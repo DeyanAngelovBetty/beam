@@ -39,6 +39,10 @@ Beam Foundations (MUI v9 kit + Betty token collections)    ≈ node_modules
   its own library when the Orchestrator BO becomes the second consumer.)
 - **Promotion path:** patterns are born in product files. When a *second* product needs one, it
   moves up to Organisms. Nobody predicts sharedness in advance; usage decides.
+  - Live example: `SunlightShell` (AppBar + Drawer + Location switcher + mode toggle) stays in
+    `apps/sunlight` even though all three demo apps will plainly need a BO shell. It gets
+    promoted to `BeamAppShell` when Gaspar actually needs it — not before. *(2026-07-20:
+    followed the rule deliberately over taking the shortcut.)*
 - Product-specific patterns (e.g. the paytable editor) start and stay in the product until
   promoted.
 
@@ -118,9 +122,14 @@ pain each one prevents:
 
 1. **Atoms are MUI. We never rebuild them.** MUI's docs are the atom documentation; the theme
    makes them Betty's. Beam's own surface area is *organisms only*.
-2. **All imports go through the barrel** (`src/beam/index.ts` → eventually `@betty/beam`),
+2. **All imports go through the barrel** (`packages/beam/src/index.ts` = `@betty/beam`),
    never `@mui/material` directly in product code. Cost: zero. Payoff: one seam when an atom
    ever needs extending or swapping.
+   - **Carve-out: `@mui/icons-material` may be imported directly in apps.** Icons are not
+     themed atoms — there is no styling seam to protect — and curating a re-export list of
+     ~60 glyphs is churn that buys nothing. Beam re-exports an icon only when it wraps it
+     with meaning (as `GemIcon` does). *(Decided 2026-07-20, when the monorepo split turned
+     this convention into an enforceable package boundary.)*
 3. **Every organism ships as a trio:** `Name.types.ts` + `Name.tsx` + `Name.stories.tsx`.
    Stories are the regression harness — internal rewrites must keep existing stories green.
 4. **Statuses are semantic vocabulary, not colors.** `BeamStatusBadge` accepts
@@ -224,7 +233,10 @@ Design against the real model, not a generic BO:
 - Organisms → separate Figma library file: pending second consumer (Orchestrator BO)
 - MUI major version for the real Sunlight repo: current MUI is v9, POC is v7 — decide before
   scaffold
-- `@betty/beam` as a published package vs in-repo: later
+- ~~`@betty/beam` as a published package vs in-repo~~ — **decided 2026-07-20: in-repo npm
+  workspace, consumed as source** (apps alias `@betty/beam` → `packages/beam/src`, no build
+  step). Forced by `GemIcon`'s `import.meta.glob` asset registry, which resolves at Vite
+  transform time and cannot survive precompilation. Revisit if Beam ever ships outside this repo.
 - Asset pipeline: gems done (GemIcon self-registering registry); coins & collection art
   pending; automated Figma→repo export pending network allowlist (`www.figma.com`)
 - Productionized sync now has **three output lanes**: seeds→`tokens.ts` · contrast checks ·
