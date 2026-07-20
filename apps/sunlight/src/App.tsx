@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ThemeProvider, CssBaseline, createBeamTheme } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
-import { SunlightShell } from './sunlight/SunlightShell';
+import { SUNLIGHT_NAV } from './sunlight/navItems';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 
 /**
@@ -18,9 +18,15 @@ export function App() {
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
       <CssBaseline />
-      <SunlightShell brand={brand} onBrandChange={setBrand}>
+      <BeamAppShell
+        title="SUNLIGHT"
+        product="sunlight"
+        navItems={SUNLIGHT_NAV}
+        brand={brand}
+        onBrandChange={setBrand}
+      >
         <LoyaltyStatusPage />
-      </SunlightShell>
+      </BeamAppShell>
     </ThemeProvider>
   );
 }
