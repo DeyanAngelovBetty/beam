@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import BlockIcon from '@mui/icons-material/Block';
-import { GemIcon, Tooltip } from '@betty/beam';
+import { Box, Stack, Typography, GemIcon, Tooltip } from '@betty/beam';
 import type { GemName } from '@betty/beam';
 
 /**

@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Stack from '@mui/material/Stack';
-import { BeamDataTable, GemIcon } from '@betty/beam';
-import type { GemName } from '@betty/beam';
+import {
+  Typography,
+  Paper,
+  Tabs,
+  Tab,
+  Stack,
+  BeamDataTable,
+  GemIcon,
+} from '@betty/beam';
+import type { GemName, BeamColumn } from '@betty/beam';
 import { NextGemPanel } from './NextGemPanel';
-import type { BeamColumn } from '@betty/beam';
 
 interface LoyaltyStatus {
   id: number;

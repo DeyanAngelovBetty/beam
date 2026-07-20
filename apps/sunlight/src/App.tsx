@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { createBeamTheme } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import { SunlightShell } from './sunlight/SunlightShell';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
