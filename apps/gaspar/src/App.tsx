@@ -13,7 +13,7 @@ import { TransactionsPage } from './gaspar/TransactionsPage';
  * sameness IS the demo — one Beam, many products.
  *
  * ⚠️ Gaspar's token values are glanceable DEMO placeholders, not its
- * identity (BEAM.md Appendix B). The real design pass is pending.
+ * identity (BEAM.md Appendix C). The real design pass is pending.
  */
 export function App() {
   const [brand, setBrand] = useState<BrandName>('ontario');

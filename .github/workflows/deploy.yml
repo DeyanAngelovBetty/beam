@@ -25,10 +25,12 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      # Sunlight app at the site root, Storybook at /storybook
+      # Landing page at the site root; each app and Storybook in its own
+      # subdirectory. PAGES_BASE is derived from the repo name so a rename
+      # does not break asset URLs.
       - run: npm run build:pages
         env:
-          BASE_PATH: /${{ github.event.repository.name }}/
+          PAGES_BASE: /${{ github.event.repository.name }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

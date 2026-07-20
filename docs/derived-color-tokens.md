@@ -63,7 +63,7 @@ linear-gradient(180deg,
 3. **Decide: single formula or per-scheme mirror?** If the formula mixes toward
    white/black (a contrast direction), mirror it (`light`/`dark` variants). If all
    inputs are theme-flipping variables, one formula suffices.
-4. **Add it to `src/theme/tokens.ts` → the `derived` section** (code-owned; the
+4. **Add it to `packages/beam/src/theme/tokens.ts` → the `derived` section** (code-owned; the
    Figma→code sync preserves this block). Document what it derives from and why.
 5. **Emit it** in `createBeamTheme.ts`: either into an MUI palette slot (like
    `divider`) or as a `--beam-*` custom property via `MuiCssBaseline` overrides.

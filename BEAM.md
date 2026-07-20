@@ -16,9 +16,9 @@ Every design decision travels exactly one lane. Before implementing anything, cl
 
 | Kind of decision | Example | Figma home | Code home |
 |---|---|---|---|
-| **Value** | brand color, spacing, font size, typeface | Variables (collections) | `src/theme/tokens.ts` (generated) |
+| **Value** | brand color, spacing, font size, typeface | Variables (collections) | `packages/beam/src/theme/tokens.ts` (generated) |
 | **Category rule** | "table headers are uppercase", focus rings, density | Text styles / effect styles | Theme `components` overrides in `createBeamTheme.ts` |
-| **Structure / behavior** | what a table is, row expansion, bulk actions | Components (variants, properties) | Organisms in `src/beam/` + stories |
+| **Structure / behavior** | what a table is, row expansion, bulk actions | Components (variants, properties) | Organisms in `packages/beam/src/` + stories |
 
 Why it matters: each lane has its own sync mechanism and its own single source of truth.
 Putting a decision in the wrong lane means it silently stops propagating.
@@ -39,10 +39,12 @@ Beam Foundations (MUI v9 kit + Betty token collections)    ≈ node_modules
   its own library when the Orchestrator BO becomes the second consumer.)
 - **Promotion path:** patterns are born in product files. When a *second* product needs one, it
   moves up to Organisms. Nobody predicts sharedness in advance; usage decides.
-  - Live example: `SunlightShell` (AppBar + Drawer + Location switcher + mode toggle) stays in
-    `apps/sunlight` even though all three demo apps will plainly need a BO shell. It gets
-    promoted to `BeamAppShell` when Gaspar actually needs it — not before. *(2026-07-20:
-    followed the rule deliberately over taking the shortcut.)*
+  - Worked example, both halves: `SunlightShell` was deliberately **left** in `apps/sunlight`
+    even though all three demo apps plainly would need a BO shell — and then **promoted** to
+    `BeamAppShell` one step later, when Gaspar actually became the second consumer. Same day,
+    both decisions. Waiting cost nothing and the abstraction was better for having two real
+    consumers to answer to. `BeamPageHeader` and `BeamTabs` followed the same path from
+    duplication in Sunlight and Gaspar. *(2026-07-20)*
 - Product-specific patterns (e.g. the paytable editor) start and stay in the product until
   promoted.
 
@@ -100,7 +102,8 @@ pain each one prevents:
    must not inherit brand-primary ink). This rule exists because we shipped and reverted
    exactly that mistake.
 5. **New brand typeface = one Figma value + one webfont line.** Figma renders installed fonts
-   for free; browsers must load them (`index.html` + `.storybook/preview-head.html`).
+   for free; browsers must load them (each app's `index.html` +
+  `packages/beam/.storybook/preview-head.html`).
 6. **Alias hygiene:** palette aliases into brand; components bind to palette (semantic), not
    brand (raw), and never to `material/colors` primitives.
 7. Plan-tier constraints are real: 4 modes per collection below Enterprise. Current
@@ -203,7 +206,33 @@ Design against the real model, not a generic BO:
 
 ---
 
-## Appendix A — Established mappings
+## Appendix A — Repo map & Figma files
+
+The repo is an npm-workspaces monorepo: one design system, several demo apps.
+
+```
+packages/beam/          @betty/beam — tokens, theme, organisms, Storybook
+apps/landing/           the published index (links every surface + its Figma file)
+apps/sunlight/          loyalty back office
+apps/gaspar/            payment orchestrator back office
+apps/midnight-demo/     retrofit slice — player search + payments tab
+```
+
+Apps alias `@betty/beam` to `packages/beam/src` and consume it as source; there is no
+package build step. Published to GitHub Pages on push to `main`: landing at the site
+root, each app and Storybook in its own subdirectory.
+
+| Surface | Figma | Code |
+|---|---|---|
+| Foundations + Organisms | [Beam (MUI v9)](https://www.figma.com/design/9yNbolohxGitkMJKDjoyKG/Beam--MUI-v9-?node-id=4662-14) | `packages/beam` |
+| Sunlight | [Sunlight](https://www.figma.com/design/erQ1X8e91k6YwRsKgnzXDY/Sunlight?node-id=0-1) | `apps/sunlight` |
+| Gaspar | *not yet created* | `apps/gaspar` |
+| Midnight retrofit | *not yet created* | `apps/midnight-demo` |
+
+Keep this table and `apps/landing/src/registry.ts` in step — the landing page is what
+everyone else sees, and a missing Figma link there reads as "no design exists".
+
+## Appendix B — Established mappings
 
 | Figma | Code |
 |---|---|
@@ -221,22 +250,29 @@ Design against the real model, not a generic BO:
 | component `BeamStatusBadge` (Status=…) | `<BeamStatusBadge status="…">` (Code Connected) |
 | rename log | `brand`→`jurisdiction` · palette modes →plain `light`/`dark` · kit-original demo modes removed |
 
-## Appendix B — Known gaps / open items
+## Appendix C — Known gaps / open items
 
 - Gaspar values are glanceable **demo placeholders**, not identity — real design pass
   pending; two dark defaults carry pre-correction values (`#57DDCC`/`#ED94FA`; intended
   `#2DD4BF`/`#E879F9`) — true up or bless
-- Gaspar backgrounds currently identical to Sunlight (teal-cast option open); Gaspar app
-  environment unspawned (cost ≈ accent seed + `createBeamTheme(brand, 'gaspar')` + shell)
+- Gaspar backgrounds currently identical to Sunlight (teal-cast option open). Gaspar app
+  environment **spawned 2026-07-20** (`apps/gaspar`, transactions screen); its marquee
+  node-graph rule builder is still to come — graph library to be chosen with Ivan
 - typography collection mobile mode: `fontFamily` still raw Roboto (needs jurisdiction alias)
 - Code Connect mapping is "simple" flavor (no template snippet) — refine via CLI later
-- Organisms → separate Figma library file: pending second consumer (Orchestrator BO)
+- Organisms → separate Figma library file: the second consumer now exists in code
+  (`apps/gaspar`), so the Figma-side split is due
 - MUI major version for the real Sunlight repo: current MUI is v9, POC is v7 — decide before
   scaffold
 - ~~`@betty/beam` as a published package vs in-repo~~ — **decided 2026-07-20: in-repo npm
   workspace, consumed as source** (apps alias `@betty/beam` → `packages/beam/src`, no build
   step). Forced by `GemIcon`'s `import.meta.glob` asset registry, which resolves at Vite
   transform time and cannot survive precompilation. Revisit if Beam ever ships outside this repo.
+- **Placeholder organisms awaiting a Figma design pass**: `BeamPageHeader`, `BeamStat`,
+  `BeamTabs`, `BeamFilterBar` (added 2026-07-20, grouped under "Organisms (placeholder)" in
+  Storybook). Shape-only, so screens had something stable to build against — the design
+  thinking is deliberately deferred to Figma rather than improvised in code. `BeamFilterBar`
+  in particular passes fields as children; a field-schema API is the open design question.
 - Asset pipeline: gems done (GemIcon self-registering registry); coins & collection art
   pending; automated Figma→repo export pending network allowlist (`www.figma.com`)
 - Productionized sync now has **three output lanes**: seeds→`tokens.ts` · contrast checks ·

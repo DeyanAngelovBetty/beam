@@ -11,7 +11,9 @@
     "dev": "npm run dev -w apps/sunlight",
     "storybook": "npm run storybook -w packages/beam",
     "typecheck": "tsc -b",
-    "build": "npm run typecheck && npm run build --workspaces --if-present"
+    "build": "npm run typecheck && npm run build --workspaces --if-present",
+    "build-storybook": "npm run build-storybook -w packages/beam",
+    "build:pages": "npm run build && npm run build-storybook && node scripts/assemble-pages.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

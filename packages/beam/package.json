@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "//": "Consumed as SOURCE, not built — GemIcon's import.meta.glob asset registry resolves at Vite transform time (BEAM.md Appendix B, decided 2026-07-20).",
+  "//": "Consumed as SOURCE, not built — GemIcon's import.meta.glob asset registry resolves at Vite transform time (BEAM.md Appendix C, decided 2026-07-20).",
   "exports": {
     ".": "./src/index.ts"
   },
