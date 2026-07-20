@@ -4,10 +4,10 @@ import Paper from '@mui/material/Paper';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Stack from '@mui/material/Stack';
-import { BeamDataTable, GemIcon } from '../beam';
-import type { GemName } from '../beam';
+import { BeamDataTable, GemIcon } from '@betty/beam';
+import type { GemName } from '@betty/beam';
 import { NextGemPanel } from './NextGemPanel';
-import type { BeamColumn } from '../beam';
+import type { BeamColumn } from '@betty/beam';
 
 interface LoyaltyStatus {
   id: number;

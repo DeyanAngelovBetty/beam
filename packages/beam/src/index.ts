@@ -7,6 +7,19 @@
  * '@mui/material' directly in product code.
  */
 
+// ---- Theme (Beam-owned) ----
+// Apps consume the theme through this entry, never by deep-importing
+// ./theme/* — same seam rule as atoms (BEAM.md §6.2).
+export { createBeamTheme } from './theme/createBeamTheme';
+export { products, derived } from './theme/tokens';
+export type {
+  BrandName,
+  ProductName,
+  ThemeMode,
+  BrandTokens,
+  BrandModeTokens,
+} from './theme/tokens';
+
 // ---- Atoms (MUI pass-through) ----
 export {
   Button,

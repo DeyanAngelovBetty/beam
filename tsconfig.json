@@ -1,17 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "types": ["vite/client"],
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src", ".storybook"]
+  "extends": "./tsconfig.base.json",
+  "include": ["packages/*/src", "packages/*/.storybook", "apps/*/src", "apps/*/vite.config.ts"]
 }

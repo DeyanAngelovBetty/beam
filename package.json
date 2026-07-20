@@ -1,32 +1,20 @@
 {
-  "name": "beam-poc",
+  "name": "beam-monorepo",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "build:pages": "npm run build && storybook build -o dist/storybook"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.3.11",
-    "@mui/material": "^7.2.0",
-    "@tanstack/react-table": "^8.21.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "dev": "npm run dev -w apps/sunlight",
+    "storybook": "npm run storybook -w packages/beam",
+    "typecheck": "tsc -b",
+    "build": "npm run typecheck && npm run build --workspaces --if-present"
   },
   "devDependencies": {
-    "@storybook/addon-docs": "^9.0.0",
-    "@storybook/react-vite": "^9.0.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.6.0",
-    "storybook": "^9.0.0",
-    "typescript": "^5.7.0",
-    "vite": "^6.3.5"
+    "@types/node": "^22.20.1",
+    "typescript": "^5.7.0"
   }
 }

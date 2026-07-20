@@ -4,8 +4,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import BlockIcon from '@mui/icons-material/Block';
-import { GemIcon, Tooltip } from '../beam';
-import type { GemName } from '../beam';
+import { GemIcon, Tooltip } from '@betty/beam';
+import type { GemName } from '@betty/beam';
 
 /**
  * Sunlight-specific pattern mirroring the player loyalty widget, made

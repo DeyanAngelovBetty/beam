@@ -35,7 +35,8 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import type { BrandName } from '../theme/tokens';
+import type { BrandName } from '@betty/beam';
+
 
 const DRAWER_WIDTH = 264;
 

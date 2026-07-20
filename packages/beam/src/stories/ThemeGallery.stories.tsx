@@ -12,8 +12,8 @@ import {
   Stack,
   Tabs,
   Tab,
-} from '../beam';
-import { BeamStatusBadge } from '../beam';
+} from '../index';
+import { BeamStatusBadge } from '../index';
 
 /**
  * Not a component — a proof. Every atom below is stock MUI consuming the
