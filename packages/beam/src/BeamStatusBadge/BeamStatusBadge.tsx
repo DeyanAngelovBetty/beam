@@ -11,7 +11,14 @@ const statusColor: Record<
   paused: 'warning',
   expired: 'default',
   error: 'error',
+  settled: 'success',
+  pending: 'info',
+  refunded: 'warning',
+  chargeback: 'error',
 };
+
+/** Quiet, resolved states read as outlines; live states read as fills. */
+const OUTLINED: BeamStatus[] = ['draft', 'expired', 'refunded'];
 
 export function BeamStatusBadge({ status, label, size = 'small' }: BeamStatusBadgeProps) {
   return (
@@ -19,7 +26,7 @@ export function BeamStatusBadge({ status, label, size = 'small' }: BeamStatusBad
       label={label ?? status}
       color={statusColor[status]}
       size={size}
-      variant={status === 'draft' || status === 'expired' ? 'outlined' : 'filled'}
+      variant={OUTLINED.includes(status) ? 'outlined' : 'filled'}
       sx={{ textTransform: 'capitalize', fontWeight: 500 }}
     />
   );

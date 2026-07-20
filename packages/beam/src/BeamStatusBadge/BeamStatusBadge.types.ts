@@ -8,12 +8,22 @@
  */
 
 export type BeamStatus =
+  // Lifecycle — configuration objects (promotions, campaigns, paytables)
   | 'active'
   | 'scheduled'
   | 'draft'
   | 'paused'
   | 'expired'
-  | 'error';
+  | 'error'
+  // Settlement — money movement (Gaspar transactions, Midnight payments).
+  // Added 2026-07-20 as a deliberate vocabulary decision when Gaspar's
+  // transactions table needed words the lifecycle set could not express:
+  // 'active' is not 'settled', and a chargeback is not an 'error'.
+  // 'error' already covers a failed payment, so it is not duplicated here.
+  | 'settled'
+  | 'pending'
+  | 'refunded'
+  | 'chargeback';
 
 export interface BeamStatusBadgeProps {
   status: BeamStatus;
