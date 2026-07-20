@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import {
   Typography,
-  Paper,
-  Tabs,
-  Tab,
   Stack,
   Box,
   Divider,
   BeamDataTable,
   BeamStatusBadge,
+  BeamPageHeader,
+  BeamTabs,
 } from '@betty/beam';
-import type { BeamColumn, BeamStatus } from '@betty/beam';
+import type { BeamColumn, BeamStatus, BeamTabItem } from '@betty/beam';
 
 /**
  * The Payment Orchestrator's list screen, built entirely from Beam organisms
@@ -74,10 +73,17 @@ const TRANSACTIONS: Transaction[] = Array.from({ length: 24 }, (_, i) => {
 const money = (amount: number, currency: string) =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency }).format(amount);
 
-const TABS = ['All', 'Deposits', 'Withdrawals', 'Disputes', 'Reconciliation'];
+/** One level deliberately — nesting is available but competes with the drawer. */
+const TABS: BeamTabItem[] = [
+  { id: 'all', label: 'All' },
+  { id: 'deposits', label: 'Deposits' },
+  { id: 'withdrawals', label: 'Withdrawals' },
+  { id: 'disputes', label: 'Disputes' },
+  { id: 'reconciliation', label: 'Reconciliation' },
+];
 
 export function TransactionsPage() {
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState('all');
 
   const columns: BeamColumn<Transaction>[] = [
     { key: 'reference', header: 'Reference', render: (t) => t.reference, getValue: (t) => t.reference, width: 130 },
@@ -104,23 +110,9 @@ export function TransactionsPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4" component="h1">
-        Transactions
-      </Typography>
+      <BeamPageHeader title="Transactions" />
 
-      <Paper variant="outlined" sx={{ px: 1 }}>
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="Transaction views"
-        >
-          {TABS.map((t) => (
-            <Tab key={t} label={t} />
-          ))}
-        </Tabs>
-      </Paper>
+      <BeamTabs items={TABS} value={tab} onChange={setTab} aria-label="Transaction views" />
 
       <BeamDataTable
         columns={columns}

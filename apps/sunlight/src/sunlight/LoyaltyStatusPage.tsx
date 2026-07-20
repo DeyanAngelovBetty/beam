@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import {
   Typography,
-  Paper,
-  Tabs,
-  Tab,
   Stack,
   BeamDataTable,
   GemIcon,
+  BeamPageHeader,
+  BeamTabs,
 } from '@betty/beam';
-import type { GemName, BeamColumn } from '@betty/beam';
+import type { GemName, BeamColumn, BeamTabItem } from '@betty/beam';
 import { NextGemPanel } from './NextGemPanel';
 
 interface LoyaltyStatus {
@@ -65,13 +64,13 @@ const STATUSES: LoyaltyStatus[] = [
   { id: 100, gem: 'vip', name: 'VIP', maxDays: '28', boxes: 12, keepBoxes: INF, keepGems: INF, multiplier: 2 },
 ];
 
-const TABS = [
+const TABS: BeamTabItem[] = [
   'Status', 'A Levels', 'B Levels', 'RTP Multipliers', 'Daily Gifts',
   'Wheel Settings', 'Status Perks', 'Onboarding Checklist', 'MetaGame Presets',
-];
+].map((label) => ({ id: label.toLowerCase().replace(/\s+/g, '-'), label }));
 
 export function LoyaltyStatusPage() {
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(TABS[0].id);
   const columns: BeamColumn<LoyaltyStatus>[] = [
     { key: 'id', header: 'ID', render: (r) => r.id, getValue: (r) => r.id, width: 64 },
     {
@@ -93,23 +92,9 @@ export function LoyaltyStatusPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4" component="h1">
-        Loyalty Status
-      </Typography>
+      <BeamPageHeader title="Loyalty Status" />
 
-      <Paper variant="outlined" sx={{ px: 1 }}>
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="Loyalty status sections"
-        >
-          {TABS.map((t) => (
-            <Tab key={t} label={t} />
-          ))}
-        </Tabs>
-      </Paper>
+      <BeamTabs items={TABS} value={tab} onChange={setTab} aria-label="Loyalty status sections" />
 
       <BeamDataTable
         columns={columns}
