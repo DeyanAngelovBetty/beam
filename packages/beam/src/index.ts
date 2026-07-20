@@ -86,3 +86,16 @@ export { BeamDataTable } from './BeamDataTable/BeamDataTable';
 export { GemIcon } from './GemIcon/GemIcon';
 export type { GemIconProps, GemName } from './GemIcon/GemIcon.types';
 export type { BeamDataTableProps, BeamColumn } from './BeamDataTable/BeamDataTable.types';
+
+// ---- Organisms: PLACEHOLDERS (2026-07-20) ----
+// Shape-only, pending the Figma design pass. Screens can be built against a
+// stable name and API now; the eventual design lands in one place instead of
+// a dozen inline copies. Expect these to change — that is the point.
+export { BeamPageHeader } from './BeamPageHeader/BeamPageHeader';
+export type { BeamPageHeaderProps } from './BeamPageHeader/BeamPageHeader.types';
+export { BeamStat } from './BeamStat/BeamStat';
+export type { BeamStatProps, BeamStatTone } from './BeamStat/BeamStat.types';
+export { BeamTabs } from './BeamTabs/BeamTabs';
+export type { BeamTabsProps, BeamTabItem } from './BeamTabs/BeamTabs.types';
+export { BeamFilterBar } from './BeamFilterBar/BeamFilterBar';
+export type { BeamFilterBarProps, BeamFilterPreset } from './BeamFilterBar/BeamFilterBar.types';
