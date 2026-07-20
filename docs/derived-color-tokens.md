@@ -1,0 +1,111 @@
+# Derived color tokens — CSS color functions in Beam
+
+*A focused companion to `BEAM.md`. For humans and AI assistants (Claude, Cowork)
+working on Beam/Sunlight. If you are an AI: treat the guardrails as hard constraints,
+and prefer proposing formulas over emitting literal colors.*
+
+---
+
+## 1. The idea in one paragraph
+
+Designers author a **small set of seed colors** (brand primaries, backgrounds — synced
+from Figma). Everything else that *follows a rule* is written **as the rule**, in CSS,
+computed by the browser: `derived tokens`. One formula replaces dozens of hand-picked
+values, can never drift from its seeds, and — the killer feature — **inherits every
+theming axis for free**: because the formula references CSS variables
+(`--mui-palette-primary-main`), its result updates automatically when product,
+jurisdiction, or light/dark mode flips. Four seeds + two formulas currently drive
+every border and page wash across 8 theme combinations.
+
+## 2. The two live examples (read these before writing a new one)
+
+### `tableBorder` — a quiet brand tint on every border
+
+```css
+/* dark scheme */  color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, white)
+/* light scheme */ color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, black)
+```
+
+Decoded, inside-out:
+- `oklch(from var(...) l c h / 0.25)` — **relative color syntax**: take primary,
+  keep its lightness/chroma/hue, set alpha to 25%.
+- `color-mix(in oklch, X 77%, white)` — blend 77% of that with 23% white, in
+  **OKLCH** (a perceptual color space: mixes look how humans expect, no muddy
+  in-betweens).
+- The white/black anchor is **mirrored per scheme** — always mix toward the
+  *contrast direction* (lighten on dark backgrounds, darken on light ones). A
+  formula that mixes toward white looks great in dark mode and vanishes in light
+  mode; this mirroring is the most common bug in derived tokens.
+- Applied to `palette.divider` *and* MUI's internal `TableCell.border`, so Paper
+  outlines, cell rules, and connector lines share one voice.
+
+### `pageGradient` — brand wash on every page
+
+```css
+linear-gradient(180deg,
+  color-mix(in oklch, var(--mui-palette-primary-main) 10%, var(--mui-palette-background-default)) 0%,
+  var(--mui-palette-background-default) 320px)
+```
+
+- **One formula, no per-scheme variants** — both inputs are themselves CSS variables
+  that flip with mode/brand/product, so the gradient adapts everywhere by itself.
+  Prefer this shape whenever possible; mirror per scheme only when the contrast
+  direction genuinely matters (as in `tableBorder`).
+- Emitted as a custom property (`--beam-page-gradient`) via a CssBaseline override;
+  consumed with `backgroundImage: 'var(--beam-page-gradient)'`.
+
+## 3. Recipe: adding a new derived token
+
+1. **Name the rule, not the color.** "Selection wash is 8% primary over background"
+   is a derived token; "#1A1B4B" is not.
+2. **Reference CSS variables, never literals.** `var(--mui-palette-*)` inputs are
+   what make the token axis-aware. A formula containing a hex is a bug.
+3. **Decide: single formula or per-scheme mirror?** If the formula mixes toward
+   white/black (a contrast direction), mirror it (`light`/`dark` variants). If all
+   inputs are theme-flipping variables, one formula suffices.
+4. **Add it to `src/theme/tokens.ts` → the `derived` section** (code-owned; the
+   Figma→code sync preserves this block). Document what it derives from and why.
+5. **Emit it** in `createBeamTheme.ts`: either into an MUI palette slot (like
+   `divider`) or as a `--beam-*` custom property via `MuiCssBaseline` overrides.
+6. **Bake for Figma if designers need it on canvas:** compute the literal results
+   per brand×scheme and write them into the `_derived (baked)` collection in the
+   Foundations file — labeled GENERATED, never hand-edited, regenerated when the
+   formula or seeds change. (Gradients can't be Figma variables; their Figma twin,
+   if needed, is a style.)
+7. **Check contrast implications.** A derived color that text sits on needs the
+   same WCAG scrutiny as a seed.
+
+## 4. CSS features cheat sheet
+
+| Feature | What it does | Support posture |
+|---|---|---|
+| `color-mix(in oklch, A p%, B)` | perceptual blend of two colors | broadly supported |
+| `oklch(from X l c h / a)` (relative color) | derive a variant of an existing color | Chrome 119+, Safari 16.4+, FF 128+ |
+| `var()` inside color functions | axis inheritance | everywhere |
+| `corner-shape: squircle` | (cousin feature already in Beam) | Chrome 139+, progressive |
+
+Posture: the BO is Chrome-first, same stance as the squircle — modern CSS is welcome;
+anything player-facing gets a stricter support review.
+
+## 5. Guardrails (especially for AI assistants)
+
+- **Never precompute a formula's result into a component.** If you know the answer
+  is "#3630A1 at 42%", the token is the *formula*, not the number. Hardcoded results
+  silently stop tracking their seeds.
+- **Formulas live in `tokens.ts`, not in component `sx`.** A color-mix in a
+  component is a one-off; in the derived section it's a system rule.
+- **Don't invent new theming axes** inside formulas (no per-product conditionals in
+  CSS — the axis system handles that upstream; formulas just consume variables).
+- **If something can't be derived** (needs designer judgment, or Figma can't
+  represent even the baked result), stop and flag it — that's a seed request or a
+  style, not a workaround.
+- Respect the mirror rule (§2) — check every new formula in **both** schemes and at
+  least two brands before calling it done.
+
+## 6. Ideas menu (unclaimed, come play)
+
+Hover/selected washes derived from primary · focus rings (`primary` at 30% — the
+`focusVisible` state token, but computed) · chart color ramps generated from primary
+by rotating OKLCH hue · elevation tints (surface + n% primary per level) · product-
+accent derivatives once Gaspar's identity lands · status-badge soft variants
+(status color at 12% over background). Each is one formula. That's the point.
