@@ -1,0 +1,105 @@
+/**
+ * Beam design tokens — GENERATED from the live Figma file via MCP sync.
+ * Source: Beam (MUI v9) Foundations (9yNbolohxGitkMJKDjoyKG).
+ * Synced: 2026-07-17 — first sync against the three-axis structure.
+ *
+ * Figma architecture (consume once, carry the rest, never skip a hop):
+ *   jurisdiction (SEED — all literals; modes Ontario|Alberta;
+ *                 groups {Product}/{theme}/…)
+ *     ↑ product  (selector; modes Sunlight|Gaspar; per-mode aliases)
+ *     ↑ palette  (top; modes Light|Dark; no groups)
+ *
+ * Code mirror: products[product][jurisdiction].{light|dark}
+ * ⚠️ Gaspar values are DEMO placeholders (glanceable hues), not identity.
+ */
+
+export type ProductName = 'sunlight' | 'gaspar';
+export type BrandName = 'ontario' | 'alberta';
+export type ThemeMode = 'light' | 'dark';
+
+export interface BrandModeTokens {
+  primaryDown1: string;
+  primary0: string;
+  primaryUp1: string;
+  contrastText: string;
+}
+
+export interface BrandTokens {
+  light: BrandModeTokens;
+  dark: BrandModeTokens;
+  states: {
+    hover: number;
+    selected: number;
+    focus: number;
+    focusVisible: number;
+    outlinedBorder: number;
+  };
+  surfaces: { screen: string; overlay: string };
+  fontFamily: string;
+}
+
+const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, outlinedBorder: 0.5 };
+const SURFACES = { screen: '#0B0F19', overlay: '#111827' };
+
+export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
+  sunlight: {
+    ontario: {
+      light: { primaryDown1: '#3832A0', primary0: '#5048E5', primaryUp1: '#828DF8', contrastText: '#FFFFFF' },
+      dark: { primaryDown1: '#515BA4', primary0: '#7582EB', primaryUp1: '#909BEF', contrastText: '#111827' },
+      states: STATES, surfaces: SURFACES, fontFamily: 'Inter',
+    },
+    alberta: {
+      light: { primaryDown1: '#906013', primary0: '#CB871B', primaryUp1: '#E9AF54', contrastText: '#111827' },
+      dark: { primaryDown1: '#BD7E19', primary0: '#E7A946', primaryUp1: '#EEC481', contrastText: '#111827' },
+      states: STATES, surfaces: SURFACES, fontFamily: 'Poppins',
+    },
+  },
+  gaspar: {
+    ontario: {
+      light: { primaryDown1: '#0B534D', primary0: '#0F766E', primaryUp1: '#3F918B', contrastText: '#FFFFFF' },
+      // dark default as entered in Figma (pre-correction footnote value) — Figma is seed truth
+      dark: { primaryDown1: '#209486', primary0: '#57DDCC', primaryUp1: '#57DDCC', contrastText: '#111827' },
+      states: STATES, surfaces: SURFACES, fontFamily: 'Inter',
+    },
+    alberta: {
+      light: { primaryDown1: '#861B94', primary0: '#C026D3', primaryUp1: '#CD51DC', contrastText: '#FFFFFF' },
+      dark: { primaryDown1: '#A255AE', primary0: '#ED94FA', primaryUp1: '#ED94FA', contrastText: '#111827' },
+      states: STATES, surfaces: SURFACES, fontFamily: 'Poppins',
+    },
+  },
+};
+
+/** Back-compat alias for pre-product-axis callers. */
+export const brands = products.sunlight;
+
+/**
+ * DERIVED TOKENS — computed in CSS from other tokens at runtime.
+ * These have no literal Figma value (Figma cannot express color-mix /
+ * relative color syntax); their Figma twin, when needed, is a static
+ * per-brand approximation. Syncs regenerate the blocks above and
+ * preserve this one.
+ *
+ * Browser note: relative color syntax needs a modern engine (Chrome 119+,
+ * Safari 18, Firefox 128+) — fine for a Chrome-first BO, same posture as
+ * corner-shape.
+ */
+export const derived = {
+  /**
+   * Brand-tinted table/surface border — a quiet derivative of primary, so
+   * borders shift subtly between Ontario and Alberta. Mixed toward the
+   * contrast direction per scheme (white on dark, black on light).
+   */
+  tableBorder: {
+    dark: 'color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, white)',
+    light: 'color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, black)',
+  },
+  /**
+   * Brand-tinted page wash — a whisper of primary fading into the page
+   * background over the first ~320px. ONE formula serves every brand and
+   * both schemes: its inputs are themselves CSS variables that flip.
+   * Not bakeable to a Figma variable (gradients aren't a variable type);
+   * its Figma twin, if needed, is a style.
+   */
+  pageGradient:
+    'linear-gradient(180deg, color-mix(in oklch, var(--mui-palette-primary-main) 10%, var(--mui-palette-background-default)) 0%, var(--mui-palette-background-default) 320px)',
+};
