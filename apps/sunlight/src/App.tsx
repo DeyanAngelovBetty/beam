@@ -4,6 +4,8 @@ import type { BrandName } from '@betty/beam';
 import { buildSunlightNav, type SunlightPage } from './sunlight/navItems';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { PlaceholderPage } from './sunlight/PlaceholderPage';
+import { UsersPage } from './sunlight/UsersPage';
+import { RolesPage } from './sunlight/RolesPage';
 
 /**
  * Sunlight is a back office: operators manage multiple jurisdictions from
@@ -49,8 +51,8 @@ function renderPage(page: SunlightPage) {
     case 'prize-wall':
       return <PlaceholderPage title="Prize Wall" />;
     case 'users':
-      return <PlaceholderPage title="Users" />;
+      return <UsersPage />;
     case 'roles':
-      return <PlaceholderPage title="Roles" />;
+      return <RolesPage />;
   }
 }
