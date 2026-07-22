@@ -3,19 +3,37 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import type { BeamFilterBarProps } from './BeamFilterBar.types';
 
 export function BeamFilterBar({
   children,
+  searchValue = '',
+  onSearchChange,
+  searchPlaceholder = 'Search',
   presets = [],
   activePreset = null,
   onPresetChange,
-  onSearch,
-  onClear,
+  onFilter,
+  onClearAll,
+  applied = false,
   'aria-label': ariaLabel,
 }: BeamFilterBarProps) {
   return (
-    <Paper variant="outlined" component="section" aria-label={ariaLabel} sx={{ p: 2 }}>
+    <Paper
+      variant="outlined"
+      component="section"
+      aria-label={ariaLabel}
+      sx={{
+        p: 2,
+        // Applied state reads as a lit border (grammar §1).
+        ...(applied && { borderColor: 'primary.main' }),
+      }}
+    >
       <Stack spacing={2}>
         {presets.length > 0 && (
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -36,8 +54,8 @@ export function BeamFilterBar({
           </Stack>
         )}
 
-        {/* Fields wrap into as many columns as the viewport allows — the one
-            layout decision every list screen already agrees on. */}
+        {/* Search leads; promoted fields follow, wrapping into as many columns
+            as the viewport allows — the one layout every list screen shares. */}
         <Box
           sx={{
             display: 'grid',
@@ -49,19 +67,50 @@ export function BeamFilterBar({
             },
           }}
         >
+          {onSearchChange && (
+            <TextField
+              size="small"
+              fullWidth
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  // Individually clearable — the reference pattern for every field.
+                  endAdornment: searchValue ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        aria-label="Clear search"
+                        edge="end"
+                        onClick={() => onSearchChange('')}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : undefined,
+                },
+              }}
+            />
+          )}
           {children}
         </Box>
 
-        {(onSearch || onClear) && (
-          <Stack direction="row" spacing={1}>
-            {onSearch && (
-              <Button variant="contained" onClick={onSearch}>
-                Search
+        {(onFilter || onClearAll) && (
+          <Stack direction="row" spacing={1} alignItems="center">
+            {onFilter && (
+              <Button variant={applied ? 'contained' : 'outlined'} onClick={onFilter}>
+                Filter
               </Button>
             )}
-            {onClear && (
-              <Button variant="outlined" onClick={onClear}>
-                Clear
+            {onClearAll && (
+              <Button variant="text" onClick={onClearAll} disabled={!applied}>
+                Clear all
               </Button>
             )}
           </Stack>

@@ -137,8 +137,9 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
         presets={RANGE_PRESETS}
         activePreset={preset}
         onPresetChange={setPreset}
-        onSearch={() => {}}
-        onClear={() => setPreset(null)}
+        applied={preset !== null}
+        onFilter={() => {}}
+        onClearAll={() => setPreset(null)}
       >
         <TextField label="Transaction ID" size="small" fullWidth />
         <TextField label="Start date" size="small" fullWidth />

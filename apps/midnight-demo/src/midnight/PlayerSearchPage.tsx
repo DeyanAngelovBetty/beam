@@ -67,8 +67,9 @@ export function PlayerSearchPage({ onOpenPlayer }: PlayerSearchPageProps) {
 
       <BeamFilterBar
         aria-label="Player search filters"
-        onSearch={() => {}}
-        onClear={() => setStatus('Any')}
+        applied={status !== 'Any'}
+        onFilter={() => {}}
+        onClearAll={() => setStatus('Any')}
       >
         <TextField label="Player ID" size="small" fullWidth />
         <TextField label="Email" size="small" fullWidth />
