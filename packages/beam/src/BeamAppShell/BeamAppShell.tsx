@@ -9,6 +9,8 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Collapse from '@mui/material/Collapse';
+import Divider from '@mui/material/Divider';
+import ListSubheader from '@mui/material/ListSubheader';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
@@ -39,33 +41,55 @@ function ModeToggle() {
   );
 }
 
+/** A flat, navigable leaf — used inside groups and sections. */
+function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }) {
+  return (
+    <ListItemButton selected={item.selected} onClick={item.onClick} sx={inset ? { pl: 4 } : undefined}>
+      {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
+      <ListItemText primary={item.label} />
+    </ListItemButton>
+  );
+}
+
 function NavItem({ item }: { item: BeamNavItem }) {
   const [open, setOpen] = useState(item.defaultOpen ?? false);
   const children = item.children ?? [];
 
+  // A section: divider + non-clickable subheader, with flat leaves beneath.
+  if (item.section) {
+    return (
+      <>
+        <Divider sx={{ my: 1 }} />
+        <ListSubheader disableSticky sx={{ bgcolor: 'transparent', letterSpacing: '0.06em' }}>
+          {item.label}
+        </ListSubheader>
+        {children.map((child) => (
+          <NavLeaf key={child.label} item={child} />
+        ))}
+      </>
+    );
+  }
+
+  // A leaf: navigable, no sub-list.
+  if (children.length === 0) {
+    return <NavLeaf item={item} />;
+  }
+
+  // A collapsible group.
   return (
     <>
-      <ListItemButton
-        selected={item.selected}
-        onClick={children.length ? () => setOpen(!open) : undefined}
-      >
+      <ListItemButton selected={item.selected} onClick={() => setOpen(!open)}>
         {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
         <ListItemText primary={item.label} />
-        {children.length > 0 &&
-          (open ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />)}
+        {open ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
       </ListItemButton>
-      {children.length > 0 && (
-        <Collapse in={open} timeout="auto" unmountOnExit>
-          <List dense disablePadding>
-            {children.map((child) => (
-              <ListItemButton key={child.label} selected={child.selected} sx={{ pl: 4 }}>
-                {child.icon && <ListItemIcon>{child.icon}</ListItemIcon>}
-                <ListItemText primary={child.label} />
-              </ListItemButton>
-            ))}
-          </List>
-        </Collapse>
-      )}
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        <List dense disablePadding>
+          {children.map((child) => (
+            <NavLeaf key={child.label} item={child} inset />
+          ))}
+        </List>
+      </Collapse>
     </>
   );
 }

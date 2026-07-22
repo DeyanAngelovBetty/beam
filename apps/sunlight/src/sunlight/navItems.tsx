@@ -1,37 +1,56 @@
 import DiamondIcon from '@mui/icons-material/Diamond';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import CasinoIcon from '@mui/icons-material/Casino';
-import AppsIcon from '@mui/icons-material/Apps';
-import CampaignIcon from '@mui/icons-material/Campaign';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import RedeemIcon from '@mui/icons-material/Redeem';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import SettingsIcon from '@mui/icons-material/Settings';
+import PeopleIcon from '@mui/icons-material/People';
+import BadgeIcon from '@mui/icons-material/Badge';
 import type { BeamNavItem } from '@betty/beam';
 
-/** Sunlight's navigation, mirroring the Yoda BO's information architecture. */
-export const SUNLIGHT_NAV: BeamNavItem[] = [
-  { label: 'Loyalty Status', icon: <DiamondIcon />, selected: true },
-  { label: 'Player Operations', icon: <ManageAccountsIcon />, children: [{ label: 'Player Search' }] },
-  { label: 'Compliance', icon: <VerifiedUserIcon />, children: [{ label: 'KYC Queue' }] },
-  { label: 'Casino Content', icon: <CasinoIcon />, children: [{ label: 'Game Catalogue' }] },
-  { label: 'Bingo', icon: <AppsIcon />, children: [{ label: 'Rooms' }] },
-  {
-    label: 'Promotions and Loyalty',
-    icon: <CampaignIcon />,
-    defaultOpen: true,
-    children: [
-      { label: 'Midnight Journey', icon: <AutoAwesomeIcon fontSize="small" /> },
-      { label: 'Betty Promotions', icon: <RedeemIcon fontSize="small" /> },
-      { label: 'Token Campaigns', icon: <TableChartIcon fontSize="small" /> },
-      { label: 'Betty Metagame', icon: <LocalOfferIcon fontSize="small" /> },
-      { label: 'Tournaments', icon: <EmojiEventsIcon fontSize="small" /> },
-    ],
-  },
-  { label: 'Reporting', icon: <BarChartIcon />, children: [{ label: 'Payouts' }] },
-  { label: 'BO Administration', icon: <SettingsIcon />, children: [{ label: 'Users & Roles' }] },
-];
+/** Every navigable destination in Sunlight. */
+export type SunlightPage =
+  | 'loyalty-status'
+  | 'perks'
+  | 'payout-tables'
+  | 'prize-wall'
+  | 'users'
+  | 'roles';
+
+interface NavArgs {
+  active: SunlightPage;
+  onNavigate: (page: SunlightPage) => void;
+}
+
+/**
+ * Sunlight's navigation, built per render so `selected` and `onClick` track
+ * the app's active page (no router — the demo owns page state).
+ */
+export function buildSunlightNav({ active, onNavigate }: NavArgs): BeamNavItem[] {
+  const leaf = (label: string, page: SunlightPage): BeamNavItem => ({
+    label,
+    selected: active === page,
+    onClick: () => onNavigate(page),
+  });
+
+  return [
+    {
+      label: 'Loyalty',
+      icon: <DiamondIcon />,
+      defaultOpen: true,
+      children: [leaf('Status', 'loyalty-status'), leaf('Perks', 'perks')],
+    },
+    {
+      label: 'Betty Meta Games',
+      icon: <CasinoIcon />,
+      children: [leaf('Payout Tables', 'payout-tables')],
+    },
+    // Prize Wall — the renamed Token Campaigns, now a top-level destination.
+    { ...leaf('Prize Wall', 'prize-wall'), icon: <RedeemIcon /> },
+    {
+      label: 'Administration',
+      section: true,
+      children: [
+        { ...leaf('Users', 'users'), icon: <PeopleIcon fontSize="small" /> },
+        { ...leaf('Roles', 'roles'), icon: <BadgeIcon fontSize="small" /> },
+      ],
+    },
+  ];
+}

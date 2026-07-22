@@ -99,3 +99,5 @@ export { BeamTabs } from './BeamTabs/BeamTabs';
 export type { BeamTabsProps, BeamTabItem } from './BeamTabs/BeamTabs.types';
 export { BeamFilterBar } from './BeamFilterBar/BeamFilterBar';
 export type { BeamFilterBarProps, BeamFilterPreset } from './BeamFilterBar/BeamFilterBar.types';
+export { BeamEmptyState } from './BeamEmptyState/BeamEmptyState';
+export type { BeamEmptyStateProps } from './BeamEmptyState/BeamEmptyState.types';

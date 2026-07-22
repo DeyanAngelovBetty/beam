@@ -20,6 +20,13 @@ export interface BeamNavItem {
   selected?: boolean;
   /** Sub-list starts expanded */
   defaultOpen?: boolean;
+  /** Makes a leaf navigable. Groups (with children) stay collapsible. */
+  onClick?: () => void;
+  /**
+   * Renders as a divider + non-clickable subheader label; `children` become
+   * flat, non-collapsible leaves beneath it. The "Administration" pattern.
+   */
+  section?: boolean;
 }
 
 export interface BeamAppShellProps {
