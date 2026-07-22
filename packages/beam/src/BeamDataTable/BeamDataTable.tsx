@@ -11,6 +11,7 @@ import {
   type RowSelectionState,
   type ExpandedState,
 } from '@tanstack/react-table';
+import { useTheme } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
@@ -30,10 +31,66 @@ import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import type { BeamDataTableProps } from './BeamDataTable.types';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
+import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
+import type { BeamColumn, BeamDataTableProps } from './BeamDataTable.types';
+
+/**
+ * The kebab that opens a row's overflow menu. Dim at rest, full on row
+ * hover and keyboard focus (the `.beam-kebab` class is targeted by the row).
+ */
+function RailKebab({ items }: { items: BeamRowMenuItem[] }) {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  return (
+    <>
+      <IconButton
+        className="beam-kebab"
+        size="small"
+        aria-label="Row actions"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAnchorEl(e.currentTarget);
+        }}
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      <BeamRowMenu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        items={items}
+      />
+    </>
+  );
+}
+
+/**
+ * A data cell. The identity column (isIdentity + getHref) renders as a real
+ * link to the record's canonical page — genuine <a> semantics — and stops
+ * click propagation so it navigates instead of firing the row's inspect.
+ */
+function renderCell<Row>(c: BeamColumn<Row>, row: Row) {
+  const content = c.render(row);
+  if (c.isIdentity && c.getHref) {
+    return (
+      <Link
+        href={c.getHref(row)}
+        onClick={(e) => e.stopPropagation()}
+        underline="hover"
+        color="primary"
+        sx={{ fontWeight: 500 }}
+      >
+        {content}
+      </Link>
+    );
+  }
+  return content;
+}
 
 /**
  * TanStack Table drives all state (sorting, filtering, selection,
@@ -51,15 +108,25 @@ export function BeamDataTable<Row>({
   searchable = false,
   paginated = false,
   renderExpanded,
+  rowMenu,
+  onRowClick,
   highlightRowId = null,
   onRowHover,
   emptyMessage = 'Nothing here yet.',
   'aria-label': ariaLabel,
 }: BeamDataTableProps<Row>) {
+  const theme = useTheme();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [globalFilter, setGlobalFilter] = useState('');
+
+  // Translucent state layers, painted over the rail's opaque base so the
+  // pinned column shows hover/selected exactly like a normal row instead of
+  // ghosting the scrolled cells behind it (the hover-bleed fix).
+  const action = (theme.vars || theme).palette.action;
+  const hoverLayer = `linear-gradient(${action.hover}, ${action.hover})`;
+  const selectedLayer = `linear-gradient(${action.selected}, ${action.selected})`;
 
   const columnDefs = useMemo<ColumnDef<Row>[]>(
     () =>
@@ -93,7 +160,17 @@ export function BeamDataTable<Row>({
 
   const selectedIds = Object.keys(rowSelection);
   const visibleRows = table.getRowModel().rows;
-  const extraCols = (selectable ? 1 : 0) + (renderExpanded ? 1 : 0);
+
+  // One pinned rail column holds all row controls, in fixed order
+  // [expand][select][kebab] — each rendered only if enabled (grammar §3).
+  const railEnabled = Boolean(renderExpanded) || selectable || Boolean(rowMenu);
+  const railCol = railEnabled ? 1 : 0;
+
+  const railStickySx = {
+    position: 'sticky' as const,
+    left: 0,
+    backgroundColor: 'background.paper',
+  };
 
   return (
     <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
@@ -154,15 +231,18 @@ export function BeamDataTable<Row>({
         <Table size="small" aria-label={ariaLabel}>
           <TableHead>
             <TableRow>
-              {renderExpanded && <TableCell padding="checkbox" />}
-              {selectable && (
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={table.getIsAllRowsSelected()}
-                    indeterminate={table.getIsSomeRowsSelected()}
-                    onChange={table.getToggleAllRowsSelectedHandler()}
-                    inputProps={{ 'aria-label': 'Select all rows' }}
-                  />
+              {railEnabled && (
+                // Header sits above the body rail cells if stickyHeader is ever
+                // enabled, and above its own row's data cells now.
+                <TableCell padding="checkbox" sx={{ ...railStickySx, zIndex: 3 }}>
+                  {selectable && (
+                    <Checkbox
+                      checked={table.getIsAllRowsSelected()}
+                      indeterminate={table.getIsSomeRowsSelected()}
+                      onChange={table.getToggleAllRowsSelectedHandler()}
+                      inputProps={{ 'aria-label': 'Select all rows' }}
+                    />
+                  )}
                 </TableCell>
               )}
               {columns.map((c, i) => {
@@ -195,7 +275,7 @@ export function BeamDataTable<Row>({
             {visibleRows.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + extraCols}
+                  colSpan={columns.length + railCol}
                   align="center"
                   sx={{ py: 6, color: 'text.secondary' }}
                 >
@@ -203,49 +283,74 @@ export function BeamDataTable<Row>({
                 </TableCell>
               </TableRow>
             )}
-            {visibleRows.map((row) => (
+            {visibleRows.map((row) => {
+              const isHighlighted = highlightRowId === row.id;
+              return (
               <Fragment key={row.id}>
                 <TableRow
                   hover
                   selected={row.getIsSelected()}
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   onMouseEnter={onRowHover ? () => onRowHover(row.id) : undefined}
                   onMouseLeave={onRowHover ? () => onRowHover(null) : undefined}
-                  sx={highlightRowId === row.id ? { bgcolor: 'action.hover' } : undefined}
+                  sx={{
+                    ...(onRowClick && { cursor: 'pointer' }),
+                    ...(isHighlighted && { bgcolor: 'action.hover' }),
+                    // Kebab: dim at rest, full on row hover and keyboard focus.
+                    '& .beam-kebab': { opacity: 0.4, transition: 'opacity 120ms' },
+                    '&:hover .beam-kebab, & .beam-kebab:focus-visible': { opacity: 1 },
+                    // Rail state layers, composited over its opaque base so the
+                    // pinned column tracks hover/selected without ghosting.
+                    '&:hover .beam-rail': { backgroundImage: hoverLayer },
+                    '&.Mui-selected .beam-rail': { backgroundImage: selectedLayer },
+                    '&.Mui-selected:hover .beam-rail': {
+                      backgroundImage: `${selectedLayer}, ${hoverLayer}`,
+                    },
+                    ...(isHighlighted && { '& .beam-rail': { backgroundImage: hoverLayer } }),
+                  }}
                 >
-                  {renderExpanded && (
-                    <TableCell padding="checkbox">
-                      <IconButton
-                        size="small"
-                        onClick={row.getToggleExpandedHandler()}
-                        aria-label={row.getIsExpanded() ? 'Collapse row' : 'Expand row'}
-                      >
-                        {row.getIsExpanded() ? (
-                          <KeyboardArrowDownIcon fontSize="small" />
-                        ) : (
-                          <KeyboardArrowRightIcon fontSize="small" />
+                  {railEnabled && (
+                    <TableCell
+                      className="beam-rail"
+                      padding="checkbox"
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{ ...railStickySx, zIndex: 2, width: 1, whiteSpace: 'nowrap' }}
+                    >
+                      <Stack direction="row" alignItems="center">
+                        {renderExpanded && (
+                          <IconButton
+                            size="small"
+                            onClick={row.getToggleExpandedHandler()}
+                            aria-label={row.getIsExpanded() ? 'Collapse row' : 'Expand row'}
+                          >
+                            {row.getIsExpanded() ? (
+                              <KeyboardArrowDownIcon fontSize="small" />
+                            ) : (
+                              <KeyboardArrowRightIcon fontSize="small" />
+                            )}
+                          </IconButton>
                         )}
-                      </IconButton>
-                    </TableCell>
-                  )}
-                  {selectable && (
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={row.getIsSelected()}
-                        onChange={row.getToggleSelectedHandler()}
-                        inputProps={{ 'aria-label': `Select row ${row.id}` }}
-                      />
+                        {selectable && (
+                          <Checkbox
+                            checked={row.getIsSelected()}
+                            onChange={row.getToggleSelectedHandler()}
+                            inputProps={{ 'aria-label': `Select row ${row.id}` }}
+                          />
+                        )}
+                        {rowMenu && <RailKebab items={rowMenu(row.original)} />}
+                      </Stack>
                     </TableCell>
                   )}
                   {columns.map((c) => (
                     <TableCell key={c.key} align={c.align}>
-                      {c.render(row.original)}
+                      {renderCell(c, row.original)}
                     </TableCell>
                   ))}
                 </TableRow>
                 {renderExpanded && (
                   <TableRow>
                     <TableCell
-                      colSpan={columns.length + extraCols}
+                      colSpan={columns.length + railCol}
                       sx={{ py: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
                     >
                       <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
@@ -255,7 +360,8 @@ export function BeamDataTable<Row>({
                   </TableRow>
                 )}
               </Fragment>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

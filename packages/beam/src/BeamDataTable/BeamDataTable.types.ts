@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
 
 /**
  * BeamDataTable — the dense operational table.
@@ -23,6 +24,14 @@ export interface BeamColumn<Row> {
   getValue?: (row: Row) => string | number;
   align?: 'left' | 'right' | 'center';
   width?: number | string;
+  /**
+   * Marks this as the record's identity cell. Combined with getHref it
+   * renders as a true link to the canonical record page — real <a>
+   * semantics (middle-click, new-tab, copy-address). Grammar §2.
+   */
+  isIdentity?: boolean;
+  /** Canonical route for the identity link. Required for the link to render. */
+  getHref?: (row: Row) => string;
 }
 
 export interface BeamBulkAction {
@@ -45,6 +54,16 @@ export interface BeamDataTableProps<Row> {
   paginated?: boolean;
   /** Enables per-row expansion — progressive disclosure (Yoda §2.4) */
   renderExpanded?: (row: Row) => ReactNode;
+  /**
+   * Per-record overflow menu, opened from the kebab in the row-controls
+   * rail. Return the items for a given row (grammar §3).
+   */
+  rowMenu?: (row: Row) => BeamRowMenuItem[];
+  /**
+   * Row click means "inspect this record" (grammar §2). Fires for clicks
+   * anywhere except the rail and the identity link. Sets a pointer cursor.
+   */
+  onRowClick?: (row: Row) => void;
   /** Externally highlight a row (relational navigation — audit §3.9) */
   highlightRowId?: string | null;
   /** Report row hover for cross-widget linking */

@@ -130,6 +130,81 @@ const paytableColumns: BeamColumn<Paytable>[] = [
   { key: 'usedBy', header: 'Used by', align: 'right', render: (r) => `${r.usedBy} configs`, getValue: (r) => r.usedBy },
 ];
 
+/**
+ * The row-controls rail: expand + select + kebab in one pinned first column,
+ * fixed order. Extra wide columns force horizontal scroll so the sticky rail
+ * (and its hover/selected background) can be seen holding its ground. The
+ * kebab is dim until the row is hovered or focused.
+ */
+const wideColumns: BeamColumn<Perk>[] = [
+  { key: 'name', header: 'Perk', render: (r) => r.name, width: 260 },
+  { key: 'loyalty', header: 'Loyalty status', render: (r) => r.loyaltyStatus, width: 200 },
+  { key: 'reward', header: 'Reward', render: (r) => r.reward, width: 220 },
+  { key: 'status', header: 'Status', render: (r) => <BeamStatusBadge status={r.status} />, width: 160 },
+  { key: 'updated', header: 'Updated', render: (r) => r.updated, align: 'right', width: 200 },
+];
+
+export const RowControlsRail: StoryObj = {
+  render: () => (
+    <BeamDataTable<Perk>
+      columns={wideColumns}
+      rows={rows}
+      getRowId={(r) => r.id}
+      selectable
+      onRowClick={(r) => console.log('inspect', r.id)}
+      renderExpanded={(r) => (
+        <Stack sx={{ px: 1, py: 1 }}>Reward: {r.reward}</Stack>
+      )}
+      rowMenu={(r) => [
+        { id: 'edit', label: 'Edit', onClick: () => console.log('edit', r.id) },
+        { id: 'duplicate', label: 'Duplicate', onClick: () => console.log('dup', r.id) },
+        {
+          id: 'pause',
+          label: 'Pause',
+          onClick: () => {},
+          disabled: r.status !== 'active',
+          disabledReason: 'Only active perks can be paused.',
+        },
+        { id: 'archive', label: 'Archive', destructive: true, onClick: () => console.log('archive', r.id) },
+      ]}
+      aria-label="Perks with row controls rail"
+    />
+  ),
+};
+
+/**
+ * Identity link + inspect: the Perk name is a true link to the record's
+ * canonical page (real <a> — middle-click, new-tab), while a click anywhere
+ * else on the row inspects it. The rail never navigates.
+ */
+export const IdentityLink: StoryObj = {
+  render: () => {
+    const linkedColumns: BeamColumn<Perk>[] = [
+      {
+        key: 'name',
+        header: 'Perk',
+        render: (r) => r.name,
+        isIdentity: true,
+        getHref: (r) => `#/perks/${r.id}`,
+      },
+      ...columns.slice(1),
+    ];
+    return (
+      <BeamDataTable<Perk>
+        columns={linkedColumns}
+        rows={rows}
+        getRowId={(r) => r.id}
+        onRowClick={(r) => console.log('inspect', r.id)}
+        rowMenu={(r) => [
+          { id: 'edit', label: 'Edit', onClick: () => console.log('edit', r.id) },
+          { id: 'delete', label: 'Delete', destructive: true, onClick: () => console.log('delete', r.id) },
+        ]}
+        aria-label="Perks with identity link"
+      />
+    );
+  },
+};
+
 export const PaytablesYodaPatterns: StoryObj = {
   render: () => (
     <BeamDataTable<Paytable>

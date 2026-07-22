@@ -51,6 +51,7 @@ export {
   CardActions,
   Tooltip,
   Typography,
+  Link,
   Stack,
   Box,
   Divider,
@@ -83,6 +84,8 @@ export type { BeamAppShellProps, BeamNavItem } from './BeamAppShell/BeamAppShell
 export { BeamStatusBadge } from './BeamStatusBadge/BeamStatusBadge';
 export type { BeamStatusBadgeProps, BeamStatus } from './BeamStatusBadge/BeamStatusBadge.types';
 export { BeamDataTable } from './BeamDataTable/BeamDataTable';
+export { BeamRowMenu } from './BeamRowMenu/BeamRowMenu';
+export type { BeamRowMenuProps, BeamRowMenuItem } from './BeamRowMenu/BeamRowMenu.types';
 export { GemIcon } from './GemIcon/GemIcon';
 export type { GemIconProps, GemName } from './GemIcon/GemIcon.types';
 export type { BeamDataTableProps, BeamColumn } from './BeamDataTable/BeamDataTable.types';
