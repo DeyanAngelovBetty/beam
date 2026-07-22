@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 
 /**
- * BeamPageHeader — page title, optional description, optional action slot,
+ * BeamPageHeader — page title, optional description, a right-aligned
+ * primary action (with optional secondary actions to its left), and an
  * optional entity-summary strip.
  *
  * Promoted on usage, not prediction: Sunlight's Loyalty Status and Gaspar's
@@ -15,8 +16,10 @@ import type { ReactNode } from 'react';
 export interface BeamPageHeaderProps {
   title: string;
   description?: ReactNode;
-  /** Right-aligned controls — primary action, overflow menu */
-  actions?: ReactNode;
+  /** The primary action, right-aligned — e.g. a contained "+ Add" button. */
+  action?: ReactNode;
+  /** Secondary actions, rendered to the left of the primary action. */
+  secondaryActions?: ReactNode;
   /** Entity summary, typically a row of BeamStat */
   summary?: ReactNode;
 }

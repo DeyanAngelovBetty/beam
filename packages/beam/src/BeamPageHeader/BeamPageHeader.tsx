@@ -3,7 +3,13 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import type { BeamPageHeaderProps } from './BeamPageHeader.types';
 
-export function BeamPageHeader({ title, description, actions, summary }: BeamPageHeaderProps) {
+export function BeamPageHeader({
+  title,
+  description,
+  action,
+  secondaryActions,
+  summary,
+}: BeamPageHeaderProps) {
   return (
     <Stack spacing={2}>
       <Stack
@@ -22,9 +28,11 @@ export function BeamPageHeader({ title, description, actions, summary }: BeamPag
             </Typography>
           )}
         </Stack>
-        {actions && (
+        {/* Secondary actions sit to the left of the primary action. */}
+        {(action || secondaryActions) && (
           <Stack direction="row" spacing={1} alignItems="center">
-            {actions}
+            {secondaryActions}
+            {action}
           </Stack>
         )}
       </Stack>

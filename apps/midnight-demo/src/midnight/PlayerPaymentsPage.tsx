@@ -102,14 +102,12 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
       <BeamPageHeader
         title={`${CURRENT_PLAYER.firstName} ${CURRENT_PLAYER.lastName}`}
         description={`Player ID ${CURRENT_PLAYER.id}`}
-        actions={
-          <>
-            <Button variant="text" onClick={onBack}>
-              Back to search
-            </Button>
-            <Button variant="contained">Quick actions</Button>
-          </>
+        secondaryActions={
+          <Button variant="text" onClick={onBack}>
+            Back to search
+          </Button>
         }
+        action={<Button variant="contained">Quick actions</Button>}
         summary={
           <>
             <BeamStat label="Status" value="Approved" tone="success" caption="Online" />
