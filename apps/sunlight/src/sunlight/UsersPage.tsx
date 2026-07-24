@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Stack,
   Button,
@@ -16,10 +17,10 @@ import { USERS, PERMISSION_OPTIONS, type User } from './users';
 /**
  * Users — a back-office admin list, assembled from Beam pieces.
  *
- * Per the list-page grammar, tuned for this page: no row-controls rail; the
- * Name is the first column and a true link to the user's page (built later).
- * Active is the one permitted inline cell control (grammar §3). Filters are
- * submitted — applied on the Filter button, matching the 274-row list.
+ * Tier 3: the Name is a true link to /users/:id, and a row click navigates
+ * to the same place. Active is the one permitted inline cell control
+ * (grammar §3). Filters are submitted on the Filter button and live in the
+ * URL, so a filtered view is shareable and survives refresh (list §1).
  */
 
 interface Applied {
@@ -30,9 +31,28 @@ interface Applied {
 
 const EMPTY: Applied = { q: '', active: 'any', perm: 'any' };
 
+/** Applied filters -> URL query, omitting defaults so the URL stays clean. */
+function toParams(d: Applied): URLSearchParams {
+  const p = new URLSearchParams();
+  if (d.q.trim()) p.set('q', d.q.trim());
+  if (d.active !== 'any') p.set('active', d.active);
+  if (d.perm !== 'any') p.set('perm', d.perm);
+  return p;
+}
+
 export function UsersPage() {
-  const [draft, setDraft] = useState<Applied>(EMPTY);
-  const [applied, setApplied] = useState<Applied>(EMPTY);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Applied filters are read from the URL (the shareable, refresh-proof
+  // source of truth); the draft is local until the Filter button submits it.
+  const activeParam = searchParams.get('active');
+  const applied: Applied = {
+    q: searchParams.get('q') ?? '',
+    active: activeParam === 'active' || activeParam === 'inactive' ? activeParam : 'any',
+    perm: searchParams.get('perm') ?? 'any',
+  };
+  const [draft, setDraft] = useState<Applied>(applied);
   const [activeOverrides, setActiveOverrides] = useState<Record<string, boolean>>({});
 
   const rows = useMemo(() => {
@@ -43,7 +63,7 @@ export function UsersPage() {
       if (applied.perm !== 'any' && u.effectivePermission !== applied.perm) return false;
       return true;
     });
-  }, [applied]);
+  }, [applied.q, applied.active, applied.perm]);
 
   const isApplied = applied.q !== '' || applied.active !== 'any' || applied.perm !== 'any';
 
@@ -54,7 +74,7 @@ export function UsersPage() {
       render: (u) => u.name,
       getValue: (u) => u.name,
       isIdentity: true,
-      getHref: (u) => `#/users/${u.id}`,
+      getHref: (u) => `${import.meta.env.BASE_URL}users/${u.id}`,
     },
     { key: 'email', header: 'Email', render: (u) => u.email, getValue: (u) => u.email },
     { key: 'role', header: 'Role', render: (u) => u.role, getValue: (u) => u.role, width: 200 },
@@ -77,6 +97,8 @@ export function UsersPage() {
           <Switch
             size="small"
             checked={on}
+            // Inline control — must not trigger the row's navigate-to-detail.
+            onClick={(e) => e.stopPropagation()}
             onChange={(e) =>
               setActiveOverrides((o) => ({ ...o, [u.id]: e.target.checked }))
             }
@@ -106,10 +128,10 @@ export function UsersPage() {
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
         searchPlaceholder="Search name or email"
         applied={isApplied}
-        onFilter={() => setApplied(draft)}
+        onFilter={() => setSearchParams(toParams(draft))}
         onClearAll={() => {
           setDraft(EMPTY);
-          setApplied(EMPTY);
+          setSearchParams({});
         }}
       >
         <TextField
@@ -145,6 +167,7 @@ export function UsersPage() {
         columns={columns}
         rows={rows}
         getRowId={(u) => u.id}
+        onRowClick={(u) => navigate(`/users/${u.id}`)}
         paginated
         emptyMessage="No users match these filters."
         aria-label="Users"

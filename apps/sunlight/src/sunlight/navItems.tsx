@@ -5,7 +5,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import BadgeIcon from '@mui/icons-material/Badge';
 import type { BeamNavItem } from '@betty/beam';
 
-/** Every navigable destination in Sunlight. */
+/** Every navigable destination in Sunlight, and its route. */
 export type SunlightPage =
   | 'loyalty-status'
   | 'perks'
@@ -14,20 +14,35 @@ export type SunlightPage =
   | 'users'
   | 'roles';
 
+export const PAGE_PATH: Record<SunlightPage, string> = {
+  'loyalty-status': '/',
+  perks: '/perks',
+  'payout-tables': '/payout-tables',
+  'prize-wall': '/prize-wall',
+  users: '/users',
+  roles: '/roles',
+};
+
 interface NavArgs {
-  active: SunlightPage;
-  onNavigate: (page: SunlightPage) => void;
+  pathname: string;
+  navigate: (path: string) => void;
+}
+
+/** A nav path is active on an exact match or when the current route is under it. */
+function isActive(path: string, pathname: string): boolean {
+  if (path === '/') return pathname === '/';
+  return pathname === path || pathname.startsWith(`${path}/`);
 }
 
 /**
- * Sunlight's navigation, built per render so `selected` and `onClick` track
- * the app's active page (no router — the demo owns page state).
+ * Sunlight's navigation, built per render from the current route so a click
+ * both navigates (router) and lights the correct item.
  */
-export function buildSunlightNav({ active, onNavigate }: NavArgs): BeamNavItem[] {
+export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[] {
   const leaf = (label: string, page: SunlightPage): BeamNavItem => ({
     label,
-    selected: active === page,
-    onClick: () => onNavigate(page),
+    selected: isActive(PAGE_PATH[page], pathname),
+    onClick: () => navigate(PAGE_PATH[page]),
   });
 
   return [

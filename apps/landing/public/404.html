@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Beam</title>
+    <!--
+      GitHub Pages serves this single root 404 for any missing path across the
+      whole site (landing at the root, each app in a subdirectory). It encodes
+      the deep link into a `?/…` query and redirects into the owning app's
+      index, which decodes it and hands the real URL to the client router.
+
+      pathSegmentsToKeep = 2 keeps `<repo>/<app>` (base + app segment), so
+      `/beam/sunlight/users/42` -> `/beam/sunlight/?/users/42`. Robust to a
+      repo rename: the base is always one segment, the app always the next.
+      (rafgraph/spa-github-pages pattern.)
+    -->
+    <script type="text/javascript">
+      var pathSegmentsToKeep = 2;
+      var l = window.location;
+      l.replace(
+        l.protocol +
+          '//' +
+          l.hostname +
+          (l.port ? ':' + l.port : '') +
+          l.pathname
+            .split('/')
+            .slice(0, 1 + pathSegmentsToKeep)
+            .join('/') +
+          '/?/' +
+          l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+          (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+          l.hash
+      );
+    </script>
+  </head>
+  <body></body>
+</html>

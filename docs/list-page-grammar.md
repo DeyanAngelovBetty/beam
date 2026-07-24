@@ -103,11 +103,15 @@ Every new list page answers five questions, then it's built:
 4. Bulk actions (and which are destructive)?
 5. Any inline cell control (max one, safe, a field-as-control)?
 
-**Users:** search + Active + Effective Permission · tier 2 panel (tabs: Roles /
-Permissions / Effective) · kebab: reset password, deactivate · bulk:
-activate/deactivate, assign role · inline: Active toggle.
-**Roles:** search · tier 2 panel (summary) → "Open editor" full page (permission
-matrix) · kebab: duplicate, delete · bulk: delete (confirmed) · inline: none.
+**Users:** search + Active + Effective Permission · **tier 3 full page**
+(`/users/:id`) · kebab: reset password, deactivate · bulk: activate/deactivate,
+assign role · inline: Active toggle.
+**Roles:** search · **tier 3 full page** (`/roles/:id`; permission matrix is a
+later round) · kebab: duplicate, delete · bulk: delete (confirmed) · inline: none.
+
+*Revised 2026-07-24: Users & Roles moved from tier 2 (panel) to tier 3 (full
+page) per `detail-page-grammar.md` §8 — row click now navigates to the same
+destination as the identity link.*
 
 ## Open questions (deliberately unresolved — input wanted)
 

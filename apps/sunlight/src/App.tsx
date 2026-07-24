@@ -1,11 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
-import { buildSunlightNav, type SunlightPage } from './sunlight/navItems';
+import { buildSunlightNav } from './sunlight/navItems';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { PlaceholderPage } from './sunlight/PlaceholderPage';
 import { UsersPage } from './sunlight/UsersPage';
 import { RolesPage } from './sunlight/RolesPage';
+import { UserPage } from './sunlight/UserPage';
+import { RolePage } from './sunlight/RolePage';
+
+// Vite's base path becomes the router basename: '/' in dev, '/beam/sunlight/'
+// on Pages. Trailing slash trimmed (react-router matches without it).
+const BASENAME = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
 
 /**
  * Sunlight is a back office: operators manage multiple jurisdictions from
@@ -14,45 +21,58 @@ import { RolesPage } from './sunlight/RolesPage';
  * brand rebuilds the theme (rare event, acceptable); switching light/dark
  * stays a CSS-variable attribute flip (frequent event, free).
  *
- * Page navigation is local state, not a router — the demo has a handful of
- * screens and no URLs to own yet.
+ * Navigation is real routing now (react-router) — deep pages have URLs, and
+ * the app shell persists around every route.
  */
 export function App() {
   const [brand, setBrand] = useState<BrandName>('ontario');
-  const [page, setPage] = useState<SunlightPage>('loyalty-status');
   const theme = useMemo(() => createBeamTheme(brand), [brand]);
-
-  const nav = buildSunlightNav({ active: page, onNavigate: setPage });
 
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
       <CssBaseline />
-      <BeamAppShell
-        title="SUNLIGHT"
-        product="sunlight"
-        navItems={nav}
-        brand={brand}
-        onBrandChange={setBrand}
-      >
-        {renderPage(page)}
-      </BeamAppShell>
+      <BrowserRouter basename={BASENAME}>
+        <ShellWithNav brand={brand} onBrandChange={setBrand}>
+          <Routes>
+            <Route path="/" element={<LoyaltyStatusPage />} />
+            <Route path="/perks" element={<PlaceholderPage title="Perks" />} />
+            <Route path="/payout-tables" element={<PlaceholderPage title="Payout Tables" />} />
+            <Route path="/prize-wall" element={<PlaceholderPage title="Prize Wall" />} />
+            <Route path="/users" element={<UsersPage />} />
+            <Route path="/users/:id" element={<UserPage />} />
+            <Route path="/roles" element={<RolesPage />} />
+            <Route path="/roles/:id" element={<RolePage />} />
+            <Route path="*" element={<PlaceholderPage title="Not found" />} />
+          </Routes>
+        </ShellWithNav>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
 
-function renderPage(page: SunlightPage) {
-  switch (page) {
-    case 'loyalty-status':
-      return <LoyaltyStatusPage />;
-    case 'perks':
-      return <PlaceholderPage title="Perks" />;
-    case 'payout-tables':
-      return <PlaceholderPage title="Payout Tables" />;
-    case 'prize-wall':
-      return <PlaceholderPage title="Prize Wall" />;
-    case 'users':
-      return <UsersPage />;
-    case 'roles':
-      return <RolesPage />;
-  }
+/** Builds the nav from the current route so the active item tracks the URL. */
+function ShellWithNav({
+  brand,
+  onBrandChange,
+  children,
+}: {
+  brand: BrandName;
+  onBrandChange: (b: BrandName) => void;
+  children: ReactNode;
+}) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const nav = buildSunlightNav({ pathname, navigate });
+
+  return (
+    <BeamAppShell
+      title="SUNLIGHT"
+      product="sunlight"
+      navItems={nav}
+      brand={brand}
+      onBrandChange={onBrandChange}
+    >
+      {children}
+    </BeamAppShell>
+  );
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Stack,
   Button,
@@ -14,13 +15,15 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { ROLES, type Role } from './roles';
 
 /**
- * Roles — assembled like Users, but with single-row actions in a kebab rail
- * (no bulk). Name is the first column after the rail and a true link to the
- * role's page (built later). Search is submitted on the Filter button.
+ * Roles — tier 3, like Users: the Name links to /roles/:id and a row click
+ * navigates there. Single-row actions in a kebab rail (no bulk). Search is
+ * submitted on the Filter button and lives in the URL (list §1).
  */
 export function RolesPage() {
-  const [draftQ, setDraftQ] = useState('');
-  const [appliedQ, setAppliedQ] = useState('');
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const appliedQ = searchParams.get('q') ?? '';
+  const [draftQ, setDraftQ] = useState(appliedQ);
 
   const rows = useMemo(() => {
     const q = appliedQ.trim().toLowerCase();
@@ -35,7 +38,7 @@ export function RolesPage() {
       render: (r) => r.name,
       getValue: (r) => r.name,
       isIdentity: true,
-      getHref: (r) => `#/roles/${r.id}`,
+      getHref: (r) => `${import.meta.env.BASE_URL}roles/${r.id}`,
     },
     { key: 'desc', header: 'Description', render: (r) => r.description },
     { key: 'users', header: 'Users', align: 'right', render: (r) => r.userCount, getValue: (r) => r.userCount, width: 110 },
@@ -72,10 +75,10 @@ export function RolesPage() {
         onSearchChange={setDraftQ}
         searchPlaceholder="Search roles"
         applied={appliedQ !== ''}
-        onFilter={() => setAppliedQ(draftQ)}
+        onFilter={() => setSearchParams(draftQ.trim() ? { q: draftQ.trim() } : {})}
         onClearAll={() => {
           setDraftQ('');
-          setAppliedQ('');
+          setSearchParams({});
         }}
       >
         {null}
@@ -86,6 +89,7 @@ export function RolesPage() {
         rows={rows}
         getRowId={(r) => r.id}
         rowMenu={rowMenu}
+        onRowClick={(r) => navigate(`/roles/${r.id}`)}
         emptyMessage="No roles match this search."
         aria-label="Roles"
       />
