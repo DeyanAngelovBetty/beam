@@ -73,6 +73,31 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
 export const brands = products.sunlight;
 
 /**
+ * ROLE RAMP — a categorical accent ramp for role provenance (detail-page §6).
+ * SEED lane (literals, Figma-truth per §4.1): a genuine system gap filled as
+ * a seed-lane proposal, not a local invention (BEAM §10.6).
+ *
+ * Six hues spaced around the wheel, distinct from the indigo brand primary,
+ * at ~500-level saturation so each reads on both dark surfaces (#0B0F19 /
+ * #111827) and light. Consumed categorically by index (role N → ramp[N % 6]);
+ * no component ever hardcodes a role color.
+ *
+ * ⚠️ Demo-picked hexes, dark-first (the BO defaults to dark); light-mode is
+ * acceptable, not tuned. Pending a real Figma pass + per-mode review.
+ */
+export const roleRamp: readonly string[] = [
+  '#14B8A6', // teal
+  '#F59E0B', // amber
+  '#F43F5E', // rose
+  '#0EA5E9', // sky
+  '#8B5CF6', // violet
+  '#84CC16', // lime
+];
+
+/** Categorical role color by index — wraps at the ramp length. */
+export const roleColor = (index: number): string => roleRamp[((index % roleRamp.length) + roleRamp.length) % roleRamp.length];
+
+/**
  * DERIVED TOKENS — computed in CSS from other tokens at runtime.
  * These have no literal Figma value (Figma cannot express color-mix /
  * relative color syntax); their Figma twin, when needed, is a static

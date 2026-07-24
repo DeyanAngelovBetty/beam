@@ -19,7 +19,7 @@
 // ./theme/* — same seam rule as atoms (BEAM.md §6.2).
 export { createBeamTheme } from './theme/createBeamTheme';
 export { meta } from './theme/textStyles';
-export { products, derived } from './theme/tokens';
+export { products, derived, roleRamp, roleColor } from './theme/tokens';
 export type {
   BrandName,
   ProductName,
