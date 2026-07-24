@@ -13,6 +13,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import GroupIcon from '@mui/icons-material/Group';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { ROLES, type Role } from './roles';
+import { RouterIdentityLink } from './RouterIdentityLink';
 
 /**
  * Roles — tier 3, like Users: the Name links to /roles/:id and a row click
@@ -90,6 +91,7 @@ export function RolesPage() {
         getRowId={(r) => r.id}
         rowMenu={rowMenu}
         onRowClick={(r) => navigate(`/roles/${r.id}`)}
+        LinkComponent={RouterIdentityLink}
         emptyMessage="No roles match this search."
         aria-label="Roles"
       />

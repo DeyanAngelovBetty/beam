@@ -1,5 +1,17 @@
-import type { ReactNode } from 'react';
+import type { ComponentType, MouseEventHandler, ReactNode } from 'react';
 import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
+
+/**
+ * The identity link renders through this component. Default: a real MUI
+ * `<a href>` (middle-click / new-tab / copy-address). Apps with a router pass
+ * an adapter that keeps the real href but intercepts a plain left-click for
+ * smooth SPA navigation.
+ */
+export interface BeamIdentityLinkProps {
+  href: string;
+  onClick?: MouseEventHandler;
+  children: ReactNode;
+}
 
 /**
  * BeamDataTable — the dense operational table.
@@ -64,6 +76,8 @@ export interface BeamDataTableProps<Row> {
    * anywhere except the rail and the identity link. Sets a pointer cursor.
    */
   onRowClick?: (row: Row) => void;
+  /** Overrides how the identity link renders (e.g. a router-aware anchor). */
+  LinkComponent?: ComponentType<BeamIdentityLinkProps>;
   /** Externally highlight a row (relational navigation — audit §3.9) */
   highlightRowId?: string | null;
   /** Report row hover for cross-widget linking */

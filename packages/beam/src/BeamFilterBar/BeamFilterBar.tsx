@@ -28,11 +28,9 @@ export function BeamFilterBar({
       variant="outlined"
       component="section"
       aria-label={ariaLabel}
-      sx={{
-        p: 2,
-        // Applied state reads as a lit border (grammar §1).
-        ...(applied && { borderColor: 'primary.main' }),
-      }}
+      // Border is constant — it's an interactive surface (detail-page §1.2).
+      // The applied-state signal is the filled Filter CTA only (below).
+      sx={{ p: 2 }}
     >
       <Stack spacing={2}>
         {presets.length > 0 && (

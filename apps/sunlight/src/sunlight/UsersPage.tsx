@@ -13,6 +13,7 @@ import {
 import type { BeamColumn } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import { USERS, PERMISSION_OPTIONS, type User } from './users';
+import { RouterIdentityLink } from './RouterIdentityLink';
 
 /**
  * Users — a back-office admin list, assembled from Beam pieces.
@@ -168,6 +169,7 @@ export function UsersPage() {
         rows={rows}
         getRowId={(u) => u.id}
         onRowClick={(u) => navigate(`/users/${u.id}`)}
+        LinkComponent={RouterIdentityLink}
         paginated
         emptyMessage="No users match these filters."
         aria-label="Users"

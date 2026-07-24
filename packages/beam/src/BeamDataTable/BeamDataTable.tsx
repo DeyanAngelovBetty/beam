@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, type ComponentType, type MouseEvent } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -38,7 +38,7 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
 import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
-import type { BeamColumn, BeamDataTableProps } from './BeamDataTable.types';
+import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps } from './BeamDataTable.types';
 
 /**
  * The kebab that opens a row's overflow menu. Dim at rest, full on row
@@ -74,13 +74,26 @@ function RailKebab({ items }: { items: BeamRowMenuItem[] }) {
  * link to the record's canonical page — genuine <a> semantics — and stops
  * click propagation so it navigates instead of firing the row's inspect.
  */
-function renderCell<Row>(c: BeamColumn<Row>, row: Row) {
+function renderCell<Row>(
+  c: BeamColumn<Row>,
+  row: Row,
+  LinkComponent?: ComponentType<BeamIdentityLinkProps>
+) {
   const content = c.render(row);
   if (c.isIdentity && c.getHref) {
+    const stop = (e: MouseEvent) => e.stopPropagation();
+    // App-supplied router link when given; else a plain, real anchor.
+    if (LinkComponent) {
+      return (
+        <LinkComponent href={c.getHref(row)} onClick={stop}>
+          {content}
+        </LinkComponent>
+      );
+    }
     return (
       <Link
         href={c.getHref(row)}
-        onClick={(e) => e.stopPropagation()}
+        onClick={stop}
         underline="hover"
         color="primary"
         sx={{ fontWeight: 500 }}
@@ -110,6 +123,7 @@ export function BeamDataTable<Row>({
   renderExpanded,
   rowMenu,
   onRowClick,
+  LinkComponent,
   highlightRowId = null,
   onRowHover,
   emptyMessage = 'Nothing here yet.',
@@ -343,7 +357,7 @@ export function BeamDataTable<Row>({
                   )}
                   {columns.map((c) => (
                     <TableCell key={c.key} align={c.align}>
-                      {renderCell(c, row.original)}
+                      {renderCell(c, row.original, LinkComponent)}
                     </TableCell>
                   ))}
                 </TableRow>

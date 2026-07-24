@@ -1,5 +1,6 @@
 import { createTheme, type Theme } from '@mui/material/styles';
 import { products, derived, type BrandName, type ProductName } from './tokens';
+import { meta } from './textStyles';
 
 /**
  * Beam theme factory.
@@ -13,17 +14,6 @@ import { products, derived, type BrandName, type ProductName } from './tokens';
  */
 export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlight'): Theme {
   const t = products[product][brand];
-
-  // Table meta text — one recipe for header, footer, and pagination labels
-  // (the code twin of a single Figma text style: table/meta)
-  const tableMetaText = (theme: Theme) => ({
-    textTransform: 'uppercase' as const,
-    fontSize: theme.typography.pxToRem(11),
-    lineHeight: 1.2,
-    fontWeight: 400,
-    letterSpacing: '0.06em',
-    color: (theme.vars || theme).palette.text.secondary,
-  });
 
   const action = {
     hoverOpacity: t.states.hover,
@@ -79,6 +69,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
         styleOverrides: {
           ':root': {
             '--beam-page-gradient': derived.pageGradient,
+            // Spine motif tokens (detail-page §2). All scheme-invariant
+            // formulas, so one :root block serves both modes.
+            '--beam-spine-default': derived.spine.default,
+            '--beam-spine-warning': derived.spine.warning,
+            '--beam-spine-danger': derived.spine.danger,
           },
         },
       },
@@ -95,21 +90,26 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
         },
       },
+      // The `meta` category rule (detail-page §3): keys everywhere speak one
+      // caps voice. One definition (theme/textStyles), several bindings.
       MuiTableCell: {
         styleOverrides: {
-          head: ({ theme }) => ({
-            ...tableMetaText(theme),
-            paddingTop: 12,
-            paddingBottom: 12,
-          }),
-          footer: ({ theme }) => tableMetaText(theme),
+          head: { ...meta, paddingTop: 12, paddingBottom: 12 },
+          footer: { ...meta },
         },
       },
       // Our pagination renders as a <div>, not a footer cell — same recipe here
       MuiTablePagination: {
         styleOverrides: {
-          selectLabel: ({ theme }) => tableMetaText(theme),
-          displayedRows: ({ theme }) => tableMetaText(theme),
+          selectLabel: { ...meta },
+          displayedRows: { ...meta },
+        },
+      },
+      // Form-field labels are keys too. Base color from meta; MUI's focused/
+      // error classes still win (higher specificity), so the field states hold.
+      MuiInputLabel: {
+        styleOverrides: {
+          root: { ...meta },
         },
       },
       // Last body row sits on the Paper edge — no divider against the curve

@@ -246,9 +246,10 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
 | `derived.tableBorder` — code formula | `palette.divider` + MUI `TableCell.border`; baked → `_derived (baked)` |
 | `derived.pageGradient` — code formula | `--beam-page-gradient` via CssBaseline (non-bakeable; Figma twin = a style) |
 | `_derived (baked)` collection | GENERATED snapshots of code formulas — never hand-edit |
-| text style `table/meta` | `tableMetaText` → `MuiTableCell.head/.footer` + `MuiTablePagination` labels |
+| text style `meta` (supersedes `table/meta`) | `meta` (`theme/textStyles.ts`) → `MuiTableCell.head/.footer` · `MuiTablePagination` labels · `MuiInputLabel` · exported for organisms (BeamStat key, section/box headers) |
+| `derived.spine.{default,warning,danger}` — code formulas | `--beam-spine-*` CSS vars via CssBaseline; baked → `_derived (baked)` |
 | component `BeamStatusBadge` (Status=…) | `<BeamStatusBadge status="…">` (Code Connected) |
-| rename log | `brand`→`jurisdiction` · palette modes →plain `light`/`dark` · kit-original demo modes removed |
+| rename log | `brand`→`jurisdiction` · palette modes →plain `light`/`dark` · kit-original demo modes removed · `table/meta`→`meta` (graduated table-local → universal key voice, 2026-07-24) |
 
 ## Appendix C — Known gaps / open items
 
@@ -268,11 +269,12 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   workspace, consumed as source** (apps alias `@betty/beam` → `packages/beam/src`, no build
   step). Forced by `GemIcon`'s `import.meta.glob` asset registry, which resolves at Vite
   transform time and cannot survive precompilation. Revisit if Beam ever ships outside this repo.
-- **Placeholder organisms awaiting a Figma design pass**: `BeamPageHeader`, `BeamStat`,
-  `BeamTabs`, `BeamFilterBar` (added 2026-07-20, grouped under "Organisms (placeholder)" in
-  Storybook). Shape-only, so screens had something stable to build against — the design
-  thinking is deliberately deferred to Figma rather than improvised in code. `BeamFilterBar`
-  in particular passes fields as children; a field-schema API is the open design question.
+- **Placeholder organisms awaiting a Figma design pass**: `BeamPageHeader`, `BeamTabs`,
+  `BeamFilterBar` (added 2026-07-20, grouped under "Organisms (placeholder)" in Storybook).
+  Shape-only, so screens had something stable to build against — the design thinking is
+  deliberately deferred to Figma rather than improvised in code. `BeamFilterBar` in particular
+  passes fields as children; a field-schema API is the open design question. *(`BeamStat`
+  graduated 2026-07-24 — spine motif + `meta` key + severity; no longer a placeholder.)*
 - Asset pipeline: gems done (GemIcon self-registering registry); coins & collection art
   pending; automated Figma→repo export pending network allowlist (`www.figma.com`)
 - Productionized sync now has **three output lanes**: seeds→`tokens.ts` · contrast checks ·

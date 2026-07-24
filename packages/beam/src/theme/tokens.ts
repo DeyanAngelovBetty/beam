@@ -102,4 +102,28 @@ export const derived = {
    */
   pageGradient:
     'linear-gradient(180deg, color-mix(in oklch, var(--mui-palette-primary-main) 10%, var(--mui-palette-background-default)) 0%, var(--mui-palette-background-default) 320px)',
+
+  /**
+   * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,
+   * NOT a reference to tableBorder: the day table borders get tuned, spines
+   * must not silently retune with them. Baked → `_derived (baked)` for Figma.
+   *
+   * - `default` is visually coincident with `tableBorder` today but an
+   *   independent formula. It mixes the primary tint toward `text.primary`
+   *   (which itself flips per scheme), so one formula serves both schemes with
+   *   no per-scheme wiring — unlike `tableBorder`'s white/black split.
+   * - `warning` / `danger` derive from the semantic palette (there are no
+   *   dedicated warning/danger *seeds* in tokens yet — flagged 2026-07-24 —
+   *   so they bind to `palette.warning/error.main`, the same "bind to the
+   *   semantic layer" posture as tableBorder←primary).
+   *
+   * Consumed as CSS custom properties emitted by the theme:
+   * `--beam-spine-default | -warning | -danger`.
+   */
+  spine: {
+    default:
+      'color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, var(--mui-palette-text-primary))',
+    warning: 'var(--mui-palette-warning-main)',
+    danger: 'var(--mui-palette-error-main)',
+  },
 };

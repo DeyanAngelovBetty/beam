@@ -18,6 +18,7 @@
 // Apps consume the theme through this entry, never by deep-importing
 // ./theme/* — same seam rule as atoms (BEAM.md §6.2).
 export { createBeamTheme } from './theme/createBeamTheme';
+export { meta } from './theme/textStyles';
 export { products, derived } from './theme/tokens';
 export type {
   BrandName,
@@ -88,7 +89,9 @@ export { BeamRowMenu } from './BeamRowMenu/BeamRowMenu';
 export type { BeamRowMenuProps, BeamRowMenuItem } from './BeamRowMenu/BeamRowMenu.types';
 export { GemIcon } from './GemIcon/GemIcon';
 export type { GemIconProps, GemName } from './GemIcon/GemIcon.types';
-export type { BeamDataTableProps, BeamColumn } from './BeamDataTable/BeamDataTable.types';
+export type { BeamDataTableProps, BeamColumn, BeamIdentityLinkProps } from './BeamDataTable/BeamDataTable.types';
+export { BeamStat } from './BeamStat/BeamStat';
+export type { BeamStatProps, BeamStatTone, BeamStatSeverity } from './BeamStat/BeamStat.types';
 
 // ---- Organisms: PLACEHOLDERS (2026-07-20) ----
 // Shape-only, pending the Figma design pass. Screens can be built against a
@@ -96,8 +99,6 @@ export type { BeamDataTableProps, BeamColumn } from './BeamDataTable/BeamDataTab
 // a dozen inline copies. Expect these to change — that is the point.
 export { BeamPageHeader } from './BeamPageHeader/BeamPageHeader';
 export type { BeamPageHeaderProps } from './BeamPageHeader/BeamPageHeader.types';
-export { BeamStat } from './BeamStat/BeamStat';
-export type { BeamStatProps, BeamStatTone } from './BeamStat/BeamStat.types';
 export { BeamTabs } from './BeamTabs/BeamTabs';
 export type { BeamTabsProps, BeamTabItem } from './BeamTabs/BeamTabs.types';
 export { BeamFilterBar } from './BeamFilterBar/BeamFilterBar';

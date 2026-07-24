@@ -2,21 +2,28 @@ import type { ReactNode } from 'react';
 
 /**
  * BeamStat — a labelled value ("nugget"): the smallest unit of entity
- * summary, used in headers, cards, and detail panels.
+ * summary, and the smallest carrier of the spine motif (detail-page §2).
  *
- * ⚠️ PLACEHOLDER (2026-07-20). Deliberately minimal: the real design pass
- * happens in Figma. This exists so screens can be built against a stable
- * name and shape now, and so the eventual design has one place to land
- * rather than a dozen inline label/value pairs to hunt down.
+ * Anatomy: left spine · key (in the `meta` voice) · value below. The spine
+ * bridges view ↔ edit — a stat and an input share a skeleton.
  */
 
-/** Semantic emphasis — never a color. The theme decides rendering. */
+/** Tints the VALUE. Semantic, never a raw color. */
 export type BeamStatTone = 'default' | 'success' | 'warning' | 'error' | 'info';
+
+/**
+ * Marks the FIELD via the spine + a paired non-color cue (icon), per
+ * WCAG 1.4.1 — severity is never colour-alone.
+ */
+export type BeamStatSeverity = 'warning' | 'danger';
 
 export interface BeamStatProps {
   label: string;
   value: ReactNode;
   /** Secondary line under the value, e.g. a unit or qualifier */
   caption?: ReactNode;
+  /** Tints the value. */
   tone?: BeamStatTone;
+  /** Switches the spine token and shows a severity icon by the key. */
+  severity?: BeamStatSeverity;
 }
