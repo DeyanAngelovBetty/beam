@@ -187,6 +187,10 @@ Design against the real model, not a generic BO:
   changes are screenshot-verified; token changes re-run the sync.
 - **Decisions get written down here** the day they're made, with their reason. An undocumented
   decision doesn't exist.
+- **The Lab.** App-local patterns get bench stories under `Lab/<Product>/<Name>` for isolated
+  design iteration *before* page integration. A Lab entry is a question, not a home: it either
+  graduates with its component via the promotion path (§2), or is deleted once its question is
+  answered. *(2026-07-25.)*
 
 ## 10. For AI assistants generating designs (Cowork / Figma agents)
 

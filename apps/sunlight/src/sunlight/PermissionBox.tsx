@@ -11,7 +11,7 @@ import { ItemRow, ItemDot } from './ItemRow';
  * pass. Do not re-enable without the design.
  * styling: pending design pass
  */
-function ProvenanceTicks({ roleIds }: { roleIds: string[] }) {
+export function ProvenanceTicks({ roleIds }: { roleIds: string[] }) {
   return (
     <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }} aria-hidden>
       {roleIds.map((roleId) => (
