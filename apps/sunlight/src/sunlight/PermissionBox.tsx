@@ -3,8 +3,14 @@ import { Box, Stack, Typography, Checkbox, Button } from '@betty/beam';
 import type { PermissionGroup } from './userDetail';
 import { roleColorById } from './RolesRail';
 import type { Linking } from './useLinking';
+import { ItemRow, ItemDot } from './ItemRow';
 
-/** One provenance tick per granting role — the static "why does he have this". */
+/**
+ * One provenance tick per granting role — the static "why does he have this".
+ * PARKED: not rendered today; the view marker is a plain dot pending a design
+ * pass. Do not re-enable without the design.
+ * styling: pending design pass
+ */
 function ProvenanceTicks({ roleIds }: { roleIds: string[] }) {
   return (
     <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }} aria-hidden>
@@ -18,93 +24,20 @@ function ProvenanceTicks({ roleIds }: { roleIds: string[] }) {
   );
 }
 
-interface PermissionBoxProps {
-  group: PermissionGroup;
-  mode: 'view' | 'edit';
-  granted: Set<string>;
-  provenance: Map<string, string[]>;
-  onTogglePermission?: (permId: string) => void;
-  linking: Linking;
-}
-
-const rowSx = {
-  px: 1,
-  py: 0.75,
-  borderRadius: 1,
-  transition: 'opacity 120ms',
-  // Row separators use the existing tableBorder (via divider) — the quieter
-  // variant is queued (grammar §1); do not hardcode a toned rgba.
-  '&:not(:last-of-type)': { borderBottom: 1, borderColor: 'divider' },
-};
-
-export function PermissionBox({ group, mode, granted, provenance, onTogglePermission, linking }: PermissionBoxProps) {
+/**
+ * The granted-only view's absence affordances: the "None granted." empty state
+ * and the "+n not granted" reveal.
+ * PARKED: not rendered today; pending a design pass. Do not re-enable without
+ * the design.
+ * styling: pending design pass
+ */
+function ParkedViewExtras({ group, granted }: { group: PermissionGroup; granted: Set<string> }) {
   const [revealed, setRevealed] = useState(false);
-
-  if (mode === 'edit') {
-    return (
-      <Stack>
-        {group.permissions.map((p) => {
-          const on = granted.has(p.id);
-          const grantedBy = provenance.get(p.id) ?? [];
-          const lp = linking.permissionProps(p.id, grantedBy);
-          return (
-            <Stack
-              key={p.id}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              data-permission-id={p.id}
-              onMouseEnter={lp.onMouseEnter}
-              onMouseLeave={lp.onMouseLeave}
-              sx={{ ...rowSx, opacity: linking.permissionDimmed(p.id, grantedBy) ? 0.35 : 1 }}
-            >
-              <Checkbox
-                size="small"
-                checked={on}
-                onChange={() => onTogglePermission?.(p.id)}
-                onFocus={lp.onFocus}
-                onBlur={lp.onBlur}
-                inputProps={{ 'aria-label': p.label }}
-                sx={{ p: 0.5 }}
-              />
-              <Typography variant="body2" sx={{ color: on ? 'text.primary' : 'text.disabled' }}>
-                {p.label}
-              </Typography>
-            </Stack>
-          );
-        })}
-      </Stack>
-    );
-  }
-
-  // View: granted only, quiet; absences behind a reveal.
   const grantedPerms = group.permissions.filter((p) => granted.has(p.id));
   const ungranted = group.permissions.filter((p) => !granted.has(p.id));
 
   return (
-    <Stack>
-      {grantedPerms.map((p) => {
-        const grantedBy = provenance.get(p.id) ?? [];
-        const lp = linking.permissionProps(p.id, grantedBy);
-        return (
-          <Stack
-            key={p.id}
-            direction="row"
-            alignItems="center"
-            spacing={1}
-            data-permission-id={p.id}
-            tabIndex={0}
-            onMouseEnter={lp.onMouseEnter}
-            onMouseLeave={lp.onMouseLeave}
-            onFocus={lp.onFocus}
-            onBlur={lp.onBlur}
-            sx={{ ...rowSx, outlineOffset: -2, opacity: linking.permissionDimmed(p.id, grantedBy) ? 0.35 : 1 }}
-          >
-            <ProvenanceTicks roleIds={grantedBy} />
-            <Typography variant="body2">{p.label}</Typography>
-          </Stack>
-        );
-      })}
+    <>
       {grantedPerms.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ px: 1, py: 0.75 }}>
           None granted.
@@ -126,6 +59,80 @@ export function PermissionBox({ group, mode, granted, provenance, onTogglePermis
           )}
         </Box>
       )}
+    </>
+  );
+}
+
+interface PermissionBoxProps {
+  group: PermissionGroup;
+  mode: 'view' | 'edit';
+  granted: Set<string>;
+  provenance: Map<string, string[]>;
+  onTogglePermission?: (permId: string) => void;
+  linking: Linking;
+}
+
+const permissionBoxSx = {
+  p: 0,
+  // border: '1px solid lime'
+};
+
+export function PermissionBox({ group, mode, granted, provenance, onTogglePermission, linking }: PermissionBoxProps) {
+  if (mode === 'edit') {
+    return (
+      <Stack sx={{ ...permissionBoxSx }}>
+        {group.permissions.map((p) => {
+          const on = granted.has(p.id);
+          const grantedBy = provenance.get(p.id) ?? [];
+          return (
+            <ItemRow
+              key={p.id}
+              linkKind="permission"
+              linkId={p.id}
+              handlers={linking.permissionProps(p.id, grantedBy)}
+              dimmed={linking.permissionDimmed(p.id, grantedBy)}
+              align="start"
+              marker={
+                <Checkbox
+                  size="small"
+                  checked={on}
+                  onChange={() => onTogglePermission?.(p.id)}
+                  inputProps={{ 'aria-label': p.label }}
+                  sx={{ p: 0 }}
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: on ? 'text.primary' : 'text.disabled' }}>
+                  {p.label}
+                </Typography>
+              }
+            />
+          );
+        })}
+      </Stack>
+    );
+  }
+
+  // View: granted only, quiet; absences behind a reveal (parked, see above).
+  const grantedPerms = group.permissions.filter((p) => granted.has(p.id));
+
+  return (
+    <Stack>
+      {grantedPerms.map((p) => {
+        const grantedBy = provenance.get(p.id) ?? [];
+        return (
+          <ItemRow
+            key={p.id}
+            linkKind="permission"
+            linkId={p.id}
+            handlers={linking.permissionProps(p.id, grantedBy)}
+            dimmed={linking.permissionDimmed(p.id, grantedBy)}
+            tabIndex={0}
+            marker={<ItemDot />}
+            label={<Typography variant="body2">{p.label}</Typography>}
+          />
+        );
+      })}
     </Stack>
   );
 }

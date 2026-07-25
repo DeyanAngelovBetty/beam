@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Stack, Typography, Paper, Divider, Checkbox, IconButton, Collapse, meta } from '@betty/beam';
+import { Box, Stack, Typography, Paper, Checkbox, IconButton, Collapse, meta } from '@betty/beam';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { groupState, type PermissionGroup } from './userDetail';
 import { PermissionBox } from './PermissionBox';
@@ -11,6 +11,25 @@ const spineFor: Record<'full' | 'partial' | 'none', { color: string; opacity: nu
   partial: { color: 'var(--mui-palette-primary-main)', opacity: 1 },
   none: { color: 'var(--beam-spine-default)', opacity: 0.3 },
 };
+
+/**
+ * The group-state header spine + "n / total" fraction.
+ * PARKED: not rendered today; pending a design pass. Do not re-enable without
+ * the design.
+ * styling: pending design pass
+ */
+function ParkedHeaderExtras({ group, granted }: { group: PermissionGroup; granted: Set<string> }) {
+  const { state, granted: g, total } = groupState(group, granted);
+  const spine = spineFor[state];
+  return (
+    <>
+      <Box aria-hidden sx={{ flexShrink: 0, width: 3, height: 16, borderRadius: 1, bgcolor: spine.color, opacity: spine.opacity }} />
+      <Typography component="span" sx={{ ...meta, opacity: 0.7 }}>
+        {g} / {total}
+      </Typography>
+    </>
+  );
+}
 
 interface PermissionSectionProps {
   group: PermissionGroup;
@@ -32,41 +51,52 @@ export function PermissionSection({
   linking,
 }: PermissionSectionProps) {
   const [open, setOpen] = useState(true);
-  const { state, granted: g, total } = groupState(group, granted);
-  const spine = spineFor[state];
+  const { state } = groupState(group, granted);
   const ids = group.permissions.map((p) => p.id);
+
+  const permissionBoxParentPaperSx = {
+    overflow: 'hidden',
+    // border: '1px solid orange'
+  };
 
   return (
     // Section header is not a raised surface → exempt from the border rule (§1.3).
-    <Box component="section">
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 1 }}>
-        <Box aria-hidden sx={{ flexShrink: 0, width: 3, height: 16, borderRadius: 1, bgcolor: spine.color, opacity: spine.opacity }} />
+    // <Box component="section">
+    <Paper component="section"
+      sx={{ ...permissionBoxParentPaperSx }}
+      variant={mode === 'edit' ? 'outlined' : 'elevation'} elevation={0}>
+      <Stack 
+        direction="row" 
+        alignItems="center" 
+        spacing={1} 
+        sx={{ 
+          px: 1,
+          py: .5,
+          borderBottom: open ? 1 : 0, 
+          borderColor: 'divider' 
+        }}>
+        
+        <Checkbox
+          size="small"
+          checked={state === 'full'}
+          indeterminate={state === 'partial'}
+          onChange={() => onToggleGroup?.(ids, state !== 'full')}
+          inputProps={{ 'aria-label': `Toggle all ${group.name} permissions` }}
+          sx={{ p: 0, visibility: mode === 'edit' ? 'visible' : 'hidden' }}
+          disabled={mode !== 'edit'}
+        />
+
         <Typography component="h2" sx={{ ...meta }}>
           {group.name}
         </Typography>
-        <Typography component="span" sx={{ ...meta, opacity: 0.7 }}>
-          {g} / {total}
-        </Typography>
-        <Box sx={{ flexGrow: 1 }} />
-        {mode === 'edit' && (
-          <Checkbox
-            size="small"
-            checked={state === 'full'}
-            indeterminate={state === 'partial'}
-            onChange={() => onToggleGroup?.(ids, state !== 'full')}
-            inputProps={{ 'aria-label': `Toggle all ${group.name} permissions` }}
-            sx={{ p: 0.5 }}
-          />
-        )}
         <IconButton size="small" onClick={() => setOpen((o) => !o)} aria-label={open ? `Collapse ${group.name}` : `Expand ${group.name}`}>
           <ExpandMoreIcon fontSize="small" sx={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
         </IconButton>
       </Stack>
-      <Divider />
       <Collapse in={open} timeout="auto">
         {/* Border = nature (§1): read-only view box is borderless (raised, calm);
             the edit checklist is bordered. */}
-        <Paper variant={mode === 'edit' ? 'outlined' : 'elevation'} elevation={0} sx={{ p: 1, mt: 1 }}>
+
           <PermissionBox
             group={group}
             mode={mode}
@@ -75,8 +105,8 @@ export function PermissionSection({
             onTogglePermission={onTogglePermission}
             linking={linking}
           />
-        </Paper>
       </Collapse>
-    </Box>
+    </Paper>
+    // </Box>
   );
 }

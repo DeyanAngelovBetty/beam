@@ -1,8 +1,14 @@
 import { Box, Paper, Stack, Typography, Checkbox, meta, roleColor } from '@betty/beam';
 import { ROLE_DEFS, ROLE_BY_ID } from './userDetail';
 import type { Linking } from './useLinking';
+import { ItemRow, ItemDot } from './ItemRow';
 
-/** A small role-color bar — the spine motif at its smallest (detail-page §5). */
+/**
+ * A small role-color bar — the spine motif at its smallest (detail-page §5).
+ * PARKED: not rendered today; the view marker is a plain dot pending a design
+ * pass. Do not re-enable without the design.
+ * styling: pending design pass
+ */
 function RoleTick({ colorIndex }: { colorIndex: number }) {
   return (
     <Box
@@ -26,58 +32,64 @@ export function RolesRail({ mode, assignedIds, onToggle, linking }: RolesRailPro
 
   return (
     // Border = nature (§1): read-only list is borderless; the edit checklist is bordered.
-    <Paper variant={mode === 'edit' ? 'outlined' : 'elevation'} elevation={mode === 'edit' ? 0 : 1} sx={{ p: 2 }}>
-      <Typography component="h2" sx={{ ...meta, mb: 1.5 }}>
-        Roles
-      </Typography>
+    <Paper variant={mode === 'edit' ? 'outlined' : 'elevation'} elevation={mode === 'edit' ? 0 : 1}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{
+          px: 1,
+          py: 0.5,
+          pl: 1.5,
+          borderBottom: 1,
+          borderColor: 'divider',
+          minHeight: 38,
+        }}
+      >
+        <Typography component="h2" sx={{ ...meta }}>
+          Roles
+        </Typography>
+      </Stack>
+
       <Stack spacing={0.5}>
         {roles.map((role) => {
           const isAssigned = assigned.has(role.id);
           const dimmed = linking.roleDimmed(role.id) || (mode === 'edit' && !isAssigned);
-          const props = linking.roleProps(role.id);
-          const row = (
-            <Stack
+          return (
+            <ItemRow
               key={role.id}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              data-role-id={role.id}
+              linkKind="role"
+              linkId={role.id}
+              handlers={linking.roleProps(role.id)}
+              dimmed={dimmed}
+              rounded
+              cursor={mode === 'view' ? 'default' : 'pointer'}
               tabIndex={mode === 'view' ? 0 : undefined}
-              onMouseEnter={props.onMouseEnter}
-              onMouseLeave={props.onMouseLeave}
-              onFocus={props.onFocus}
-              onBlur={props.onBlur}
-              sx={{
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                cursor: mode === 'view' ? 'default' : 'pointer',
-                opacity: dimmed ? 0.35 : 1,
-                transition: 'opacity 120ms',
-                outlineOffset: 2,
-              }}
               onClick={mode === 'edit' ? () => onToggle?.(role.id) : undefined}
-            >
-              {mode === 'edit' && (
-                <Checkbox
-                  size="small"
-                  checked={isAssigned}
-                  onChange={() => onToggle?.(role.id)}
-                  onClick={(e) => e.stopPropagation()}
-                  inputProps={{ 'aria-label': `Assign role ${role.name}` }}
-                  sx={{ p: 0.5 }}
-                />
-              )}
-              <RoleTick colorIndex={role.colorIndex} />
-              <Typography variant="body2">{role.name}</Typography>
-            </Stack>
+              marker={
+                mode === 'edit' ? (
+                  <Checkbox
+                    size="small"
+                    checked={isAssigned}
+                    onChange={() => onToggle?.(role.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    inputProps={{ 'aria-label': `Assign role ${role.name}` }}
+                    sx={{ p: 0 }}
+                  />
+                ) : (
+                  <ItemDot />
+                )
+              }
+              label={<Typography variant="body2">{role.name}</Typography>}
+            />
           );
-          return row;
         })}
         {mode === 'view' && roles.length === 0 && (
-          <Typography variant="body2" color="text.secondary">
-            No roles assigned.
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="body2" color="text.secondary">
+              No roles assigned.
+            </Typography>
+          </Stack>
         )}
       </Stack>
     </Paper>
