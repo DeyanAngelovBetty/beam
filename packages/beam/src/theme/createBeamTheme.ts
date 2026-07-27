@@ -109,7 +109,32 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // error classes still win (higher specificity), so the field states hold.
       MuiInputLabel: {
         styleOverrides: {
-          root: { ...meta },
+          root: {
+            ...meta,
+            // meta IS the final size — one caps voice everywhere — so the
+            // in-the-notch (shrunk) label must render at exactly meta, NOT
+            // meta × 0.75. MUI's default shrink is
+            // `translate(14px, -9px) scale(0.75)`, whose math assumes a 1rem
+            // label scaled to 12px; meta ships at its own size, so that scale
+            // both shrinks the wrong amount and mis-positions the label on the
+            // border. Neutralize the scale, re-center with a corrected Y.
+            '&.MuiInputLabel-shrink': {
+              transform: 'translate(14px, -5px) scale(1)', // Y offset: Deyan tunes on the bench
+            },
+          },
+        },
+      },
+      // Notch gap pairs with the label's rendered size. MUI's legend defaults
+      // to `0.75em` to mirror the default 0.75 shrink scale; since the label
+      // now renders unscaled at meta (above), the legend must render at meta's
+      // size too — coupled to meta, not a magic number. (If the gap runs tight
+      // against the caps/tracked label during tuning, extend the legend with
+      // meta's textTransform + letterSpacing here — MUI mirrors neither.)
+      MuiOutlinedInput: {
+        styleOverrides: {
+          notchedOutline: {
+            '& legend': { fontSize: meta.fontSize },
+          },
         },
       },
       // Last body row sits on the Paper edge — no divider against the curve

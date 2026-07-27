@@ -42,6 +42,10 @@ function Gallery() {
       </Stack>
 
       <TextField label="Paytable name" placeholder="Daily Wheel — default" fullWidth />
+      {/* Resting state on the bench: empty + unfocused + no placeholder, so the
+          meta label sits INSIDE the field at full size (not shrunk into the
+          notch). Diagnostic only — the resting look is a design decision. */}
+      <TextField label="Empty label" fullWidth />
 
       <Stack direction="row" spacing={2} alignItems="center">
         <Switch defaultChecked />

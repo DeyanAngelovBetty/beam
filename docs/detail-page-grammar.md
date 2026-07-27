@@ -69,6 +69,10 @@ one caps voice for keys everywhere:
 - **Applies to:** datagrid headers · `BeamStat` keys · form-field labels
   (`InputLabel`) · permission-box headers · page-section headers.
 - **Boundary: keys only.** Never values, never helper text.
+- **Form-label binding renders meta unscaled in the notch** *(2026-07-28):* meta
+  is already the final size, so the shrunk `InputLabel` overrides MUI's
+  `scale(0.75)` to `scale(1)` (with a corrected translate), and the outlined
+  notch's legend font-size is coupled to meta so the gap and label agree.
 - One Figma text style (**`meta`** — supersedes `table/meta`; update the BEAM.md
   Appendix B pairing and rename log), one theme recipe.
 - Current spec: fontFamily token · **Light 300** · 12/12 · 7% tracking ·
