@@ -152,7 +152,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
               // paddingRight is a free optical value — no identity attached.
               // Starts at 6; tuned on the bench (including compensating the
               // trailing space letterSpacing leaves after the last glyph).
-              paddingRight: 6, // side gap: Deyan tunes on the bench
+              paddingRight: 4, // side gap: Deyan tunes on the bench
             },
           },
         },
