@@ -51,7 +51,6 @@ function DemoRow({ mode, label, dimmed, marker, checked }: DemoArgs) {
       linkId="demo"
       handlers={noopHandlers}
       dimmed={dimmed}
-      align={isEdit ? 'start' : 'center'}
       tabIndex={isEdit ? undefined : 0}
       marker={markerNode}
       label={
@@ -85,7 +84,7 @@ type Story = StoryObj<typeof meta>;
 
 /** View row — read-only, dot marker. */
 export const ViewRow: Story = {
-  args: { mode: 'view', marker: 'dot', label: 'View player overview' },
+  args: { mode: "view", marker: 'dot', label: 'View player overview' },
 };
 
 /** Edit row, granted — checkbox checked, label at full strength. */

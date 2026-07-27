@@ -19,7 +19,7 @@ export interface ItemRowProps {
   marker: ReactNode;
   label: ReactNode;
   /** Marker/label cross-axis alignment. Roles + view rows = 'center'; edit permission rows = 'start'. */
-  align?: 'center' | 'start';
+  // align?: 'center' | 'start';
   tabIndex?: number;
   onClick?: () => void;
   /** Roles rows are chip-like (borderRadius); permission rows are flat. */
@@ -35,7 +35,7 @@ export function ItemRow({
   dimmed,
   marker,
   label,
-  align = 'center',
+  // align = 'start',
   tabIndex,
   onClick,
   rounded,
@@ -46,7 +46,6 @@ export function ItemRow({
   return (
     <Stack
       direction="row"
-      alignItems={align}
       spacing={1}
       {...dataAttr}
       tabIndex={tabIndex}
@@ -57,6 +56,7 @@ export function ItemRow({
       onClick={onClick}
       sx={{
         p: 1,
+        alignItems: 'start',
         transition: 'opacity 120ms',
         opacity: dimmed ? 0.35 : 1,
         ...(rounded ? { borderRadius: 1 } : {}),

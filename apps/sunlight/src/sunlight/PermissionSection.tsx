@@ -89,9 +89,9 @@ export function PermissionSection({
         <Typography component="h2" sx={{ ...meta }}>
           {group.name}
         </Typography>
-        <IconButton size="small" onClick={() => setOpen((o) => !o)} aria-label={open ? `Collapse ${group.name}` : `Expand ${group.name}`}>
+        {/* <IconButton size="small" onClick={() => setOpen((o) => !o)} aria-label={open ? `Collapse ${group.name}` : `Expand ${group.name}`}>
           <ExpandMoreIcon fontSize="small" sx={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
-        </IconButton>
+        </IconButton> */}
       </Stack>
       <Collapse in={open} timeout="auto">
         {/* Border = nature (§1): read-only view box is borderless (raised, calm);
