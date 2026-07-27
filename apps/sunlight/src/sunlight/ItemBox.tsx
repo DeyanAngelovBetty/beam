@@ -123,7 +123,7 @@ export function ItemBox({ group, mode, granted, provenance, onTogglePermission, 
         direction="row"
         alignItems="center"
         spacing={1}
-        sx={{ p:1, borderBottom: 1, borderColor: 'divider' }}
+        sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}
       >
         <Checkbox
           size="small"
@@ -148,9 +148,10 @@ export function ItemBox({ group, mode, granted, provenance, onTogglePermission, 
               key={p.id}
               linkKind="permission"
               linkId={p.id}
-              handlers={linking.permissionProps(p.id, grantedBy)}
-              dimmed={linking.permissionDimmed(p.id, grantedBy)}
-              tabIndex={mode === 'edit' ? undefined : 0}
+              // Permission rows are dimming targets only — no linking handlers,
+              // and no tabIndex (a11y: a focus stop that fires nothing is an
+              // anti-pattern; edit rows are already reachable via the checkbox).
+              dimmed={linking.permissionDimmed(grantedBy)}
               marker={
                 mode === 'edit' ? (
                   <Checkbox

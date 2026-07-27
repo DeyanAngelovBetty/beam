@@ -106,12 +106,26 @@ page-header
 - **Roles rail, edit:** the same rail becomes a bordered surface (§1.2) showing
   the **full role catalog** with checkboxes; unassigned roles render dimmed —
   the reveal logic of the permission boxes, applied one level up.
-- **Bidirectional hover/focus linking** (the NextGemPanel pattern, scaled):
-  hover/focus a role → its permissions highlight, others dim; hover/focus a
-  permission → the roles granting it highlight. The inverse direction *is*
-  provenance, kinetic. **Keyboard focus triggers the same linking** — hover-only
-  is half an interaction. Mechanism: shared state + `data-` attributes; no
-  exotic CSS.
+- **Unidirectional hover/focus linking — roles → permissions** (the NextGemPanel
+  pattern, scaled): hover or keyboard-focus a role in the rail → its granted
+  permissions highlight, everything else dims. Permissions are dimming **targets
+  only, never triggers**. Keyboard-focus parity lives on the rail — focusing a
+  role links the same as hovering. Mechanism: shared state + `data-` attributes;
+  no exotic CSS.
+  - *Revised 2026-07-27 (was bidirectional).* Permission rows are numerous and
+    small, so cursor travel across the grid fired the rail highlighting nonstop
+    — a constant flash, distracting and overwhelming. The two directions also
+    differ in kind: role → permissions ("what does this role grant") is a
+    deliberate pointing gesture and stays kinetic; permission → roles ("why does
+    he have this") is provenance and belongs to the **static** answer, not to
+    hover. This makes the parked **provenance ticks** the sole "why does he have
+    this" answer now — raising their priority for the next design round.
+  - *a11y note (the tabIndex removal, same change):* view permission rows lost
+    their `tabIndex`. They were focusable only to fire linking as triggers; with
+    that gone, two reasons converge — a focus stop that does nothing is an
+    anti-pattern (it clutters tab order and signals an interaction that isn't
+    there), and edit mode is already covered by each row's checkbox. The
+    interaction's keyboard parity now lives entirely on the roles rail.
 
 ## 6. Permissions: ItemRow · ItemBox · PageSection
 

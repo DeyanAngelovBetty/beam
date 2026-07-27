@@ -1,31 +1,27 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ROLE_BY_ID } from './userDetail';
 
 /**
- * Bidirectional role ↔ permission linking (detail-page §5), the NextGemPanel
- * pattern scaled up. Shared page-level state; hover OR keyboard focus sets the
- * active element, and everything not related to it dims.
+ * Unidirectional role → permission linking (detail-page §5). Hover or keyboard-
+ * focus a role in the rail → its granted permissions highlight, everything else
+ * dims. Permissions are dimming TARGETS only, never triggers: permission → role
+ * ("why does he have this") is provenance — the static answer (parked ticks),
+ * not a hover.
  *
  * Dim is computed in React (a handful of roles, ~20 rows — cheap) and applied
- * as opacity; the elements also carry data-role-id / data-permission-id for
- * identification. No exotic CSS.
+ * as opacity; permission rows keep data-permission-id for identification.
  */
 
-export type LinkActive = { kind: 'role'; id: string } | { kind: 'permission'; id: string } | null;
-
 export interface Linking {
-  active: LinkActive;
-  /** Handlers for a role element — hover and focus both link. */
-  roleProps: (roleId: string) => LinkElementProps;
-  /** Handlers for a permission row — provenance = the roles granting it. */
-  permissionProps: (permId: string, grantedBy: string[]) => LinkElementProps;
-  /** True when something is active and this role is not part of it. */
+  activeRole: string | null;
+  /** Handlers for a role element — hover/focus makes it the active role. */
+  roleProps: (roleId: string) => LinkHandlers;
+  /** True when a role is active and this role isn't it. */
   roleDimmed: (roleId: string) => boolean;
-  /** True when something is active and this permission is not part of it. */
-  permissionDimmed: (permId: string, grantedBy: string[]) => boolean;
+  /** True when a role is active and it does not grant this permission. */
+  permissionDimmed: (grantedBy: string[]) => boolean;
 }
 
-interface LinkElementProps {
+interface LinkHandlers {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onFocus: () => void;
@@ -33,53 +29,31 @@ interface LinkElementProps {
 }
 
 export function useLinking(): Linking {
-  const [active, setActive] = useState<LinkActive>(null);
-
-  const clear = useCallback(() => setActive(null), []);
+  const [activeRole, setActiveRole] = useState<string | null>(null);
+  const clear = useCallback(() => setActiveRole(null), []);
 
   const roleProps = useCallback(
-    (roleId: string): LinkElementProps => ({
-      onMouseEnter: () => setActive({ kind: 'role', id: roleId }),
+    (roleId: string): LinkHandlers => ({
+      onMouseEnter: () => setActiveRole(roleId),
       onMouseLeave: clear,
-      onFocus: () => setActive({ kind: 'role', id: roleId }),
-      onBlur: clear,
-    }),
-    [clear]
-  );
-
-  const permissionProps = useCallback(
-    (permId: string): LinkElementProps => ({
-      onMouseEnter: () => setActive({ kind: 'permission', id: permId }),
-      onMouseLeave: clear,
-      onFocus: () => setActive({ kind: 'permission', id: permId }),
+      onFocus: () => setActiveRole(roleId),
       onBlur: clear,
     }),
     [clear]
   );
 
   const roleDimmed = useCallback(
-    (roleId: string): boolean => {
-      if (!active) return false;
-      if (active.kind === 'role') return active.id !== roleId;
-      // A permission is active: highlight the roles that grant it.
-      const role = ROLE_BY_ID.get(roleId);
-      return !role?.grants.includes(active.id);
-    },
-    [active]
+    (roleId: string): boolean => activeRole !== null && activeRole !== roleId,
+    [activeRole]
   );
 
   const permissionDimmed = useCallback(
-    (permId: string, grantedBy: string[]): boolean => {
-      if (!active) return false;
-      if (active.kind === 'permission') return active.id !== permId;
-      // A role is active: highlight the permissions it grants.
-      return !grantedBy.includes(active.id);
-    },
-    [active]
+    (grantedBy: string[]): boolean => activeRole !== null && !grantedBy.includes(activeRole),
+    [activeRole]
   );
 
   return useMemo(
-    () => ({ active, roleProps, permissionProps, roleDimmed, permissionDimmed }),
-    [active, roleProps, permissionProps, roleDimmed, permissionDimmed]
+    () => ({ activeRole, roleProps, roleDimmed, permissionDimmed }),
+    [activeRole, roleProps, roleDimmed, permissionDimmed]
   );
 }

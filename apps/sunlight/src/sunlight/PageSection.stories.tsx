@@ -16,9 +16,8 @@ import type { Linking } from './useLinking';
 const noop = { onMouseEnter: () => {}, onMouseLeave: () => {}, onFocus: () => {}, onBlur: () => {} };
 function benchLinking(dim = false): Linking {
   return {
-    active: null,
+    activeRole: null,
     roleProps: () => noop,
-    permissionProps: () => noop,
     roleDimmed: () => dim,
     permissionDimmed: () => dim,
   };

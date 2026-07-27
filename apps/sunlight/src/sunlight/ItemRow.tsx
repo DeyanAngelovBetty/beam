@@ -12,8 +12,12 @@ export interface ItemRowProps {
   /** Which data-* the row carries → data-role-id | data-permission-id (linking identity). */
   linkKind: 'role' | 'permission';
   linkId: string;
-  /** The linking handler set, wired ONCE here (from useLinking's roleProps/permissionProps). */
-  handlers: ReturnType<Linking['roleProps']>;
+  /**
+   * The linking handler set (from useLinking's roleProps). Present on role
+   * rows — the only linking triggers; omitted on permission rows, which are
+   * dimming targets only (detail-page §5).
+   */
+  handlers?: ReturnType<Linking['roleProps']>;
   dimmed: boolean;
   /** Leading marker slot: checkbox | dot | (future provenance ticks). */
   marker: ReactNode;
@@ -49,10 +53,10 @@ export function ItemRow({
       spacing={1}
       {...dataAttr}
       tabIndex={tabIndex}
-      onMouseEnter={handlers.onMouseEnter}
-      onMouseLeave={handlers.onMouseLeave}
-      onFocus={handlers.onFocus}
-      onBlur={handlers.onBlur}
+      onMouseEnter={handlers?.onMouseEnter}
+      onMouseLeave={handlers?.onMouseLeave}
+      onFocus={handlers?.onFocus}
+      onBlur={handlers?.onBlur}
       onClick={onClick}
       sx={{
         p: 1,

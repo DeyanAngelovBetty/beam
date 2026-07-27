@@ -18,9 +18,8 @@ const noop = { onMouseEnter: () => {}, onMouseLeave: () => {}, onFocus: () => {}
 /** Inert linking for the bench; `dim` forces every row to the dimmed state. */
 function benchLinking(dim = false): Linking {
   return {
-    active: null,
+    activeRole: null,
     roleProps: () => noop,
-    permissionProps: () => noop,
     roleDimmed: () => dim,
     permissionDimmed: () => dim,
   };
