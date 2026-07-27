@@ -27,6 +27,7 @@ import {
 import { RolesRail } from './RolesRail';
 import { PageSection } from './PageSection';
 import { useLinking } from './useLinking';
+import { modeBorder } from './surfaceBorder';
 
 const STATS_GRID = {
   display: 'grid',
@@ -124,8 +125,9 @@ function UserView({
         }
       />
 
-      {/* Stats block: raised + read-only → borderless (§1.1). */}
-      <Paper variant="elevation" elevation={0} sx={{ p: 2 }}>
+      {/* Stats block: raised + read-only → border present but transparent
+          (§1, constant-geometry clause), so view↔edit doesn't jump. */}
+      <Paper elevation={0} sx={{ p: 2, ...modeBorder(false) }}>
         <Box sx={STATS_GRID}>
           <BeamStat label="Name" value={detail.name} />
           <BeamStat label="Email" value={detail.email} />
@@ -270,9 +272,10 @@ function UserEdit({
         }
       />
 
-      {/* Stats block in edit: now holds form fields → bordered (§1.2). Same
-          grid as view, so the skeleton reads as "same thing, now editable". */}
-      <Paper variant="outlined" sx={{ p: 2 }}>
+      {/* Stats block in edit: holds form fields → border visible (§1.2). Same
+          geometry as view (constant border), so the skeleton reads as "same
+          thing, now editable" with zero jump — only the border color changes. */}
+      <Paper elevation={0} sx={{ p: 2, ...modeBorder(true) }}>
         <Box sx={STATS_GRID}>
           <TextField
             label="Name"

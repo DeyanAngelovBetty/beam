@@ -4,6 +4,7 @@ import { groupState, type PermissionGroup } from './userDetail';
 import { roleColorById } from './RolesRail';
 import type { Linking } from './useLinking';
 import { ItemRow, ItemDot } from './ItemRow';
+import { modeBorder } from './surfaceBorder';
 
 /**
  * ItemBox — a titled box of ItemRows (detail-page §6). Header: group name in
@@ -118,7 +119,7 @@ export function ItemBox({ group, mode, granted, provenance, onTogglePermission, 
   const rows = mode === 'edit' ? group.permissions : grantedPerms;
 
   return (
-    <Paper sx={{ overflow: 'hidden' }} variant={mode === 'edit' ? 'outlined' : 'elevation'} elevation={0}>
+    <Paper elevation={0} sx={{ overflow: 'hidden', ...modeBorder(mode === 'edit') }}>
       <Stack
         direction="row"
         alignItems="center"

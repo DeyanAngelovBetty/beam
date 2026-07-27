@@ -2,6 +2,7 @@ import { Box, Paper, Stack, Typography, Checkbox, meta, roleColor } from '@betty
 import { ROLE_DEFS, ROLE_BY_ID } from './userDetail';
 import type { Linking } from './useLinking';
 import { ItemRow, ItemDot } from './ItemRow';
+import { modeBorder } from './surfaceBorder';
 
 /**
  * A small role-color bar — the spine motif at its smallest (detail-page §5).
@@ -31,8 +32,10 @@ export function RolesRail({ mode, assignedIds, onToggle, linking }: RolesRailPro
   const roles = mode === 'view' ? ROLE_DEFS.filter((r) => assigned.has(r.id)) : ROLE_DEFS;
 
   return (
-    // Border = nature (§1): read-only list is borderless; the edit checklist is bordered.
-    <Paper variant={mode === 'edit' ? 'outlined' : 'elevation'} elevation={mode === 'edit' ? 0 : 1}>
+    // Border = nature (§1): constant border, visible only in the interactive
+    // (edit) mode; view keeps its raised elevation. Border presence is constant
+    // geometry (no view↔edit jump); visibility is the mode signal.
+    <Paper elevation={mode === 'edit' ? 0 : 1} sx={{ ...modeBorder(mode === 'edit') }}>
       <Stack
         direction="row"
         alignItems="center"

@@ -30,6 +30,21 @@ so deep pages become assembly, not design.*
 Border presence is **static per surface/mode** — it never signals dirty/pending
 state. Dirty state belongs to the CTA and the page-header actions (§4).
 
+- **Constant-geometry border for mode-switching surfaces** *(2026-07-28):* a
+  surface that is bordered in ANY mode carries its border in EVERY mode; calm
+  modes render it `transparent`. Border PRESENCE is constant geometry; border
+  VISIBILITY is the mode signal. This refines what "borderless" means for a
+  surface that flips view↔edit (ItemBox, the roles rail, the stats/form Paper):
+  **invisible, not absent** — the three clauses above are unchanged. Rationale:
+  auto height = content + padding + border regardless of box-sizing, so a 1px
+  border appearing/disappearing shifts every child on every mode switch; a
+  transparent-but-present border holds the skeleton so the flip moves zero
+  pixels, only color.
+- **Skeleton-constancy family.** The same principle runs through Beam: the
+  hidden-but-space-preserved header checkbox, and now the constant border.
+  Geometry stays put across a state/mode change; only the *fill* of a reserved
+  slot changes. Reserve the space, signal with what fills it.
+
 - ✅ This blesses shipped reality: the datagrid stays bordered.
 - ⚠️ **Code amendment queued (in flight):** `BeamFilterBar` border becomes
   constant (it is an interactive surface); applied-state = filled Filter CTA only.
