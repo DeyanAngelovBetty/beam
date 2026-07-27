@@ -4,9 +4,9 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import type { Linking } from './useLinking';
 
 /**
- * ItemRow — the one row skeleton behind RolesRail rows and PermissionBox
- * rows (view + edit). Marker and per-site behavior vary by props; the row
- * shape, spacing, dimming, and the linking handler set are defined once here.
+ * ItemRow — the one row skeleton behind RolesRail rows and ItemBox rows
+ * (view + edit). Marker and per-site behavior vary by props; the row shape,
+ * spacing, dimming, and the linking handler set are defined once here.
  */
 export interface ItemRowProps {
   /** Which data-* the row carries → data-role-id | data-permission-id (linking identity). */

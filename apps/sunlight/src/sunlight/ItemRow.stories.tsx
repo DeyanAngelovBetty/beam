@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Stack, Typography, Checkbox } from '@betty/beam';
 import { ItemRow, ItemDot } from './ItemRow';
-import { ProvenanceTicks } from './PermissionBox';
+import { ProvenanceTicks } from './ItemBox';
 
 /**
  * Lab bench for the app-local ItemRow — the shared row skeleton behind
- * RolesRail and PermissionBox. Scaffold only: the states come from
+ * RolesRail and ItemBox. Scaffold only: the states come from
  * detail-page-grammar §5/§6 (view row, edit checked/unchecked, dimmed via
  * linking, provenance marker), not invented. No styling beyond what ItemRow
  * and the parked stubs already render.

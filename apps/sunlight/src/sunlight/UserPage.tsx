@@ -17,7 +17,7 @@ import {
   BeamEmptyState,
 } from '@betty/beam';
 import {
-  CATALOG,
+  SECTIONS,
   ROLE_BY_ID,
   getUserDetail,
   effectiveGrants,
@@ -25,16 +25,8 @@ import {
   saveUserEdit,
 } from './userDetail';
 import { RolesRail } from './RolesRail';
-import { PermissionSection } from './PermissionSection';
+import { PageSection } from './PageSection';
 import { useLinking } from './useLinking';
-
-/**
- * A/B TOGGLE — layout craft question (detail-page §7). false = standard CSS
- * grid, aligned rows (aids comparison-scanning). true = grid-lanes masonry,
- * a progressive enhancement inert until browsers ship `grid-lanes` (same
- * posture as squircle). NEVER the columns hack. Flip and rebuild to A/B live.
- */
-const MASONRY = false;
 
 const STATS_GRID = {
   display: 'grid',
@@ -143,10 +135,10 @@ function UserView({
 
       <RolesPermissionsLayout
         rail={<RolesRail mode="view" assignedIds={detail.roleIds} linking={linking} />}
-        sections={CATALOG.map((group) => (
-          <PermissionSection
-            key={group.id}
-            group={group}
+        sections={SECTIONS.map((section) => (
+          <PageSection
+            key={section.id}
+            section={section}
             mode="view"
             granted={granted}
             provenance={provenance}
@@ -306,10 +298,10 @@ function UserEdit({
 
       <RolesPermissionsLayout
         rail={<RolesRail mode="edit" assignedIds={working.roleIds} onToggle={toggleRole} linking={linking} />}
-        sections={CATALOG.map((group) => (
-          <PermissionSection
-            key={group.id}
-            group={group}
+        sections={SECTIONS.map((section) => (
+          <PageSection
+            key={section.id}
+            section={section}
             mode="edit"
             granted={working.grants}
             provenance={provenance}
@@ -344,26 +336,9 @@ function RolesPermissionsLayout({ rail, sections }: { rail: React.ReactNode; sec
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '260px 1fr' }, gap: 2, alignItems: 'start' }}>
       <Box sx={{ position: { md: 'sticky' }, top: { md: 88 } }}>{rail}</Box>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
-          gap: 2,
-          alignItems: 'start',
-          // Progressive masonry (detail-page §7) — inert until `grid-lanes`
-          // ships; base aligned-rows grid is the fallback. Never columns.
-          ...(MASONRY
-            ? {
-                '@supports (display: grid-lanes)': {
-                  display: 'grid-lanes',
-                  gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
-                },
-              }
-            : {}),
-        }}
-      >
-        {sections}
-      </Box>
+      {/* Sections stack vertically; each PageSection owns its own box grid
+          (and the masonry toggle) internally. */}
+      <Stack spacing={3}>{sections}</Stack>
     </Box>
   );
 }

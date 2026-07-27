@@ -113,26 +113,40 @@ page-header
   is half an interaction. Mechanism: shared state + `data-` attributes; no
   exotic CSS.
 
-## 6. Permission box
+## 6. Permissions: ItemRow · ItemBox · PageSection
 
-- **Header:** group name + **fraction** ("Transactions · 12 / 14") — tri-state
-  made numeric. The header spine carries group state: full = quiet · partial =
-  accent · none = dim.
-- **View body:** **granted only**, quiet list; absences behind a
-  **"+n not granted"** reveal. The daily reader gets calm; the compliance reader
-  gets completeness.
-- **Provenance:** each granted row wears a tick colored to its source role — the
-  static answer to "why does he have this"; the hover linking (§5) is the
-  kinetic answer. Same colors, one system.
+*Revised 2026-07-27: the permission box splits into a two-level hierarchy — a
+section over its boxes — and gains the zero-granted-view rule. Collapse moves
+from the box to the section.*
+
+The right pane is three nested, app-local pieces (born product-local, BEAM §2):
+
+- **ItemRow** — one labelled row: a leading marker slot (a checkbox in edit, a
+  quiet dot in view, provenance ticks pending), the label, and the dim opacity
+  that drives §5 linking. Rows may wrap; variable heights are legal.
+- **ItemBox** — a titled box of ItemRows. Header: group name in the **meta**
+  voice + a **tri-state group checkbox** (edit only; hidden-but-space-preserved
+  in view). Body: view lists **granted rows only**; edit is the **full
+  checklist**. Border = nature (§1): view borderless, edit bordered.
+- **PageSection** — the outer level: a section header (title in **meta** + a
+  **tri-state checkbox selecting every permission in every box** + a **collapse
+  caret** + a rule that bleeds to the right edge) over a grid of ItemBoxes.
+  **Collapse lives here, at section level — never on the box.**
+
+Rules:
+- **Zero-granted view renders nothing.** A box with no granted rows is absent in
+  view mode — the daily reader gets calm. *(The "None granted." / "+n not
+  granted" absence affordances stay **parked**; their fate is a later design
+  round.)*
+- **Tri-state rolls up:** box state across its rows, section state across its
+  boxes — full / partial / none.
 - **One checkbox per permission**, even when multiple roles grant it.
-  *(Provisional — overlapping-grant semantics to be confirmed with the domain
-  team; revisit w/c 2026-07-27.)*
-- **Edit body:** full checklist; tri-state group checkbox in the header; the
-  spine holds the frame through the view ↔ edit transition.
-- Rows may wrap → variable row heights are expected and legal.
-- 📌 **System gap, flagged:** role provenance needs a **categorical color ramp**
-  (per-role accents). No such tokens exist yet; they are a seed-lane proposal,
-  not a local invention (BEAM §10.6).
+  *(Provisional — overlapping-grant semantics pending domain confirmation.)*
+- **Provenance** (each granted row's source-role tick) and the **header spine +
+  fraction** are **parked, pending design** (`styling: pending design pass`) —
+  the static answer to "why does he have this"; the kinetic answer is the §5
+  linking. Same color system: the categorical **role ramp** (a seed-lane ramp,
+  now shipped as `roleRamp` — the gap flagged here is closed).
 
 ## 7. Layout: grid-lanes, progressively
 

@@ -17,6 +17,13 @@ export interface PermissionGroup {
   permissions: PermissionDef[];
 }
 
+/** A page section groups several permission boxes (detail-page §5–7). */
+export interface PermissionSectionDef {
+  id: string;
+  name: string;
+  groups: PermissionGroup[];
+}
+
 export interface RoleDef {
   id: string;
   name: string;
@@ -34,57 +41,72 @@ export interface UserDetail {
   roleIds: string[];
 }
 
-export const CATALOG: PermissionGroup[] = [
-  {
-    id: 'po',
-    name: 'Player Overview',
-    permissions: [
-      { id: 'po.view', label: 'View player overview' },
-      { id: 'po.pii', label: 'View personal data (PII)' },
-      { id: 'po.notes', label: 'Manage notes' },
-      { id: 'po.flags', label: 'Manage risk flags' },
-    ],
-  },
-  {
-    id: 'tx',
-    name: 'Transactions',
-    permissions: [
-      { id: 'tx.view', label: 'View transactions' },
-      { id: 'tx.refund', label: 'Refund transactions and reverse settled payments up to the configured daily limit' },
-      { id: 'tx.chargeback', label: 'Handle chargebacks' },
-      { id: 'tx.export', label: 'Export transaction reports' },
-      { id: 'tx.adjust', label: 'Adjust balances' },
-    ],
-  },
-  {
-    id: 'loy',
-    name: 'Loyalty',
-    permissions: [
-      { id: 'loy.view', label: 'View loyalty' },
-      { id: 'loy.grant', label: 'Grant loyalty rewards' },
-      { id: 'loy.config', label: 'Configure loyalty' },
-    ],
-  },
-  {
-    id: 'cmp',
-    name: 'Compliance',
-    permissions: [
-      { id: 'cmp.kyc', label: 'Run KYC checks' },
-      { id: 'cmp.aml', label: 'Run AML checks' },
-      { id: 'cmp.approve', label: 'Approve compliance cases' },
-      { id: 'cmp.audit', label: 'View compliance audit' },
-      { id: 'cmp.manual', label: 'Override and approve high-risk cases flagged for manual review' },
-    ],
-  },
-  {
-    id: 'cnt',
-    name: 'Content',
-    permissions: [
-      { id: 'cnt.view', label: 'View content' },
-      { id: 'cnt.edit', label: 'Edit content' },
-    ],
-  },
+const PLAYER_OVERVIEW: PermissionGroup = {
+  id: 'po',
+  name: 'Player Overview',
+  permissions: [
+    { id: 'po.view', label: 'View player overview' },
+    { id: 'po.pii', label: 'View personal data (PII)' },
+    { id: 'po.notes', label: 'Manage notes' },
+    { id: 'po.flags', label: 'Manage risk flags' },
+  ],
+};
+
+const TRANSACTIONS: PermissionGroup = {
+  id: 'tx',
+  name: 'Transactions',
+  permissions: [
+    { id: 'tx.view', label: 'View transactions' },
+    { id: 'tx.refund', label: 'Refund transactions and reverse settled payments up to the configured daily limit' },
+    { id: 'tx.chargeback', label: 'Handle chargebacks' },
+    { id: 'tx.export', label: 'Export transaction reports' },
+    { id: 'tx.adjust', label: 'Adjust balances' },
+  ],
+};
+
+const LOYALTY: PermissionGroup = {
+  id: 'loy',
+  name: 'Loyalty',
+  permissions: [
+    { id: 'loy.view', label: 'View loyalty' },
+    { id: 'loy.grant', label: 'Grant loyalty rewards' },
+    { id: 'loy.config', label: 'Configure loyalty' },
+  ],
+};
+
+const COMPLIANCE: PermissionGroup = {
+  id: 'cmp',
+  name: 'Compliance',
+  permissions: [
+    { id: 'cmp.kyc', label: 'Run KYC checks' },
+    { id: 'cmp.aml', label: 'Run AML checks' },
+    { id: 'cmp.approve', label: 'Approve compliance cases' },
+    { id: 'cmp.audit', label: 'View compliance audit' },
+    { id: 'cmp.manual', label: 'Override and approve high-risk cases flagged for manual review' },
+  ],
+};
+
+const CONTENT: PermissionGroup = {
+  id: 'cnt',
+  name: 'Content',
+  permissions: [
+    { id: 'cnt.view', label: 'View content' },
+    { id: 'cnt.edit', label: 'Edit content' },
+  ],
+};
+
+/**
+ * The two-level hierarchy (detail-page §5–7): sections → groups (boxes) →
+ * permissions (rows). Section→group mapping is provisional, matching the
+ * Figma frames' shape (revisit with the real frames).
+ */
+export const SECTIONS: PermissionSectionDef[] = [
+  { id: 'player-info', name: 'Player Info Page', groups: [PLAYER_OVERVIEW, TRANSACTIONS] },
+  { id: 'player-ops', name: 'Player Operations', groups: [LOYALTY, COMPLIANCE, CONTENT] },
 ];
+
+/** Flat group list — derived, so role grants / provenance / group state are unchanged. */
+export const CATALOG: PermissionGroup[] = SECTIONS.flatMap((s) => s.groups);
 
 export const ROLE_DEFS: RoleDef[] = [
   { id: 'admin', name: 'Admin', colorIndex: 0, grants: CATALOG.flatMap((g) => g.permissions.map((p) => p.id)) },
@@ -192,4 +214,21 @@ export function groupState(group: PermissionGroup, grantedIds: Set<string>): { s
   const granted = group.permissions.filter((p) => grantedIds.has(p.id)).length;
   const state: GroupState = granted === 0 ? 'none' : granted === total ? 'full' : 'partial';
   return { state, granted, total };
+}
+
+/** Section state = group state rolled up across every box in the section. */
+export function sectionState(
+  section: PermissionSectionDef,
+  grantedIds: Set<string>
+): { state: GroupState; granted: number; total: number } {
+  const perms = section.groups.flatMap((g) => g.permissions);
+  const total = perms.length;
+  const granted = perms.filter((p) => grantedIds.has(p.id)).length;
+  const state: GroupState = granted === 0 ? 'none' : granted === total ? 'full' : 'partial';
+  return { state, granted, total };
+}
+
+/** All permission ids in a section — for the section-level select-all. */
+export function sectionPermissionIds(section: PermissionSectionDef): string[] {
+  return section.groups.flatMap((g) => g.permissions.map((p) => p.id));
 }
