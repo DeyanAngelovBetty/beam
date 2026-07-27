@@ -124,16 +124,36 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
         },
       },
-      // Notch gap pairs with the label's rendered size. MUI's legend defaults
-      // to `0.75em` to mirror the default 0.75 shrink scale; since the label
-      // now renders unscaled at meta (above), the legend must render at meta's
-      // size too — coupled to meta, not a magic number. (If the gap runs tight
-      // against the caps/tracked label during tuning, extend the legend with
-      // meta's textTransform + letterSpacing here — MUI mirrors neither.)
+      // Notch gap geometry. The legend sizes the border's gap; it must predict
+      // the label's TRUE rendered width and register to the label's left edge.
       MuiOutlinedInput: {
         styleOverrides: {
           notchedOutline: {
-            '& legend': { fontSize: meta.fontSize },
+            // FULL mirror — MUI mirrors only the label text at a font-size, not
+            // meta's transform or tracking, so the legend under-predicts the
+            // caps/tracked label. Carry all three, coupled to meta (no literals).
+            // (fontWeight deliberately not mirrored — meta's 300 vs the legend's
+            // 400 is a sub-px residual, outside this concern.)
+            '& legend': {
+              fontSize: meta.fontSize,
+              textTransform: meta.textTransform,
+              letterSpacing: meta.letterSpacing,
+            },
+            '& legend > span': {
+              // LEFT-REGISTRATION is the doctrine. The label's left edge — its
+              // shrink translate-X (14px) — is the fixed datum: flush with the
+              // input value, it never moves. The rule's left break is placed
+              // relative to that datum, so paddingLeft is coupled:
+              //   paddingLeft = label translate-X (14) − fieldset padding-inline (MUI's 8) = 6
+              // Preserve this identity — if the 14px translate or the 8px
+              // fieldset padding ever changes, paddingLeft must follow, or the
+              // left break drifts off the datum.
+              paddingLeft: 6,
+              // paddingRight is a free optical value — no identity attached.
+              // Starts at 6; tuned on the bench (including compensating the
+              // trailing space letterSpacing leaves after the last glyph).
+              paddingRight: 6, // side gap: Deyan tunes on the bench
+            },
           },
         },
       },
