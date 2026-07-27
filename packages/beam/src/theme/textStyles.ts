@@ -20,9 +20,9 @@
  */
 export const meta = {
   textTransform: 'uppercase',
-  fontSize: '0.75rem', // 12px
-  lineHeight: '12px', // 12 / 12
+  fontSize: '0.65rem', // 12px
+  lineHeight: '1', // 12 / 12
   fontWeight: 300,
-  letterSpacing: '0.07em', // 7%
+  letterSpacing: '0.1em', // 7%
   color: 'var(--mui-palette-text-secondary)',
 } as const;

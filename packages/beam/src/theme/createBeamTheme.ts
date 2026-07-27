@@ -85,7 +85,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // "Operational surfaces are soft" — rounder radius plus squircle
             // corner geometry (CSS Borders L5, Chrome 139+; progressive
             // enhancement — unsupported browsers keep the plain radius).
-            borderRadius: 26,
+            borderRadius: 12,
             cornerShape: 'squircle',
           },
         },
