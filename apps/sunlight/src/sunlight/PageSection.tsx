@@ -43,7 +43,7 @@ export function PageSection({
   return (
     // Section header is not a raised surface → exempt from the border rule (§1.3).
     <Box component="section">
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ pl: 1, py: 0.5 }}>
         {/* Select/unselect ALL permissions in ALL of this section's boxes.
             Hidden-but-space-preserved in view, like the box checkbox. */}
         <Checkbox

@@ -123,7 +123,7 @@ export function ItemBox({ group, mode, granted, provenance, onTogglePermission, 
         direction="row"
         alignItems="center"
         spacing={1}
-        sx={{ px: 1, py: 0.5, borderBottom: 1, borderColor: 'divider' }}
+        sx={{ p:1, borderBottom: 1, borderColor: 'divider' }}
       >
         <Checkbox
           size="small"
