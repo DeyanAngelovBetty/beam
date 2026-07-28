@@ -82,12 +82,28 @@ continuous movement. Unlock reverses it.
     that waits for a second consumer needing the values in Figma. Values ship
     as placeholders; the choreography (durations, easings, visual outcomes) is
     the bench pass.
-- Locked expand/collapse animates the shell grid itself
-  (grid-template-columns), so content genuinely reflows.
+- Locked expand/collapse reflows the content as a **named view-transition
+  group** (`beam-shell-content`), not a `grid-template-columns` transition: with
+  the root crossfade killed, a static snapshot masks the live grid, so a plain
+  CSS transition would run invisibly and sequence *after* the morph. The VT
+  group animates *within* the transition, on the same clock as the mark.
 - Peek entry/exit: transform + @starting-style; hover intent delay (~250ms)
   and a close grace period so edge-passes don't flicker.
 - `prefers-reduced-motion`: all of the above collapses to instant state
   changes; the ignition becomes a crossfade or nothing.
+
+**Maintaining the ignition (for Alex).** The choreography is CSS, and it lives
+in `createBeamTheme.ts` beside the motion vars — *not* in the component —
+because View Transitions animate on pseudo-elements at the document root, which
+only global CSS can reach. The component's only jobs are naming the moving parts
+(`view-transition-name`: `brandmark`, `ghost`, `sidebar`, `content`) and calling
+`startViewTransition` on the lock flip. Three tokens control the timing:
+`--beam-motion-move` conducts the mark's travel, the panel's grow/collapse, and
+the content reflow; `--beam-motion-fade` fades the ghost; `--beam-motion-quick`
+is reserved for the peek. **To retune, edit the values in `tokens.ts`
+`derived.motion` — nothing else.** To inspect: DevTools ▸ Animations, trigger a
+lock, and scrub the ~300ms; the `::view-transition-*` pseudos appear under the
+document root while it runs.
 
 ## 5. The header subtraction
 

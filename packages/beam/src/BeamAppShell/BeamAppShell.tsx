@@ -43,11 +43,13 @@ const DEFAULT_CONTENT_GUTTER = { xs: 2, sm: 4, md: 7 }; // 16 / 32 / 56px — gu
 // migrates to BeamPageHeader's rhythm once that organism leaves placeholder.
 const CONTENT_VERTICAL = { xs: 2, md: 10 };
 
-// Morph seams for the (later) motion pass — the brand mark and the ghost each
-// render in exactly one place per state, so a view-transition can morph
-// between positions. Motion itself is NOT in this commit (grammar §4).
-const VT_BRANDMARK = 'beam-shell-brandmark';
-const VT_GHOST = 'beam-shell-ghost';
+// View-transition names — the "layer names" the ignition matches on (grammar
+// §4). Each names exactly one element per state so the browser can morph
+// between positions; the choreography that times them lives in createBeamTheme.
+const VT_BRANDMARK = 'beam-shell-brandmark'; // travels: strip ↔ locked header
+const VT_GHOST = 'beam-shell-ghost'; // fades out: the peek's watermark
+const VT_PANEL = 'beam-shell-sidebar'; // grows/collapses: the locked panel
+const VT_CONTENT = 'beam-shell-content'; // reflows: full-width ↔ right column
 
 // The lock shortcut — ONE definition, used by both the keydown listener and
 // the chevron tooltips. Platform-aware: ⌘ on Mac, Ctrl elsewhere.
@@ -325,6 +327,9 @@ export function BeamAppShell({
         aria-label="Navigation panel"
         onMouseEnter={floating ? clearTimers : undefined}
         onMouseLeave={floating ? scheduleClose : undefined}
+        // Named only in the locked nature — the peek is not part of the ignition
+        // (it's plain CSS, grammar §4). Enter on lock / exit on unlock.
+        style={nature === 'locked' && !drawer ? { viewTransitionName: VT_PANEL } : undefined}
         sx={{
           width: DRAWER_WIDTH,
           height: '100%',
@@ -407,8 +412,14 @@ export function BeamAppShell({
   const main = (
     <Box
       component="main"
+      // Named for the ignition (grammar §4): morphs full-width ↔ right column on
+      // lock/unlock. Present in both states, so its group genuinely reflows.
+      style={{ viewTransitionName: VT_CONTENT }}
       sx={{
         minWidth: 0,
+        // minHeight pins old/new snapshot heights equal so the reflow morph is
+        // horizontal-only — otherwise short pages warp vertically mid-transition.
+        minHeight: '100vh',
         // Horizontal = the gutter (responsive). Vertical = provisional rhythm,
         // off the gutter scale on purpose; unlocked top is strip clearance
         // (structural overlay-compensation, not rhythm).

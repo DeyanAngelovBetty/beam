@@ -77,7 +77,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
             // are independently addressable (durations may become Figma number
             // variables; easings stay code strings), plus a composed shorthand.
-            // Shipped unused: choreography is the bench pass.
+            // Consumed by the ignition choreography below; retune the values in
+            // tokens.ts `derived.motion`.
             '--beam-motion-quick-duration': derived.motion.quick.duration,
             '--beam-motion-quick-easing': derived.motion.quick.easing,
             '--beam-motion-quick':
@@ -101,6 +102,69 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
               '--beam-motion-move-duration': '0ms',
               '--beam-motion-fade-duration': '0ms',
             },
+          },
+
+          /*
+           * ── The ignition choreography (shell-grammar §4) ──────────────────
+           * These rules drive the lock/unlock morph. They live HERE, beside the
+           * motion vars, and NOT in the component — because that's where the
+           * browser looks.
+           *
+           * View Transitions in one paragraph: `document.startViewTransition()`
+           * is the browser's Smart-Animate. It screenshots the page BEFORE your
+           * DOM change and AFTER, matches the two by `view-transition-name`
+           * (think Figma layer name), and tweens each matched pair between its
+           * old and new screenshot. The tween runs on throwaway pseudo-elements
+           * — `::view-transition-group|old|new(NAME)` — mounted at the DOCUMENT
+           * ROOT for the length of the transition (~300ms), painted on top of
+           * the live page. So motion is styled by targeting those pseudos
+           * globally; a rule scoped inside a component would never match them.
+           * The names are set inline in BeamAppShell.tsx: `brandmark`, `ghost`,
+           * `sidebar`, `content`.
+           *
+           * What each rule does:
+           *  - root silenced — without it the browser cross-fades the ENTIRE
+           *    page. We want only the four named parts to move.
+           *  - brandmark / sidebar / content → `move`: the mark travels, the
+           *    panel grows/collapses, the content reflows — one clock, so they
+           *    read as a single movement.
+           *  - ghost (old only) → `fade`: the peek's watermark fades out as the
+           *    color mark lands.
+           * Every duration/easing comes from a motion var — never a literal
+           * here (that is the whole point of the tokens). Reduced motion is
+           * handled upstream (the component skips startViewTransition) and the
+           * kill switch above zeros these durations too.
+           *
+           * Inspect/scrub: DevTools ▸ Animations. Trigger a lock, then drag the
+           * panel's slider to step the ~300ms frame-by-frame; the
+           * `::view-transition-*` pseudos appear under the document root in the
+           * Elements tree while it runs.
+           * ──────────────────────────────────────────────────────────────────
+           */
+          '::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root)':
+            { animation: 'none' },
+          // The brand mark travels between the strip and the locked panel header.
+          '::view-transition-group(beam-shell-brandmark), ::view-transition-old(beam-shell-brandmark), ::view-transition-new(beam-shell-brandmark)':
+            {
+              animationDuration: 'var(--beam-motion-move-duration)',
+              animationTimingFunction: 'var(--beam-motion-move-easing)',
+            },
+          // The locked panel grows in (lock) / collapses out (unlock).
+          '::view-transition-group(beam-shell-sidebar), ::view-transition-old(beam-shell-sidebar), ::view-transition-new(beam-shell-sidebar)':
+            {
+              animationDuration: 'var(--beam-motion-move-duration)',
+              animationTimingFunction: 'var(--beam-motion-move-easing)',
+            },
+          // The content reflows: full-width ↔ right column.
+          '::view-transition-group(beam-shell-content), ::view-transition-old(beam-shell-content), ::view-transition-new(beam-shell-content)':
+            {
+              animationDuration: 'var(--beam-motion-move-duration)',
+              animationTimingFunction: 'var(--beam-motion-move-easing)',
+            },
+          // The ghost watermark fades out (peek → locked promotion).
+          '::view-transition-old(beam-shell-ghost)': {
+            animationDuration: 'var(--beam-motion-fade-duration)',
+            animationTimingFunction: 'var(--beam-motion-fade-easing)',
           },
         },
       },
