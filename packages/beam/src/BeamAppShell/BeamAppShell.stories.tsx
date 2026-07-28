@@ -171,12 +171,31 @@ function ShellBench({ navItems = NAV, ...shellProps }: BenchArgs) {
   );
 }
 
-/** Opens the peek/drawer on mount so the static story shows the open state. */
+/** Clicks the hamburger on mount — used narrow, where click opens the drawer. */
 function AutoOpen({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const t = setTimeout(() => {
       ref.current?.querySelector<HTMLButtonElement>('[aria-label="Open navigation"]')?.click();
+    }, 60);
+    return () => clearTimeout(t);
+  }, []);
+  return <div ref={ref}>{children}</div>;
+}
+
+/**
+ * Hovers the strip hamburger on mount so the static story shows the peek. Wide
+ * click now LOCKS (not peeks), so the peek is reachable only by hover — a
+ * bubbling `mouseover` is what React derives `onMouseEnter` from. Pair with
+ * `peekOpenDelayMs={0}` so it opens without the hover-intent wait.
+ */
+function AutoHover({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      ref.current
+        ?.querySelector<HTMLButtonElement>('[aria-controls="beam-shell-panel"]')
+        ?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
     }, 60);
     return () => clearTimeout(t);
   }, []);
@@ -205,11 +224,11 @@ export const ClosedStrip: Story = {
 /** Peek — the floating panel the closed state slides in on hover (opened here on mount). */
 export const PeekOpen: Story = {
   render: (args) => (
-    <AutoOpen>
+    <AutoHover>
       <ShellBench {...args} />
-    </AutoOpen>
+    </AutoHover>
   ),
-  args: { defaultLocked: false },
+  args: { defaultLocked: false, peekOpenDelayMs: 0 },
 };
 
 /** Narrow — the peek in mobile clothes: a modal drawer with scrim + focus trap. */

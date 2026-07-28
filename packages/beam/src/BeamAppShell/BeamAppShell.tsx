@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -43,6 +43,9 @@ const VT_GHOST = 'beam-shell-ghost';
 const LOCK_KEY = '\\';
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
 const LOCK_SHORTCUT_LABEL = IS_MAC ? '⌘\\' : 'Ctrl+\\';
+// aria-keyshortcuts form of the same chord (space-separated alternatives) —
+// the keydown listener accepts either modifier, so both are advertised.
+const LOCK_ARIA_KEYSHORTCUTS = `Meta+${LOCK_KEY} Control+${LOCK_KEY}`;
 
 function readInitialLock(controlled: boolean, persistKey: string | false, defaultLocked?: boolean): boolean {
   if (controlled) return false;
@@ -193,12 +196,42 @@ export function BeamAppShell({
 
   useEffect(() => clearTimers, [clearTimers]);
 
-  // ⌘\ / Ctrl+\ toggles lock (wide only) from anywhere.
+  // ---- focus bridge (two-trigger disclosure) ----
+  // Locking unmounts the strip; unlocking unmounts the panel header. The
+  // expand/collapse triggers are DIFFERENT elements, so focus must hop to the
+  // counterpart or it drops to <body> (WCAG 2.4.3). Handlers record intent; the
+  // layout effect moves focus once the transition has committed. The ref-flag
+  // self-guards: initial mount and resize-driven flips leave it null (no-op).
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const closeChevronRef = useRef<HTMLButtonElement>(null);
+  const pendingFocusRef = useRef<'lock' | 'unlock' | null>(null);
+
+  const lockOpen = useCallback(() => {
+    pendingFocusRef.current = 'lock';
+    setLocked(true);
+    closeNow();
+  }, [setLocked, closeNow]);
+  const lockClose = useCallback(() => {
+    pendingFocusRef.current = 'unlock';
+    setLocked(false);
+  }, [setLocked]);
+
+  useLayoutEffect(() => {
+    const pending = pendingFocusRef.current;
+    if (!pending) return;
+    pendingFocusRef.current = null;
+    const target = pending === 'lock' ? closeChevronRef.current : hamburgerRef.current;
+    target?.focus();
+  }, [effectiveLocked]);
+
+  // ⌘\ / Ctrl+\ toggles lock (wide only) from anywhere; focus follows the flip.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === LOCK_KEY && isWide) {
         e.preventDefault();
-        setLocked(!isLocked);
+        const next = !isLocked;
+        pendingFocusRef.current = next ? 'lock' : 'unlock';
+        setLocked(next);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -282,11 +315,9 @@ export function BeamAppShell({
               </Box>
               <Tooltip title={`Lock sidebar open · ${LOCK_SHORTCUT_LABEL}`}>
                 <IconButton
-                  aria-label="Lock sidebar"
-                  onClick={() => {
-                    setLocked(true);
-                    closeNow();
-                  }}
+                  aria-label="Lock sidebar open"
+                  aria-keyshortcuts={LOCK_ARIA_KEYSHORTCUTS}
+                  onClick={lockOpen}
                 >
                   <KeyboardDoubleArrowRightIcon />
                 </IconButton>
@@ -298,7 +329,14 @@ export function BeamAppShell({
                 {colorMark}
               </Box>
               <Tooltip title={`Close sidebar · ${LOCK_SHORTCUT_LABEL}`}>
-                <IconButton aria-label="Close sidebar" onClick={() => setLocked(false)}>
+                <IconButton
+                  ref={closeChevronRef}
+                  aria-label="Close sidebar"
+                  aria-expanded
+                  aria-controls={panelId}
+                  aria-keyshortcuts={LOCK_ARIA_KEYSHORTCUTS}
+                  onClick={lockClose}
+                >
                   <KeyboardDoubleArrowLeftIcon />
                 </IconButton>
               </Tooltip>
@@ -350,14 +388,19 @@ export function BeamAppShell({
         spacing={1}
         sx={{ position: 'fixed', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
       >
-        <Tooltip title="Open navigation">
+        {/* Hamburger, dual role (grammar §3, §6): wide = lock toggle (hover still
+            peeks); narrow = open the modal drawer, no lock. */}
+        <Tooltip title={isWide ? `Lock sidebar open · ${LOCK_SHORTCUT_LABEL}` : 'Open navigation'}>
           <IconButton
-            aria-label="Open navigation"
-            aria-expanded={peekOpen}
+            ref={hamburgerRef}
+            aria-label={isWide ? 'Lock sidebar open' : 'Open navigation'}
+            aria-expanded={isWide ? effectiveLocked : peekOpen}
             aria-controls={panelId}
+            aria-keyshortcuts={isWide ? LOCK_ARIA_KEYSHORTCUTS : undefined}
             onMouseEnter={isWide ? scheduleOpen : undefined}
             onClick={() => {
-              if (peekOpen) closeNow();
+              if (isWide) lockOpen();
+              else if (peekOpen) closeNow();
               else openNow();
             }}
           >
