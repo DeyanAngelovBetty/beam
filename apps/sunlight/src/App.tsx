@@ -8,7 +8,9 @@ import {
 } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
+import SUNLIGHT_MARK from './assets/SUNLIGHT.svg';
 import { buildSunlightNav } from './sunlight/navItems';
+import { ShellFooter } from './sunlight/ShellFooter';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { PlaceholderPage } from './sunlight/PlaceholderPage';
 import { UsersPage } from './sunlight/UsersPage';
@@ -28,6 +30,22 @@ const BrandContext = createContext<{ brand: BrandName; setBrand: (b: BrandName) 
   setBrand: () => {},
 });
 
+// Brand mark is app-owned (shell-grammar §3): the shell ships no logos. Color =
+// the full SVG for content-adjacent chrome; ghost = the same asset desaturated
+// to a watermark, the peek's destination marker. Ghost opacity is a bench value
+// — the motion/polish pass owns it.
+const brandMark = {
+  color: <img src={SUNLIGHT_MARK} alt="Sunlight" style={{ height: 20, display: 'block' }} />,
+  ghost: (
+    <img
+      src={SUNLIGHT_MARK}
+      alt=""
+      aria-hidden
+      style={{ height: 20, display: 'block', filter: 'grayscale(1)', opacity: 0.16 }}
+    />
+  ),
+};
+
 /** The persistent shell around every route. A data-router layout route. */
 function Layout() {
   const { brand, setBrand } = useContext(BrandContext);
@@ -36,7 +54,12 @@ function Layout() {
   const nav = buildSunlightNav({ pathname, navigate });
 
   return (
-    <BeamAppShell title="SUNLIGHT" product="sunlight" navItems={nav} brand={brand} onBrandChange={setBrand}>
+    <BeamAppShell
+      brandMark={brandMark}
+      navItems={nav}
+      persistKey="beam.shell.sunlight"
+      footer={<ShellFooter brand={brand} onBrandChange={setBrand} />}
+    >
       <Outlet />
     </BeamAppShell>
   );

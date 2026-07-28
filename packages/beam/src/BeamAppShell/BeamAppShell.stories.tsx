@@ -1,13 +1,23 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useColorScheme } from '@mui/material/styles';
 import DiamondIcon from '@mui/icons-material/Diamond';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PeopleIcon from '@mui/icons-material/People';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
 import { BeamAppShell } from './BeamAppShell';
 import type { BeamNavItem } from './BeamAppShell.types';
+import { products } from '../theme/tokens';
 import type { BrandName } from '../theme/tokens';
 
 /**
@@ -49,9 +59,11 @@ function DemoColorLogo() {
 }
 
 function DemoGhostLogo() {
-  // Mono, currentColor — subdual is applied by the shell's ghost slot (opacity).
+  // Mono watermark: currentColor at heavy subdual. The app bakes the subdual
+  // into the ghost node (the shell renders it as-is). Opacity is a bench value —
+  // the motion/polish pass owns it.
   return (
-    <svg width="115" height="20" viewBox="0 0 207 36" fill="none" aria-hidden>
+    <svg width="115" height="20" viewBox="0 0 207 36" fill="none" aria-hidden style={{ opacity: 0.16 }}>
       {SUNLIGHT_PATHS.map((d, i) => (
         <path key={i} d={d} fill="currentColor" />
       ))}
@@ -60,6 +72,54 @@ function DemoGhostLogo() {
 }
 
 const DEMO_BRAND = { color: <DemoColorLogo />, ghost: <DemoGhostLogo /> };
+
+/** Demo mode toggle — mirrors each app's ShellFooter. */
+function DemoModeToggle() {
+  const { mode, setMode } = useColorScheme();
+  const next = mode === 'dark' ? 'light' : 'dark';
+  return (
+    <IconButton onClick={() => setMode(next)} aria-label={`Switch to ${next} mode`} color="inherit">
+      {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+    </IconButton>
+  );
+}
+
+const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
+/**
+ * The app-owned footer, demoed. Post header-subtraction (grammar §5) the
+ * jurisdiction switch + mode toggle live in each app's ShellFooter; the bench
+ * reproduces one so the slot reads true.
+ */
+function DemoFooter({
+  brand,
+  onBrandChange,
+}: {
+  brand: BrandName;
+  onBrandChange: (brand: BrandName) => void;
+}) {
+  const jurisdictions = Object.keys(products.sunlight) as BrandName[];
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ p: 1.5 }}>
+      <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
+        <InputLabel id="bench-location">Location</InputLabel>
+        <Select
+          labelId="bench-location"
+          label="Location"
+          value={brand}
+          onChange={(e) => onBrandChange(e.target.value as BrandName)}
+        >
+          {jurisdictions.map((j) => (
+            <MenuItem key={j} value={j}>
+              {cap(j)}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <DemoModeToggle />
+    </Stack>
+  );
+}
 
 const NAV: BeamNavItem[] = [
   { label: 'Loyalty Status', icon: <DiamondIcon />, selected: true },
@@ -95,18 +155,15 @@ interface BenchArgs {
   peekCloseGraceMs?: number;
 }
 
-/** Wires the jurisdiction footer (backward-compat) to real state. */
+/** Wires the app-owned footer (jurisdiction + mode) to real state. */
 function ShellBench({ navItems = NAV, ...shellProps }: BenchArgs) {
   const [brand, setBrand] = useState<BrandName>('ontario');
   return (
     <BeamAppShell
       brandMark={DEMO_BRAND}
-      title="SUNLIGHT"
-      product="sunlight"
-      brand={brand}
-      onBrandChange={setBrand}
       navItems={navItems}
       persistKey={false}
+      footer={<DemoFooter brand={brand} onBrandChange={setBrand} />}
       {...shellProps}
     >
       <DemoPage />

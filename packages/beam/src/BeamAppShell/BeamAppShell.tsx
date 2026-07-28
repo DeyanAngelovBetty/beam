@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { useColorScheme, useTheme } from '@mui/material/styles';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -11,21 +11,15 @@ import Divider from '@mui/material/Divider';
 import ListSubheader from '@mui/material/ListSubheader';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
+import Tooltip from '@mui/material/Tooltip';
 import Stack from '@mui/material/Stack';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import { products, type BrandName } from '../theme/tokens';
 import type { BeamAppShellProps, BeamNavItem } from './BeamAppShell.types';
 
 const DRAWER_WIDTH = 264;
@@ -44,8 +38,11 @@ const DEFAULT_PERSIST_KEY = 'beam.shell.locked';
 const VT_BRANDMARK = 'beam-shell-brandmark';
 const VT_GHOST = 'beam-shell-ghost';
 
-/** Jurisdiction labels are derived, not listed — see the internal footer. */
-const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+// The lock shortcut — ONE definition, used by both the keydown listener and
+// the chevron tooltips. Platform-aware: ⌘ on Mac, Ctrl elsewhere.
+const LOCK_KEY = '\\';
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+const LOCK_SHORTCUT_LABEL = IS_MAC ? '⌘\\' : 'Ctrl+\\';
 
 function readInitialLock(controlled: boolean, persistKey: string | false, defaultLocked?: boolean): boolean {
   if (controlled) return false;
@@ -59,16 +56,6 @@ function readInitialLock(controlled: boolean, persistKey: string | false, defaul
     }
   }
   return defaultLocked ?? false;
-}
-
-function ModeToggle() {
-  const { mode, setMode } = useColorScheme();
-  const next = mode === 'dark' ? 'light' : 'dark';
-  return (
-    <IconButton onClick={() => setMode(next)} aria-label={`Switch to ${next} mode`} color="inherit">
-      {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-    </IconButton>
-  );
 }
 
 /** Wordmark fallback when no brandMark is supplied. Ghost = subdued mono. */
@@ -137,48 +124,6 @@ function NavItem({ item }: { item: BeamNavItem }) {
   );
 }
 
-/**
- * Backward-compat footer: the jurisdiction switcher + mode toggle that used to
- * live in the app bar. Rendered when the app supplies no `footer`. The header
- * subtraction (commit 2) moves ownership of this to each app.
- */
-function LegacyFooter({
-  product,
-  brand,
-  onBrandChange,
-}: Pick<BeamAppShellProps, 'product' | 'brand' | 'onBrandChange'>) {
-  if (!product || !brand || !onBrandChange) return <ModeToggleRow />;
-  const jurisdictions = Object.keys(products[product]) as BrandName[];
-  return (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ p: 1.5 }}>
-      <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
-        <InputLabel id="beam-shell-location">Location</InputLabel>
-        <Select
-          labelId="beam-shell-location"
-          label="Location"
-          value={brand}
-          onChange={(e) => onBrandChange(e.target.value as BrandName)}
-        >
-          {jurisdictions.map((j) => (
-            <MenuItem key={j} value={j}>
-              {cap(j)}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <ModeToggle />
-    </Stack>
-  );
-}
-
-function ModeToggleRow() {
-  return (
-    <Stack direction="row" justifyContent="flex-end" sx={{ p: 1.5 }}>
-      <ModeToggle />
-    </Stack>
-  );
-}
-
 export function BeamAppShell({
   navItems,
   children,
@@ -191,9 +136,6 @@ export function BeamAppShell({
   peekOpenDelayMs = PEEK_OPEN_DELAY_MS,
   peekCloseGraceMs = PEEK_CLOSE_GRACE_MS,
   title,
-  product,
-  brand,
-  onBrandChange,
 }: BeamAppShellProps) {
   const theme = useTheme();
   const isWide = useMediaQuery(theme.breakpoints.up('md'));
@@ -254,7 +196,7 @@ export function BeamAppShell({
   // ⌘\ / Ctrl+\ toggles lock (wide only) from anywhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === '\\' && isWide) {
+      if ((e.metaKey || e.ctrlKey) && e.key === LOCK_KEY && isWide) {
         e.preventDefault();
         setLocked(!isLocked);
       }
@@ -281,9 +223,7 @@ export function BeamAppShell({
   const panelId = 'beam-shell-panel';
   const colorMark = brandMark?.color ?? <Wordmark title={title} />;
   const ghostMark = brandMark?.ghost ?? <Wordmark title={title} ghost />;
-  const footerContent = footer ?? (
-    <LegacyFooter product={product} brand={brand} onBrandChange={onBrandChange} />
-  );
+  const footerContent = footer;
 
   const navList = (
     <List dense component="nav" aria-label="Main navigation" sx={{ flexGrow: 1, overflowY: 'auto' }}>
@@ -328,9 +268,11 @@ export function BeamAppShell({
             // the drawer has no lock to promise (grammar open question).
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>{colorMark}</Box>
-              <IconButton aria-label="Close navigation" onClick={closeNow}>
-                <CloseIcon />
-              </IconButton>
+              <Tooltip title="Close">
+                <IconButton aria-label="Close navigation" onClick={closeNow}>
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
             </>
           ) : nature === 'peek' ? (
             <>
@@ -338,30 +280,34 @@ export function BeamAppShell({
               <Box style={{ viewTransitionName: VT_GHOST }} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                 {ghostMark}
               </Box>
-              <IconButton
-                aria-label="Lock sidebar"
-                onClick={() => {
-                  setLocked(true);
-                  closeNow();
-                }}
-              >
-                <KeyboardDoubleArrowRightIcon />
-              </IconButton>
+              <Tooltip title={`Lock sidebar open · ${LOCK_SHORTCUT_LABEL}`}>
+                <IconButton
+                  aria-label="Lock sidebar"
+                  onClick={() => {
+                    setLocked(true);
+                    closeNow();
+                  }}
+                >
+                  <KeyboardDoubleArrowRightIcon />
+                </IconButton>
+              </Tooltip>
             </>
           ) : (
             <>
               <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                 {colorMark}
               </Box>
-              <IconButton aria-label="Close sidebar" onClick={() => setLocked(false)}>
-                <KeyboardDoubleArrowLeftIcon />
-              </IconButton>
+              <Tooltip title={`Close sidebar · ${LOCK_SHORTCUT_LABEL}`}>
+                <IconButton aria-label="Close sidebar" onClick={() => setLocked(false)}>
+                  <KeyboardDoubleArrowLeftIcon />
+                </IconButton>
+              </Tooltip>
             </>
           )}
         </Stack>
 
         {navList}
-        <Box sx={{ borderTop: 1, borderColor: 'divider' }}>{footerContent}</Box>
+        {footerContent && <Box sx={{ borderTop: 1, borderColor: 'divider' }}>{footerContent}</Box>}
       </Box>
     );
   };
@@ -404,18 +350,20 @@ export function BeamAppShell({
         spacing={1}
         sx={{ position: 'fixed', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
       >
-        <IconButton
-          aria-label="Open navigation"
-          aria-expanded={peekOpen}
-          aria-controls={panelId}
-          onMouseEnter={isWide ? scheduleOpen : undefined}
-          onClick={() => {
-            if (peekOpen) closeNow();
-            else openNow();
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
+        <Tooltip title="Open navigation">
+          <IconButton
+            aria-label="Open navigation"
+            aria-expanded={peekOpen}
+            aria-controls={panelId}
+            onMouseEnter={isWide ? scheduleOpen : undefined}
+            onClick={() => {
+              if (peekOpen) closeNow();
+              else openNow();
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+        </Tooltip>
         <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
           {colorMark}
         </Box>

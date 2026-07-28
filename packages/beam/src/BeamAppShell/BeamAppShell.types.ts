@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import type { BrandName, ProductName } from '../theme/tokens';
 
 /**
  * BeamAppShell v2 — the frame every Beam product wears (shell-grammar.md).
@@ -56,7 +55,10 @@ export interface BeamAppShellProps {
    */
   persistKey?: string | false;
 
-  /** App chrome slot — the sidebar footer zone (grammar §5). */
+  /**
+   * App chrome slot — the sidebar footer zone (grammar §5). The old app bar's
+   * jurisdiction switcher + mode toggle live here now, app-owned.
+   */
   footer?: ReactNode;
 
   /**
@@ -67,11 +69,6 @@ export interface BeamAppShellProps {
   peekOpenDelayMs?: number;
   peekCloseGraceMs?: number;
 
-  // ---- Backward-compat (deprecated in commit 2's header subtraction) ----
   /** Wordmark fallback when no brandMark is supplied. */
   title?: string;
-  /** Drives the internal jurisdiction switcher until the app takes it over. */
-  product?: ProductName;
-  brand?: BrandName;
-  onBrandChange?: (brand: BrandName) => void;
 }

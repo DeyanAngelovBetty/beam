@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import { MIDNIGHT_NAV } from './midnight/navItems';
+import { ShellFooter } from './midnight/ShellFooter';
 import { PlayerSearchPage } from './midnight/PlayerSearchPage';
 import { PlayerPaymentsPage } from './midnight/PlayerPaymentsPage';
 
@@ -37,10 +38,9 @@ export function App() {
       <CssBaseline />
       <BeamAppShell
         title="MIDNIGHT"
-        product="sunlight"
         navItems={nav}
-        brand={brand}
-        onBrandChange={setBrand}
+        persistKey="beam.shell.midnight"
+        footer={<ShellFooter brand={brand} onBrandChange={setBrand} />}
       >
         {screen === 'search' ? (
           <PlayerSearchPage onOpenPlayer={() => setScreen('player')} />
