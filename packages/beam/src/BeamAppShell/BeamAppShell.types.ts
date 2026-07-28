@@ -2,13 +2,9 @@ import type { ReactNode } from 'react';
 import type { BrandName, ProductName } from '../theme/tokens';
 
 /**
- * BeamAppShell — the back-office frame: fixed AppBar, permanent/temporary
- * Drawer, jurisdiction switcher, mode toggle.
- *
- * Promoted from Sunlight when Gaspar became the second consumer, exactly as
- * BEAM.md §2's promotion path prescribes — not predicted in advance.
- * Everything that varied between the two products became a prop; everything
- * that didn't stayed inside.
+ * BeamAppShell v2 — the frame every Beam product wears (shell-grammar.md).
+ * Two persistent states, locked | closed; peek is closed's hover answer, not a
+ * mode. No persistent app bar — the page owns its top edge (grammar §5).
  */
 
 export interface BeamNavItem {
@@ -29,21 +25,53 @@ export interface BeamNavItem {
   section?: boolean;
 }
 
+/**
+ * The product's logo, in the two surface-dependent variants the shell places
+ * (grammar §3). Supplied by the consuming app — the shell never owns logos.
+ */
+export interface BeamBrandMark {
+  /** Full-color mark for content-adjacent chrome: the strip and locked header. */
+  color: ReactNode;
+  /** Mono mark at heavy subdual — the peek's destination watermark (ghost). */
+  ghost: ReactNode;
+}
+
 export interface BeamAppShellProps {
-  /** Wordmark in the drawer header, e.g. "SUNLIGHT" */
-  title: string;
-  /**
-   * Which product's token set is mounted. The shell uses it to offer the
-   * jurisdictions that product actually defines, so a new market added in
-   * Figma appears in the switcher without a code change.
-   */
-  product: ProductName;
   navItems: BeamNavItem[];
-  /**
-   * Jurisdiction is RUNTIME state in a back office — operators manage
-   * several from one seat (BEAM.md §5).
-   */
-  brand: BrandName;
-  onBrandChange: (brand: BrandName) => void;
   children: ReactNode;
+
+  /** Logos (grammar §3). Falls back to the `title` wordmark when omitted. */
+  brandMark?: BeamBrandMark;
+
+  // ---- State model (grammar §1) — controlled OR uncontrolled ----
+  /** Controlled lock state. When set, the parent owns it (no persistence). */
+  locked?: boolean;
+  /** Uncontrolled initial lock. Default: closed (false) — the novelty is the point. */
+  defaultLocked?: boolean;
+  onLockedChange?: (locked: boolean) => void;
+  /**
+   * localStorage key for the lock preference (uncontrolled only; `false`
+   * disables persistence). Scope it per deployment — localStorage is
+   * per-origin, and on Pages all products share one origin.
+   */
+  persistKey?: string | false;
+
+  /** App chrome slot — the sidebar footer zone (grammar §5). */
+  footer?: ReactNode;
+
+  /**
+   * Hover-intent timing (ms). Default to the tuned constants in the component;
+   * overridable so the bench can dial them via controls before a value is
+   * committed to the constant.
+   */
+  peekOpenDelayMs?: number;
+  peekCloseGraceMs?: number;
+
+  // ---- Backward-compat (deprecated in commit 2's header subtraction) ----
+  /** Wordmark fallback when no brandMark is supplied. */
+  title?: string;
+  /** Drives the internal jurisdiction switcher until the app takes it over. */
+  product?: ProductName;
+  brand?: BrandName;
+  onBrandChange?: (brand: BrandName) => void;
 }

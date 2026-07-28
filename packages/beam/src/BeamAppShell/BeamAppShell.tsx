@@ -1,9 +1,7 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useColorScheme, useTheme } from '@mui/material/styles';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Drawer from '@mui/material/Drawer';
 import Box from '@mui/material/Box';
+import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -17,8 +15,12 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
+import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
+import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import ExpandLess from '@mui/icons-material/ExpandLess';
@@ -27,9 +29,37 @@ import { products, type BrandName } from '../theme/tokens';
 import type { BeamAppShellProps, BeamNavItem } from './BeamAppShell.types';
 
 const DRAWER_WIDTH = 264;
+const STRIP_HEIGHT = 56;
 
-/** Jurisdiction labels are derived, not listed — see BeamAppShellProps.product. */
-const label = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+// timing: Deyan tunes on the bench
+const PEEK_OPEN_DELAY_MS = 250;
+// timing: Deyan tunes on the bench
+const PEEK_CLOSE_GRACE_MS = 300;
+
+const DEFAULT_PERSIST_KEY = 'beam.shell.locked';
+
+// Morph seams for the (later) motion pass — the brand mark and the ghost each
+// render in exactly one place per state, so a view-transition can morph
+// between positions. Motion itself is NOT in this commit (grammar §4).
+const VT_BRANDMARK = 'beam-shell-brandmark';
+const VT_GHOST = 'beam-shell-ghost';
+
+/** Jurisdiction labels are derived, not listed — see the internal footer. */
+const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
+function readInitialLock(controlled: boolean, persistKey: string | false, defaultLocked?: boolean): boolean {
+  if (controlled) return false;
+  if (persistKey && typeof window !== 'undefined') {
+    try {
+      const v = window.localStorage.getItem(persistKey);
+      if (v === 'true') return true;
+      if (v === 'false') return false;
+    } catch {
+      /* localStorage unavailable — fall through */
+    }
+  }
+  return defaultLocked ?? false;
+}
 
 function ModeToggle() {
   const { mode, setMode } = useColorScheme();
@@ -41,7 +71,23 @@ function ModeToggle() {
   );
 }
 
-/** A flat, navigable leaf — used inside groups and sections. */
+/** Wordmark fallback when no brandMark is supplied. Ghost = subdued mono. */
+function Wordmark({ title, ghost = false }: { title?: string; ghost?: boolean }) {
+  return (
+    <Typography
+      component="span"
+      sx={{
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        // Ghost subdual is a styling value — pending design pass; plain low-opacity for now.
+        ...(ghost ? { color: 'text.primary', opacity: 0.16 } : {}),
+      }}
+    >
+      {title ?? 'BEAM'}
+    </Typography>
+  );
+}
+
 function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }) {
   return (
     <ListItemButton selected={item.selected} onClick={item.onClick} sx={inset ? { pl: 4 } : undefined}>
@@ -55,7 +101,6 @@ function NavItem({ item }: { item: BeamNavItem }) {
   const [open, setOpen] = useState(item.defaultOpen ?? false);
   const children = item.children ?? [];
 
-  // A section: divider + non-clickable subheader, with flat leaves beneath.
   if (item.section) {
     return (
       <>
@@ -70,12 +115,10 @@ function NavItem({ item }: { item: BeamNavItem }) {
     );
   }
 
-  // A leaf: navigable, no sub-list.
   if (children.length === 0) {
     return <NavLeaf item={item} />;
   }
 
-  // A collapsible group.
   return (
     <>
       <ListItemButton selected={item.selected} onClick={() => setOpen(!open)}>
@@ -94,114 +137,328 @@ function NavItem({ item }: { item: BeamNavItem }) {
   );
 }
 
-export function BeamAppShell({
-  title,
+/**
+ * Backward-compat footer: the jurisdiction switcher + mode toggle that used to
+ * live in the app bar. Rendered when the app supplies no `footer`. The header
+ * subtraction (commit 2) moves ownership of this to each app.
+ */
+function LegacyFooter({
   product,
-  navItems,
   brand,
   onBrandChange,
+}: Pick<BeamAppShellProps, 'product' | 'brand' | 'onBrandChange'>) {
+  if (!product || !brand || !onBrandChange) return <ModeToggleRow />;
+  const jurisdictions = Object.keys(products[product]) as BrandName[];
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ p: 1.5 }}>
+      <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
+        <InputLabel id="beam-shell-location">Location</InputLabel>
+        <Select
+          labelId="beam-shell-location"
+          label="Location"
+          value={brand}
+          onChange={(e) => onBrandChange(e.target.value as BrandName)}
+        >
+          {jurisdictions.map((j) => (
+            <MenuItem key={j} value={j}>
+              {cap(j)}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <ModeToggle />
+    </Stack>
+  );
+}
+
+function ModeToggleRow() {
+  return (
+    <Stack direction="row" justifyContent="flex-end" sx={{ p: 1.5 }}>
+      <ModeToggle />
+    </Stack>
+  );
+}
+
+export function BeamAppShell({
+  navItems,
   children,
+  brandMark,
+  locked,
+  defaultLocked,
+  onLockedChange,
+  persistKey = DEFAULT_PERSIST_KEY,
+  footer,
+  peekOpenDelayMs = PEEK_OPEN_DELAY_MS,
+  peekCloseGraceMs = PEEK_CLOSE_GRACE_MS,
+  title,
+  product,
+  brand,
+  onBrandChange,
 }: BeamAppShellProps) {
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const isWide = useMediaQuery(theme.breakpoints.up('md'));
 
-  // Offer exactly the jurisdictions this product defines — a new market added
-  // in Figma reaches the switcher through the token sync, with no code change.
-  const jurisdictions = Object.keys(products[product]) as BrandName[];
-
-  const nav = (
-    <>
-      <Toolbar sx={{ px: 2.5 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
-          {title}
-        </Typography>
-      </Toolbar>
-      <List dense component="nav" aria-label="Main navigation">
-        {navItems.map((item) => (
-          <NavItem key={item.label} item={item} />
-        ))}
-      </List>
-    </>
+  // ---- lock state (controlled/uncontrolled + persistence) ----
+  const isControlled = locked !== undefined;
+  const [uncontrolled, setUncontrolled] = useState(() =>
+    readInitialLock(isControlled, persistKey, defaultLocked)
+  );
+  const isLocked = isControlled ? Boolean(locked) : uncontrolled;
+  const setLocked = useCallback(
+    (nextLocked: boolean) => {
+      if (!isControlled) {
+        setUncontrolled(nextLocked);
+        if (persistKey && typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem(persistKey, String(nextLocked));
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      onLockedChange?.(nextLocked);
+    },
+    [isControlled, persistKey, onLockedChange]
   );
 
-  return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <AppBar
-        position="fixed"
-        color="transparent"
-        elevation={0}
-        sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
-          bgcolor: 'background.default',
-          borderBottom: 1,
-          borderColor: 'divider',
-        }}
-      >
-        <Toolbar sx={{ gap: 1 }}>
-          {!isDesktop && (
-            <IconButton edge="start" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
-              <MenuIcon />
-            </IconButton>
-          )}
-          <Box sx={{ flexGrow: 1 }} />
-          {/* Runtime jurisdiction context — a BO decision, deliberately unlike
-              the player-facing SDK where brand is deploy-time. */}
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel id="location-label">Location</InputLabel>
-            <Select
-              labelId="location-label"
-              label="Location"
-              value={brand}
-              onChange={(e) => onBrandChange(e.target.value as BrandName)}
-            >
-              {jurisdictions.map((j) => (
-                <MenuItem key={j} value={j}>
-                  {label(j)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <ModeToggle />
-        </Toolbar>
-      </AppBar>
+  // Below the breakpoint, locked is unavailable — the peek becomes a drawer.
+  const effectiveLocked = isWide && isLocked;
 
-      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
-        {isDesktop ? (
-          <Drawer
-            variant="permanent"
-            open
-            sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' } }}
-          >
-            {nav}
-          </Drawer>
-        ) : (
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={() => setMobileOpen(false)}
-            ModalProps={{ keepMounted: true }}
-            sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
-          >
-            {nav}
-          </Drawer>
-        )}
-      </Box>
+  // ---- peek (ephemeral; hover intent + close grace) ----
+  const [peekOpen, setPeekOpen] = useState(false);
+  const openTimer = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const clearTimers = useCallback(() => {
+    if (openTimer.current) clearTimeout(openTimer.current);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  }, []);
+  const scheduleOpen = useCallback(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    openTimer.current = setTimeout(() => setPeekOpen(true), peekOpenDelayMs);
+  }, [peekOpenDelayMs]);
+  const scheduleClose = useCallback(() => {
+    if (openTimer.current) clearTimeout(openTimer.current);
+    closeTimer.current = setTimeout(() => setPeekOpen(false), peekCloseGraceMs);
+  }, [peekCloseGraceMs]);
+  const openNow = useCallback(() => {
+    clearTimers();
+    setPeekOpen(true);
+  }, [clearTimers]);
+  const closeNow = useCallback(() => {
+    clearTimers();
+    setPeekOpen(false);
+  }, [clearTimers]);
 
+  useEffect(() => clearTimers, [clearTimers]);
+
+  // ⌘\ / Ctrl+\ toggles lock (wide only) from anywhere.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\' && isWide) {
+        e.preventDefault();
+        setLocked(!isLocked);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isWide, isLocked, setLocked]);
+
+  // Esc dismisses a peek.
+  useEffect(() => {
+    if (!peekOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeNow();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [peekOpen, closeNow]);
+
+  // Locking closes any open peek (it's been promoted).
+  useEffect(() => {
+    if (effectiveLocked) closeNow();
+  }, [effectiveLocked, closeNow]);
+
+  const panelId = 'beam-shell-panel';
+  const colorMark = brandMark?.color ?? <Wordmark title={title} />;
+  const ghostMark = brandMark?.ghost ?? <Wordmark title={title} ghost />;
+  const footerContent = footer ?? (
+    <LegacyFooter product={product} brand={brand} onBrandChange={onBrandChange} />
+  );
+
+  const navList = (
+    <List dense component="nav" aria-label="Main navigation" sx={{ flexGrow: 1, overflowY: 'auto' }}>
+      {navItems.map((item) => (
+        <NavItem key={item.label} item={item} />
+      ))}
+    </List>
+  );
+
+  /** The panel — one content skeleton, two natures (grammar §2). */
+  const panel = (nature: 'locked' | 'peek', drawer = false) => {
+    const floating = nature === 'peek' && !drawer;
+    return (
       <Box
-        component="main"
+        id={panelId}
+        component="section"
+        aria-label="Navigation panel"
+        onMouseEnter={floating ? clearTimers : undefined}
+        onMouseLeave={floating ? scheduleClose : undefined}
         sx={{
-          flexGrow: 1,
-          p: { xs: 2, md: 4 },
-          minWidth: 0,
-          backgroundImage: 'var(--beam-page-gradient)',
-          backgroundRepeat: 'no-repeat',
+          width: DRAWER_WIDTH,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: 'background.paper',
+          // Constant-geometry border (detail grammar §1) — present in both
+          // natures; nature changes radius + elevation, not geometry.
+          border: 1,
+          borderColor: 'divider',
+          ...(floating ? { borderRadius: 2, boxShadow: 8 } : { borderRadius: 0 }),
         }}
       >
-        <Toolbar />
-        {children}
+        {/* Panel header — brand mark + chevrons (grammar §3). */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{ px: 1.5, minHeight: STRIP_HEIGHT, borderBottom: 1, borderColor: 'divider' }}
+        >
+          {drawer ? (
+            // Narrow drawer: color mark + a close button. No ghost, no lock —
+            // the drawer has no lock to promise (grammar open question).
+            <>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>{colorMark}</Box>
+              <IconButton aria-label="Close navigation" onClick={closeNow}>
+                <CloseIcon />
+              </IconButton>
+            </>
+          ) : nature === 'peek' ? (
+            <>
+              {/* Ghost = the destination marker: where the brand lands on lock. */}
+              <Box style={{ viewTransitionName: VT_GHOST }} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                {ghostMark}
+              </Box>
+              <IconButton
+                aria-label="Lock sidebar"
+                onClick={() => {
+                  setLocked(true);
+                  closeNow();
+                }}
+              >
+                <KeyboardDoubleArrowRightIcon />
+              </IconButton>
+            </>
+          ) : (
+            <>
+              <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                {colorMark}
+              </Box>
+              <IconButton aria-label="Close sidebar" onClick={() => setLocked(false)}>
+                <KeyboardDoubleArrowLeftIcon />
+              </IconButton>
+            </>
+          )}
+        </Stack>
+
+        {navList}
+        <Box sx={{ borderTop: 1, borderColor: 'divider' }}>{footerContent}</Box>
       </Box>
+    );
+  };
+
+  const main = (
+    <Box
+      component="main"
+      sx={{
+        minWidth: 0,
+        p: { xs: 2, md: 4 },
+        pt: effectiveLocked ? { xs: 2, md: 4 } : `${STRIP_HEIGHT}px`,
+        backgroundImage: 'var(--beam-page-gradient)',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {children}
+    </Box>
+  );
+
+  // ---- LOCKED (wide): in-flow panel + content, as a grid so the column can
+  // later animate (grammar §4). ----
+  if (effectiveLocked) {
+    return (
+      <Box sx={{ display: 'grid', gridTemplateColumns: `${DRAWER_WIDTH}px 1fr`, minHeight: '100vh' }}>
+        <Box component="nav" sx={{ position: 'sticky', top: 0, height: '100vh' }}>
+          {panel('locked')}
+        </Box>
+        {main}
+      </Box>
+    );
+  }
+
+  // ---- CLOSED (wide) or NARROW: brand strip + content; peek/drawer on demand. ----
+  return (
+    <Box sx={{ minHeight: '100vh', position: 'relative' }}>
+      {/* Brand strip (grammar §3): hamburger + color mark, top-left, no bar. */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{ position: 'fixed', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
+      >
+        <IconButton
+          aria-label="Open navigation"
+          aria-expanded={peekOpen}
+          aria-controls={panelId}
+          onMouseEnter={isWide ? scheduleOpen : undefined}
+          onClick={() => {
+            if (peekOpen) closeNow();
+            else openNow();
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
+        <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
+          {colorMark}
+        </Box>
+      </Stack>
+
+      {/* Left-edge hover zone opens the peek (wide, closed). */}
+      {isWide && !peekOpen && (
+        <Box
+          onMouseEnter={scheduleOpen}
+          sx={{ position: 'fixed', top: 0, left: 0, width: 8, height: '100vh', zIndex: theme.zIndex.appBar - 1 }}
+        />
+      )}
+
+      {main}
+
+      {isWide ? (
+        peekOpen && (
+          // Peek = floating panel, non-modal (grammar §2, §6). Inset below the
+          // strip so the strip stays visible.
+          <Box
+            sx={{
+              position: 'fixed',
+              top: STRIP_HEIGHT,
+              left: 8,
+              height: `calc(100vh - ${STRIP_HEIGHT + 8}px)`,
+              zIndex: theme.zIndex.appBar - 1,
+            }}
+          >
+            {panel('peek')}
+          </Box>
+        )
+      ) : (
+        // Narrow: the peek wearing mobile clothes — a modal drawer.
+        <Drawer
+          variant="temporary"
+          open={peekOpen}
+          onClose={closeNow}
+          ModalProps={{ keepMounted: true }}
+          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0 } }}
+        >
+          {panel('peek', true)}
+        </Drawer>
+      )}
     </Box>
   );
 }
