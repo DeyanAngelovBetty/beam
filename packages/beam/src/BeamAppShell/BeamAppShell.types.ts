@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ResponsiveStyleValue } from '@mui/system';
 
 /**
  * BeamAppShell v2 — the frame every Beam product wears (shell-grammar.md).
@@ -68,6 +69,16 @@ export interface BeamAppShellProps {
    */
   peekOpenDelayMs?: number;
   peekCloseGraceMs?: number;
+
+  /**
+   * Horizontal breathing room between content and the shell's edges — the
+   * gutter (grammar §5). Responsive by doctrine: tighter on small screens,
+   * opening at `md` where the drawer becomes an in-flow sidebar and content
+   * gains a persistent neighbour. Horizontal only; vertical rhythm is the
+   * page's (BeamPageHeader). MUI spacing units or any CSS length. Steps are
+   * bench-tunable — see the component default.
+   */
+  contentGutter?: ResponsiveStyleValue<number | string>;
 
   /** Wordmark fallback when no brandMark is supplied. */
   title?: string;

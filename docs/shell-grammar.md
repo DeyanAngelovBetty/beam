@@ -104,3 +104,11 @@ header or footer zone — audited per app, not assumed.
 - Motion token values (bench).
 - Whether the ghost appears in the narrow-viewport drawer (probably not —
   the drawer has no lock to promise).
+- **Content vertical rhythm migrates to BeamPageHeader.** The `contentGutter`
+  prop owns the horizontal gutter only; top/bottom rhythm is parked on the
+  shell provisionally (`CONTENT_VERTICAL`) until BeamPageHeader leaves
+  placeholder and owns the rhythm above the page's first row.
+- **Content max-width, not a wider gutter, is the ultrawide answer.** The
+  gutter's top step is pinned at `md` (the drawer boundary); beyond that,
+  readable line length is a content-width concern the shell may later cap,
+  separate from the edge gutter.

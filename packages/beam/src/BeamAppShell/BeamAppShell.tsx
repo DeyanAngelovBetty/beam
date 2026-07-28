@@ -32,6 +32,16 @@ const PEEK_CLOSE_GRACE_MS = 300;
 
 const DEFAULT_PERSIST_KEY = 'beam.shell.locked';
 
+// Horizontal content gutter (grammar §5). Opens at `md` — the same boundary as
+// `isWide`, where the drawer becomes an in-flow sidebar and content gains a
+// persistent neighbour to breathe against. No lg/xl step: past md the layout is
+// stable; ultrawide is a content max-width job, not an ever-widening gutter.
+const DEFAULT_CONTENT_GUTTER = { xs: 2, sm: 4, md: 7 }; // 16 / 32 / 56px — gutter steps: Deyan tunes on the bench
+
+// Vertical rhythm is NOT the gutter. Parked on the shell provisionally; it
+// migrates to BeamPageHeader's rhythm once that organism leaves placeholder.
+const CONTENT_VERTICAL = { xs: 2, md: 4 };
+
 // Morph seams for the (later) motion pass — the brand mark and the ghost each
 // render in exactly one place per state, so a view-transition can morph
 // between positions. Motion itself is NOT in this commit (grammar §4).
@@ -138,6 +148,7 @@ export function BeamAppShell({
   footer,
   peekOpenDelayMs = PEEK_OPEN_DELAY_MS,
   peekCloseGraceMs = PEEK_CLOSE_GRACE_MS,
+  contentGutter = DEFAULT_CONTENT_GUTTER,
   title,
 }: BeamAppShellProps) {
   const theme = useTheme();
@@ -355,8 +366,12 @@ export function BeamAppShell({
       component="main"
       sx={{
         minWidth: 0,
-        p: { xs: 2, md: 4 },
-        pt: effectiveLocked ? { xs: 2, md: 4 } : `${STRIP_HEIGHT}px`,
+        // Horizontal = the gutter (responsive). Vertical = provisional rhythm,
+        // off the gutter scale on purpose; unlocked top is strip clearance
+        // (structural overlay-compensation, not rhythm).
+        px: contentGutter,
+        pb: CONTENT_VERTICAL,
+        pt: effectiveLocked ? CONTENT_VERTICAL : `${STRIP_HEIGHT}px`,
         backgroundImage: 'var(--beam-page-gradient)',
         backgroundRepeat: 'no-repeat',
       }}
