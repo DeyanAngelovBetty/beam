@@ -74,6 +74,33 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-spine-default': derived.spine.default,
             '--beam-spine-warning': derived.spine.warning,
             '--beam-spine-danger': derived.spine.danger,
+            // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
+            // are independently addressable (durations may become Figma number
+            // variables; easings stay code strings), plus a composed shorthand.
+            // Shipped unused: choreography is the bench pass.
+            '--beam-motion-quick-duration': derived.motion.quick.duration,
+            '--beam-motion-quick-easing': derived.motion.quick.easing,
+            '--beam-motion-quick':
+              'var(--beam-motion-quick-duration) var(--beam-motion-quick-easing)',
+            '--beam-motion-move-duration': derived.motion.move.duration,
+            '--beam-motion-move-easing': derived.motion.move.easing,
+            '--beam-motion-move':
+              'var(--beam-motion-move-duration) var(--beam-motion-move-easing)',
+            '--beam-motion-fade-duration': derived.motion.fade.duration,
+            '--beam-motion-fade-easing': derived.motion.fade.easing,
+            '--beam-motion-fade':
+              'var(--beam-motion-fade-duration) var(--beam-motion-fade-easing)',
+          },
+          // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the
+          // duration vars at the injection layer. Everything built on the motion
+          // tokens collapses to instant — one switch, no per-component checks.
+          // (Easings are left intact; a 0ms duration makes them moot.)
+          '@media (prefers-reduced-motion: reduce)': {
+            ':root': {
+              '--beam-motion-quick-duration': '0ms',
+              '--beam-motion-move-duration': '0ms',
+              '--beam-motion-fade-duration': '0ms',
+            },
           },
         },
       },

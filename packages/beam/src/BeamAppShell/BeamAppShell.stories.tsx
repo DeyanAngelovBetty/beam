@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useColorScheme } from '@mui/material/styles';
 import DiamondIcon from '@mui/icons-material/Diamond';
@@ -153,21 +153,42 @@ interface BenchArgs {
   defaultLocked?: boolean;
   peekOpenDelayMs?: number;
   peekCloseGraceMs?: number;
+  // Motion-token duration overrides (Playground only). INERT for now: nothing
+  // consumes the named-motion vars yet, and the interim lock transition is the
+  // UA-default root crossfade, which these do NOT govern. They go live when the
+  // choreography CSS (Deyan's bench pass) names the transition.
+  motionQuick?: string;
+  motionMove?: string;
+  motionFade?: string;
 }
 
 /** Wires the app-owned footer (jurisdiction + mode) to real state. */
-function ShellBench({ navItems = NAV, ...shellProps }: BenchArgs) {
+function ShellBench({
+  navItems = NAV,
+  motionQuick,
+  motionMove,
+  motionFade,
+  ...shellProps
+}: BenchArgs) {
   const [brand, setBrand] = useState<BrandName>('ontario');
+  // Style-less wrapper; only carries the motion-duration var overrides (if any).
+  const motionVars = {
+    ...(motionQuick ? { '--beam-motion-quick-duration': motionQuick } : {}),
+    ...(motionMove ? { '--beam-motion-move-duration': motionMove } : {}),
+    ...(motionFade ? { '--beam-motion-fade-duration': motionFade } : {}),
+  } as CSSProperties;
   return (
-    <BeamAppShell
-      brandMark={DEMO_BRAND}
-      navItems={navItems}
-      persistKey={false}
-      footer={<DemoFooter brand={brand} onBrandChange={setBrand} />}
-      {...shellProps}
-    >
-      <DemoPage />
-    </BeamAppShell>
+    <div style={motionVars}>
+      <BeamAppShell
+        brandMark={DEMO_BRAND}
+        navItems={navItems}
+        persistKey={false}
+        footer={<DemoFooter brand={brand} onBrandChange={setBrand} />}
+        {...shellProps}
+      >
+        <DemoPage />
+      </BeamAppShell>
+    </div>
   );
 }
 
@@ -242,13 +263,28 @@ export const NarrowDrawer: Story = {
   args: { defaultLocked: false },
 };
 
-/** Playground — the state + timing knobs (the constants are the shipped defaults). */
+/**
+ * Playground — the state + timing knobs (the constants are the shipped
+ * defaults). The motion-duration knobs are wired to the token vars but INERT
+ * until the choreography CSS consumes them (see BenchArgs) — they're here to
+ * scaffold the bench, not to animate anything yet.
+ */
 export const Playground: Story = {
-  args: { defaultLocked: false, peekOpenDelayMs: 250, peekCloseGraceMs: 300 },
+  args: {
+    defaultLocked: false,
+    peekOpenDelayMs: 250,
+    peekCloseGraceMs: 300,
+    motionQuick: '180ms',
+    motionMove: '300ms',
+    motionFade: '200ms',
+  },
   argTypes: {
     defaultLocked: { control: 'boolean' },
     peekOpenDelayMs: { control: { type: 'number', min: 0, max: 1000, step: 50 } },
     peekCloseGraceMs: { control: { type: 'number', min: 0, max: 1000, step: 50 } },
+    motionQuick: { control: 'text' },
+    motionMove: { control: 'text' },
+    motionFade: { control: 'text' },
     navItems: { table: { disable: true } },
     locked: { table: { disable: true } },
   },

@@ -151,4 +151,25 @@ export const derived = {
     warning: 'var(--mui-palette-warning-main)',
     danger: 'var(--mui-palette-error-main)',
   },
+
+  /**
+   * MOTION — Beam's first motion tokens (shell-grammar §4). Three named
+   * motions; `duration` and `easing` are SEPARATE fields so each injects as its
+   * own CSS var (`--beam-motion-{name}-duration` / `-easing`), plus a composed
+   * `--beam-motion-{name}` shorthand. The split is load-bearing: durations may
+   * later register as Figma *number* variables while easings stay code-side
+   * strings (deferral dated in shell-grammar §4). Code is truth until then,
+   * same posture as the derived colors above.
+   *
+   * Values are PLACEHOLDERS — choreography (durations, easings, and every
+   * visual outcome) is the bench pass. The tokens ship unused.
+   */
+  motion: {
+    // micro-feedback: peek slide, hovers
+    quick: { duration: '180ms', easing: 'ease-out' }, // motion: Deyan tunes on the bench
+    // things that travel or reflow: the lock morph, grid reflow
+    move: { duration: '300ms', easing: 'ease' }, // motion: Deyan tunes on the bench
+    // crossfades: the ghost ignition
+    fade: { duration: '200ms', easing: 'linear' }, // motion: Deyan tunes on the bench
+  },
 };

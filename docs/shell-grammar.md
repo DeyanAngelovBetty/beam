@@ -73,6 +73,15 @@ continuous movement. Unlock reverses it.
 
 - Easings and durations for this pass become **Beam's first motion tokens**
   (two or three named duration/easing pairs); no one-off cubic-beziers.
+  - *Scaffolded 2026-07-28.* Three named motions — `quick` / `move` / `fade` —
+    live in `tokens.ts` `derived.motion` and inject at the theme layer as
+    `--beam-motion-{name}` (with independently addressable `-duration` /
+    `-easing` vars). Code is truth, same posture as the derived colors.
+    **Figma registration is deferred:** durations may later register as Figma
+    *number* variables while easings stay code-side strings — pipeline work
+    that waits for a second consumer needing the values in Figma. Values ship
+    as placeholders; the choreography (durations, easings, visual outcomes) is
+    the bench pass.
 - Locked expand/collapse animates the shell grid itself
   (grid-template-columns), so content genuinely reflows.
 - Peek entry/exit: transform + @starting-style; hover intent delay (~250ms)

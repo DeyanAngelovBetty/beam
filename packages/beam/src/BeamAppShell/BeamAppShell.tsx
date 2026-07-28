@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -56,6 +57,27 @@ const LOCK_SHORTCUT_LABEL = IS_MAC ? '⌘\\' : 'Ctrl+\\';
 // aria-keyshortcuts form of the same chord (space-separated alternatives) —
 // the keydown listener accepts either modifier, so both are advertised.
 const LOCK_ARIA_KEYSHORTCUTS = `Meta+${LOCK_KEY} Control+${LOCK_KEY}`;
+
+// ---- ignition seam (grammar §4) ----
+// The lock flip is routed through a view transition so CSS can later morph the
+// swap (the ghost→gradient ignition). Progressive enhancement, squircle posture:
+// feature-detected, and skipped when motion is reduced. No lib-type dependency —
+// startViewTransition isn't in the DOM typings on our target yet.
+type ViewTransitionStarter = (callback: () => void) => unknown;
+
+function getStartViewTransition(): ViewTransitionStarter | null {
+  if (typeof document === 'undefined') return null;
+  const doc = document as Document & { startViewTransition?: ViewTransitionStarter };
+  return typeof doc.startViewTransition === 'function' ? doc.startViewTransition.bind(doc) : null;
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
 
 function readInitialLock(controlled: boolean, persistKey: string | false, defaultLocked?: boolean): boolean {
   if (controlled) return false;
@@ -162,17 +184,33 @@ export function BeamAppShell({
   const isLocked = isControlled ? Boolean(locked) : uncontrolled;
   const setLocked = useCallback(
     (nextLocked: boolean) => {
-      if (!isControlled) {
-        setUncontrolled(nextLocked);
-        if (persistKey && typeof window !== 'undefined') {
-          try {
-            window.localStorage.setItem(persistKey, String(nextLocked));
-          } catch {
-            /* ignore */
+      const applyLock = () => {
+        if (!isControlled) {
+          setUncontrolled(nextLocked);
+          if (persistKey && typeof window !== 'undefined') {
+            try {
+              window.localStorage.setItem(persistKey, String(nextLocked));
+            } catch {
+              /* ignore */
+            }
           }
         }
+        onLockedChange?.(nextLocked);
+      };
+
+      // Ignition seam (grammar §4): morph the lock swap through a view
+      // transition when supported and motion is allowed; otherwise a plain,
+      // instant flip. flushSync lands the uncontrolled DOM change inside the
+      // snapshot; controlled consumers own their own commit timing.
+      // NOTE (interim): until the choreography CSS names the transition, the
+      // browser's default root crossfade plays here. Intentional — see the
+      // commit that introduced this.
+      const startViewTransition = getStartViewTransition();
+      if (!startViewTransition || prefersReducedMotion()) {
+        applyLock();
+        return;
       }
-      onLockedChange?.(nextLocked);
+      startViewTransition(() => flushSync(applyLock));
     },
     [isControlled, persistKey, onLockedChange]
   );
