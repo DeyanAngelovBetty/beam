@@ -40,7 +40,7 @@ const DEFAULT_CONTENT_GUTTER = { xs: 2, sm: 4, md: 7 }; // 16 / 32 / 56px — gu
 
 // Vertical rhythm is NOT the gutter. Parked on the shell provisionally; it
 // migrates to BeamPageHeader's rhythm once that organism leaves placeholder.
-const CONTENT_VERTICAL = { xs: 2, md: 4 };
+const CONTENT_VERTICAL = { xs: 2, md: 10 };
 
 // Morph seams for the (later) motion pass — the brand mark and the ghost each
 // render in exactly one place per state, so a view-transition can morph
@@ -295,9 +295,14 @@ export function BeamAppShell({
           bgcolor: 'background.paper',
           // Constant-geometry border (detail grammar §1) — present in both
           // natures; nature changes radius + elevation, not geometry.
-          border: 1,
+          borderStyle: 'solid',
+          borderWidth: nature === 'peek' ? '1px 1px 1px 0' : '0 1px 0 0',
           borderColor: 'divider',
-          ...(floating ? { borderRadius: 2, boxShadow: 8 } : { borderRadius: 0 }),
+          ...(floating ? { 
+            borderRadius: 2, 
+            borderTopLeftRadius: 0, 
+            borderBottomLeftRadius: 0, 
+            boxShadow: 8 } : { borderRadius: 0 }),
         }}
       >
         {/* Panel header — brand mark + chevrons (grammar §3). */}
@@ -371,7 +376,8 @@ export function BeamAppShell({
         // (structural overlay-compensation, not rhythm).
         px: contentGutter,
         pb: CONTENT_VERTICAL,
-        pt: effectiveLocked ? CONTENT_VERTICAL : `${STRIP_HEIGHT}px`,
+        // pt: effectiveLocked ? CONTENT_VERTICAL : `${STRIP_HEIGHT}px`,
+        pt: CONTENT_VERTICAL,
         backgroundImage: 'var(--beam-page-gradient)',
         backgroundRepeat: 'no-repeat',
       }}
@@ -445,8 +451,9 @@ export function BeamAppShell({
             sx={{
               position: 'fixed',
               top: STRIP_HEIGHT,
-              left: 8,
-              height: `calc(100vh - ${STRIP_HEIGHT + 8}px)`,
+              left: 0,
+              // height: `calc(100vh - ${STRIP_HEIGHT + 8}px)`,
+              height: `calc(100vh - ${STRIP_HEIGHT * 2}px)`,
               zIndex: theme.zIndex.appBar - 1,
             }}
           >
