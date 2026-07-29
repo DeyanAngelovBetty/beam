@@ -39,6 +39,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
 import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps } from './BeamDataTable.types';
+import { isWhiteSpaceLike } from 'typescript';
 
 /**
  * The kebab that opens a row's overflow menu. Dim at rest, full on row
@@ -187,6 +188,8 @@ export function BeamDataTable<Row>({
   const railStickySx = {
     position: 'sticky' as const,
     left: 0,
+    pl: 0.5,
+    width: '1%',
     backgroundColor: 'background.paper',
   };
 
@@ -295,7 +298,7 @@ export function BeamDataTable<Row>({
               {railEnabled && (
                 // Header sits above the body rail cells if stickyHeader is ever
                 // enabled, and above its own row's data cells now.
-                <TableCell padding="checkbox" sx={{ ...railStickySx, zIndex: 3 }}>
+                <TableCell sx={{ ...railStickySx, zIndex: 3 }}>
                   {selectable && (
                     <Checkbox
                       checked={table.getIsAllRowsSelected()}
@@ -373,9 +376,9 @@ export function BeamDataTable<Row>({
                   {railEnabled && (
                     <TableCell
                       className="beam-rail"
-                      padding="checkbox"
+                      // padding="checkbox"
                       onClick={(e) => e.stopPropagation()}
-                      sx={{ ...railStickySx, zIndex: 2, width: 1, whiteSpace: 'nowrap' }}
+                      sx={{ ...railStickySx, zIndex: 2, whiteSpace: 'nowrap' }}
                     >
                       <Stack direction="row" alignItems="center">
                         {selectable && (
@@ -432,9 +435,9 @@ export function BeamDataTable<Row>({
           zero-state included — and aria-live so its changes are announced. The
           footer border-top is the styling pass. // styling: pending design pass */}
       {selectable ? (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider' }}>
           <Typography variant="body2" aria-live="polite" sx={{ pl: 2, color: 'text.secondary' }}>
-            {selectedCount === 0 ? 'No rows selected' : `${selectedCount} selected`}
+            {selectedCount === 0 ? '' : `${selectedCount} selected`}
           </Typography>
           {paginationEl ?? <Box />}
         </Box>
