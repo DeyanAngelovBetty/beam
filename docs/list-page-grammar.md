@@ -62,11 +62,15 @@ Affordances: whole-row hover highlight + the link-styled name + the rail itself.
 Row *actions* have exactly three homes:
 1. **The kebab in the row controls rail** — secondary per-record actions as
    *labeled* menu items. The rail is a **pinned first column**, fixed internal
-   order `[expand][select][⋮]`, each control optional per page; kebab renders
+   order `[select][⋮][expand]`, each control optional per page; kebab renders
    dim at rest, full on row hover **and keyboard focus**. Pinned-left means
    actions stay visible while data columns scroll — which structurally kills the
    legacy failure (icon-only actions in the last column, scrolled out of view —
    the audit's §3.12 finding). Caret in the rail = expand, only, always.
+
+   *Amended 2026-07-29: rail order is `[select][⋮][expand]` — selection anchors
+   the rail's outer edge (the row's coarsest handle), and the expand caret sits
+   innermost, nearest the row content it opens.*
 2. **Inside the detail surface** — edit/save/delete live where the record is open,
    with room for labels and confirmation.
 3. **The bulk bar** — for multi (below).
@@ -92,6 +96,29 @@ row action. Sparingly: one per table, never destructive.
   down → select all matching is the real ops workflow; this is where §1 and §4
   meet.
 
+*Amended 2026-07-29 — constant geometry, variable enablement.* The bulk bar no
+longer overlays or replaces the toolbar on selection (that reflow is gone). This
+applies detail-grammar §1's border rule to interaction: **the geometry is
+constant; only enablement varies.**
+- **Batch actions render always**, in a persistent, **unboxed** strip on the page
+  background between the filter bar and the table (§1.3 exempt — plain actions,
+  not a raised container). They are **disabled at zero selection** and enable as
+  selection grows. Nothing overlays, replaces, or reflows on select/deselect.
+- **Ownership:** BeamDataTable keeps owning selection and renders the strip
+  itself, above its Paper — the batch bar is *table* chrome (it acts on the
+  table's selected rows), distinct from the filter bar's *page* chrome (which
+  narrows the dataset). *(When the server-side "select all matching" escalation
+  above is built, selection lifts to page state and the bar may migrate; not
+  yet.)*
+- **Selection count** lives in the **table footer, left, opposite pagination**,
+  always present: `No rows selected` ↔ `{n} selected`. It is `aria-live` so its
+  changes are announced.
+- **A11y:** disabled batch buttons use **`aria-disabled`, not `disabled`** — they
+  stay focusable and announced, so a screen-reader user discovers them; each is
+  `aria-describedby` a hint ("Select one or more rows…") that explains *why*
+  it's inert, and the click handler no-ops. Enablement is also conveyed visually.
+- **Destructive** batch actions keep confirmation.
+
 ## 5. Per-page declaration (the checklist that makes screens assembly)
 
 📎 [Visual →](https://www.figma.com/design/9yNbolohxGitkMJKDjoyKG/Beam--MUI-v9-?node-id=12282-4264)
@@ -112,6 +139,38 @@ later round) · kebab: duplicate, delete · bulk: delete (confirmed) · inline: 
 *Revised 2026-07-24: Users & Roles moved from tier 2 (panel) to tier 3 (full
 page) per `detail-page-grammar.md` §8 — row click now navigates to the same
 destination as the identity link.*
+
+## 6. Actions are a complexity cost — earn the combination
+
+📌 *Added 2026-07-29.*
+
+**Batch actions and row actions together are a complexity cost, not a default.**
+A page earns the combination only when *both* are genuinely needed; prefer one,
+justify two. Row actions serve the single record; batch actions serve the
+multi-select workflow. A page that has never shown a real multi-select need
+should not carry a batch bar just because the table can.
+
+*Audit 2026-07-29 — the two shipped list pages:*
+
+| Page | Row actions | Batch actions | Verdict |
+|---|---|---|---|
+| **Users** | none (inline Active toggle only) | none | No combination — clause N/A. |
+| **Roles** | kebab: Edit / Users in Role / Delete | none | One set — clean. |
+| **Payout Configs** | kebab: Edit / Clone / Delete | Go Live / Delete | **Both — under review.** |
+
+**Payout Configs** (recommendation, pending Georgi — trimming actions is a
+product call): the row set earns its place (Edit, and especially **Clone**, are
+inherently per-record). The batch set is unproven on a new page — batch
+**Delete** duplicates row Delete and is dangerous in bulk; batch **Go Live** is
+the only plausibly-genuine multi need (activating several drafts for a launch).
+Recommendation: default to **row-actions-only** unless a bulk go-live workflow is
+confirmed, then keep batch Go Live only. Left as-is in code pending that
+conversation (taken to Georgi alongside the one-list IA question).
+
+*Reconcile-later (2026-07-29): §5 declares Users with a kebab (reset password,
+deactivate) and bulk (activate/deactivate, assign role), but the shipped code
+has neither — only the inline Active toggle. Close the gap (build the declared
+actions or revise the declaration); don't let it drift.*
 
 ## Open questions (deliberately unresolved — input wanted)
 

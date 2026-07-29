@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type ComponentType, type MouseEvent } from 'react';
+import { Fragment, useId, useMemo, useState, type ComponentType, type MouseEvent } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -173,10 +173,14 @@ export function BeamDataTable<Row>({
   });
 
   const selectedIds = Object.keys(rowSelection);
+  const selectedCount = selectedIds.length;
+  const batchHintId = useId();
   const visibleRows = table.getRowModel().rows;
 
   // One pinned rail column holds all row controls, in fixed order
-  // [expand][select][kebab] — each rendered only if enabled (grammar §3).
+  // [select][kebab][expand] — each rendered only if enabled (grammar §3):
+  // selection anchors the rail's outer edge; the expand caret sits innermost,
+  // nearest the row content it opens.
   const railEnabled = Boolean(renderExpanded) || selectable || Boolean(rowMenu);
   const railCol = railEnabled ? 1 : 0;
 
@@ -186,41 +190,85 @@ export function BeamDataTable<Row>({
     backgroundColor: 'background.paper',
   };
 
+  const paginationEl = paginated ? (
+    <TablePagination
+      component="div"
+      count={table.getFilteredRowModel().rows.length}
+      page={table.getState().pagination.pageIndex}
+      onPageChange={(_, p) => table.setPageIndex(p)}
+      rowsPerPage={table.getState().pagination.pageSize}
+      onRowsPerPageChange={(e) => table.setPageSize(parseInt(e.target.value, 10))}
+      rowsPerPageOptions={[5, 10, 25]}
+    />
+  ) : null;
+
   return (
-    <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-      {(searchable || (selectable && selectedIds.length > 0)) && (
-        <Toolbar
-          variant="dense"
-          sx={{
-            gap: 2,
-            justifyContent: 'space-between',
-            ...(selectedIds.length > 0 && { bgcolor: 'action.selected' }),
-            borderBottom: 1,
-            borderColor: 'divider',
-          }}
-        >
-          {selectedIds.length > 0 ? (
-            <>
-              <Typography variant="body2" fontWeight={500}>
-                {selectedIds.length} selected
-              </Typography>
-              <Stack direction="row" spacing={1}>
-                {bulkActions.map((a) => (
-                  <Button
-                    key={a.id}
-                    size="small"
-                    color={a.destructive ? 'error' : 'primary'}
-                    onClick={() => {
-                      onBulkAction?.(a.id, selectedIds);
-                      table.resetRowSelection();
-                    }}
-                  >
-                    {a.label}
-                  </Button>
-                ))}
-              </Stack>
-            </>
-          ) : (
+    <>
+      {/* Batch actions — a persistent, UNBOXED strip on the page background,
+          sitting between the filter bar and the table (grammar §4; §1.3 exempt:
+          plain actions, not a raised container). The table owns selection and
+          renders this itself. Constant geometry, variable enablement: every
+          action always renders, disabled at zero selection. Destructive actions
+          confirm. // styling: pending design pass */}
+      {bulkActions.length > 0 && (
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 0.5, minHeight: 40 }}>
+          {bulkActions.map((a) => {
+            const disabled = selectedCount === 0;
+            return (
+              <Button
+                key={a.id}
+                size="small"
+                color={a.destructive ? 'error' : 'primary'}
+                // aria-disabled (not `disabled`) keeps the button focusable and
+                // announced, so a screen-reader user discovers the action and,
+                // via the hint, learns why it's inert. The handler no-ops when
+                // disabled; enablement is also conveyed visually (opacity).
+                aria-disabled={disabled}
+                aria-describedby={disabled ? batchHintId : undefined}
+                onClick={() => {
+                  if (disabled) return;
+                  if (
+                    a.destructive &&
+                    typeof window !== 'undefined' &&
+                    !window.confirm(`${a.label} ${selectedCount} selected item(s)?`)
+                  ) {
+                    return;
+                  }
+                  onBulkAction?.(a.id, selectedIds);
+                  table.resetRowSelection();
+                }}
+                sx={{ opacity: disabled ? 0.5 : 1 }}
+              >
+                {a.label}
+              </Button>
+            );
+          })}
+          {/* Why the actions are disabled — referenced by each disabled button. */}
+          <Box
+            component="span"
+            id={batchHintId}
+            sx={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              p: 0,
+              m: -1,
+              overflow: 'hidden',
+              clip: 'rect(0 0 0 0)',
+              whiteSpace: 'nowrap',
+              border: 0,
+            }}
+          >
+            Select one or more rows to enable batch actions.
+          </Box>
+        </Stack>
+      )}
+
+      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+        {/* Internal search is only for lists with no page-level filter bar;
+            when search lives in BeamFilterBar this toolbar renders nothing. */}
+        {searchable && (
+          <Toolbar variant="dense" sx={{ gap: 2, borderBottom: 1, borderColor: 'divider' }}>
             <TextField
               size="small"
               placeholder="Search"
@@ -237,9 +285,8 @@ export function BeamDataTable<Row>({
               }}
               sx={{ width: 280 }}
             />
-          )}
-        </Toolbar>
-      )}
+          </Toolbar>
+        )}
 
       <TableContainer>
         <Table size="small" aria-label={ariaLabel}>
@@ -331,6 +378,14 @@ export function BeamDataTable<Row>({
                       sx={{ ...railStickySx, zIndex: 2, width: 1, whiteSpace: 'nowrap' }}
                     >
                       <Stack direction="row" alignItems="center">
+                        {selectable && (
+                          <Checkbox
+                            checked={row.getIsSelected()}
+                            onChange={row.getToggleSelectedHandler()}
+                            inputProps={{ 'aria-label': `Select row ${row.id}` }}
+                          />
+                        )}
+                        {rowMenu && <RailKebab items={rowMenu(row.original)} />}
                         {renderExpanded && (
                           <IconButton
                             size="small"
@@ -344,14 +399,6 @@ export function BeamDataTable<Row>({
                             )}
                           </IconButton>
                         )}
-                        {selectable && (
-                          <Checkbox
-                            checked={row.getIsSelected()}
-                            onChange={row.getToggleSelectedHandler()}
-                            inputProps={{ 'aria-label': `Select row ${row.id}` }}
-                          />
-                        )}
-                        {rowMenu && <RailKebab items={rowMenu(row.original)} />}
                       </Stack>
                     </TableCell>
                   )}
@@ -380,17 +427,21 @@ export function BeamDataTable<Row>({
         </Table>
       </TableContainer>
 
-      {paginated && (
-        <TablePagination
-          component="div"
-          count={table.getFilteredRowModel().rows.length}
-          page={table.getState().pagination.pageIndex}
-          onPageChange={(_, p) => table.setPageIndex(p)}
-          rowsPerPage={table.getState().pagination.pageSize}
-          onRowsPerPageChange={(e) => table.setPageSize(parseInt(e.target.value, 10))}
-          rowsPerPageOptions={[5, 10, 25]}
-        />
+      {/* Footer: selection count on the left, pagination on the right (grammar
+          §4). The count is always present when selectable — constant geometry,
+          zero-state included — and aria-live so its changes are announced. The
+          footer border-top is the styling pass. // styling: pending design pass */}
+      {selectable ? (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="body2" aria-live="polite" sx={{ pl: 2, color: 'text.secondary' }}>
+            {selectedCount === 0 ? 'No rows selected' : `${selectedCount} selected`}
+          </Typography>
+          {paginationEl ?? <Box />}
+        </Box>
+      ) : (
+        paginationEl
       )}
-    </Paper>
+      </Paper>
+    </>
   );
 }
