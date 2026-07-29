@@ -156,16 +156,12 @@ should not carry a batch bar just because the table can.
 |---|---|---|---|
 | **Users** | none (inline Active toggle only) | none | No combination — clause N/A. |
 | **Roles** | kebab: Edit / Users in Role / Delete | none | One set — clean. |
-| **Payout Configs** | kebab: Edit / Clone / Delete | Go Live / Delete | **Both — under review.** |
+| **Payout Configs** | kebab: Edit + Enable/Disable | none | ✅ One set — resolved by product docs. |
 
-**Payout Configs** (recommendation, pending Georgi — trimming actions is a
-product call): the row set earns its place (Edit, and especially **Clone**, are
-inherently per-record). The batch set is unproven on a new page — batch
-**Delete** duplicates row Delete and is dangerous in bulk; batch **Go Live** is
-the only plausibly-genuine multi need (activating several drafts for a launch).
-Recommendation: default to **row-actions-only** unless a bulk go-live workflow is
-confirmed, then keep batch Go Live only. Left as-is in code pending that
-conversation (taken to Georgi alongside the one-list IA question).
+*Resolved 2026-07-29 — Payout Configs.* Georgi's Design Brief settled it: no
+Delete, no bulk workflows. The page now carries **row actions only** (Edit +
+Enable/Disable) and renders **no batch strip**. The earlier "both — under review"
+combination is gone; the clause is satisfied by the product spec, not a guess.
 
 *Reconcile-later (2026-07-29): §5 declares Users with a kebab (reset password,
 deactivate) and bulk (activate/deactivate, assign role), but the shipped code

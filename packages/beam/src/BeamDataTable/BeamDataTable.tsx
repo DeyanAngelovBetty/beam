@@ -121,6 +121,7 @@ export function BeamDataTable<Row>({
   onBulkAction,
   searchable = false,
   paginated = false,
+  defaultPageSize = 10,
   renderExpanded,
   rowMenu,
   onRowClick,
@@ -159,6 +160,7 @@ export function BeamDataTable<Row>({
     data: rows,
     columns: columnDefs,
     getRowId,
+    initialState: { pagination: { pageSize: defaultPageSize } },
     state: { sorting, rowSelection, expanded, globalFilter },
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
@@ -201,7 +203,7 @@ export function BeamDataTable<Row>({
       onPageChange={(_, p) => table.setPageIndex(p)}
       rowsPerPage={table.getState().pagination.pageSize}
       onRowsPerPageChange={(e) => table.setPageSize(parseInt(e.target.value, 10))}
-      rowsPerPageOptions={[5, 10, 25]}
+      rowsPerPageOptions={[...new Set([5, 10, 25, defaultPageSize])].sort((a, b) => a - b)}
     />
   ) : null;
 

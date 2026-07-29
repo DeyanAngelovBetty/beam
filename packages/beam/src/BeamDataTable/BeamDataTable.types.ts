@@ -64,6 +64,8 @@ export interface BeamDataTableProps<Row> {
   searchable?: boolean;
   /** Built-in pagination footer */
   paginated?: boolean;
+  /** Initial rows per page (paginated only). Default 10; added to the options. */
+  defaultPageSize?: number;
   /** Enables per-row expansion — progressive disclosure (Yoda §2.4) */
   renderExpanded?: (row: Row) => ReactNode;
   /**

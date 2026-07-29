@@ -15,8 +15,8 @@ import {
 import type { BeamColumn, BeamRowMenuItem } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import BlockIcon from '@mui/icons-material/Block';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import {
   PAYOUT_CONFIGS,
@@ -31,16 +31,14 @@ import {
 } from './payoutConfigs';
 
 /**
- * Payout Configs — the first MetaGame back-office list, assembled from Beam
- * pieces per the list grammar. ONE list for every game type, with GameType a
- * promoted filter (the legacy Yoda split them into nav items — that's
- * navigation doing a filter's job; provisional, see docs/metagame-pages.md).
+ * Payout Configs — the first MetaGame back-office list, aligned to Georgi's
+ * Design Brief (2026-07-29). ONE list for every game type (IA confirmed), with
+ * GameType + Status as exact-match promoted filters.
  *
- * §5 declaration: promoted filters GameType + Status · tier 3 (row click →
- * /payout-configs/:id, Name is the identity link) · rail expand+select+kebab
- * (Edit / Clone / Delete) · bulk Go Live / Delete (destructive) · no inline
- * cell control. The rail caret expands the Yoda preview (grammar §3) — tier 3
- * and expansion coexist.
+ * §5 declaration (post-brief): promoted filters GameType + Status · tier 3 (row
+ * click → /payout-configs/:id, Name is the identity link) · rail expand + kebab
+ * (Edit + Enable/Disable — no Delete, brief) · NO batch actions (brief specifies
+ * none) · no inline cell control. The rail caret expands the Yoda preview.
  */
 
 interface Applied {
@@ -60,12 +58,22 @@ function toParams(d: Applied): URLSearchParams {
   return p;
 }
 
+// Row actions are stubbed — behaviour wiring is a later round; only navigation
+// is real. Enable/Disable dialogs ship PLAIN (window.confirm); the real dialog
+// and its exact copy come from brief §10.1 (not yet in-repo).
+function confirmToggle(config: PayoutConfig, next: 'Enable' | 'Disable') {
+  if (typeof window === 'undefined') return;
+  if (window.confirm(`${next} "${config.name}"?`)) {
+    console.log(next.toLowerCase(), config.id);
+  }
+}
+
 export function PayoutConfigsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Applied filters live in the URL (shareable, refresh-proof); the draft is
-  // local until the Filter button submits (list §1).
+  // local until the Filter button submits (list §1). Filters are exact-match.
   const gameTypeParam = searchParams.get('gameType');
   const statusParam = searchParams.get('status');
   const applied: Applied = {
@@ -87,6 +95,8 @@ export function PayoutConfigsPage() {
 
   const isApplied = applied.q !== '' || applied.gameType !== 'any' || applied.status !== 'any';
 
+  // Columns per brief §5.1: Name (API Code), Game type, Status, Rows — plus Avg
+  // payout, which is OUR enhancement (not in the brief spec), and Updated.
   const columns: BeamColumn<PayoutConfig>[] = [
     {
       key: 'name',
@@ -96,7 +106,7 @@ export function PayoutConfigsPage() {
       isIdentity: true,
       getHref: (c) => `${import.meta.env.BASE_URL}payout-configs/${c.id}`,
     },
-    { key: 'gameType', header: 'Game type', render: (c) => c.gameType, getValue: (c) => c.gameType, width: 160 },
+    { key: 'gameType', header: 'Game type', render: (c) => c.gameType, getValue: (c) => c.gameType, width: 170 },
     {
       key: 'status',
       header: 'Status',
@@ -107,7 +117,9 @@ export function PayoutConfigsPage() {
         return <BeamStatusBadge status={b.status} label={b.label} size="small" />;
       },
     },
+    { key: 'rows', header: 'Rows', align: 'right', width: 90, getValue: (c) => c.rows.length, render: (c) => c.rows.length },
     {
+      // Our enhancement, not in the brief's column spec — see metagame-pages.md.
       key: 'avg',
       header: 'Avg payout',
       align: 'right',
@@ -118,18 +130,12 @@ export function PayoutConfigsPage() {
     { key: 'updated', header: 'Updated', align: 'right', width: 130, getValue: (c) => c.updatedAt, render: (c) => c.updatedAt },
   ];
 
-  // Actions are stubbed to the console — behaviour wiring is a later round;
-  // only navigation is real this commit.
+  // Kebab: Edit + Enable/Disable (brief §10.1). No Delete (brief: no delete).
   const rowMenu = (c: PayoutConfig): BeamRowMenuItem[] => [
     { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onClick: () => console.log('edit', c.id) },
-    { id: 'clone', label: 'Clone', icon: <ContentCopyIcon fontSize="small" />, onClick: () => console.log('clone', c.id) },
-    {
-      id: 'delete',
-      label: 'Delete',
-      icon: <DeleteIcon fontSize="small" />,
-      onClick: () => console.log('delete', c.id),
-      destructive: true,
-    },
+    c.status === 'Enabled'
+      ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onClick: () => confirmToggle(c, 'Disable') }
+      : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onClick: () => confirmToggle(c, 'Enable') },
   ];
 
   return (
@@ -192,17 +198,12 @@ export function PayoutConfigsPage() {
         columns={columns}
         rows={rows}
         getRowId={(c) => c.id}
-        selectable
-        bulkActions={[
-          { id: 'golive', label: 'Go Live' },
-          { id: 'delete', label: 'Delete', destructive: true },
-        ]}
-        onBulkAction={(actionId, ids) => console.log('bulk', actionId, ids)}
         rowMenu={rowMenu}
         renderExpanded={(c) => <PayoutPreview config={c} />}
         onRowClick={(c) => navigate(`/payout-configs/${c.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated
+        defaultPageSize={20}
         emptyMessage="No payout configs match these filters."
         aria-label="Payout configs"
       />
