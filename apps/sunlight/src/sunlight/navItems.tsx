@@ -9,7 +9,7 @@ import type { BeamNavItem } from '@betty/beam';
 export type SunlightPage =
   | 'loyalty-status'
   | 'perks'
-  | 'payout-tables'
+  | 'payout-configs'
   | 'prize-wall'
   | 'users'
   | 'roles';
@@ -17,7 +17,7 @@ export type SunlightPage =
 export const PAGE_PATH: Record<SunlightPage, string> = {
   'loyalty-status': '/',
   perks: '/perks',
-  'payout-tables': '/payout-tables',
+  'payout-configs': '/payout-configs',
   'prize-wall': '/prize-wall',
   users: '/users',
   roles: '/roles',
@@ -55,7 +55,7 @@ export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[]
     {
       label: 'Betty Meta Games',
       icon: <CasinoIcon />,
-      children: [leaf('Payout Tables', 'payout-tables')],
+      children: [leaf('Payout Configs', 'payout-configs')],
     },
     // Prize Wall — the renamed Token Campaigns, now a top-level destination.
     { ...leaf('Prize Wall', 'prize-wall'), icon: <RedeemIcon /> },
