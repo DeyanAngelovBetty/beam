@@ -13,7 +13,6 @@ import {
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BlockIcon from '@mui/icons-material/Block';
 import { RouterIdentityLink } from './RouterIdentityLink';
@@ -22,8 +21,6 @@ import {
   PAYOUT_CONFIGS,
   GAME_TYPES,
   PAYOUT_STATUSES,
-  expectedAvgPayout,
-  formatPayout,
   statusBadge,
   type PayoutConfig,
   type GameType,
@@ -117,25 +114,18 @@ export function PayoutConfigsPage() {
         return <BeamStatusBadge status={b.status} label={b.label} size="small" />;
       },
     },
-    { key: 'rows', header: 'Rows', align: 'right', width: 90, getValue: (c) => c.rows.length, render: (c) => c.rows.length },
-    {
-      // Our enhancement, not in the brief's column spec — see metagame-pages.md.
-      key: 'avg',
-      header: 'Avg payout',
-      align: 'right',
-      width: 150,
-      getValue: (c) => expectedAvgPayout(c),
-      render: (c) => formatPayout(expectedAvgPayout(c)),
-    },
-    { key: 'updated', header: 'Updated', align: 'right', width: 130, getValue: (c) => c.updatedAt, render: (c) => c.updatedAt },
+    // Columns per Georgi (Slack, 2026-07-30): Name | Game Type | Status |
+    // Payout Rows | Actions (the rail kebab). Avg Payout (our enhancement) was
+    // vetoed; Updated dropped — see metagame-pages.md.
+    { key: 'rows', header: 'Payout Rows', align: 'right', width: 120, getValue: (c) => c.rows.length, render: (c) => c.rows.length },
   ];
 
   // The row's actions — ONE definition, projected to both the kebab and the
-  // expansion action bar (grammar §3). Edit → detail · Clone (stub) ·
-  // Enable ↔ Disable (state-dependent). No Delete (brief §10).
+  // expansion action bar (grammar §3). Edit → detail · Enable ↔ Disable
+  // (state-dependent). Clone removed per Georgi (Slack, 2026-07-30); no Delete
+  // (brief §10). One place changes; every surface follows.
   const rowActions = (c: PayoutConfig): BeamRowAction[] => [
     { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/payout-configs/${c.id}`) },
-    { id: 'clone', label: 'Clone', icon: <ContentCopyIcon fontSize="small" />, onSelect: () => console.log('clone', c.id) },
     c.status === 'Enabled'
       ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Disable') }
       : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Enable') },

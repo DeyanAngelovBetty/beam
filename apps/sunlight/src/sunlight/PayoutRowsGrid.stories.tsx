@@ -4,9 +4,10 @@ import { PayoutRowsGrid } from './PayoutRowsGrid';
 import type { PayoutRow } from './payoutConfigs';
 
 /**
- * Lab bench for the PayoutRowsGrid — the designed expansion content (view half
- * of the future two-mode PayoutRow pattern). Exercises the merged-cell / reward
- * -line structure, the quiet zero-probability row, and wrapping messages.
+ * Lab bench for the PayoutRowsGrid — the expansion content (view half of the
+ * future two-mode PayoutRow pattern). Win Message | Probability (%) | Rewards
+ * (inline, comma-joined). Exercises single/multi rewards, the quiet
+ * zero-probability row, and a wrapping message.
  */
 const meta = {
   title: 'Lab/Sunlight/PayoutRowsGrid',
@@ -52,16 +53,16 @@ const longMessage: PayoutRow = {
   ],
 };
 
-/** One reward line — the simplest payout row. */
+/** One reward — the simplest payout row. */
 export const SingleRewardRow: Story = { args: { rows: [single] } };
 
-/** Multiple reward lines — Win Message + Probability merge across them. */
+/** Multiple rewards — listed inline in the Rewards column, comma-joined. */
 export const MultiRewardRow: Story = { args: { rows: [multi] } };
 
 /** Zero-probability ("visual only") row — same grid, dimmed quiet. */
 export const ZeroProbabilityRow: Story = { args: { rows: [zero] } };
 
-/** A long win message wraps; the merged cells stay top-aligned. */
+/** A long win message wraps; cells stay top-aligned. */
 export const LongWrappingMessage: Story = {
   render: (args) => (
     <Box sx={{ maxWidth: 520 }}>
@@ -71,7 +72,7 @@ export const LongWrappingMessage: Story = {
   args: { rows: [longMessage] },
 };
 
-/** A full table mirroring the mock's data — merged rows, a no-win line, a quiet row. */
+/** A full table — multi-reward rows, a no-win line, and a quiet zero-probability row. */
 export const FullTable: Story = {
   args: {
     rows: [

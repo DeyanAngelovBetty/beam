@@ -51,25 +51,36 @@ vocabulary**, no union extension:
   per brief).** GameType is a promoted filter, not per-type nav entries. *(Was
   provisional pending Georgi; the brief confirms the single list.)*
 
-## Columns & filters (brief §5.1)
+## Columns & filters
 
-- Columns: **Name** (API Code) · **Game type** · **Status** · **Rows** (count) ·
-  **Avg payout** · **Updated**.
-  - **Avg payout is OUR enhancement**, not in the brief's column spec — kept
-    because it makes the list scannable and it's the same number the detail
-    page's Live Checks will surface. Flagged here as ours-not-spec.
-- Filters: **exact-match** semantics on Game type + Status; search over name/id.
-- Pagination: default **20** rows/page (`BeamDataTable defaultPageSize`).
+*Per Georgi (Slack, 2026-07-30):* Columns are **Name** (API Code) · **Game
+Type** · **Status** · **Payout Rows** (count) · **Actions** (the rail kebab).
+- **Avg Payout — VETOED.** It was our enhancement (ours-not-spec); Georgi cut
+  it. The number still feeds the detail page's Live Checks, just not the list.
+- **Updated — dropped** from the list.
+- Filters: **exact-match** semantics on Game Type + Status; search over name/id.
+  Sorting + pagination (default **20**) unchanged.
 
-## Actions (brief)
+## Actions
 
-- Row kebab: **Edit** + **Enable/Disable** (the toggle shows the opposite of the
-  current status). Confirmation dialogs ship **plain** (`window.confirm`); the
-  real dialog + exact copy come from brief §10.1.
-- **No Delete** anywhere (brief). **No batch actions** — the brief specifies no
-  bulk workflows, so this page renders none. The persistent batch strip remains
-  a BeamDataTable capability + list-grammar doctrine for pages that earn it
-  (list-grammar §4, §6); Payout Configs simply isn't one.
+*Per Georgi (Slack, 2026-07-30):* the row's actions are **Edit** + **Enable ↔
+Disable** only (the toggle shows the opposite of the current status). **Clone
+removed.** Defined once as `rowActions` (list-grammar §3) and projected to both
+the kebab and the expansion action bar — one place changes, every surface
+follows. Confirmation dialogs ship **plain** (`window.confirm`); real copy is
+brief §10.1.
+- **No Delete** anywhere (brief §10). **No batch actions** — the brief specifies
+  no bulk workflows, so this page renders none. The persistent batch strip
+  remains a BeamDataTable capability + list-grammar doctrine for pages that earn
+  it (list-grammar §4, §6); Payout Configs isn't one.
+
+## PayoutRowsGrid (expansion content)
+
+*Per Georgi (Slack, 2026-07-30):* **Win Message | Probability | Rewards**.
+Rewards are one column, listed inline per row ("3.00 BTY, 2.00 Tokens", via the
+display label map). Probability displays as a **percentage** (stored 0..1, ×100,
+no trailing-zero padding). The earlier merged-cell / rowSpan anatomy (a line per
+reward) was superseded; it may return in the **editor** half of the pattern.
 
 ## Pages planned (brief screen inventory)
 
