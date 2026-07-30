@@ -112,6 +112,22 @@ by param.
   (retained across update; new rows assigned; omitted rows removed). The editor
   pairs it with a client-only `_key`.
 
+## Game Configs list (2026-07-30)
+
+- Route: `/game-configs`, under **Betty Meta Games**, beside Payout Configs.
+- Columns: **Name** (the API `Code`) · **Game Type** · **Status** ·
+  **Targeting Rules** (count).
+- Promoted filters: search over Code/Id · exact-match Game Type · exact-match
+  Status. Sorting and pagination follow Payout Configs.
+- Tier 3 row click, with rail expand + kebab. Row actions are **Edit** and the
+  state-dependent **Enable/Disable** action only; no Delete, Clone, or batch
+  actions.
+- Expansion renders rules in descending priority/evaluation order. Each config
+  has exactly one enabled, conditionless fallback, rendered last and explicitly
+  labelled. Conditional groups are displayed read-only as All/Any summaries;
+  the condition-builder editor remains design-lane and is not part of this
+  slice.
+
 ## Pages planned (brief screen inventory)
 
 - **Payout Configs — list** ✓ (`/payout-configs`).
