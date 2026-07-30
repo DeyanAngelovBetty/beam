@@ -88,14 +88,18 @@ export function PayoutRowsEditor({
     // (the strip spans the grid width, not the page width).
     <Box sx={{ width: 'fit-content' }}>
       <Stack spacing={1.5}>
-        <Typography variant="subtitle2" color="text.secondary">
+        {/* <Typography variant="subtitle2" color="text.secondary">
           Payout Rows
-        </Typography>
+        </Typography> */}
 
         {/* Chrome strip ABOVE the grid: Live Check (+ aggregate errors) left,
             Add Row right. The Live Check is BeamStat severity's first consumer
             (detail §2): exact = quiet · under = warning · over = danger. */}
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+          <Button size="small" startIcon={<AddIcon />} onClick={addRow}>
+            Add Row
+          </Button>
+
           <Stack spacing={0.5}>
             <Stack direction="row" spacing={4} alignItems="flex-start">
               <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
@@ -107,9 +111,7 @@ export function PayoutRowsEditor({
               </Typography>
             )}
           </Stack>
-          <Button size="small" startIcon={<AddIcon />} onClick={addRow}>
-            Add Row
-          </Button>
+
         </Stack>
 
         {/* Editable → interactive surface, so bordered (detail-grammar §1.2).
