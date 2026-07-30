@@ -225,6 +225,7 @@ export function BeamDataTable<Row>({
     left: 0,
     pl: 0.5,
     width: '1%',
+    verticalAlign: 'top',
     backgroundColor: 'background.paper',
     // Scroll-affordance elevation (constant geometry — pigment/elevation only,
     // detail-grammar §1). At scrollLeft 0 both are gone; a rightward shadow +
