@@ -1,4 +1,4 @@
-import { Fragment, useId, useMemo, useState, type ComponentType, type MouseEvent } from 'react';
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type ComponentType, type MouseEvent } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -40,6 +40,12 @@ import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
 import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps } from './BeamDataTable.types';
 import { isWhiteSpaceLike } from 'typescript';
+
+// Rail scroll-affordance elevation — a truth-conditional cue shown only while
+// content actually scrolls under the pinned rail. Values are placeholders.
+// elevation: Deyan tunes on the bench
+const RAIL_SCROLLED_SHADOW = '4px 0 6px -3px rgba(0, 0, 0, 0.18)';
+const RAIL_DIVIDER_INSET = 6; // px top/bottom inset so the rule doesn't bleed to the cell's vertical edges
 
 /**
  * The kebab that opens a row's overflow menu. Dim at rest, full on row
@@ -180,6 +186,33 @@ export function BeamDataTable<Row>({
   const batchHintId = useId();
   const visibleRows = table.getRowModel().rows;
 
+  // Rail scroll affordance — BASE path. The scroll-state container query is the
+  // enhancement (Chrome, pure CSS); where it's unsupported (Safari/Firefox) this
+  // passive, rAF-throttled listener toggles data-rail-scrolled on the scroller.
+  // Feature-gated so supporting engines run zero JS (squircle/grid-lanes posture).
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const supportsScrollState =
+      typeof CSS !== 'undefined' && CSS.supports?.('container-type', 'scroll-state');
+    if (supportsScrollState) return; // enhancement handles it — no listener
+    let raf = 0;
+    const apply = () => {
+      raf = 0;
+      el.dataset.railScrolled = el.scrollLeft > 0 ? 'true' : 'false';
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(apply);
+    };
+    apply();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   // One pinned rail column holds all row controls, in fixed order
   // [select][kebab][expand] — each rendered only if enabled (grammar §3):
   // selection anchors the rail's outer edge; the expand caret sits innermost,
@@ -193,6 +226,35 @@ export function BeamDataTable<Row>({
     pl: 0.5,
     width: '1%',
     backgroundColor: 'background.paper',
+    // Scroll-affordance elevation (constant geometry — pigment/elevation only,
+    // detail-grammar §1). At scrollLeft 0 both are gone; a rightward shadow +
+    // an inset right-edge divider fade in while content scrolls under the rail.
+    // Both transition on the quick motion token (reduced-motion zeros it →
+    // instant). Header + body rail cells inherit this via the shared spread.
+    transition: 'box-shadow var(--beam-motion-quick)',
+    boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      top: `${RAIL_DIVIDER_INSET}px`,
+      bottom: `${RAIL_DIVIDER_INSET}px`,
+      right: 0,
+      width: '1px',
+      backgroundColor: 'divider',
+      opacity: 0,
+      transition: 'opacity var(--beam-motion-quick)',
+      pointerEvents: 'none',
+    },
+    // Enhancement (Chrome): scroll-state container query — pure CSS, no JS. True
+    // when there is content hidden toward the inline-start (i.e. scrolled right).
+    '@container scroll-state(scrollable: inline-start)': {
+      boxShadow: RAIL_SCROLLED_SHADOW,
+      '&::after': { opacity: 1 },
+    },
+    // Base (Safari/Firefox): the scroll listener sets data-rail-scrolled on the
+    // scroll container where scroll-state queries aren't supported.
+    '[data-rail-scrolled="true"] &': { boxShadow: RAIL_SCROLLED_SHADOW },
+    '[data-rail-scrolled="true"] &::after': { opacity: 1 },
   };
 
   const paginationEl = paginated ? (
@@ -293,7 +355,9 @@ export function BeamDataTable<Row>({
           </Toolbar>
         )}
 
-      <TableContainer>
+      {/* The scroll container also queries its own scroll state (enhancement).
+          The cast: 'scroll-state' is newer than csstype's container-type union. */}
+      <TableContainer ref={scrollRef} sx={{ containerType: 'scroll-state' as 'normal' }}>
         <Table size="small" aria-label={ariaLabel}>
           <TableHead>
             <TableRow>

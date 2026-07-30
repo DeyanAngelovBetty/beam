@@ -71,6 +71,14 @@ Row *actions* have exactly three homes:
    *Amended 2026-07-29: rail order is `[select][⋮][expand]` — selection anchors
    the rail's outer edge (the row's coarsest handle), and the expand caret sits
    innermost, nearest the row content it opens.*
+
+   *Amended 2026-07-30: rail elevation is a **truth-conditional** cue. When the
+   table scrolls horizontally and content passes under the pinned rail, the rail
+   gains a rightward shadow + an inset right-edge divider (pigment/elevation
+   only — geometry never moves, constant-geometry family). Both are fully gone
+   at scrollLeft 0 and fade on the quick motion token. Chrome uses a scroll-state
+   container query; other engines a feature-gated scroll listener. The footer
+   row is outside the scroll container, so it correctly shows no cue.*
 2. **Inside the detail surface** — edit/save/delete live where the record is open,
    with room for labels and confirmation.
 3. **The bulk bar** — for multi (below).

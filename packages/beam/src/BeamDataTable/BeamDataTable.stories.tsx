@@ -4,6 +4,7 @@ import type { BeamColumn } from './BeamDataTable.types';
 import { BeamStatusBadge } from '../BeamStatusBadge/BeamStatusBadge';
 import type { BeamStatus } from '../BeamStatusBadge/BeamStatusBadge.types';
 import Stack from '@mui/material/Stack';
+import Box from '@mui/material/Box';
 
 /** Realistic Sunlight shape: perks management list (Beam candidate page) */
 interface Perk {
@@ -169,6 +170,29 @@ export const RowControlsRail: StoryObj = {
       ]}
       aria-label="Perks with row controls rail"
     />
+  ),
+};
+
+/**
+ * Rail scroll affordance: a deliberately narrow container forces horizontal
+ * scroll so the bench can exercise the pinned rail's elevation cue. At
+ * scrollLeft 0 the rail is flush — no divider, no shadow; scroll right and a
+ * rightward shadow + an inset right-edge divider fade in (geometry never moves).
+ * Chrome drives it with the scroll-state container query; Safari/Firefox via the
+ * JS base. Shadow/divider values are plain — Deyan tunes them on the bench.
+ */
+export const RailScrollAffordance: StoryObj = {
+  render: () => (
+    <Box sx={{ maxWidth: 480 }}>
+      <BeamDataTable<Perk>
+        columns={wideColumns}
+        rows={rows}
+        getRowId={(r) => r.id}
+        selectable
+        rowMenu={(r) => [{ id: 'edit', label: 'Edit', onClick: () => console.log('edit', r.id) }]}
+        aria-label="Rail scroll affordance demo"
+      />
+    </Box>
   ),
 };
 
