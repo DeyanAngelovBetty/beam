@@ -110,6 +110,11 @@ page-header
 └────────────────────────────────────────────┘
 ```
 
+- **The back link is header anatomy** *(2026-07-30):* the breadcrumb row is
+  owned by `BeamPageHeader` (the `back` prop: `{ label, href?, onClick? }`),
+  never hand-rolled above the header. `href` gives real-anchor semantics,
+  `onClick` intercepts a plain left-click for SPA nav; a callback with no `href`
+  (screen-state back) renders an accessible button.
 - **Save model: the page-header actions slot.** View mode: `[Edit]`. Edit mode:
   `[Cancel] [Save]`, with Save enabled by dirty state. Nothing applies live.
 - The separate dirty-state commit bar ("n changes · Save · Discard") is

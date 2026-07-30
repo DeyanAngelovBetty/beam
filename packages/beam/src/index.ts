@@ -98,7 +98,7 @@ export type { BeamStatProps, BeamStatTone, BeamStatSeverity } from './BeamStat/B
 // stable name and API now; the eventual design lands in one place instead of
 // a dozen inline copies. Expect these to change — that is the point.
 export { BeamPageHeader } from './BeamPageHeader/BeamPageHeader';
-export type { BeamPageHeaderProps } from './BeamPageHeader/BeamPageHeader.types';
+export type { BeamPageHeaderProps, BeamBackLink } from './BeamPageHeader/BeamPageHeader.types';
 export { BeamTabs } from './BeamTabs/BeamTabs';
 export type { BeamTabsProps, BeamTabItem } from './BeamTabs/BeamTabs.types';
 export { BeamFilterBar } from './BeamFilterBar/BeamFilterBar';

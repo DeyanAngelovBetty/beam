@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { Stack, Button, BeamPageHeader } from '@betty/beam';
+import { Stack, BeamPageHeader } from '@betty/beam';
 import { ROLES } from './roles';
+import { backTo } from './backTo';
 
 /**
  * Role deep page — STUB. The permission matrix is a later design round
@@ -15,12 +16,8 @@ export function RolePage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title={role ? role.name : `Role ${id}`}
+        back={backTo(navigate, '/roles', 'Roles')}
         description={role ? role.description : 'Unknown role'}
-        secondaryActions={
-          <Button variant="text" onClick={() => navigate('/roles')}>
-            ← Roles
-          </Button>
-        }
       />
     </Stack>
   );

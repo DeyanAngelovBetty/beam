@@ -101,12 +101,8 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
     <Stack spacing={3}>
       <BeamPageHeader
         title={`${CURRENT_PLAYER.firstName} ${CURRENT_PLAYER.lastName}`}
+        back={{ label: 'Search', onClick: onBack }}
         description={`Player ID ${CURRENT_PLAYER.id}`}
-        secondaryActions={
-          <Button variant="text" onClick={onBack}>
-            Back to search
-          </Button>
-        }
         action={<Button variant="contained">Quick actions</Button>}
         summary={
           <>

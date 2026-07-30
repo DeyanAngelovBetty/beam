@@ -63,3 +63,26 @@ export const WithSummary: Story = {
     ),
   },
 };
+
+/**
+ * Detail page: the back link is header anatomy (detail-grammar §4), owned by the
+ * organism. Href form — a real anchor for a router page (new-tab / copy work).
+ */
+export const WithBackLink: Story = {
+  args: {
+    title: 'Edna Schimmel',
+    back: { label: 'Users', href: '#/users' },
+    description: 'Player ID 257291',
+    action: <Button variant="contained">Edit</Button>,
+  },
+};
+
+/** Back link, callback form — a screen-state "back" with no URL (renders a button). */
+export const WithBackCallback: Story = {
+  args: {
+    title: 'Edna Schimmel',
+    back: { label: 'Search', onClick: () => {} },
+    description: 'Player ID 257291',
+    action: <Button variant="contained">Quick actions</Button>,
+  },
+};

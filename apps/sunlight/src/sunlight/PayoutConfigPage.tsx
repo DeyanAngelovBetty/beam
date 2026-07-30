@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { Stack, Button, BeamPageHeader } from '@betty/beam';
+import { Stack, BeamPageHeader } from '@betty/beam';
 import { PAYOUT_CONFIGS } from './payoutConfigs';
+import { backTo } from './backTo';
 
 /**
  * Payout Config deep page — STUB. The full detail (row editor + the Live Checks
@@ -16,12 +17,8 @@ export function PayoutConfigPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title={config ? config.name : `Config ${id}`}
+        back={backTo(navigate, '/payout-configs', 'Payout Configs')}
         description={config ? `${config.gameType} · ${config.status}` : 'Unknown payout config'}
-        secondaryActions={
-          <Button variant="text" onClick={() => navigate('/payout-configs')}>
-            ← Payout Configs
-          </Button>
-        }
       />
     </Stack>
   );

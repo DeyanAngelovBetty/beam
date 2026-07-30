@@ -7,7 +7,6 @@ import {
   Typography,
   Button,
   TextField,
-  Link,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -28,6 +27,8 @@ import { RolesRail } from './RolesRail';
 import { PageSection } from './PageSection';
 import { useLinking } from './useLinking';
 import { modeBorder } from './surfaceBorder';
+import { backTo } from './backTo';
+import type { BeamBackLink } from '@betty/beam';
 
 const STATS_GRID = {
   display: 'grid',
@@ -58,14 +59,7 @@ export function UserPage({ edit = false }: { edit?: boolean }) {
   if (!detail) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader
-          title="User not found"
-          secondaryActions={
-            <Button variant="text" onClick={() => navigate('/users')}>
-              ← Users
-            </Button>
-          }
-        />
+        <BeamPageHeader title="User not found" back={backTo(navigate, '/users', 'Users')} />
         <BeamEmptyState title={`No user with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -73,25 +67,12 @@ export function UserPage({ edit = false }: { edit?: boolean }) {
 
   const viewPath = `/users/${id}`;
   const editPath = `/users/${id}/edit`;
-  const breadcrumb = (
-    <Link
-      href={`${import.meta.env.BASE_URL}users`}
-      underline="hover"
-      color="text.secondary"
-      variant="body2"
-      onClick={(e) => {
-        e.preventDefault();
-        navigate('/users');
-      }}
-    >
-      ← Users
-    </Link>
-  );
+  const back = backTo(navigate, '/users', 'Users');
 
   return edit ? (
-    <UserEdit detail={detail} viewPath={viewPath} breadcrumb={breadcrumb} linking={linking} />
+    <UserEdit detail={detail} viewPath={viewPath} back={back} linking={linking} />
   ) : (
-    <UserView detail={detail} editPath={editPath} breadcrumb={breadcrumb} linking={linking} />
+    <UserView detail={detail} editPath={editPath} back={back} linking={linking} />
   );
 }
 
@@ -100,12 +81,12 @@ export function UserPage({ edit = false }: { edit?: boolean }) {
 function UserView({
   detail,
   editPath,
-  breadcrumb,
+  back,
   linking,
 }: {
   detail: NonNullable<ReturnType<typeof getUserDetail>>;
   editPath: string;
-  breadcrumb: React.ReactNode;
+  back: BeamBackLink;
   linking: ReturnType<typeof useLinking>;
 }) {
   const navigate = useNavigate();
@@ -114,9 +95,9 @@ function UserView({
 
   return (
     <Stack spacing={2}>
-      {breadcrumb}
       <BeamPageHeader
         title={detail.name}
+        back={back}
         description={detail.email}
         action={
           <Button variant="contained" onClick={() => navigate(editPath)}>
@@ -157,12 +138,12 @@ function UserView({
 function UserEdit({
   detail,
   viewPath,
-  breadcrumb,
+  back,
   linking,
 }: {
   detail: NonNullable<ReturnType<typeof getUserDetail>>;
   viewPath: string;
-  breadcrumb: React.ReactNode;
+  back: BeamBackLink;
   linking: ReturnType<typeof useLinking>;
 }) {
   const navigate = useNavigate();
@@ -256,9 +237,9 @@ function UserEdit({
 
   return (
     <Stack spacing={2}>
-      {breadcrumb}
       <BeamPageHeader
         title={working.name || 'User'}
+        back={back}
         description={working.email}
         secondaryActions={
           <Button variant="text" onClick={() => navigate(viewPath)}>
