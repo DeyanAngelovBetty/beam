@@ -38,6 +38,13 @@ export interface Reward {
 }
 
 export interface PayoutRow {
+  /**
+   * Row identity for the aggregate PUT contract (brief §5.2): rows with an `id`
+   * are retained across an update, rows without one are new, and omitted rows
+   * are removed. The editor pairs this with a client-only `_key` (React) —
+   * `id` is the domain identity, `_key` never leaves the form.
+   */
+  id?: string;
   /** 0..1. Rows with probability 0 are "visual only" — shown, never landed. */
   probability: number;
   winMessage: string;
@@ -228,4 +235,76 @@ export function statusBadge(status: PayoutStatus): { status: BeamStatus; label: 
 /** Format a payout value: grouped thousands, two decimals (2,648.95). */
 export function formatPayout(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Prize type DISPLAY label over the domain reward type — domain stays
+ * Coins | Tokens (Coins → 'BTY'). Candidate for a future i18n / currency pass.
+ */
+export const PRIZE_TYPE_LABEL: Record<RewardType, string> = { Coins: 'BTY', Tokens: 'Tokens' };
+
+// ---- Mock persistence (the seed store as a stand-in API) --------------------
+// Mutates the module array; the list page remounts on navigate and reflects it
+// (same pattern as saveUserEdit). Shapes mirror the brief's create/PUT contract
+// so the real API swap is mechanical.
+
+let idSeq = 0;
+/** Unique id for a config or row (mock; the real API assigns these). */
+export function newId(prefix: 'pc' | 'row'): string {
+  idSeq += 1;
+  return `${prefix}-${Date.now().toString(36)}-${idSeq}`;
+}
+
+export function getPayoutConfig(id: string): PayoutConfig | undefined {
+  return PAYOUT_CONFIGS.find((c) => c.id === id);
+}
+
+/** Name must be unique within its GameType (brief §5.2). Excludes the config being edited. */
+export function nameIsUnique(name: string, gameType: GameType, excludeId?: string): boolean {
+  const n = name.trim().toLowerCase();
+  return !PAYOUT_CONFIGS.some(
+    (c) => c.id !== excludeId && c.gameType === gameType && c.name.trim().toLowerCase() === n
+  );
+}
+
+/** The editor's payload — everything the form owns (status is set by the system). */
+export interface PayoutConfigInput {
+  name: string;
+  gameType: GameType;
+  rows: PayoutRow[];
+}
+
+function stampRows(rows: PayoutRow[]): PayoutRow[] {
+  // Aggregate PUT: retain identity where it exists, assign ids to new rows.
+  return rows.map((r) => ({ ...r, id: r.id ?? newId('row') }));
+}
+
+/** Create — always Disabled (brief §5.2: created as Disabled; activation is separate). */
+export function createPayoutConfig(input: PayoutConfigInput): PayoutConfig {
+  const today = new Date().toISOString().slice(0, 10);
+  const config: PayoutConfig = {
+    id: newId('pc'),
+    name: input.name.trim(),
+    gameType: input.gameType,
+    status: 'Disabled',
+    rows: stampRows(input.rows),
+    createdAt: today,
+    updatedAt: today,
+  };
+  PAYOUT_CONFIGS.push(config);
+  return config;
+}
+
+/**
+ * Update — aggregate replace (brief PUT contract): the sent rows array IS the
+ * new state (existing ids retained, new rows assigned, omitted rows removed).
+ * GameType is read-only on edit (brief §5.2.7), so it is not changed here.
+ */
+export function updatePayoutConfig(id: string, input: PayoutConfigInput): PayoutConfig | undefined {
+  const config = PAYOUT_CONFIGS.find((c) => c.id === id);
+  if (!config) return undefined;
+  config.name = input.name.trim();
+  config.rows = stampRows(input.rows);
+  config.updatedAt = new Date().toISOString().slice(0, 10);
+  return config;
 }

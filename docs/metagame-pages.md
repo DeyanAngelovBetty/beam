@@ -82,12 +82,42 @@ display label map). Probability displays as a **percentage** (stored 0..1, ×100
 no trailing-zero padding). The earlier merged-cell / rowSpan anatomy (a line per
 reward) was superseded; it may return in the **editor** half of the pattern.
 
+## Payout Config — Create / Edit page
+
+*Per Georgi's Create spec (2026-07-30).* Routes: **`/payout-configs/new`**
+(Create) and **`/payout-configs/:id`** (Edit) — one `PayoutConfigEditor`, mode
+by param.
+
+- **No view mode — deliberate divergence.** Brief §5.2 defines only Create/Edit;
+  MetaGame configs are always editable (Enabled configs stay editable, brief
+  §10). This departs from the User page's view↔edit doctrine, on purpose.
+- **Header-actions vs bottom bar — flagged to Georgi.** Cancel + Create/Save sit
+  in the page-header actions slot (detail-grammar §4 save model), not the bottom
+  bar Georgi sketched. Doctrine wins; a one-line move if product overrules. Save
+  is gated on a valid form **and** total probability exactly 100%.
+- **% input supersedes the brief.** Probability is entered as a **percentage**
+  (Georgi's latest, superseding the brief's decimal input); stored domain value
+  stays 0..1. Held as a raw string in the form, converted on save; the sum-to-100
+  Live Check works in percentage space.
+- **Status** is visible (badge) but not editable here (brief §5.2.8); Enable is a
+  separate post-create action. **Game Type** is read-only on edit (brief §5.2.7).
+- **Live Check** (Total + Remaining, BeamStat severity — its first real
+  consumer): 100% → quiet · <100% → `warning` · >100% → `danger`.
+- **Minimums doctrine (one line, so Game Configs inherits it): _structural
+  prevention for local rules, validation for aggregate rules._** ≥1 reward per
+  row and no-duplicate-reward-type are LOCAL → prevented structurally (disabled
+  controls / filtered options). ≥1 row overall and total-=-100% are AGGREGATE →
+  validated (Save blocks, message by the Live Check).
+- **Persistence** mirrors the brief's aggregate PUT: `PayoutRow` gained `id?`
+  (retained across update; new rows assigned; omitted rows removed). The editor
+  pairs it with a client-only `_key`.
+
 ## Pages planned (brief screen inventory)
 
 - **Payout Configs — list** ✓ (`/payout-configs`).
-- **Payout Config — detail/editor** — stub only (`/payout-configs/:id`). Row
-  editor + Live Checks (BeamStat severity over `expectedAvgPayout` /
-  `probabilityTotal`) is a later round.
+- **Payout Config — Create/Edit** ✓ (`/payout-configs/new`, `/payout-configs/:id`).
+  The detail *view* Live Checks over `expectedAvgPayout` are a separate later
+  round (this page is the editor).
 - **Game Configurations — list + editor** (with the condition builder) — pending.
 - **Default Configs mapping** — pending.
 - **Presets** — pending.

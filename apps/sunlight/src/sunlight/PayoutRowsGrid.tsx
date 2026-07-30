@@ -6,7 +6,7 @@ import {
   TableRow,
   TableCell,
 } from '@betty/beam';
-import { formatPayout, type PayoutRow, type RewardType } from './payoutConfigs';
+import { formatPayout, PRIZE_TYPE_LABEL, type PayoutRow } from './payoutConfigs';
 
 /**
  * PayoutRowsGrid — the expansion content for a payout config. This is the VIEW
@@ -21,12 +21,6 @@ import { formatPayout, type PayoutRow, type RewardType } from './payoutConfigs';
  *
  * Styling ships structural + plain; marked values are Deyan's bench pass.
  */
-
-/**
- * Prize type is a DISPLAY label over the domain reward type — the domain stays
- * Coins | Tokens. Candidate mapping for a future i18n / currency pass.
- */
-const PRIZE_TYPE_LABEL: Record<RewardType, string> = { Coins: 'BTY', Tokens: 'Tokens' };
 
 // Zero-probability rows read quiet — dimmed like ungranted ItemRows (opacity).
 const DIMMED_OPACITY = 0.35; // styling: pending design pass

@@ -137,7 +137,7 @@ export function PayoutConfigsPage() {
         title="Payout Configs"
         description="Payout tables across every MetaGame game type."
         action={
-          <Button variant="contained" startIcon={<AddIcon />}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/payout-configs/new')}>
             New config
           </Button>
         }
