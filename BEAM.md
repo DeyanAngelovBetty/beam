@@ -199,6 +199,10 @@ Design against the real model, not a generic BO:
   design iteration *before* page integration. A Lab entry is a question, not a home: it either
   graduates with its component via the promotion path (§2), or is deleted once its question is
   answered. *(2026-07-25.)*
+- **Product collaborators and their agents:** App-local patterns get bench stories 
+  under `Lab/<Product>/<Name>` for isolated design iteration *before* page integration. A Lab 
+  entry is a question, not a home: it either graduates with its component via the promotion 
+  path (§2), or is deleted once its question is answered. *(2026-07-25.)*
 
 ## 10. For AI assistants generating designs (Cowork / Figma agents)
 
