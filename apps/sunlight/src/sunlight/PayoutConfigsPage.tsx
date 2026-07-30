@@ -2,11 +2,9 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Stack,
-  Box,
   Button,
   TextField,
   MenuItem,
-  Typography,
   BeamPageHeader,
   BeamFilterBar,
   BeamDataTable,
@@ -14,10 +12,10 @@ import {
 } from '@betty/beam';
 import type { BeamColumn, BeamRowMenuItem } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BlockIcon from '@mui/icons-material/Block';
 import { RouterIdentityLink } from './RouterIdentityLink';
+import { PayoutRowsGrid } from './PayoutRowsGrid';
 import {
   PAYOUT_CONFIGS,
   GAME_TYPES,
@@ -130,9 +128,9 @@ export function PayoutConfigsPage() {
     { key: 'updated', header: 'Updated', align: 'right', width: 130, getValue: (c) => c.updatedAt, render: (c) => c.updatedAt },
   ];
 
-  // Kebab: Edit + Enable/Disable (brief §10.1). No Delete (brief: no delete).
+  // Kebab: Enable/Disable only — the lifecycle toggle (brief). Edit + Clone
+  // live under the expanded PayoutRowsGrid; there is no Delete (brief §10).
   const rowMenu = (c: PayoutConfig): BeamRowMenuItem[] => [
-    { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onClick: () => console.log('edit', c.id) },
     c.status === 'Enabled'
       ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onClick: () => confirmToggle(c, 'Disable') }
       : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onClick: () => confirmToggle(c, 'Enable') },
@@ -199,7 +197,13 @@ export function PayoutConfigsPage() {
         rows={rows}
         getRowId={(c) => c.id}
         rowMenu={rowMenu}
-        renderExpanded={(c) => <PayoutPreview config={c} />}
+        renderExpanded={(c) => (
+          <PayoutRowsGrid
+            rows={c.rows}
+            onEdit={() => navigate(`/payout-configs/${c.id}`)}
+            onClone={() => console.log('clone', c.id)}
+          />
+        )}
         onRowClick={(c) => navigate(`/payout-configs/${c.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated
@@ -207,58 +211,6 @@ export function PayoutConfigsPage() {
         emptyMessage="No payout configs match these filters."
         aria-label="Payout configs"
       />
-    </Stack>
-  );
-}
-
-/**
- * Row expansion — the Yoda preview pattern: winnable payouts beside visual-only
- * entries. PLAIN scaffold; the preview's design is a later round.
- * // styling: pending design pass
- */
-function PayoutPreview({ config }: { config: PayoutConfig }) {
-  const winnable = config.rows.filter((r) => r.probability > 0);
-  const visualOnly = config.rows.filter((r) => r.probability === 0);
-
-  return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ py: 1 }}>
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Winnable Payouts
-        </Typography>
-        <Stack spacing={0.5}>
-          {winnable.map((r, i) => (
-            <Stack key={i} direction="row" justifyContent="space-between" spacing={2}>
-              <Typography variant="body2">{r.winMessage}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {formatPayout(r.prizeValue)} · {(r.probability * 100).toLocaleString('en-US', { maximumFractionDigits: 2 })}%
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      </Box>
-
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Visual Only
-        </Typography>
-        {visualOnly.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            None.
-          </Typography>
-        ) : (
-          <Stack spacing={0.5}>
-            {visualOnly.map((r, i) => (
-              <Stack key={i} direction="row" justifyContent="space-between" spacing={2}>
-                <Typography variant="body2">{r.winMessage}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatPayout(r.prizeValue)}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
-        )}
-      </Box>
     </Stack>
   );
 }

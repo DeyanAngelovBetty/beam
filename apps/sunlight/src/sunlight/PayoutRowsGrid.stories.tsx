@@ -1,0 +1,105 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Box } from '@betty/beam';
+import { PayoutRowsGrid } from './PayoutRowsGrid';
+import type { PayoutRow } from './payoutConfigs';
+
+/**
+ * Lab bench for the PayoutRowsGrid — the designed expansion content (view half
+ * of the future two-mode PayoutRow pattern). Exercises the merged-cell / reward
+ * -line structure, the quiet zero-probability row, and wrapping messages.
+ */
+const meta = {
+  title: 'Lab/Sunlight/PayoutRowsGrid',
+  component: PayoutRowsGrid,
+  parameters: { layout: 'padded' },
+  args: {
+    onEdit: () => console.log('edit'),
+    onClone: () => console.log('clone'),
+  },
+} satisfies Meta<typeof PayoutRowsGrid>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+const single: PayoutRow = {
+  probability: 0.5,
+  winMessage: 'Win 1 Coin',
+  prizeValue: 1,
+  rewards: [{ rewardType: 'Coins', amount: 1 }],
+};
+
+const multi: PayoutRow = {
+  probability: 0.05,
+  winMessage: '6.25× Bonus',
+  prizeValue: 6.25,
+  rewards: [
+    { rewardType: 'Coins', amount: 6 },
+    { rewardType: 'Tokens', amount: 2 },
+  ],
+};
+
+const zero: PayoutRow = {
+  probability: 0,
+  winMessage: 'Grand Prize (display)',
+  prizeValue: 1000,
+  rewards: [{ rewardType: 'Coins', amount: 1000 }],
+};
+
+const longMessage: PayoutRow = {
+  probability: 0.02,
+  winMessage:
+    'Congratulations — you unlocked the legendary weekend mega-multiplier reward; enjoy your bonus coins and free tokens across the next three sessions',
+  prizeValue: 500,
+  rewards: [
+    { rewardType: 'Coins', amount: 500 },
+    { rewardType: 'Tokens', amount: 10 },
+  ],
+};
+
+/** One reward line — the simplest payout row. */
+export const SingleRewardRow: Story = { args: { rows: [single] } };
+
+/** Multiple reward lines — Win Message + Probability merge across them. */
+export const MultiRewardRow: Story = { args: { rows: [multi] } };
+
+/** Zero-probability ("visual only") row — same grid, dimmed quiet. */
+export const ZeroProbabilityRow: Story = { args: { rows: [zero] } };
+
+/** A long win message wraps; the merged cells stay top-aligned. */
+export const LongWrappingMessage: Story = {
+  render: (args) => (
+    <Box sx={{ maxWidth: 520 }}>
+      <PayoutRowsGrid {...args} />
+    </Box>
+  ),
+  args: { rows: [longMessage] },
+};
+
+/** A full table mirroring the mock's data — merged rows, a no-win line, a quiet row. */
+export const FullTable: Story = {
+  args: {
+    rows: [
+      {
+        probability: 0.5,
+        winMessage: 'Win 1 Coin',
+        prizeValue: 1,
+        rewards: [
+          { rewardType: 'Coins', amount: 1 },
+          { rewardType: 'Tokens', amount: 1 },
+        ],
+      },
+      {
+        probability: 0.3,
+        winMessage: 'Win 3 Coins',
+        prizeValue: 3,
+        rewards: [
+          { rewardType: 'Coins', amount: 3 },
+          { rewardType: 'Tokens', amount: 1 },
+        ],
+      },
+      multi,
+      { probability: 0.13, winMessage: 'No win', prizeValue: 0, rewards: [] },
+      zero,
+    ],
+  },
+};

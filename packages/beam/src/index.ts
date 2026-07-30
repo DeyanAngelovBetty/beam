@@ -72,6 +72,14 @@ export {
   InputLabel,
   CssBaseline,
   useMediaQuery,
+  // Table primitives — for app-local tabular composition (e.g. Sunlight's
+  // PayoutRowsGrid). BeamDataTable uses these internally; these exports serve
+  // hand-built tables that aren't the datagrid organism.
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
 } from '@mui/material';
 
 // Theme infrastructure. Not re-exported by MUI's root entry, so it comes
