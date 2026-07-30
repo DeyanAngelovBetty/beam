@@ -54,15 +54,15 @@ export function PayoutRowsGrid({
 }) {
   return (
     <Stack spacing={1.5} sx={{ py: 1 }}>
-      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-        <Table size="small" aria-label="Payout rows" sx={{ '& td, & th': { verticalAlign: 'top' } }}>
+      <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
+        <Table size="small" aria-label="Payout rows" sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}>
           <TableHead>
             <TableRow>
               <TableCell sx={V_RULE}>Win Message</TableCell>
               <TableCell align="right" sx={V_RULE}>
                 Probability
               </TableCell>
-              <TableCell align="center">Prize Type</TableCell>
+              <TableCell align="left">Prize Type</TableCell>
               <TableCell align="right">Prize Value</TableCell>
             </TableRow>
           </TableHead>
@@ -91,7 +91,7 @@ export function PayoutRowsGrid({
                         </TableCell>
                       </>
                     )}
-                    <TableCell align="center" sx={{ ...cellBottom, ...dim }}>
+                    <TableCell align="left" sx={{ ...cellBottom, ...dim }}>
                       {rw ? PRIZE_TYPE_LABEL[rw.rewardType] : '—'}
                     </TableCell>
                     <TableCell align="right" sx={{ ...cellBottom, ...dim }}>
