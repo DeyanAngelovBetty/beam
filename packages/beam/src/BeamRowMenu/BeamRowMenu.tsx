@@ -5,14 +5,14 @@ import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import Box from '@mui/material/Box';
-import type { BeamRowMenuItem, BeamRowMenuProps } from './BeamRowMenu.types';
+import type { BeamRowAction, BeamRowMenuProps } from './BeamRowMenu.types';
 
-function Item({ item, onClose }: { item: BeamRowMenuItem; onClose: () => void }) {
+function Item({ item, onClose }: { item: BeamRowAction; onClose: () => void }) {
   const menuItem = (
     <MenuItem
       disabled={item.disabled}
       onClick={() => {
-        item.onClick();
+        item.onSelect();
         onClose();
       }}
       sx={item.destructive ? { color: 'error.main' } : undefined}

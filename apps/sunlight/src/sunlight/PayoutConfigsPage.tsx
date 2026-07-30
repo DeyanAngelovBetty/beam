@@ -10,8 +10,10 @@ import {
   BeamDataTable,
   BeamStatusBadge,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowMenuItem } from '@betty/beam';
+import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BlockIcon from '@mui/icons-material/Block';
 import { RouterIdentityLink } from './RouterIdentityLink';
@@ -128,12 +130,15 @@ export function PayoutConfigsPage() {
     { key: 'updated', header: 'Updated', align: 'right', width: 130, getValue: (c) => c.updatedAt, render: (c) => c.updatedAt },
   ];
 
-  // Kebab: Enable/Disable only — the lifecycle toggle (brief). Edit + Clone
-  // live under the expanded PayoutRowsGrid; there is no Delete (brief §10).
-  const rowMenu = (c: PayoutConfig): BeamRowMenuItem[] => [
+  // The row's actions — ONE definition, projected to both the kebab and the
+  // expansion action bar (grammar §3). Edit → detail · Clone (stub) ·
+  // Enable ↔ Disable (state-dependent). No Delete (brief §10).
+  const rowActions = (c: PayoutConfig): BeamRowAction[] => [
+    { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/payout-configs/${c.id}`) },
+    { id: 'clone', label: 'Clone', icon: <ContentCopyIcon fontSize="small" />, onSelect: () => console.log('clone', c.id) },
     c.status === 'Enabled'
-      ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onClick: () => confirmToggle(c, 'Disable') }
-      : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onClick: () => confirmToggle(c, 'Enable') },
+      ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Disable') }
+      : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Enable') },
   ];
 
   return (
@@ -196,14 +201,8 @@ export function PayoutConfigsPage() {
         columns={columns}
         rows={rows}
         getRowId={(c) => c.id}
-        rowMenu={rowMenu}
-        renderExpanded={(c) => (
-          <PayoutRowsGrid
-            rows={c.rows}
-            onEdit={() => navigate(`/payout-configs/${c.id}`)}
-            onClone={() => console.log('clone', c.id)}
-          />
-        )}
+        rowActions={rowActions}
+        renderExpanded={(c) => <PayoutRowsGrid rows={c.rows} />}
         onRowClick={(c) => navigate(`/payout-configs/${c.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated

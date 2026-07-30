@@ -1,7 +1,6 @@
 import {
   Stack,
   Paper,
-  Button,
   Table,
   TableHead,
   TableBody,
@@ -43,15 +42,7 @@ const NO_BORDER = { borderBottom: 0 };
 const formatProbability = (p: number) =>
   p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export function PayoutRowsGrid({
-  rows,
-  onEdit,
-  onClone,
-}: {
-  rows: PayoutRow[];
-  onEdit: () => void;
-  onClone: () => void;
-}) {
+export function PayoutRowsGrid({ rows }: { rows: PayoutRow[] }) {
   return (
     <Stack spacing={1.5} sx={{ py: 1 }}>
       <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
@@ -104,17 +95,6 @@ export function PayoutRowsGrid({
           </TableBody>
         </Table>
       </Paper>
-
-      {/* The mock also shows Delete; omitted per brief §10 (no delete controls).
-          Enable/Disable stays in the row kebab. */}
-      <Stack direction="row" spacing={1}>
-        <Button variant="outlined" size="small" onClick={onEdit}>
-          Edit
-        </Button>
-        <Button variant="outlined" size="small" onClick={onClone}>
-          Clone
-        </Button>
-      </Stack>
     </Stack>
   );
 }

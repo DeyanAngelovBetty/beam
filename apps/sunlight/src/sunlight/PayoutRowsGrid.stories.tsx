@@ -12,10 +12,6 @@ const meta = {
   title: 'Lab/Sunlight/PayoutRowsGrid',
   component: PayoutRowsGrid,
   parameters: { layout: 'padded' },
-  args: {
-    onEdit: () => console.log('edit'),
-    onClone: () => console.log('clone'),
-  },
 } satisfies Meta<typeof PayoutRowsGrid>;
 
 export default meta;

@@ -83,6 +83,18 @@ Row *actions* have exactly three homes:
    with room for labels and confirmation.
 3. **The bulk bar** — for multi (below).
 
+*Amended 2026-07-30: row actions are DATA, defined once.* A row's actions are
+declared once per datagrid as `rowActions(row) → BeamRowAction[]` (id · label ·
+onSelect · destructive? · disabled?/reason). Every surface that manifests them —
+the rail kebab, and an action bar the organism appends below `renderExpanded`
+when the row is expanded — projects that **one** definition; the consumer never
+hand-rolls action buttons in expansion content (there is no opt-out, so surfaces
+cannot drift). State-dependent actions (Enable ↔ Disable) are expressed by
+returning the right one from the closure; to hide an action, don't return it.
+Destructive reads error-tinted per surface (grouped-last menu item · error
+button); disabled stays visible with its reason. This killed a live drift:
+PayoutConfigs' kebab and expansion footer had shown different sets.
+
 **The one carve-out — inline cell controls:** a single, safe, high-frequency toggle
 that *is a field of the record* (Users → Active, Loyalty → Daily Wheel) may render
 inline as its control, with an aria-label. This is a cell showing its value, not a

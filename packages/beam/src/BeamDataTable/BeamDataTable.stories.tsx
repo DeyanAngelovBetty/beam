@@ -156,19 +156,52 @@ export const RowControlsRail: StoryObj = {
       renderExpanded={(r) => (
         <Stack sx={{ px: 1, py: 1 }}>Reward: {r.reward}</Stack>
       )}
-      rowMenu={(r) => [
-        { id: 'edit', label: 'Edit', onClick: () => console.log('edit', r.id) },
-        { id: 'duplicate', label: 'Duplicate', onClick: () => console.log('dup', r.id) },
+      rowActions={(r) => [
+        { id: 'edit', label: 'Edit', onSelect: () => console.log('edit', r.id) },
+        { id: 'duplicate', label: 'Duplicate', onSelect: () => console.log('dup', r.id) },
         {
           id: 'pause',
           label: 'Pause',
-          onClick: () => {},
+          onSelect: () => {},
           disabled: r.status !== 'active',
           disabledReason: 'Only active perks can be paused.',
         },
-        { id: 'archive', label: 'Archive', destructive: true, onClick: () => console.log('archive', r.id) },
+        { id: 'archive', label: 'Archive', destructive: true, onSelect: () => console.log('archive', r.id) },
       ]}
       aria-label="Perks with row controls rail"
+    />
+  ),
+};
+
+/**
+ * Row actions as data (grammar §3): ONE `rowActions` definition, projected to
+ * every surface. Open the kebab AND expand a row — the menu and the appended
+ * action bar render the SAME set, so they can't drift. Exercises a
+ * state-dependent label (Pause ↔ Resume), a destructive action (Archive), and a
+ * disabled action with a reason (Schedule — only drafts).
+ */
+export const RowActionsProjection: StoryObj = {
+  render: () => (
+    <BeamDataTable<Perk>
+      columns={wideColumns}
+      rows={rows}
+      getRowId={(r) => r.id}
+      renderExpanded={(r) => <Stack sx={{ px: 1, py: 1 }}>Reward: {r.reward}</Stack>}
+      rowActions={(r) => [
+        { id: 'edit', label: 'Edit', onSelect: () => console.log('edit', r.id) },
+        r.status === 'paused'
+          ? { id: 'resume', label: 'Resume', onSelect: () => console.log('resume', r.id) }
+          : { id: 'pause', label: 'Pause', onSelect: () => console.log('pause', r.id) },
+        {
+          id: 'schedule',
+          label: 'Schedule',
+          onSelect: () => {},
+          disabled: r.status !== 'draft',
+          disabledReason: 'Only drafts can be scheduled.',
+        },
+        { id: 'archive', label: 'Archive', destructive: true, onSelect: () => console.log('archive', r.id) },
+      ]}
+      aria-label="Row actions projected to kebab + expansion bar"
     />
   ),
 };
@@ -189,7 +222,7 @@ export const RailScrollAffordance: StoryObj = {
         rows={rows}
         getRowId={(r) => r.id}
         selectable
-        rowMenu={(r) => [{ id: 'edit', label: 'Edit', onClick: () => console.log('edit', r.id) }]}
+        rowActions={(r) => [{ id: 'edit', label: 'Edit', onSelect: () => console.log('edit', r.id) }]}
         aria-label="Rail scroll affordance demo"
       />
     </Box>
@@ -219,9 +252,9 @@ export const IdentityLink: StoryObj = {
         rows={rows}
         getRowId={(r) => r.id}
         onRowClick={(r) => console.log('inspect', r.id)}
-        rowMenu={(r) => [
-          { id: 'edit', label: 'Edit', onClick: () => console.log('edit', r.id) },
-          { id: 'delete', label: 'Delete', destructive: true, onClick: () => console.log('delete', r.id) },
+        rowActions={(r) => [
+          { id: 'edit', label: 'Edit', onSelect: () => console.log('edit', r.id) },
+          { id: 'delete', label: 'Delete', destructive: true, onSelect: () => console.log('delete', r.id) },
         ]}
         aria-label="Perks with identity link"
       />

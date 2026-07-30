@@ -7,7 +7,7 @@ import {
   BeamFilterBar,
   BeamDataTable,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowMenuItem } from '@betty/beam';
+import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import GroupIcon from '@mui/icons-material/Group';
@@ -46,14 +46,14 @@ export function RolesPage() {
     { key: 'created', header: 'Created', render: (r) => r.created, align: 'right', width: 130 },
   ];
 
-  const rowMenu = (r: Role): BeamRowMenuItem[] => [
-    { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onClick: () => {} },
-    { id: 'users', label: 'Users in Role', icon: <GroupIcon fontSize="small" />, onClick: () => {} },
+  const rowActions = (r: Role): BeamRowAction[] => [
+    { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => {} },
+    { id: 'users', label: 'Users in Role', icon: <GroupIcon fontSize="small" />, onSelect: () => {} },
     {
       id: 'delete',
       label: 'Delete',
       icon: <DeleteIcon fontSize="small" />,
-      onClick: () => {},
+      onSelect: () => {},
       destructive: true,
     },
   ];
@@ -89,7 +89,7 @@ export function RolesPage() {
         columns={columns}
         rows={rows}
         getRowId={(r) => r.id}
-        rowMenu={rowMenu}
+        rowActions={rowActions}
         onRowClick={(r) => navigate(`/roles/${r.id}`)}
         LinkComponent={RouterIdentityLink}
         emptyMessage="No roles match this search."

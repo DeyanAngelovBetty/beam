@@ -29,6 +29,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import Collapse from '@mui/material/Collapse';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -37,7 +38,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
-import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
+import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps } from './BeamDataTable.types';
 import { isWhiteSpaceLike } from 'typescript';
 
@@ -51,7 +52,7 @@ const RAIL_DIVIDER_INSET = 6; // px top/bottom inset so the rule doesn't bleed t
  * The kebab that opens a row's overflow menu. Dim at rest, full on row
  * hover and keyboard focus (the `.beam-kebab` class is targeted by the row).
  */
-function RailKebab({ items }: { items: BeamRowMenuItem[] }) {
+function RailKebab({ items }: { items: BeamRowAction[] }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   return (
     <>
@@ -73,6 +74,45 @@ function RailKebab({ items }: { items: BeamRowMenuItem[] }) {
         items={items}
       />
     </>
+  );
+}
+
+/**
+ * The expanded-row action bar — the SAME `rowActions` projected as buttons
+ * (grammar §3). The organism appends this below `renderExpanded` content; the
+ * consumer never renders it, so the bar and the kebab can't drift.
+ * Disabled actions use aria-disabled (focusable + announced) + a tooltip reason
+ * + a no-op guard; destructive actions read error-tinted. Pigment is Deyan's.
+ */
+function RowActionBar({ actions }: { actions: BeamRowAction[] }) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ pt: 2 }}>
+      {actions.map((a) => {
+        const button = (
+          <Button
+            key={a.id}
+            variant="outlined"
+            size="small"
+            color={a.destructive ? 'error' : 'primary'}
+            aria-disabled={a.disabled || undefined}
+            startIcon={a.icon}
+            onClick={() => {
+              if (!a.disabled) a.onSelect();
+            }}
+            sx={a.disabled ? { opacity: 0.5 } : undefined}
+          >
+            {a.label}
+          </Button>
+        );
+        return a.disabled && a.disabledReason ? (
+          <Tooltip key={a.id} title={a.disabledReason}>
+            {button}
+          </Tooltip>
+        ) : (
+          button
+        );
+      })}
+    </Stack>
   );
 }
 
@@ -129,7 +169,7 @@ export function BeamDataTable<Row>({
   paginated = false,
   defaultPageSize = 10,
   renderExpanded,
-  rowMenu,
+  rowActions,
   onRowClick,
   LinkComponent,
   highlightRowId = null,
@@ -217,7 +257,7 @@ export function BeamDataTable<Row>({
   // [select][kebab][expand] — each rendered only if enabled (grammar §3):
   // selection anchors the rail's outer edge; the expand caret sits innermost,
   // nearest the row content it opens.
-  const railEnabled = Boolean(renderExpanded) || selectable || Boolean(rowMenu);
+  const railEnabled = Boolean(renderExpanded) || selectable || Boolean(rowActions);
   const railCol = railEnabled ? 1 : 0;
 
   const railStickySx = {
@@ -416,6 +456,9 @@ export function BeamDataTable<Row>({
             )}
             {visibleRows.map((row) => {
               const isHighlighted = highlightRowId === row.id;
+              // One definition, projected to every surface (grammar §3): the
+              // kebab and the expansion action bar both render from `actions`.
+              const actions = rowActions ? rowActions(row.original) : [];
               return (
               <Fragment key={row.id}>
                 <TableRow
@@ -455,7 +498,7 @@ export function BeamDataTable<Row>({
                             inputProps={{ 'aria-label': `Select row ${row.id}` }}
                           />
                         )}
-                        {rowMenu && <RailKebab items={rowMenu(row.original)} />}
+                        {actions.length > 0 && <RailKebab items={actions} />}
                         {renderExpanded && (
                           <IconButton
                             size="small"
@@ -485,7 +528,12 @@ export function BeamDataTable<Row>({
                       sx={{ py: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
                     >
                       <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
-                        <Box sx={{ py: 2, px: 1 }}>{renderExpanded(row.original)}</Box>
+                        <Box sx={{ py: 2, px: 1 }}>
+                          {renderExpanded(row.original)}
+                          {/* Organism-appended action bar — same `actions` as the
+                              kebab, so surfaces can't drift (grammar §3). */}
+                          {actions.length > 0 && <RowActionBar actions={actions} />}
+                        </Box>
                       </Collapse>
                     </TableCell>
                   </TableRow>

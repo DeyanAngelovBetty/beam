@@ -1,5 +1,5 @@
 import type { ComponentType, MouseEventHandler, ReactNode } from 'react';
-import type { BeamRowMenuItem } from '../BeamRowMenu/BeamRowMenu.types';
+import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 
 /**
  * The identity link renders through this component. Default: a real MUI
@@ -69,10 +69,14 @@ export interface BeamDataTableProps<Row> {
   /** Enables per-row expansion — progressive disclosure (Yoda §2.4) */
   renderExpanded?: (row: Row) => ReactNode;
   /**
-   * Per-record overflow menu, opened from the kebab in the row-controls
-   * rail. Return the items for a given row (grammar §3).
+   * A row's actions, defined ONCE as data (grammar §3). Every surface projects
+   * this one definition: the rail kebab, and — when the row is expanded — an
+   * action bar the organism appends below `renderExpanded` (no opt-out; the
+   * guarantee that surfaces can't drift is the feature). Return the actions for
+   * a given row; omit an action to hide it. State-dependent actions (Enable ↔
+   * Disable) are expressed by returning the right one from the closure.
    */
-  rowMenu?: (row: Row) => BeamRowMenuItem[];
+  rowActions?: (row: Row) => BeamRowAction[];
   /**
    * Row click means "inspect this record" (grammar §2). Fires for clicks
    * anywhere except the rail and the identity link. Sets a pointer cursor.

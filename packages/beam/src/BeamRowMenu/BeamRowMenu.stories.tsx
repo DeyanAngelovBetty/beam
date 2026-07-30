@@ -6,7 +6,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { BeamRowMenu } from './BeamRowMenu';
-import type { BeamRowMenuItem } from './BeamRowMenu.types';
+import type { BeamRowAction } from './BeamRowMenu.types';
 
 /**
  * The per-record overflow menu. Labeled items, destructive grouped last
@@ -21,13 +21,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const ITEMS: BeamRowMenuItem[] = [
-  { id: 'reset', label: 'Reset password', icon: <LockResetIcon fontSize="small" />, onClick: () => {} },
+const ITEMS: BeamRowAction[] = [
+  { id: 'reset', label: 'Reset password', icon: <LockResetIcon fontSize="small" />, onSelect: () => {} },
   {
     id: 'deactivate',
     label: 'Deactivate',
     icon: <BlockIcon fontSize="small" />,
-    onClick: () => {},
+    onSelect: () => {},
     disabled: true,
     disabledReason: 'This user is already inactive.',
   },
@@ -35,7 +35,7 @@ const ITEMS: BeamRowMenuItem[] = [
     id: 'delete',
     label: 'Delete',
     icon: <DeleteIcon fontSize="small" />,
-    onClick: () => {},
+    onSelect: () => {},
     destructive: true,
   },
 ];
@@ -61,13 +61,13 @@ export const Default: Story = {
   },
 };
 
-const DUPLICATE_DELETE: BeamRowMenuItem[] = [
-  { id: 'duplicate', label: 'Duplicate', icon: <ContentCopyIcon fontSize="small" />, onClick: () => {} },
+const DUPLICATE_DELETE: BeamRowAction[] = [
+  { id: 'duplicate', label: 'Duplicate', icon: <ContentCopyIcon fontSize="small" />, onSelect: () => {} },
   {
     id: 'delete',
     label: 'Delete',
     icon: <DeleteIcon fontSize="small" />,
-    onClick: () => {},
+    onSelect: () => {},
     destructive: true,
     disabled: true,
     disabledReason: 'This role is assigned to 41 users.',
