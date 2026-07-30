@@ -118,6 +118,18 @@ by param.
 - **Payout Config — Create/Edit** ✓ (`/payout-configs/new`, `/payout-configs/:id`).
   The detail *view* Live Checks over `expectedAvgPayout` are a separate later
   round (this page is the editor).
-- **Game Configurations — list + editor** (with the condition builder) — pending.
+- **Game Configurations — list + editor** (with the condition builder) — pending
+  (Georgi's agent builds the list + editor shell on a branch).
+  - *ConditionBuilder scaffolded bench-first (2026-07-30)* — the editor's flagged
+    invention, built standalone in `apps/sunlight` (`conditionTree.ts` +
+    `ConditionBuilder.tsx` + `ConditionSummary.tsx`, `Lab/Sunlight/ConditionBuilder`)
+    so it slots into that editor when both land. Domain mirrors the API Condition
+    JSON (Group/Leaf, All/Any, In/NotIn); never renders raw JSON — the summary is
+    the read-only prose twin. Controlled, `isValidConditionTree` exposed for the
+    editor's Save gate. **Pending:** nesting visuals (spine-motif territory,
+    reserved) and the per-field value **lookup data** (placeholder lists — no
+    lookup endpoints, brief §14). Value control is a constrained multi-select
+    (no free entry); new leaves default field/operator, empty-values is the honest
+    incomplete signal.
 - **Default Configs mapping** — pending.
 - **Presets** — pending.
