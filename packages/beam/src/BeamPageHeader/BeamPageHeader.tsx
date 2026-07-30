@@ -40,6 +40,7 @@ function BackLink({ back }: { back: BeamBackLink }) {
 export function BeamPageHeader({
   title,
   back,
+  status,
   description,
   action,
   secondaryActions,
@@ -54,10 +55,12 @@ export function BeamPageHeader({
         alignItems={{ sm: 'center' }}
         justifyContent="space-between"
       >
-        <Stack spacing={0.5}>
+        <Stack spacing={0.5} alignItems="flex-start">
           <Typography variant="h4" component="h1">
             {title}
           </Typography>
+          {/* Status/identity slot — under the title, above the description (§4). */}
+          {status}
           {description && (
             <Typography variant="body2" color="text.secondary">
               {description}

@@ -84,19 +84,38 @@ export function PayoutRowsEditor({
     v.status === 'exact' ? 'default' : v.status === 'under' ? 'warning' : 'error';
 
   return (
-    <Stack spacing={2}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
+    // One fit-content container so the strip's edges align with the grid's
+    // (the strip spans the grid width, not the page width).
+    <Box sx={{ width: 'fit-content' }}>
+      <Stack spacing={1.5}>
         <Typography variant="subtitle2" color="text.secondary">
           Payout Rows
         </Typography>
-        <Button size="small" startIcon={<AddIcon />} onClick={addRow}>
-          Add Row
-        </Button>
-      </Stack>
 
-      {/* Editable → interactive surface, so bordered (detail-grammar §1.2). */}
-      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-        <Table size="small" sx={{ '& td, & th': { verticalAlign: 'top' } }}>
+        {/* Chrome strip ABOVE the grid: Live Check (+ aggregate errors) left,
+            Add Row right. The Live Check is BeamStat severity's first consumer
+            (detail §2): exact = quiet · under = warning · over = danger. */}
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+          <Stack spacing={0.5}>
+            <Stack direction="row" spacing={4} alignItems="flex-start">
+              <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
+              <BeamStat label="Remaining" value={`${v.remaining}%`} tone={remainingTone} />
+            </Stack>
+            {v.aggregate && (
+              <Typography variant="body2" color="error" role="alert">
+                {v.aggregate}
+              </Typography>
+            )}
+          </Stack>
+          <Button size="small" startIcon={<AddIcon />} onClick={addRow}>
+            Add Row
+          </Button>
+        </Stack>
+
+        {/* Editable → interactive surface, so bordered (detail-grammar §1.2).
+            Fit-content, same skeleton as PayoutRowsGrid. */}
+        <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
+          <Table size="small" sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}>
           <TableHead>
             <TableRow>
               <TableCell>Win Message</TableCell>
@@ -221,18 +240,8 @@ export function PayoutRowsEditor({
             })}
           </TableBody>
         </Table>
-      </Paper>
-
-      {/* The Live Check — BeamStat severity's first real consumer (detail §2). */}
-      <Stack direction="row" spacing={4} alignItems="flex-start">
-        <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
-        <BeamStat label="Remaining" value={`${v.remaining}%`} tone={remainingTone} />
+        </Paper>
       </Stack>
-      {v.aggregate && (
-        <Typography variant="body2" color="error" role="alert">
-          {v.aggregate}
-        </Typography>
-      )}
-    </Stack>
+    </Box>
   );
 }

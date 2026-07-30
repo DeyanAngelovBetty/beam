@@ -31,6 +31,12 @@ export interface BeamPageHeaderProps {
   title: string;
   /** Back link, rendered as the breadcrumb row above the title (§4). */
   back?: BeamBackLink;
+  /**
+   * Record identity metadata under the title (e.g. a status badge) — §4
+   * anatomy. Identity, not an action: it sits below the title, above the
+   * description, never in the actions slot.
+   */
+  status?: ReactNode;
   description?: ReactNode;
   /** The primary action, right-aligned — e.g. a contained "+ Add" button. */
   action?: ReactNode;

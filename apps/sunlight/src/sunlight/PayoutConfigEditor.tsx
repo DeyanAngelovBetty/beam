@@ -110,10 +110,10 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
       <BeamPageHeader
         title={existing ? existing.name : 'Create Payout Config'}
         back={backTo(navigate, '/payout-configs', 'Payout Configs')}
+        // Status is identity, under the title (§4) — not an action. Create mode
+        // has no config yet; the "created as Disabled" subtitle carries it.
+        status={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : undefined}
         description={isEdit ? undefined : 'New configurations are created as Disabled.'}
-        secondaryActions={
-          badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : undefined
-        }
         action={
           <Stack direction="row" spacing={1} alignItems="center">
             <Button variant="text" onClick={() => navigate('/payout-configs')}>

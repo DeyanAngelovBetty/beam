@@ -7,7 +7,9 @@ import type { RewardType } from './payoutConfigs';
 /**
  * Lab bench for PayoutRowsEditor — the editable sibling of PayoutRowsGrid.
  * Controlled; the harness holds the working rows. Exercises the reward blocks,
- * structural duplicate-type prevention, and the Live Check severities.
+ * structural duplicate-type prevention, and the Live Check severities — now in
+ * the chrome strip ABOVE the fit-content grid (stats + aggregate left, Add Row
+ * right). The under/over stories keep the warning/danger states visible.
  */
 // No `component` binding: these are render-only harness stories (the editor is
 // controlled), so we avoid Storybook's required-args typing.
