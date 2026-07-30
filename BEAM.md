@@ -120,6 +120,14 @@ pain each one prevents:
   header Location switcher). Brand switch may rebuild the theme; mode switch must not.
 - MUI action opacities come from the Figma `_states` alphas (hover 4%, selected 8%, focus 12%);
   focusVisible 30% and outlinedBorder 50% are consumed at component level.
+- **Stack rhythm is gap, never margin-top** *(2026-07-30):* vertical/horizontal
+  rhythm between stacked elements comes from the parent's `gap` (Stack `spacing`,
+  now `useFlexGap: true` estate-wide), never from `mt`/`mb` sprinkled on child
+  Papers/Boxes/sections. **Scope:** this governs *layout rhythm between siblings*
+  only. Out of jurisdiction: a component's own intrinsic spacing (a Divider's
+  `my`, a Typography's `gutterBottom` — type-idiom gutters), a margin inside a
+  `Collapse` that must collapse with its content, and optical nudges within a
+  component. Flag the ambiguous; don't convert reflexively.
 
 ## 6. Component rules
 

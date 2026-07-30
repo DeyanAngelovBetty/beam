@@ -168,6 +168,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
         },
       },
+      // Stack rhythm is real CSS `gap`, never injected child margins (BEAM.md
+      // styling rules, 2026-07-30). Estate-wide default so every Stack composes
+      // by gap; margin-based spacing is off the table for layout rhythm.
+      MuiStack: {
+        defaultProps: { useFlexGap: true },
+      },
       // Category rules — the code twin of Figma TEXT/EFFECT STYLES (not variables).
       // One decision here restyles every instance everywhere: zero component edits.
       MuiPaper: {
