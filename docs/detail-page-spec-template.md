@@ -37,6 +37,8 @@ in the actions slot; not editable on this page if lifecycle says so
 |  |  |  |  |
 
 ## Editable collections  ▸ the page's heart; per collection:
+▸ section actions (Add Row/Rule) = a LEFT-aligned strip directly above
+the organism; the right edge is page-only (grammar §4 altitude rule)
 - Name + what one item is:
 - Columns/fields per item:
 - Item actions (add/remove/reorder): ▸ reorder = design-lane flag if

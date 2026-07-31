@@ -35,6 +35,8 @@ implements, if any)
 - Any disabled states + their reasons:
 
 ## Batch actions  ▸ complexity clause: batch + row together is a cost
+▸ the batch strip renders LEFT, directly above the table; the page's
+right edge is page-only (grammar §4 altitude rule)
 - [ ] None (default)
 - [ ] Yes — the multi-select workflow that justifies it:
 

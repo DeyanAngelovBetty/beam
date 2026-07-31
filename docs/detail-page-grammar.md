@@ -110,6 +110,15 @@ page-header
 └────────────────────────────────────────────┘
 ```
 
+- **Altitude determines alignment** *(2026-07-31):* the right edge belongs to
+  the page. Page-level actions live in the `BeamPageHeader` actions slot, and
+  **nothing below page altitude aligns right.** Section/organism-level actions
+  (the batch strip, Add Row, Add Rule) render as a **LEFT-aligned strip directly
+  above the organism** they operate on — proximity-above declares ownership, and
+  left is where scanning starts. Per-item inline controls keep their own anatomy
+  (the datagrid rail, a table cell, a card header's controls). Disclosure
+  controls (collapse carets) are not actions and keep their anatomy.
+  *(Cross-ref: list-grammar §3.)*
 - **The back link is header anatomy** *(2026-07-30):* the breadcrumb row is
   owned by `BeamPageHeader` (the `back` prop: `{ label, href?, onClick? }`),
   never hand-rolled above the header. `href` gives real-anchor semantics,

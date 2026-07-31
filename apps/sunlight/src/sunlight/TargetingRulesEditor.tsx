@@ -64,14 +64,9 @@ export function TargetingRulesEditor({
 
   return (
     <Stack spacing={1.5}>
-      <Stack justifyContent="space-between" alignItems="left">
-        <Typography variant="subtitle2" color="text.secondary">
-          Targeting Rules
-        </Typography>
-        <Button size="small" startIcon={<AddIcon />} onClick={addRule} sx={{ width: 'fit-content' }}>
-          Add Rule
-        </Button>
-      </Stack>
+      <Typography variant="subtitle2" color="text.secondary">
+        Targeting Rules
+      </Typography>
 
       {/* AGGREGATE, non-blocking (the Enable-action concern; awareness only here).
           Ships plain. */}
@@ -84,6 +79,13 @@ export function TargetingRulesEditor({
           </Typography>
         </Stack>
       )}
+
+      {/* Section action: a LEFT-aligned strip directly above the rules it
+          operates on (altitude rule, detail-grammar §4 — the right edge is
+          page-only). Matches PayoutRowsEditor's Add Row. */}
+      <Button size="small" startIcon={<AddIcon />} onClick={addRule} sx={{ alignSelf: 'flex-start' }}>
+        Add Rule
+      </Button>
 
       {rules.map((rule, i) => (
         <RuleCard
