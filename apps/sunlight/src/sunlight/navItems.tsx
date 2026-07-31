@@ -12,6 +12,7 @@ export type SunlightPage =
   | 'payout-configs'
   | 'game-configs'
   | 'default-game-configs'
+  | 'meta-game-presets'
   | 'prize-wall'
   | 'users'
   | 'roles';
@@ -22,6 +23,7 @@ export const PAGE_PATH: Record<SunlightPage, string> = {
   'payout-configs': '/payout-configs',
   'game-configs': '/game-configs',
   'default-game-configs': '/default-game-configs',
+  'meta-game-presets': '/meta-game-presets',
   'prize-wall': '/prize-wall',
   users: '/users',
   roles: '/roles',
@@ -63,6 +65,7 @@ export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[]
         leaf('Payout Configs', 'payout-configs'),
         leaf('Game Configs', 'game-configs'),
         leaf('Default Game Configs', 'default-game-configs'),
+        leaf('MetaGame Presets', 'meta-game-presets'),
       ],
     },
     // Prize Wall — the renamed Token Campaigns, now a top-level destination.

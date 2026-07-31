@@ -23,6 +23,8 @@ import { PayoutConfigEditor } from './sunlight/PayoutConfigEditor';
 import { GameConfigsPage } from './sunlight/GameConfigsPage';
 import { GameConfigEditor } from './sunlight/GameConfigEditor';
 import { DefaultGameConfigsPage } from './sunlight/DefaultGameConfigsPage';
+import { MetaGamePresetsPage } from './sunlight/MetaGamePresetsPage';
+import { MetaGamePresetEditor } from './sunlight/MetaGamePresetEditor';
 
 // Vite's base path becomes the router basename: '/' in dev, '/beam/sunlight/'
 // on Pages. Trailing slash trimmed (react-router matches without it).
@@ -87,6 +89,9 @@ const router = createBrowserRouter(
         { path: 'game-configs/new', element: <GameConfigEditor /> },
         { path: 'game-configs/:id', element: <GameConfigEditor /> },
         { path: 'default-game-configs', element: <DefaultGameConfigsPage /> },
+        { path: 'meta-game-presets', element: <MetaGamePresetsPage /> },
+        { path: 'meta-game-presets/new', element: <MetaGamePresetEditor /> },
+        { path: 'meta-game-presets/:id', element: <MetaGamePresetEditor /> },
         { path: 'prize-wall', element: <PlaceholderPage title="Prize Wall" /> },
         { path: 'users', element: <UsersPage /> },
         { path: 'users/:id', element: <UserPage /> },
