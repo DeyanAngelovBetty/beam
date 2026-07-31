@@ -4,6 +4,7 @@ import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import type { BeamPageHeaderProps, BeamBackLink } from './BeamPageHeader.types';
+import Box from '@mui/material/Box';
 
 /**
  * The breadcrumb back link (§4 anatomy). Real anchor when `href` is given;
@@ -23,17 +24,29 @@ function BackLink({ back }: { back: BeamBackLink }) {
     back.onClick();
   };
   return (
-    <Link
-      component={isAnchor ? 'a' : 'button'}
-      href={back.href}
-      onClick={handleClick}
-      underline="hover"
-      color="text.secondary"
-      variant="body2"
-      sx={{ alignSelf: 'flex-start', cursor: 'pointer' }}
-    >
-      ← {back.label}
-    </Link>
+<Link
+  component={isAnchor ? 'a' : 'button'}
+  href={back.href}
+  onClick={handleClick}
+  color="text.secondary"
+  variant="body2"
+  underline="none"
+  sx={{
+    alignSelf: 'flex-start',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.5,
+    '& .BeamPageHeader-backLabel': { textDecoration: 'none' },
+    '&:hover .BeamPageHeader-backLabel, &:focus-visible .BeamPageHeader-backLabel': {
+      textDecoration: 'underline',
+      textUnderlineOffset: '0.2em',
+    },
+  }}
+>
+  <Box component="span" aria-hidden>&#60;-</Box>
+  <span className="BeamPageHeader-backLabel">{back.label}</span>
+</Link>
   );
 }
 
