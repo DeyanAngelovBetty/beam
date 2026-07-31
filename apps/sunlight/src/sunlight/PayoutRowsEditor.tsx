@@ -135,7 +135,7 @@ export function PayoutRowsEditor({
             Fit-content, same skeleton as PayoutRowsGrid. */}
         <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
           <Table size="small" sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}>
-          <TableHead>
+          <TableHead sx={{ '& th': { pb: 2.5 } }}>
             <TableRow>
               <TableCell>Win Message</TableCell>
               <TableCell align="right">Probability (%)</TableCell>
