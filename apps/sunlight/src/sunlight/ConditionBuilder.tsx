@@ -98,7 +98,7 @@ function GroupEditor({
   const addGroup = () => emit({ ...node, children: [...node.children, emptyGroup()] });
 
   return (
-    <Stack spacing={1}>
+    <Stack spacing={1} sx={isRoot ? undefined : { py: 1.5 }}>
       <Stack direction="row" spacing={1} alignItems="center">
         <TextField
           select
@@ -140,7 +140,7 @@ function GroupEditor({
               {err}
             </Typography>
           )}
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ mt: '8px !important' }}>
             <Button size="small" startIcon={<AddIcon />} onClick={addLeaf}>
               Add Condition
             </Button>
@@ -170,7 +170,7 @@ function LeafEditor({
   const setValues = (values: (string | number)[]) => emit({ ...node, values });
 
   return (
-    <Stack direction="row" spacing={1} alignItems="flex-start">
+    <Stack direction="row" spacing={1} alignItems="flex-start" sx={err ? { pb: 1 } : undefined}>
       <TextField
         select
         size="small"

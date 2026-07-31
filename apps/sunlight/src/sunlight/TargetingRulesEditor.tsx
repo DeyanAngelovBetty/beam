@@ -67,7 +67,7 @@ export function TargetingRulesEditor({
   };
 
   return (
-    <Stack spacing={1.5}>
+    <Stack spacing={2}>
       <Typography variant="subtitle2" color="text.secondary">
         Targeting Rules
       </Typography>
@@ -156,7 +156,7 @@ function RuleCard({
 }) {
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
-      <Stack spacing={1.5}>
+      <Stack spacing={2}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Typography variant="subtitle2">Rule {index + 1}</Typography>

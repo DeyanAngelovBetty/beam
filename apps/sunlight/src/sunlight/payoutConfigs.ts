@@ -84,7 +84,7 @@ const coins = (amount: number): Reward => ({ rewardType: 'Coins', amount });
 const tokens = (amount: number): Reward => ({ rewardType: 'Tokens', amount });
 
 /**
- * Eight configs, one per game type, recognizable from the real system. Averages
+ * Recognizable configs from the real system, with two InstantWheel variants. Averages
  * are engineered to hit the doc's headline numbers (the list column derives
  * them, not stores them). Deliberate demo fixtures:
  *  - "Topaz - Weekend Special" probabilities sum to 0.9 — a future validation demo.
@@ -175,6 +175,26 @@ export const PAYOUT_CONFIGS: PayoutConfig[] = [
       { probability: 0.5, winMessage: '60,000 Coins', prizeValue: 60000, rewards: [coins(60000)] },
       { probability: 0.4, winMessage: '70,000 Coins', prizeValue: 70000, rewards: [coins(70000)] },
       { probability: 0.1, winMessage: '11,250 Tokens', prizeValue: 11250, rewards: [tokens(11250)] },
+    ],
+  },
+  {
+    id: 'pc-default-instant-wheel',
+    name: 'Default Instant Wheel Payout',
+    gameType: 'InstantWheel',
+    status: 'Enabled',
+    createdAt: '2026-04-18',
+    updatedAt: '2026-07-28',
+    // avg = .5·50 + .3·100 + .15·250 + .05·500 = 117.50
+    rows: [
+      { probability: 0.5, winMessage: '50 Coins', prizeValue: 50, rewards: [coins(50)] },
+      { probability: 0.3, winMessage: '100 Coins', prizeValue: 100, rewards: [coins(100)] },
+      { probability: 0.15, winMessage: '250 Coins', prizeValue: 250, rewards: [coins(250)] },
+      {
+        probability: 0.05,
+        winMessage: '500 Coins and 10 Tokens',
+        prizeValue: 500,
+        rewards: [coins(500), tokens(10)],
+      },
     ],
   },
   {

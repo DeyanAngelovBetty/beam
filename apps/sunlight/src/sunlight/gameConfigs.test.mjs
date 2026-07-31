@@ -54,3 +54,14 @@ test('rules preserve priority and fallback semantics', () => {
     );
   }
 });
+
+test('InstantWheel demo keeps distinct disabled-rule and enabled-fallback payouts', () => {
+  const config = GAME_CONFIGS.find((candidate) => candidate.id === 'gc-instant-wheel-test');
+  const normalRule = config.targetingRules.find((rule) => rule.condition);
+  const fallback = config.targetingRules.find((rule) => !rule.condition);
+
+  assert.equal(normalRule.payoutConfigId, 'pc-topaz-weekend');
+  assert.equal(fallback.payoutConfigId, 'pc-default-instant-wheel');
+  assert.equal(PAYOUT_CONFIGS.find((candidate) => candidate.id === normalRule.payoutConfigId).status, 'Disabled');
+  assert.equal(PAYOUT_CONFIGS.find((candidate) => candidate.id === fallback.payoutConfigId).status, 'Enabled');
+});

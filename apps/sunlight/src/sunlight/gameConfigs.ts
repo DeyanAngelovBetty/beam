@@ -125,7 +125,7 @@ export const GAME_CONFIGS: GameConfig[] = [
         id: 'tr-instant-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-topaz-weekend',
+        payoutConfigId: 'pc-default-instant-wheel',
       },
     ],
   },
