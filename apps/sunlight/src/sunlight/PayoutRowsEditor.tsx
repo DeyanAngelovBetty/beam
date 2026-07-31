@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Stack,
   Box,
@@ -46,11 +47,21 @@ import {
 export function PayoutRowsEditor({
   rows,
   onChange,
+  showAllErrors = false,
 }: {
   rows: EditorRow[];
   onChange: (rows: EditorRow[]) => void;
+  showAllErrors?: boolean;
 }) {
   const v = validateRows(rows);
+  const [touched, setTouched] = useState<Set<string>>(() => new Set());
+  const markTouched = (key: string) =>
+    setTouched((current) => {
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+  const showError = (key: string) => showAllErrors || touched.has(key);
 
   const setRow = (key: string, patch: Partial<EditorRow>) =>
     onChange(rows.map((r) => (r._key === key ? { ...r, ...patch } : r)));
@@ -62,8 +73,14 @@ export function PayoutRowsEditor({
           : r
       )
     );
-  const addRow = () => onChange([...rows, emptyRow()]);
-  const deleteRow = (key: string) => onChange(rows.filter((r) => r._key !== key)); // may empty → aggregate error
+  const addRow = () => {
+    markTouched('aggregate');
+    onChange([...rows, emptyRow()]);
+  };
+  const deleteRow = (key: string) => {
+    markTouched('aggregate');
+    onChange(rows.filter((r) => r._key !== key)); // may empty → aggregate error
+  };
   const addReward = (rowKey: string) =>
     onChange(
       rows.map((r) => {
@@ -88,9 +105,9 @@ export function PayoutRowsEditor({
     // (the strip spans the grid width, not the page width).
     <Box sx={{ width: 'fit-content' }}>
       <Stack spacing={1.5}>
-        {/* <Typography variant="subtitle2" color="text.secondary">
+        <Typography variant="h6" component="h2">
           Payout Rows
-        </Typography> */}
+        </Typography>
 
         {/* Chrome strip ABOVE the grid: Live Check (+ aggregate errors) left,
             Add Row right. The Live Check is BeamStat severity's first consumer
@@ -105,7 +122,7 @@ export function PayoutRowsEditor({
               <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
               <BeamStat label="Remaining" value={`${v.remaining}%`} tone={remainingTone} />
             </Stack>
-            {v.aggregate && (
+            {v.aggregate && showError('aggregate') && (
               <Typography variant="body2" color="error" role="alert">
                 {v.aggregate}
               </Typography>
@@ -147,8 +164,9 @@ export function PayoutRowsEditor({
                       maxRows={4}
                       value={row.winMessage}
                       onChange={(e) => setRow(row._key, { winMessage: e.target.value })}
-                      error={Boolean(rowErr?.winMessage)}
-                      helperText={rowErr?.winMessage}
+                      onBlur={() => markTouched(`winMessage:${row._key}`)}
+                      error={Boolean(rowErr?.winMessage && showError(`winMessage:${row._key}`))}
+                      helperText={showError(`winMessage:${row._key}`) ? rowErr?.winMessage : undefined}
                       inputProps={{ 'aria-label': `Win message, row ${ri + 1}` }}
                     />
                   </TableCell>
@@ -158,8 +176,12 @@ export function PayoutRowsEditor({
                       sx={{ width: 110 }}
                       value={row.probabilityPct}
                       onChange={(e) => setRow(row._key, { probabilityPct: e.target.value })}
-                      error={Boolean(rowErr?.probability)}
-                      helperText={rowErr?.probability}
+                      onBlur={() => {
+                        markTouched(`probability:${row._key}`);
+                        markTouched('aggregate');
+                      }}
+                      error={Boolean(rowErr?.probability && showError(`probability:${row._key}`))}
+                      helperText={showError(`probability:${row._key}`) ? rowErr?.probability : undefined}
                       inputProps={{ inputMode: 'decimal', 'aria-label': `Probability percent, row ${ri + 1}` }}
                     />
                   </TableCell>
@@ -193,8 +215,9 @@ export function PayoutRowsEditor({
                               sx={{ width: 120 }}
                               value={rw.amount}
                               onChange={(e) => setReward(row._key, rw._key, { amount: e.target.value })}
-                              error={Boolean(amtErr)}
-                              helperText={amtErr}
+                              onBlur={() => markTouched(`amount:${row._key}:${rw._key}`)}
+                              error={Boolean(amtErr && showError(`amount:${row._key}:${rw._key}`))}
+                              helperText={showError(`amount:${row._key}:${rw._key}`) ? amtErr : undefined}
                               inputProps={{ inputMode: 'numeric', 'aria-label': `Amount, reward ${rwi + 1}, row ${ri + 1}` }}
                             />
                             {/* ≥1 reward per row is structural — Remove disabled at the last. */}

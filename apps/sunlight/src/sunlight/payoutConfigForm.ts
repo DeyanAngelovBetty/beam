@@ -1,5 +1,6 @@
 import {
   nameIsUnique,
+  REWARD_TYPES,
   type GameType,
   type PayoutConfig,
   type PayoutConfigInput,
@@ -36,7 +37,7 @@ export interface EditorModel {
   rows: EditorRow[];
 }
 
-export const REWARD_TYPES: RewardType[] = ['Coins', 'Tokens'];
+export { REWARD_TYPES };
 export const MAX_NAME = 100;
 export const MAX_WIN_MESSAGE = 200;
 const EPS = 1e-6;

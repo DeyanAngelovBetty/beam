@@ -169,6 +169,7 @@ export function BeamDataTable<Row>({
   paginated = false,
   defaultPageSize = 10,
   renderExpanded,
+  showExpandedActions = true,
   rowActions,
   onRowClick,
   LinkComponent,
@@ -530,9 +531,9 @@ export function BeamDataTable<Row>({
                       <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
                         <Box sx={{ py: 2, px: 1 }}>
                           {renderExpanded(row.original)}
-                          {/* Organism-appended action bar — same `actions` as the
-                              kebab, so surfaces can't drift (grammar §3). */}
-                          {actions.length > 0 && <RowActionBar actions={actions} />}
+                          {/* Optional organism-appended action bar — when shown,
+                              it uses the same `actions` as the kebab. */}
+                          {showExpandedActions && actions.length > 0 && <RowActionBar actions={actions} />}
                         </Box>
                       </Collapse>
                     </TableCell>

@@ -6,7 +6,7 @@ import {
   TableRow,
   TableCell,
 } from '@betty/beam';
-import { formatPayout, PRIZE_TYPE_LABEL, type PayoutRow } from './payoutConfigs';
+import { formatRewards, type PayoutRow } from './payoutConfigs';
 
 /**
  * PayoutRowsGrid — the expansion content for a payout config. This is the VIEW
@@ -14,7 +14,7 @@ import { formatPayout, PRIZE_TYPE_LABEL, type PayoutRow } from './payoutConfigs'
  * for the grid, not the mode.
  *
  * Structure (per Georgi, Slack 2026-07-30): Win Message | Probability | Rewards.
- * Rewards are ONE column, listed inline per row ("3.00 BTY, 2.00 Tokens").
+ * Rewards are ONE column, listed inline per row ("3 Coins, 2 Tokens").
  * The earlier merged-cell / rowSpan anatomy (a line per reward) was superseded
  * by product; it may return in the EDITOR half, where per-reward rows earn
  * their own controls.
@@ -33,10 +33,10 @@ const NO_BORDER = { borderBottom: 0 };
 const formatPercent = (p: number) =>
   `${(p * 100).toLocaleString('en-US', { maximumFractionDigits: 4 })}%`;
 
-/** Rewards inline: "{value} {label}" per reward, comma-joined. Dashed if none. */
+/** Rewards inline: readable whole-number reward copy, comma-joined. Dashed if none. */
 const rewardsLabel = (row: PayoutRow) =>
   row.rewards.length
-    ? row.rewards.map((rw) => `${formatPayout(rw.amount)} ${PRIZE_TYPE_LABEL[rw.rewardType]}`).join(', ')
+    ? formatRewards(row.rewards)
     : '—';
 
 export function PayoutRowsGrid({ rows }: { rows: PayoutRow[] }) {

@@ -30,6 +30,7 @@ export type PayoutStatus = 'Enabled' | 'Disabled';
 
 /** Rewards are Coins or Tokens, positive integer amounts (brief). */
 export type RewardType = 'Coins' | 'Tokens';
+export const REWARD_TYPES: RewardType[] = ['Coins', 'Tokens'];
 
 /** One reward line. A row carries at most one of each type (no repeats). */
 export interface Reward {
@@ -232,16 +233,28 @@ export function statusBadge(status: PayoutStatus): { status: BeamStatus; label: 
     : { status: 'draft', label: 'Disabled' };
 }
 
-/** Format a payout value: grouped thousands, two decimals (2,648.95). */
+/** Format a reward amount as a grouped whole number (2,648). */
 export function formatPayout(value: number): string {
-  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
 /**
- * Prize type DISPLAY label over the domain reward type — domain stays
- * Coins | Tokens (Coins → 'BTY'). Candidate for a future i18n / currency pass.
+ * Reward type display labels mirror the backend-aligned domain vocabulary.
  */
-export const PRIZE_TYPE_LABEL: Record<RewardType, string> = { Coins: 'BTY', Tokens: 'Tokens' };
+export const PRIZE_TYPE_LABEL: Record<RewardType, string> = { Coins: 'Coins', Tokens: 'Tokens' };
+
+/** Readable reward copy with grouped whole amounts and singular grammar. */
+export function formatReward(reward: Reward): string {
+  const label = reward.amount === 1
+    ? reward.rewardType.slice(0, -1)
+    : PRIZE_TYPE_LABEL[reward.rewardType];
+  return `${formatPayout(reward.amount)} ${label}`;
+}
+
+/** Inline reward-list copy used by payout-row previews. */
+export function formatRewards(rewards: Reward[]): string {
+  return rewards.map(formatReward).join(', ');
+}
 
 // ---- Mock persistence (the seed store as a stand-in API) --------------------
 // Mutates the module array; the list page remounts on navigate and reflects it

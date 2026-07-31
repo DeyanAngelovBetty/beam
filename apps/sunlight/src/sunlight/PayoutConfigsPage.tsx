@@ -12,7 +12,6 @@ import {
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BlockIcon from '@mui/icons-material/Block';
 import { RouterIdentityLink } from './RouterIdentityLink';
@@ -115,17 +114,14 @@ export function PayoutConfigsPage() {
       },
     },
     // Columns per Georgi (Slack, 2026-07-30): Name | Game Type | Status |
-    // Payout Rows | Actions (the rail kebab). Avg Payout (our enhancement) was
+    // Rows | Actions (the rail kebab). Avg Payout (our enhancement) was
     // vetoed; Updated dropped — see metagame-pages.md.
-    { key: 'rows', header: 'Payout Rows', align: 'right', width: 120, getValue: (c) => c.rows.length, render: (c) => c.rows.length },
+    { key: 'rows', header: 'Rows', align: 'right', width: 80, getValue: (c) => c.rows.length, render: (c) => c.rows.length },
   ];
 
-  // The row's actions — ONE definition, projected to both the kebab and the
-  // expansion action bar (grammar §3). Edit → detail · Enable ↔ Disable
-  // (state-dependent). Clone removed per Georgi (Slack, 2026-07-30); no Delete
-  // (brief §10). One place changes; every surface follows.
+  // Name is the Edit route. The rail menu carries only the state-dependent
+  // Enable/Disable action; expanded payout rows remain read-only.
   const rowActions = (c: PayoutConfig): BeamRowAction[] => [
-    { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/payout-configs/${c.id}`) },
     c.status === 'Enabled'
       ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Disable') }
       : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Enable') },
@@ -193,6 +189,7 @@ export function PayoutConfigsPage() {
         getRowId={(c) => c.id}
         rowActions={rowActions}
         renderExpanded={(c) => <PayoutRowsGrid rows={c.rows} />}
+        showExpandedActions={false}
         onRowClick={(c) => navigate(`/payout-configs/${c.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated

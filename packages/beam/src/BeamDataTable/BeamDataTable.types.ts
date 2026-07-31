@@ -68,12 +68,13 @@ export interface BeamDataTableProps<Row> {
   defaultPageSize?: number;
   /** Enables per-row expansion — progressive disclosure (Yoda §2.4) */
   renderExpanded?: (row: Row) => ReactNode;
+  /** Whether row actions are repeated below expanded content. Defaults to true. */
+  showExpandedActions?: boolean;
   /**
    * A row's actions, defined ONCE as data (grammar §3). Every surface projects
-   * this one definition: the rail kebab, and — when the row is expanded — an
-   * action bar the organism appends below `renderExpanded` (no opt-out; the
-   * guarantee that surfaces can't drift is the feature). Return the actions for
-   * a given row; omit an action to hide it. State-dependent actions (Enable ↔
+   * this one definition: the rail kebab, and — unless `showExpandedActions` is
+   * false — an action bar below `renderExpanded`. Return the actions for a
+   * given row; omit an action to hide it. State-dependent actions (Enable ↔
    * Disable) are expressed by returning the right one from the closure.
    */
   rowActions?: (row: Row) => BeamRowAction[];

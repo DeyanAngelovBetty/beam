@@ -74,6 +74,8 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
     [existing]
   );
   const [model, setModel] = useState<EditorModel>(initialModel);
+  const [touched, setTouched] = useState({ name: false, gameType: false });
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const originalSerialized = useMemo(() => serializeModel(initialModel), [initialModel]);
   const isDirty = serializeModel(model) !== originalSerialized;
   const savingRef = useRef(false);
@@ -121,13 +123,14 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
             </Button>
             {/* Save gate: valid form AND total probability exactly 100%.
                 aria-disabled (focusable + announced) + tooltip reason. */}
-            <Tooltip title={v.valid ? '' : saveReason}>
+            <Tooltip title={v.valid ? '' : submitAttempted ? saveReason : 'Complete the form to continue.'}>
               <span>
                 <Button
                   variant="contained"
                   aria-disabled={!v.valid || undefined}
                   aria-describedby={undefined}
                   onClick={() => {
+                    setSubmitAttempted(true);
                     if (v.valid) save();
                   }}
                   sx={v.valid ? undefined : { opacity: 0.5 }}
@@ -150,8 +153,9 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
           required
           value={model.name}
           onChange={(e) => setModel((m) => ({ ...m, name: e.target.value }))}
-          error={Boolean(v.name)}
-          helperText={v.name}
+          onBlur={() => setTouched((current) => ({ ...current, name: true }))}
+          error={Boolean(v.name && (touched.name || submitAttempted))}
+          helperText={touched.name || submitAttempted ? v.name : undefined}
           sx={{ maxWidth: 480 }}
           inputProps={{ maxLength: MAX_NAME }}
         />
@@ -170,8 +174,9 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
             required
             value={model.gameType}
             onChange={(e) => setModel((m) => ({ ...m, gameType: e.target.value as GameType }))}
-            error={Boolean(v.gameType)}
-            helperText={v.gameType}
+            onBlur={() => setTouched((current) => ({ ...current, gameType: true }))}
+            error={Boolean(v.gameType && (touched.gameType || submitAttempted))}
+            helperText={touched.gameType || submitAttempted ? v.gameType : undefined}
             sx={{ maxWidth: 480 }}
           >
             {GAME_TYPES.map((g) => (
@@ -183,7 +188,11 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
         )}
       </Stack>
 
-      <PayoutRowsEditor rows={model.rows} onChange={(rows) => setModel((m) => ({ ...m, rows }))} />
+      <PayoutRowsEditor
+        rows={model.rows}
+        onChange={(rows) => setModel((m) => ({ ...m, rows }))}
+        showAllErrors={submitAttempted}
+      />
 
       <Dialog open={blocker.state === 'blocked'} onClose={() => blocker.reset?.()}>
         <DialogTitle>Discard changes?</DialogTitle>

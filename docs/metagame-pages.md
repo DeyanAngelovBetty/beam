@@ -77,10 +77,15 @@ brief §10.1.
 ## PayoutRowsGrid (expansion content)
 
 *Per Georgi (Slack, 2026-07-30):* **Win Message | Probability | Rewards**.
-Rewards are one column, listed inline per row ("3.00 BTY, 2.00 Tokens", via the
-display label map). Probability displays as a **percentage** (stored 0..1, ×100,
+Rewards are one column, listed inline per row ("3 Coins, 2 Tokens").
+Probability displays as a **percentage** (stored 0..1, ×100,
 no trailing-zero padding). The earlier merged-cell / rowSpan anatomy (a line per
 reward) was superseded; it may return in the **editor** half of the pattern.
+
+*Terminology confirmed 2026-07-31:* user-facing reward types mirror the
+backend-aligned values **Coins** and **Tokens**. Reward amounts display as
+grouped whole numbers with readable singular/plural copy (`1 Coin`, `3 Coins`,
+`2 Tokens`, `500 Coins, 10 Tokens`); the legacy currency label is not used.
 
 ## Payout Config — Create / Edit page
 
