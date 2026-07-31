@@ -62,9 +62,9 @@ export const MultipleRules: Story = {
       initial={model(
         'Wheel',
         [
-          rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'In', ['VIP']), leaf('LoyaltyStatus', 'In', ['Gold'])])),
-          rule('pc-no-loss-abs', grp('Any', [leaf('RccSegment', 'In', ['High Value'])])),
-          rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'NotIn', ['Restricted'])]), 'Disabled'),
+          rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'IsOneOf', ['VIP']), leaf('LoyaltyStatus', 'IsOneOf', ['Gold'])])),
+          rule('pc-no-loss-abs', grp('Any', [leaf('RccSegment', 'IsOneOf', ['High Value'])])),
+          rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'IsNoneOf', ['Restricted'])]), 'Disabled'),
         ],
         'pc-no-loss-abs'
       )}
@@ -79,7 +79,7 @@ export const DisabledPayoutWarning: Story = {
     <Harness
       initial={model(
         'WheelOfWins',
-        [rule('pc-jamie-abs', grp('All', [leaf('Audience', 'In', ['VIP'])]))],
+        [rule('pc-jamie-abs', grp('All', [leaf('Audience', 'IsOneOf', ['VIP'])]))],
         'pc-jamie-abs'
       )}
     />
@@ -90,7 +90,7 @@ export const DisabledPayoutWarning: Story = {
 export const InvalidCondition: Story = {
   render: () => (
     <Harness
-      initial={model('Wheel', [rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'In', [])]))], 'pc-no-loss-abs')}
+      initial={model('Wheel', [rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'IsOneOf', [])]))], 'pc-no-loss-abs')}
     />
   ),
 };

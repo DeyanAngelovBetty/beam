@@ -4,7 +4,6 @@ import {
   gameConfigNameIsUnique,
   type GameConfig,
   type GameConfigInput,
-  type MatchMode,
   type TargetingCondition,
   type TargetingRule,
 } from './gameConfigs';
@@ -12,77 +11,40 @@ import {
   emptyLeaf,
   isValidConditionTree,
   type ConditionGroup,
-  type ConditionField,
-  type ConditionLeaf,
-  type LeafOperator,
+  type ConditionNode,
 } from './conditionTree';
 
 /**
  * The Game Config editor's FORM model + the CONDITION ADAPTER.
  *
- * ⚠️ Integration flag: Georgi's `TargetingRule.condition` is FLAT
- * (`{ match, conditions[] }`, display-string operators, string values) while the
- * ConditionBuilder is a NESTED tree (`ConditionGroup`). This adapter bridges
- * them and consumes the builder via its exported API only. Because the persisted
- * model is flat, **nested groups can't be saved** — a rule's condition is valid
- * only when it is also flat (see validateModel). Flagged to Georgi: the model
- * grows to a tree, or Game Config conditions stay flat.
+ * The backend and editor both support recursive condition trees. This adapter
+ * adds and removes the editor-only `kind` discriminator while preserving the
+ * backend operator, field, value, and statement names.
  */
 
 const MAX_NAME = 100;
 
-const ATTR_TO_FIELD: Record<TargetingCondition['attribute'], ConditionField> = {
-  Audience: 'Audience',
-  'Loyalty Status': 'LoyaltyStatus',
-  'RCC Segment': 'RccSegment',
-};
-const FIELD_TO_ATTR: Record<ConditionField, TargetingCondition['attribute']> = {
-  Audience: 'Audience',
-  LoyaltyStatus: 'Loyalty Status',
-  RccSegment: 'RCC Segment',
-};
-const OP_TO_LEAF: Record<TargetingCondition['operator'], LeafOperator> = {
-  'is one of': 'In',
-  'is none of': 'NotIn',
-};
-const LEAF_TO_OP: Record<LeafOperator, TargetingCondition['operator']> = {
-  In: 'is one of',
-  NotIn: 'is none of',
-};
-
-export function conditionToGroup(cond?: { match: MatchMode; conditions: TargetingCondition[] }): ConditionGroup {
-  if (!cond || cond.conditions.length === 0) {
-    return { kind: 'group', operator: cond?.match ?? 'All', children: [emptyLeaf()] };
-  }
-  return {
-    kind: 'group',
-    operator: cond.match,
-    children: cond.conditions.map(
-      (c): ConditionLeaf => ({
-        kind: 'leaf',
-        field: ATTR_TO_FIELD[c.attribute],
-        operator: OP_TO_LEAF[c.operator],
-        values: [...c.values],
-      })
-    ),
-  };
+export function conditionToGroup(condition?: TargetingCondition): ConditionGroup {
+  if (!condition) return { kind: 'group', operator: 'All', children: [emptyLeaf()] };
+  const node = conditionToNode(condition);
+  return node.kind === 'group' ? node : { kind: 'group', operator: 'All', children: [node] };
 }
 
-/** ConditionGroup → Georgi's flat condition (root leaf children only). */
-export function groupToCondition(group: ConditionGroup): { match: MatchMode; conditions: TargetingCondition[] } {
-  const conditions = group.children
-    .filter((c): c is ConditionLeaf => c.kind === 'leaf')
-    .map((leaf) => ({
-      attribute: FIELD_TO_ATTR[leaf.field],
-      operator: LEAF_TO_OP[leaf.operator],
-      values: leaf.values.map(String),
-    }));
-  return { match: group.operator, conditions };
+function conditionToNode(condition: TargetingCondition): ConditionNode {
+  return 'statements' in condition
+    ? { kind: 'group', operator: condition.operator, children: condition.statements.map(conditionToNode) }
+    : { kind: 'leaf', field: condition.field, operator: condition.operator, values: [...condition.values] };
 }
 
-/** Flat = the root group holds only leaves (the persisted model can't nest). */
-export function isFlatGroup(group: ConditionGroup): boolean {
-  return group.children.every((c) => c.kind === 'leaf');
+/** Editor tree → exact recursive backend condition shape. */
+export function groupToCondition(group: ConditionGroup): TargetingCondition {
+  return nodeToCondition(group);
+}
+
+function nodeToCondition(node: ConditionNode): TargetingCondition {
+  return node.kind === 'group'
+    ? { operator: node.operator, statements: node.children.map(nodeToCondition) }
+    : { operator: node.operator, field: node.field, values: [...node.values] };
 }
 
 // ---- Form model -------------------------------------------------------------
@@ -92,9 +54,6 @@ export interface EditorRule {
   id?: string;
   status: PayoutStatus;
   payoutConfigId: string;
-  /** Not edited here — the sketch shows names, the API defines none. Retained on
-   *  save, flagged to Georgi (ConditionSummary is the rule's identity line). */
-  name: string;
   group: ConditionGroup;
 }
 
@@ -102,7 +61,6 @@ export interface EditorFallback {
   _key: string;
   id?: string;
   payoutConfigId: string;
-  name: string;
 }
 
 export interface EditorModel {
@@ -120,7 +78,6 @@ export function emptyRule(): EditorRule {
     _key: key(),
     status: 'Enabled',
     payoutConfigId: '',
-    name: '',
     group: { kind: 'group', operator: 'All', children: [emptyLeaf()] },
   };
 }
@@ -130,7 +87,7 @@ export function emptyModel(): EditorModel {
     code: '',
     gameType: '',
     rules: [],
-    fallback: { _key: key(), payoutConfigId: '', name: 'Fallback' },
+    fallback: { _key: key(), payoutConfigId: '' },
   };
 }
 
@@ -151,19 +108,15 @@ export function toEditorModel(config: GameConfig): EditorModel {
       id: r.id,
       status: r.status,
       payoutConfigId: r.payoutConfigId,
-      name: r.name,
       group: conditionToGroup(r.condition),
     })),
     fallback: {
       _key: key(),
       id: fallbackRule?.id,
       payoutConfigId: fallbackRule?.payoutConfigId ?? '',
-      name: fallbackRule?.name ?? 'Fallback',
     },
   };
 }
-
-const payoutName = (id: string) => PAYOUT_CONFIGS.find((p) => p.id === id)?.name ?? id;
 
 export function toDomainInput(model: EditorModel): GameConfigInput {
   const n = model.rules.length;
@@ -172,8 +125,6 @@ export function toDomainInput(model: EditorModel): GameConfigInput {
     priority: (n - i) * 100, // order → priority; top = highest
     status: r.status,
     payoutConfigId: r.payoutConfigId,
-    payoutConfigName: payoutName(r.payoutConfigId),
-    name: r.name,
     condition: groupToCondition(r.group),
   }));
   rules.push({
@@ -181,8 +132,6 @@ export function toDomainInput(model: EditorModel): GameConfigInput {
     priority: 0,
     status: 'Enabled',
     payoutConfigId: model.fallback.payoutConfigId,
-    payoutConfigName: payoutName(model.fallback.payoutConfigId),
-    name: model.fallback.name || 'Fallback',
   });
   return { code: model.code.trim(), gameType: model.gameType as GameType, targetingRules: rules };
 }
@@ -243,7 +192,6 @@ export function validateModel(model: EditorModel, excludeId?: string): ModelVali
     const pe = payoutError(r.payoutConfigId);
     if (pe) errs.payoutConfig = pe;
     if (!isValidConditionTree(r.group)) errs.condition = 'Complete the condition — every rule needs values.';
-    else if (!isFlatGroup(r.group)) errs.condition = 'Nested groups aren’t supported yet.';
     return errs;
   });
 

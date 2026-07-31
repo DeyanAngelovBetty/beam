@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import {
   Stack,
-  Box,
   Paper,
   Button,
   Typography,
@@ -9,14 +9,13 @@ import {
   Switch,
   IconButton,
   Tooltip,
-  BeamStatusBadge,
 } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { PAYOUT_CONFIGS, statusBadge, type GameType, type PayoutStatus } from './payoutConfigs';
+import { PAYOUT_CONFIGS, type GameType, type PayoutStatus } from './payoutConfigs';
 import { ConditionBuilder } from './ConditionBuilder';
 import type { ConditionGroup } from './conditionTree';
 import {
@@ -40,15 +39,20 @@ import {
 export function TargetingRulesEditor({
   value,
   onChange,
+  showAllErrors = false,
 }: {
   value: EditorModel;
   onChange: (next: EditorModel) => void;
+  showAllErrors?: boolean;
 }) {
+  const [touched, setTouched] = useState<Set<string>>(() => new Set());
   const v = validateModel(value);
   const { rules, fallback, gameType } = value;
 
   const setRules = (next: EditorRule[]) => onChange({ ...value, rules: next });
   const setFallback = (next: EditorFallback) => onChange({ ...value, fallback: next });
+  const markTouched = (key: string) => setTouched((current) => new Set(current).add(key));
+  const showError = (key: string) => showAllErrors || touched.has(key);
 
   const updateRuleAt = (i: number, patch: Partial<EditorRule>) =>
     setRules(rules.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -68,18 +72,6 @@ export function TargetingRulesEditor({
         Targeting Rules
       </Typography>
 
-      {/* AGGREGATE, non-blocking (the Enable-action concern; awareness only here).
-          Ships plain. */}
-      {v.disabledRefRuleNumbers.length > 0 && (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ color: 'warning.main' }} role="status">
-          <WarningAmberIcon fontSize="small" />
-          <Typography variant="body2">
-            This config can’t be Enabled while{' '}
-            {v.disabledRefRuleNumbers.map((n) => `rule ${n}`).join(', ')} uses a Disabled Payout Config.
-          </Typography>
-        </Stack>
-      )}
-
       {/* Section action: a LEFT-aligned strip directly above the rules it
           operates on (altitude rule, detail-grammar §4 — the right edge is
           page-only). Matches PayoutRowsEditor's Add Row. */}
@@ -95,11 +87,17 @@ export function TargetingRulesEditor({
           isFirst={i === 0}
           isLast={i === rules.length - 1}
           gameType={gameType}
-          payoutError={v.rules[i]?.payoutConfig}
-          conditionError={v.rules[i]?.condition}
+          payoutError={showError(`payout:${rule._key}`) ? v.rules[i]?.payoutConfig : undefined}
+          conditionError={showError(`condition:${rule._key}`) ? v.rules[i]?.condition : undefined}
           onStatus={(status) => updateRuleAt(i, { status })}
-          onPayout={(payoutConfigId) => updateRuleAt(i, { payoutConfigId })}
-          onGroup={(group) => updateRuleAt(i, { group })}
+          onPayout={(payoutConfigId) => {
+            markTouched(`payout:${rule._key}`);
+            updateRuleAt(i, { payoutConfigId });
+          }}
+          onGroup={(group) => {
+            markTouched(`condition:${rule._key}`);
+            updateRuleAt(i, { group });
+          }}
           onDelete={() => removeRuleAt(i)}
           onMove={(dir) => moveRule(i, dir)}
         />
@@ -111,13 +109,16 @@ export function TargetingRulesEditor({
         <Stack spacing={1}>
           <Typography variant="subtitle2">Fallback</Typography>
           <Typography variant="body2" color="text.secondary">
-            NO CONDITION — always matches when no rule above applies.
+            No condition — always matches and is evaluated last.
           </Typography>
           <PayoutConfigSelect
             gameType={gameType}
             value={fallback.payoutConfigId}
-            error={v.fallback}
-            onChange={(payoutConfigId) => setFallback({ ...fallback, payoutConfigId })}
+            error={showError('fallback') ? v.fallback : undefined}
+            onChange={(payoutConfigId) => {
+              markTouched('fallback');
+              setFallback({ ...fallback, payoutConfigId });
+            }}
             ariaLabel="Fallback Payout Config"
           />
         </Stack>
@@ -213,8 +214,7 @@ function RuleCard({
   );
 }
 
-/** PayoutConfig select — filtered to the GameType, each option name + status
- *  badge (Disabled selectable). Orphan loaded ids (from seed) render flagged. */
+/** PayoutConfig select — filtered to the GameType with Disabled options selectable. */
 function PayoutConfigSelect({
   gameType,
   value,
@@ -228,49 +228,53 @@ function PayoutConfigSelect({
   onChange: (id: string) => void;
   ariaLabel: string;
 }) {
-  const options = PAYOUT_CONFIGS.filter((p) => !gameType || p.gameType === gameType).map((p) => ({
+  const options = PAYOUT_CONFIGS.filter((p) => gameType && p.gameType === gameType).map((p) => ({
     id: p.id,
     label: p.name,
     status: p.status as PayoutStatus | undefined,
   }));
-  if (value && !options.some((o) => o.id === value)) {
-    options.unshift({ id: value, label: `${value} (not in this game type)`, status: undefined });
-  }
-
+  const selectedOption = options.find((option) => option.id === value);
   return (
-    <TextField
-      select
-      size="small"
-      label="Payout Config"
-      sx={{ minWidth: 360, maxWidth: 480 }}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      error={Boolean(error)}
-      helperText={error}
-      inputProps={{ 'aria-label': ariaLabel }}
-      SelectProps={{
-        renderValue: (selected) => {
-          const o = options.find((x) => x.id === selected);
-          return o ? o.label : '';
-        },
-      }}
-    >
-      {options.length === 0 && (
-        <MenuItem value="" disabled>
-          No Payout Configs for this game type
-        </MenuItem>
-      )}
-      {options.map((o) => {
-        const badge = o.status ? statusBadge(o.status) : null;
-        return (
-          <MenuItem key={o.id} value={o.id}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-              <span>{o.label}</span>
-              {badge && <BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
-            </Box>
+    <Stack spacing={0.75}>
+      <TextField
+        select
+        size="small"
+        label="Payout Config"
+        sx={{ minWidth: 360, maxWidth: 480 }}
+        value={value}
+        disabled={!gameType}
+        onChange={(e) => onChange(e.target.value)}
+        error={Boolean(error)}
+        helperText={error}
+        inputProps={{ 'aria-label': ariaLabel }}
+        SelectProps={{
+          renderValue: (selected) => {
+            const o = options.find((x) => x.id === selected);
+            return o ? `${o.label} — ${o.status}` : '';
+          },
+        }}
+      >
+        {options.length === 0 && (
+          <MenuItem value="" disabled>
+            No Payout Configs for this game type
           </MenuItem>
-        );
-      })}
-    </TextField>
+        )}
+        {options.map((o) => {
+          return (
+            <MenuItem key={o.id} value={o.id}>
+              {o.label} — {o.status}
+            </MenuItem>
+          );
+        })}
+      </TextField>
+      {selectedOption?.status === 'Disabled' && (
+        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: 'warning.main' }} role="status">
+          <WarningAmberIcon fontSize="small" />
+          <Typography variant="body2">
+            This PayoutConfig must be enabled before the GameConfig can be enabled.
+          </Typography>
+        </Stack>
+      )}
+    </Stack>
   );
 }

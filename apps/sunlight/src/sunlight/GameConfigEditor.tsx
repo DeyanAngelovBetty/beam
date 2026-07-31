@@ -62,6 +62,8 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
     [existing]
   );
   const [model, setModel] = useState<EditorModel>(initialModel);
+  const [touched, setTouched] = useState({ code: false, gameType: false });
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const originalSerialized = useMemo(() => serializeModel(initialModel), [initialModel]);
   const isDirty = serializeModel(model) !== originalSerialized;
   const savingRef = useRef(false);
@@ -103,12 +105,13 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
             <Button variant="text" onClick={() => navigate('/game-configs')}>
               Cancel
             </Button>
-            <Tooltip title={v.valid ? '' : saveReason}>
+            <Tooltip title={v.valid ? '' : submitAttempted ? saveReason : 'Complete the form to continue.'}>
               <span>
                 <Button
                   variant="contained"
                   aria-disabled={!v.valid || undefined}
                   onClick={() => {
+                    setSubmitAttempted(true);
                     if (v.valid) save();
                   }}
                   sx={v.valid ? undefined : { opacity: 0.5 }}
@@ -131,8 +134,9 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
           required
           value={model.code}
           onChange={(e) => setModel((m) => ({ ...m, code: e.target.value }))}
-          error={Boolean(v.code)}
-          helperText={v.code}
+          onBlur={() => setTouched((current) => ({ ...current, code: true }))}
+          error={Boolean(v.code) && (touched.code || submitAttempted)}
+          helperText={touched.code || submitAttempted ? v.code : undefined}
           sx={{ maxWidth: 480 }}
           inputProps={{ maxLength: MAX_GC_NAME }}
         />
@@ -151,8 +155,13 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
             required
             value={model.gameType}
             onChange={(e) => setModel((m) => ({ ...m, gameType: e.target.value as GameType }))}
-            error={Boolean(v.gameType)}
-            helperText={v.gameType ?? 'Payout Config options filter by game type.'}
+            onBlur={() => setTouched((current) => ({ ...current, gameType: true }))}
+            error={Boolean(v.gameType) && (touched.gameType || submitAttempted)}
+            helperText={
+              (touched.gameType || submitAttempted) && v.gameType
+                ? v.gameType
+                : 'Payout Config options filter by game type.'
+            }
             sx={{ maxWidth: 480 }}
           >
             {GAME_TYPES.map((g) => (
@@ -164,7 +173,7 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
         )}
       </Stack>
 
-      <TargetingRulesEditor value={model} onChange={setModel} />
+      <TargetingRulesEditor value={model} onChange={setModel} showAllErrors={submitAttempted} />
 
       <Dialog open={blocker.state === 'blocked'} onClose={() => blocker.reset?.()}>
         <DialogTitle>Discard changes?</DialogTitle>

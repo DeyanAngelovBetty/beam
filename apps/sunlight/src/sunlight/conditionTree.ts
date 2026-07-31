@@ -2,12 +2,12 @@
  * ConditionTree — the domain shape for MetaGame targeting conditions, mirroring
  * the API's Condition JSON (brief §7). NEVER rendered or accepted as raw JSON:
  * the ConditionBuilder edits this tree, the ConditionSummary reads it back as
- * prose. A node is a Group (All/Any of children) or a Leaf (field In/NotIn a set
- * of values).
+ * prose. A node is a Group (All/Any of children) or a Leaf (field
+ * IsOneOf/IsNoneOf a set of values).
  */
 
 export type ConditionField = 'Audience' | 'LoyaltyStatus' | 'RccSegment';
-export type LeafOperator = 'In' | 'NotIn';
+export type LeafOperator = 'IsOneOf' | 'IsNoneOf';
 export type GroupOperator = 'All' | 'Any';
 
 export interface ConditionLeaf {
@@ -33,8 +33,8 @@ export const GROUP_LABEL: Record<GroupOperator, string> = {
 };
 
 export const LEAF_OP_LABEL: Record<LeafOperator, string> = {
-  In: 'is one of',
-  NotIn: 'is none of',
+  IsOneOf: 'is one of',
+  IsNoneOf: 'is none of',
 };
 
 /** Field labels per the spec (refine against brief §7 when docs/reference lands). */
@@ -45,7 +45,7 @@ export const FIELD_LABEL: Record<ConditionField, string> = {
 };
 
 export const CONDITION_FIELDS: ConditionField[] = ['Audience', 'LoyaltyStatus', 'RccSegment'];
-export const LEAF_OPERATORS: LeafOperator[] = ['In', 'NotIn'];
+export const LEAF_OPERATORS: LeafOperator[] = ['IsOneOf', 'IsNoneOf'];
 export const GROUP_OPERATORS: GroupOperator[] = ['All', 'Any'];
 
 /**
@@ -86,7 +86,7 @@ export function labelForValue(field: ConditionField, value: string | number): st
 /** New leaf: field/operator default (the API requires a field), values empty
  *  (the honest "incomplete" signal — flagged by validation, not a fake empty field). */
 export function emptyLeaf(): ConditionLeaf {
-  return { kind: 'leaf', field: 'Audience', operator: 'In', values: [] };
+  return { kind: 'leaf', field: 'Audience', operator: 'IsOneOf', values: [] };
 }
 
 /** New group starts empty — its empty state is a real, flagged validation error. */

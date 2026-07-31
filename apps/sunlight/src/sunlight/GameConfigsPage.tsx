@@ -14,7 +14,6 @@ import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import EditIcon from '@mui/icons-material/Edit';
 import { GAME_TYPES, PAYOUT_STATUSES, statusBadge } from './payoutConfigs';
 import type { GameType, PayoutStatus } from './payoutConfigs';
 import { GAME_CONFIGS } from './gameConfigs';
@@ -104,12 +103,6 @@ export function GameConfigsPage() {
   ];
 
   const rowActions = (config: GameConfig): BeamRowAction[] => [
-    {
-      id: 'edit',
-      label: 'Edit',
-      icon: <EditIcon fontSize="small" />,
-      onSelect: () => navigate(`/game-configs/${config.id}`),
-    },
     config.status === 'Enabled'
       ? {
           id: 'disable',
@@ -193,6 +186,7 @@ export function GameConfigsPage() {
         getRowId={(config) => config.id}
         rowActions={rowActions}
         renderExpanded={(config) => <TargetingRulesGrid rules={config.targetingRules} />}
+        showExpandedActions={false}
         onRowClick={(config) => navigate(`/game-configs/${config.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated

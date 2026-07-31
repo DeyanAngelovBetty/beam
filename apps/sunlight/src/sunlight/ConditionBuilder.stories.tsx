@@ -54,7 +54,7 @@ function Harness({ initial, summary = false }: { initial: ConditionGroup; summar
 
 /** A single leaf inside the (always-Group) root. */
 export const SingleLeaf: Story = {
-  render: () => <Harness initial={g('All', [l('Audience', 'In', [1001])])} />,
+  render: () => <Harness initial={g('All', [l('Audience', 'IsOneOf', [1001])])} />,
 };
 
 /** Flat ALL group — the sketch's rule 1. */
@@ -62,16 +62,16 @@ export const FlatAll: Story = {
   render: () => (
     <Harness
       initial={g('All', [
-        l('Audience', 'In', [1001, 1002]),
-        l('LoyaltyStatus', 'In', ['VIP', 'Diamond']),
+        l('Audience', 'IsOneOf', [1001, 1002]),
+        l('LoyaltyStatus', 'IsOneOf', ['VIP', 'Diamond']),
       ])}
     />
   ),
 };
 
-/** ANY group with a NotIn leaf — rule 2. */
-export const AnyWithNotIn: Story = {
-  render: () => <Harness initial={g('Any', [l('RccSegment', 'NotIn', ['Whale'])])} />,
+/** ANY group with an IsNoneOf leaf — rule 2. */
+export const AnyWithIsNoneOf: Story = {
+  render: () => <Harness initial={g('Any', [l('RccSegment', 'IsNoneOf', ['Whale'])])} />,
 };
 
 /** Nested — the brief §7.1 example: ALL containing a leaf + an ANY group. */
@@ -79,8 +79,8 @@ export const Nested: Story = {
   render: () => (
     <Harness
       initial={g('All', [
-        l('LoyaltyStatus', 'In', ['VIP']),
-        g('Any', [l('Audience', 'In', [1001]), l('RccSegment', 'In', ['Regular'])]),
+        l('LoyaltyStatus', 'IsOneOf', ['VIP']),
+        g('Any', [l('Audience', 'IsOneOf', [1001]), l('RccSegment', 'IsOneOf', ['Regular'])]),
       ])}
     />
   ),
@@ -90,7 +90,7 @@ export const Nested: Story = {
 export const InvalidStates: Story = {
   render: () => (
     <Harness
-      initial={g('All', [g('All', []), l('Audience', 'In', [])])}
+      initial={g('All', [g('All', []), l('Audience', 'IsOneOf', [])])}
     />
   ),
 };
@@ -101,8 +101,8 @@ export const EditableAndReadOnly: Story = {
     <Harness
       summary
       initial={g('All', [
-        l('LoyaltyStatus', 'In', ['VIP']),
-        g('Any', [l('Audience', 'In', [1001]), l('RccSegment', 'NotIn', ['Whale'])]),
+        l('LoyaltyStatus', 'IsOneOf', ['VIP']),
+        g('Any', [l('Audience', 'IsOneOf', [1001]), l('RccSegment', 'IsNoneOf', ['Whale'])]),
       ])}
     />
   ),

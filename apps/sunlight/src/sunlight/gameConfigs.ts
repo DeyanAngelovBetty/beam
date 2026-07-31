@@ -4,24 +4,19 @@ import type { GameType, PayoutStatus } from './payoutConfigs';
 export type GcIdPrefix = 'gc' | 'tr';
 
 export type MatchMode = 'All' | 'Any';
+export type TargetingLeafOperator = 'IsOneOf' | 'IsNoneOf';
+export type TargetingConditionField = 'Audience' | 'LoyaltyStatus' | 'RccSegment';
 
-export interface TargetingCondition {
-  attribute: 'Audience' | 'Loyalty Status' | 'RCC Segment';
-  operator: 'is one of' | 'is none of';
-  values: string[];
-}
+export type TargetingCondition =
+  | { operator: MatchMode; statements: TargetingCondition[] }
+  | { operator: TargetingLeafOperator; field: TargetingConditionField; values: (string | number)[] };
 
 export interface TargetingRule {
   id: string;
   priority: number;
   status: PayoutStatus;
   payoutConfigId: string;
-  payoutConfigName: string;
-  name: string;
-  condition?: {
-    match: MatchMode;
-    conditions: TargetingCondition[];
-  };
+  condition?: TargetingCondition;
 }
 
 export interface GameConfig {
@@ -43,14 +38,12 @@ export const GAME_CONFIGS: GameConfig[] = [
         id: 'tr-wheel-vip-gold',
         priority: 300,
         status: 'Enabled',
-        payoutConfigId: 'pc-wheel-vip',
-        payoutConfigName: 'VIP Wheel Payout',
-        name: 'VIP Gold Players',
+        payoutConfigId: 'pc-no-loss-abs',
         condition: {
-          match: 'All',
-          conditions: [
-            { attribute: 'Audience', operator: 'is one of', values: ['VIP'] },
-            { attribute: 'Loyalty Status', operator: 'is one of', values: ['Gold'] },
+          operator: 'All',
+          statements: [
+            { field: 'Audience', operator: 'IsOneOf', values: ['VIP'] },
+            { field: 'LoyaltyStatus', operator: 'IsOneOf', values: ['Gold'] },
           ],
         },
       },
@@ -58,14 +51,12 @@ export const GAME_CONFIGS: GameConfig[] = [
         id: 'tr-wheel-special',
         priority: 200,
         status: 'Enabled',
-        payoutConfigId: 'pc-wheel-special',
-        payoutConfigName: 'Special Wheel Payout',
-        name: 'Special Segment Players',
+        payoutConfigId: 'pc-no-loss-abs',
         condition: {
-          match: 'Any',
-          conditions: [
-            { attribute: 'RCC Segment', operator: 'is one of', values: ['High Value'] },
-            { attribute: 'Audience', operator: 'is none of', values: ['Restricted'] },
+          operator: 'Any',
+          statements: [
+            { field: 'RccSegment', operator: 'IsOneOf', values: ['High Value'] },
+            { field: 'Audience', operator: 'IsNoneOf', values: ['Restricted'] },
           ],
         },
       },
@@ -73,21 +64,17 @@ export const GAME_CONFIGS: GameConfig[] = [
         id: 'tr-wheel-returning',
         priority: 100,
         status: 'Disabled',
-        payoutConfigId: 'pc-wheel-returning',
-        payoutConfigName: 'Returning Player Wheel Payout',
-        name: 'Returning Players',
+        payoutConfigId: 'pc-no-loss-abs',
         condition: {
-          match: 'All',
-          conditions: [{ attribute: 'RCC Segment', operator: 'is one of', values: ['Returning'] }],
+          operator: 'All',
+          statements: [{ field: 'RccSegment', operator: 'IsOneOf', values: ['Returning'] }],
         },
       },
       {
         id: 'tr-wheel-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-wheel-default',
-        payoutConfigName: 'Default Wheel Payout',
-        name: 'Fallback',
+        payoutConfigId: 'pc-no-loss-abs',
       },
     ],
   },
@@ -101,21 +88,17 @@ export const GAME_CONFIGS: GameConfig[] = [
         id: 'tr-scratcher-vip',
         priority: 100,
         status: 'Enabled',
-        payoutConfigId: 'pc-scratcher-vip',
-        payoutConfigName: 'VIP Daily Scratcher Payout',
-        name: 'VIP Players',
+        payoutConfigId: 'pc-legacy-scratcher',
         condition: {
-          match: 'Any',
-          conditions: [{ attribute: 'Audience', operator: 'is one of', values: ['VIP', 'High Rollers'] }],
+          operator: 'Any',
+          statements: [{ field: 'Audience', operator: 'IsOneOf', values: ['VIP', 'High Rollers'] }],
         },
       },
       {
         id: 'tr-scratcher-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-scratcher-default',
-        payoutConfigName: 'Default Daily Scratcher Payout',
-        name: 'Fallback',
+        payoutConfigId: 'pc-legacy-scratcher',
       },
     ],
   },
@@ -129,14 +112,12 @@ export const GAME_CONFIGS: GameConfig[] = [
         id: 'tr-instant-test',
         priority: 100,
         status: 'Disabled',
-        payoutConfigId: 'pc-instant-test',
-        payoutConfigName: 'Instant Wheel Test Payout',
-        name: 'Test Audience',
+        payoutConfigId: 'pc-topaz-weekend',
         condition: {
-          match: 'All',
-          conditions: [
-            { attribute: 'Audience', operator: 'is one of', values: ['Internal Testers'] },
-            { attribute: 'RCC Segment', operator: 'is none of', values: ['Self Excluded'] },
+          operator: 'All',
+          statements: [
+            { field: 'Audience', operator: 'IsOneOf', values: ['Internal Testers'] },
+            { field: 'RccSegment', operator: 'IsNoneOf', values: ['Self Excluded'] },
           ],
         },
       },
@@ -144,9 +125,7 @@ export const GAME_CONFIGS: GameConfig[] = [
         id: 'tr-instant-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-instant-default',
-        payoutConfigName: 'Default Instant Wheel Payout',
-        name: 'Fallback',
+        payoutConfigId: 'pc-topaz-weekend',
       },
     ],
   },
