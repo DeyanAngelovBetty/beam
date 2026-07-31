@@ -64,11 +64,11 @@ export function TargetingRulesEditor({
 
   return (
     <Stack spacing={1.5}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <Stack justifyContent="space-between" alignItems="left">
         <Typography variant="subtitle2" color="text.secondary">
           Targeting Rules
         </Typography>
-        <Button size="small" startIcon={<AddIcon />} onClick={addRule}>
+        <Button size="small" startIcon={<AddIcon />} onClick={addRule} sx={{ width: 'fit-content' }}>
           Add Rule
         </Button>
       </Stack>
