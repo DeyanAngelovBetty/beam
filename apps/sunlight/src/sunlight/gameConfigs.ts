@@ -1,6 +1,5 @@
 import type { GameType, PayoutStatus } from './payoutConfigs';
 
-// ID prefixes for the mock store (the real API assigns these).
 export type GcIdPrefix = 'gc' | 'tr';
 
 export type MatchMode = 'All' | 'Any';
@@ -27,149 +26,107 @@ export interface GameConfig {
   targetingRules: TargetingRule[];
 }
 
+/** Betty-owned GameConfigs for the three-game visual demo. */
 export const GAME_CONFIGS: GameConfig[] = [
   {
-    id: 'gc-wheel-global',
-    code: 'WHEEL_GLOBAL',
-    gameType: 'Wheel',
+    id: 'gc-mystery-box-default',
+    code: 'MYSTERY_BOX_DEFAULT',
+    gameType: 'MysteryBox',
     status: 'Enabled',
     targetingRules: [
       {
-        id: 'tr-wheel-vip-gold',
-        priority: 300,
-        status: 'Enabled',
-        payoutConfigId: 'pc-no-loss-abs',
-        condition: {
-          operator: 'All',
-          statements: [
-            { field: 'Audience', operator: 'IsOneOf', values: ['VIP'] },
-            { field: 'LoyaltyStatus', operator: 'IsOneOf', values: ['Gold'] },
-          ],
-        },
-      },
-      {
-        id: 'tr-wheel-special',
-        priority: 200,
-        status: 'Enabled',
-        payoutConfigId: 'pc-no-loss-abs',
-        condition: {
-          operator: 'Any',
-          statements: [
-            { field: 'RccSegment', operator: 'IsOneOf', values: ['High Value'] },
-            { field: 'Audience', operator: 'IsNoneOf', values: ['Restricted'] },
-          ],
-        },
-      },
-      {
-        id: 'tr-wheel-returning',
+        id: 'tr-mystery-box-vip',
         priority: 100,
-        status: 'Disabled',
-        payoutConfigId: 'pc-no-loss-abs',
+        status: 'Enabled',
+        payoutConfigId: 'pc-mystery-box-premium',
         condition: {
           operator: 'All',
-          statements: [{ field: 'RccSegment', operator: 'IsOneOf', values: ['Returning'] }],
+          statements: [
+            { field: 'Audience', operator: 'IsOneOf', values: [1001] },
+            { field: 'RccSegment', operator: 'IsNoneOf', values: ['Toddler'] },
+            {
+              operator: 'Any',
+              statements: [
+                { field: 'LoyaltyStatus', operator: 'IsOneOf', values: ['Diamond', 'VIP'] },
+                { field: 'RccSegment', operator: 'IsOneOf', values: ['Whale'] },
+              ],
+            },
+          ],
         },
       },
+      {
+        id: 'tr-mystery-box-fallback',
+        priority: 0,
+        status: 'Enabled',
+        payoutConfigId: 'pc-mystery-box-standard',
+      },
+    ],
+  },
+  {
+    id: 'gc-mystery-box-promotion',
+    code: 'MYSTERY_BOX_PROMOTION',
+    gameType: 'MysteryBox',
+    status: 'Disabled',
+    targetingRules: [
+      {
+        id: 'tr-mystery-box-promotion-fallback',
+        priority: 0,
+        status: 'Enabled',
+        payoutConfigId: 'pc-mystery-box-promotion',
+      },
+    ],
+  },
+  {
+    id: 'gc-wheel-default',
+    code: 'WHEEL_DEFAULT',
+    gameType: 'Wheel',
+    status: 'Enabled',
+    targetingRules: [
       {
         id: 'tr-wheel-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-no-loss-abs',
+        payoutConfigId: 'pc-wheel-standard',
       },
     ],
   },
   {
-    id: 'gc-wheel-promotion',
-    code: 'WHEEL_PROMOTION',
-    gameType: 'Wheel',
-    status: 'Disabled',
-    targetingRules: [
-      {
-        id: 'tr-wheel-promotion-fallback',
-        priority: 0,
-        status: 'Enabled',
-        payoutConfigId: 'pc-no-loss-abs',
-      },
-    ],
-  },
-  {
-    id: 'gc-daily-scratcher',
-    code: 'DAILY_SCRATCHER_CA',
-    gameType: 'DailyScratcher',
+    id: 'gc-scratcher-default',
+    code: 'SCRATCHER_DEFAULT',
+    gameType: 'Scratcher',
     status: 'Enabled',
     targetingRules: [
-      {
-        id: 'tr-scratcher-vip',
-        priority: 100,
-        status: 'Enabled',
-        payoutConfigId: 'pc-legacy-scratcher',
-        condition: {
-          operator: 'Any',
-          statements: [{ field: 'Audience', operator: 'IsOneOf', values: ['VIP', 'High Rollers'] }],
-        },
-      },
       {
         id: 'tr-scratcher-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-legacy-scratcher',
-      },
-    ],
-  },
-  {
-    id: 'gc-instant-wheel-test',
-    code: 'INSTANT_WHEEL_TEST',
-    gameType: 'InstantWheel',
-    status: 'Disabled',
-    targetingRules: [
-      {
-        id: 'tr-instant-test',
-        priority: 100,
-        status: 'Disabled',
-        payoutConfigId: 'pc-topaz-weekend',
-        condition: {
-          operator: 'All',
-          statements: [
-            { field: 'Audience', operator: 'IsOneOf', values: ['Internal Testers'] },
-            { field: 'RccSegment', operator: 'IsNoneOf', values: ['Self Excluded'] },
-          ],
-        },
-      },
-      {
-        id: 'tr-instant-fallback',
-        priority: 0,
-        status: 'Enabled',
-        payoutConfigId: 'pc-default-instant-wheel',
+        payoutConfigId: 'pc-scratcher-standard',
       },
     ],
   },
 ];
 
-// ---- Mock persistence (the seed store as a stand-in API) --------------------
-// Extends Georgi's merged domain with the editor's create/update helpers,
-// mirroring payoutConfigs.ts. Aggregate PUT shape: TargetingRule.id retained,
-// new rules assigned, omitted rules removed (the editor sends the full list).
-// Mutates GAME_CONFIGS; the list remounts on navigate and reflects it.
-
 let gcIdSeq = 0;
+
 export function newGcId(prefix: GcIdPrefix): string {
   gcIdSeq += 1;
   return `${prefix}-${Date.now().toString(36)}-${gcIdSeq}`;
 }
 
 export function getGameConfig(id: string): GameConfig | undefined {
-  return GAME_CONFIGS.find((c) => c.id === id);
+  return GAME_CONFIGS.find((config) => config.id === id);
 }
 
-/** Config code must be unique within its GameType. Excludes the config being edited. */
 export function gameConfigNameIsUnique(code: string, gameType: GameType, excludeId?: string): boolean {
-  const c = code.trim().toLowerCase();
+  const normalizedCode = code.trim().toLowerCase();
   return !GAME_CONFIGS.some(
-    (g) => g.id !== excludeId && g.gameType === gameType && g.code.trim().toLowerCase() === c
+    (config) =>
+      config.id !== excludeId
+      && config.gameType === gameType
+      && config.code.trim().toLowerCase() === normalizedCode
   );
 }
 
-/** The editor payload — code + gameType + the full (already-adapted) rule list. */
 export interface GameConfigInput {
   code: string;
   gameType: GameType;
@@ -177,10 +134,10 @@ export interface GameConfigInput {
 }
 
 function stampRules(rules: TargetingRule[]): TargetingRule[] {
-  return rules.map((r) => ({ ...r, id: r.id || newGcId('tr') }));
+  return rules.map((rule) => ({ ...rule, id: rule.id || newGcId('tr') }));
 }
 
-/** Create — always Disabled (activation is a separate action). */
+/** New GameConfigs always start Disabled. */
 export function createGameConfig(input: GameConfigInput): GameConfig {
   const config: GameConfig = {
     id: newGcId('gc'),
@@ -193,9 +150,9 @@ export function createGameConfig(input: GameConfigInput): GameConfig {
   return config;
 }
 
-/** Update — aggregate replace. GameType is read-only on edit, so it is untouched. */
+/** Aggregate replacement. GameType stays immutable on Edit. */
 export function updateGameConfig(id: string, input: GameConfigInput): GameConfig | undefined {
-  const config = GAME_CONFIGS.find((c) => c.id === id);
+  const config = GAME_CONFIGS.find((candidate) => candidate.id === id);
   if (!config) return undefined;
   config.code = input.code.trim();
   config.targetingRules = stampRules(input.targetingRules);

@@ -52,7 +52,7 @@ function Harness({ initial }: { initial: EditorModel }) {
 
 /** Fallback only — no conditional rules yet (the create minimum). */
 export const FallbackOnly: Story = {
-  render: () => <Harness initial={model('Wheel', [], 'pc-no-loss-abs')} />,
+  render: () => <Harness initial={model('Wheel', [], 'pc-wheel-standard')} />,
 };
 
 /** Multiple rules — reorder arrows disable at the first (up) and last (down). */
@@ -62,11 +62,11 @@ export const MultipleRules: Story = {
       initial={model(
         'Wheel',
         [
-          rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'IsOneOf', ['VIP']), leaf('LoyaltyStatus', 'IsOneOf', ['Gold'])])),
-          rule('pc-no-loss-abs', grp('Any', [leaf('RccSegment', 'IsOneOf', ['High Value'])])),
-          rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'IsNoneOf', ['Restricted'])]), 'Disabled'),
+          rule('pc-wheel-standard', grp('All', [leaf('Audience', 'IsOneOf', [1001]), leaf('LoyaltyStatus', 'IsOneOf', ['VIP'])])),
+          rule('pc-wheel-standard', grp('Any', [leaf('RccSegment', 'IsOneOf', ['Whale'])])),
+          rule('pc-wheel-standard', grp('All', [leaf('Audience', 'IsNoneOf', [1004])]), 'Disabled'),
         ],
-        'pc-no-loss-abs'
+        'pc-wheel-standard'
       )}
     />
   ),
@@ -78,9 +78,9 @@ export const DisabledPayoutWarning: Story = {
   render: () => (
     <Harness
       initial={model(
-        'WheelOfWins',
-        [rule('pc-jamie-abs', grp('All', [leaf('Audience', 'IsOneOf', ['VIP'])]))],
-        'pc-jamie-abs'
+        'MysteryBox',
+        [rule('pc-mystery-box-promotion', grp('All', [leaf('Audience', 'IsOneOf', [1001])]))],
+        'pc-mystery-box-promotion'
       )}
     />
   ),
@@ -90,7 +90,7 @@ export const DisabledPayoutWarning: Story = {
 export const InvalidCondition: Story = {
   render: () => (
     <Harness
-      initial={model('Wheel', [rule('pc-no-loss-abs', grp('All', [leaf('Audience', 'IsOneOf', [])]))], 'pc-no-loss-abs')}
+      initial={model('Wheel', [rule('pc-wheel-standard', grp('All', [leaf('Audience', 'IsOneOf', [])]))], 'pc-wheel-standard')}
     />
   ),
 };

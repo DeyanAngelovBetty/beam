@@ -1,5 +1,8 @@
 import type { GameType } from './payoutConfigs';
-import { replaceDefaultGameConfig } from './defaultGameConfigHelpers';
+import {
+  INITIAL_DEFAULT_GAME_CONFIGS,
+  replaceDefaultGameConfig,
+} from './defaultGameConfigHelpers';
 
 export interface DefaultGameConfigMapping {
   gameType: GameType;
@@ -7,10 +10,8 @@ export interface DefaultGameConfigMapping {
 }
 
 /** Visual mock for GET /defaultGameConfigs. One mapping at most per GameType. */
-export let DEFAULT_GAME_CONFIGS: DefaultGameConfigMapping[] = [
-  { gameType: 'InstantWheel', gameConfigId: 'gc-instant-wheel-test' },
-  { gameType: 'Wheel', gameConfigId: 'gc-wheel-global' },
-];
+export let DEFAULT_GAME_CONFIGS: DefaultGameConfigMapping[] =
+  INITIAL_DEFAULT_GAME_CONFIGS.map((mapping) => ({ ...mapping }));
 
 export function getDefaultGameConfigs(): DefaultGameConfigMapping[] {
   return DEFAULT_GAME_CONFIGS.map((mapping) => ({ ...mapping }));

@@ -1,52 +1,79 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GAME_CONFIGS } from './gameConfigs.ts';
+import { GAME_TYPES } from './payoutConfigs.ts';
 import {
   DISABLED_GAME_CONFIG_WARNING,
+  INITIAL_DEFAULT_GAME_CONFIGS,
   disabledGameConfigWarning,
   filterGameConfigsByGameType,
   isDefaultGameConfigChanged,
   replaceDefaultGameConfig,
 } from './defaultGameConfigHelpers.ts';
 
-test('GameConfig options are limited to the same GameType', () => {
-  const wheelConfigs = filterGameConfigsByGameType(GAME_CONFIGS, 'Wheel');
-  assert.ok(wheelConfigs.every((config) => config.gameType === 'Wheel'));
-  assert.deepEqual(wheelConfigs.map((config) => config.id), ['gc-wheel-global', 'gc-wheel-promotion']);
+test('the demo exposes exactly three valid Enabled default mappings', () => {
+  assert.deepEqual(GAME_TYPES, ['MysteryBox', 'Wheel', 'Scratcher']);
+  assert.deepEqual(INITIAL_DEFAULT_GAME_CONFIGS, [
+    { gameType: 'MysteryBox', gameConfigId: 'gc-mystery-box-default' },
+    { gameType: 'Wheel', gameConfigId: 'gc-wheel-default' },
+    { gameType: 'Scratcher', gameConfigId: 'gc-scratcher-default' },
+  ]);
+
+  for (const mapping of INITIAL_DEFAULT_GAME_CONFIGS) {
+    const config = GAME_CONFIGS.find((candidate) => candidate.id === mapping.gameConfigId);
+    assert.ok(config, `${mapping.gameType} references a missing GameConfig`);
+    assert.equal(config.gameType, mapping.gameType);
+    assert.equal(config.status, 'Enabled');
+  }
 });
 
-test('Save becomes available only after a configured selection changes', () => {
-  assert.equal(isDefaultGameConfigChanged('gc-wheel-global', 'gc-wheel-global'), false);
-  assert.equal(isDefaultGameConfigChanged('gc-wheel-global', 'gc-wheel-promotion'), true);
-  assert.equal(isDefaultGameConfigChanged('gc-wheel-promotion', 'gc-wheel-global'), true);
-  assert.equal(isDefaultGameConfigChanged('gc-wheel-global', ''), false);
-  assert.equal(isDefaultGameConfigChanged('', 'gc-instant-wheel-test'), true);
+test('selectors offer only same-GameType GameConfigs', () => {
+  const mysteryBoxConfigs = filterGameConfigsByGameType(GAME_CONFIGS, 'MysteryBox');
+  assert.deepEqual(
+    mysteryBoxConfigs.map((config) => `${config.code} — ${config.status}`),
+    ['MYSTERY_BOX_DEFAULT — Enabled', 'MYSTERY_BOX_PROMOTION — Disabled']
+  );
+  assert.deepEqual(
+    filterGameConfigsByGameType(GAME_CONFIGS, 'Wheel').map((config) => config.code),
+    ['WHEEL_DEFAULT']
+  );
+  assert.deepEqual(
+    filterGameConfigsByGameType(GAME_CONFIGS, 'Scratcher').map((config) => config.code),
+    ['SCRATCHER_DEFAULT']
+  );
 });
 
-test('PUT semantics replace the single mapping for a GameType', () => {
-  const mappings = [
-    { gameType: 'Wheel', gameConfigId: 'gc-wheel-global' },
-    { gameType: 'InstantWheel', gameConfigId: 'gc-instant-wheel-test' },
-  ];
-  const replaced = replaceDefaultGameConfig(mappings, {
-    gameType: 'Wheel',
-    gameConfigId: 'gc-wheel-promotion',
+test('Save becomes available only after the MysteryBox selection changes', () => {
+  assert.equal(isDefaultGameConfigChanged('gc-mystery-box-default', 'gc-mystery-box-default'), false);
+  assert.equal(isDefaultGameConfigChanged('gc-mystery-box-default', 'gc-mystery-box-promotion'), true);
+  assert.equal(isDefaultGameConfigChanged('gc-mystery-box-promotion', 'gc-mystery-box-default'), true);
+  assert.equal(isDefaultGameConfigChanged('gc-mystery-box-default', ''), false);
+});
+
+test('PUT semantics replace and restore the single MysteryBox mapping', () => {
+  const replaced = replaceDefaultGameConfig(INITIAL_DEFAULT_GAME_CONFIGS, {
+    gameType: 'MysteryBox',
+    gameConfigId: 'gc-mystery-box-promotion',
   });
-
-  assert.equal(replaced.filter((mapping) => mapping.gameType === 'Wheel').length, 1);
-  assert.equal(replaced.find((mapping) => mapping.gameType === 'Wheel').gameConfigId, 'gc-wheel-promotion');
+  assert.equal(replaced.filter((mapping) => mapping.gameType === 'MysteryBox').length, 1);
+  assert.equal(
+    replaced.find((mapping) => mapping.gameType === 'MysteryBox').gameConfigId,
+    'gc-mystery-box-promotion'
+  );
 
   const restored = replaceDefaultGameConfig(replaced, {
-    gameType: 'Wheel',
-    gameConfigId: 'gc-wheel-global',
+    gameType: 'MysteryBox',
+    gameConfigId: 'gc-mystery-box-default',
   });
-  assert.equal(restored.filter((mapping) => mapping.gameType === 'Wheel').length, 1);
-  assert.equal(restored.find((mapping) => mapping.gameType === 'Wheel').gameConfigId, 'gc-wheel-global');
+  assert.equal(
+    restored.find((mapping) => mapping.gameType === 'MysteryBox').gameConfigId,
+    'gc-mystery-box-default'
+  );
 });
 
-test('Disabled selections expose the game-engine warning', () => {
-  const disabled = GAME_CONFIGS.find((config) => config.id === 'gc-wheel-promotion');
-  const enabled = GAME_CONFIGS.find((config) => config.id === 'gc-wheel-global');
+test('only the intentional promotion alternative exposes the Disabled warning', () => {
+  const disabled = GAME_CONFIGS.find((config) => config.id === 'gc-mystery-box-promotion');
+  const enabled = GAME_CONFIGS.find((config) => config.id === 'gc-mystery-box-default');
   assert.equal(disabledGameConfigWarning(disabled), DISABLED_GAME_CONFIG_WARNING);
   assert.equal(disabledGameConfigWarning(enabled), undefined);
 });
