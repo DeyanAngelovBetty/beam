@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GAME_CONFIGS } from './gameConfigs.ts';
+import { META_GAME_PRESETS } from './metaGamePresets.ts';
 import {
   canChangePresetSource,
   emptyPresetModel,
   gameTypeFromGameConfig,
   nextPresetStatusAction,
+  normalizePresetUseCases,
+  presetImagePreviewMode,
   presetGameConfigOptions,
   presetModelToInput,
   presetSource,
@@ -89,4 +92,30 @@ test('initial validation errors stay hidden until touch or submit', () => {
   assert.equal(shouldShowPresetError(false, false), false);
   assert.equal(shouldShowPresetError(true, false), true);
   assert.equal(shouldShowPresetError(false, true), true);
+});
+
+test('All and Store remain mutually exclusive', () => {
+  assert.deepEqual(normalizePresetUseCases([], ['All']), ['All']);
+  assert.deepEqual(normalizePresetUseCases(['All'], ['All', 'Store']), ['Store']);
+  assert.deepEqual(normalizePresetUseCases(['Store'], ['Store', 'All']), ['All']);
+  assert.deepEqual(normalizePresetUseCases([], ['All', 'Store']), ['All']);
+});
+
+test('mock UseCases are normalized', () => {
+  assert.ok(META_GAME_PRESETS.every((preset) => !(preset.useCases.includes('All') && preset.useCases.includes('Store'))));
+  assert.deepEqual(
+    META_GAME_PRESETS.find((preset) => preset.id === 'preset-yoda-scratcher').useCases,
+    ['All']
+  );
+});
+
+test('empty ImageUrl uses the neutral placeholder', () => {
+  assert.ok(META_GAME_PRESETS.every((preset) => preset.imageUrl === null));
+  assert.equal(presetImagePreviewMode(null), 'placeholder');
+  assert.equal(presetImagePreviewMode(''), 'placeholder');
+});
+
+test('valid ImageUrl uses an image preview and falls back after a load error', () => {
+  assert.equal(presetImagePreviewMode('https://example.test/game.png'), 'image');
+  assert.equal(presetImagePreviewMode('https://example.test/game.png', true), 'placeholder');
 });

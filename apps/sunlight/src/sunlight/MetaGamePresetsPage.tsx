@@ -5,14 +5,12 @@ import {
   BeamFilterBar,
   BeamPageHeader,
   BeamStatusBadge,
-  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -32,6 +30,7 @@ import {
 import { nextPresetStatusAction, presetSource, type PresetSource } from './metaGamePresetHelpers';
 import { GAME_TYPES, PAYOUT_STATUSES, statusBadge, type GameType, type PayoutStatus } from './payoutConfigs';
 import { RouterIdentityLink } from './RouterIdentityLink';
+import { PresetImagePreview } from './PresetImagePreview';
 
 interface AppliedFilters {
   q: string;
@@ -60,20 +59,7 @@ function PresetPreview({ preset }: { preset: MetaGamePreset }) {
   const source = presetSource(preset);
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'flex-start' }}>
-      <Paper variant="outlined" sx={{ width: 160, height: 96, overflow: 'hidden', flexShrink: 0 }}>
-        {preset.imageUrl ? (
-          <Box
-            component="img"
-            src={preset.imageUrl}
-            alt={`${preset.displayName} preview`}
-            sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 1 }}
-          />
-        ) : (
-          <Stack alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
-            <Typography variant="body2" color="text.secondary">No image</Typography>
-          </Stack>
-        )}
-      </Paper>
+      <PresetImagePreview imageUrl={preset.imageUrl} alt={`${preset.displayName} preview`} />
       <Stack spacing={0.75}>
         <Typography variant="body2"><strong>Skin:</strong> {preset.skinId ?? 'Not set'}</Typography>
         <Typography variant="body2"><strong>Volatility:</strong> {preset.volatility ?? 'Not set'}</Typography>

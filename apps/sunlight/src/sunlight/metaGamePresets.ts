@@ -19,8 +19,6 @@ export interface MetaGamePreset {
 
 export type MetaGamePresetInput = Omit<MetaGamePreset, 'id' | 'status'>;
 
-const sunlightImage = new URL('../assets/SUNLIGHT.svg', import.meta.url).href;
-
 export const PRESET_VOLATILITIES: PresetVolatility[] = ['Low', 'Medium', 'High'];
 export const PRESET_USE_CASES: PresetUseCase[] = ['All', 'Store'];
 
@@ -32,7 +30,7 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
     displayName: 'Summer Rewards Wheel',
     configCode: null,
     skinId: 'summer-gold',
-    imageUrl: sunlightImage,
+    imageUrl: null,
     volatility: 'Medium',
     useCases: ['All'],
     expiryHours: 24,
@@ -45,7 +43,7 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
     displayName: 'Instant Wheel Test',
     configCode: null,
     skinId: 'internal-preview',
-    imageUrl: sunlightImage,
+    imageUrl: null,
     volatility: 'High',
     useCases: ['Store'],
     expiryHours: 6,
@@ -58,9 +56,9 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
     displayName: 'Classic Scratcher',
     configCode: 'SCRATCHER_CLASSIC',
     skinId: 'classic-blue',
-    imageUrl: sunlightImage,
+    imageUrl: null,
     volatility: 'Low',
-    useCases: ['All', 'Store'],
+    useCases: ['All'],
     expiryHours: null,
     status: 'Enabled',
   },

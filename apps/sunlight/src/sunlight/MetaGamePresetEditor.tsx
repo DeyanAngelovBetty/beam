@@ -4,14 +4,12 @@ import {
   BeamEmptyState,
   BeamPageHeader,
   BeamStatusBadge,
-  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
-  Paper,
   Stack,
   TextField,
   Tooltip,
@@ -34,6 +32,7 @@ import {
   gameConfigForId,
   gameTypeFromGameConfig,
   isPreviewableImageUrl,
+  normalizePresetUseCases,
   presetGameConfigOptions,
   presetModelToInput,
   presetToEditorModel,
@@ -43,6 +42,7 @@ import {
   type PresetSource,
 } from './metaGamePresetHelpers';
 import { GAME_TYPES, statusBadge, type GameType } from './payoutConfigs';
+import { PresetImagePreview } from './PresetImagePreview';
 
 type TouchedField = 'displayName' | 'gameConfigId' | 'gameType' | 'configCode' | 'expiryHours';
 
@@ -270,9 +270,7 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
         <TextField label="Skin ID" value={model.skinId} onChange={(event) => setModel((current) => ({ ...current, skinId: event.target.value }))} />
         <TextField label="Image URL" value={model.imageUrl} onChange={(event) => setModel((current) => ({ ...current, imageUrl: event.target.value }))} />
         {isPreviewableImageUrl(model.imageUrl) && (
-          <Paper variant="outlined" sx={{ width: 180, height: 96, overflow: 'hidden' }}>
-            <Box component="img" src={model.imageUrl} alt="Preset preview" sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 1 }} />
-          </Paper>
+          <PresetImagePreview imageUrl={model.imageUrl} alt="Preset preview" width={180} />
         )}
         <TextField select label="Volatility" value={model.volatility} onChange={(event) => setModel((current) => ({ ...current, volatility: event.target.value as PresetEditorModel['volatility'] }))}>
           <MenuItem value="">Not set</MenuItem>
@@ -282,7 +280,13 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
           select
           label="Use Cases"
           value={model.useCases}
-          onChange={(event) => setModel((current) => ({ ...current, useCases: event.target.value as unknown as PresetUseCase[] }))}
+          onChange={(event) => {
+            const next = event.target.value as unknown as PresetUseCase[];
+            setModel((current) => ({
+              ...current,
+              useCases: normalizePresetUseCases(current.useCases, next),
+            }));
+          }}
           SelectProps={{ multiple: true, renderValue: (selected) => (selected as PresetUseCase[]).join(', ') }}
         >
           {PRESET_USE_CASES.map((useCase) => <MenuItem key={useCase} value={useCase}>{useCase}</MenuItem>)}

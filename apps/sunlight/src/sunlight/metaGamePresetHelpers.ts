@@ -55,7 +55,7 @@ export function presetToEditorModel(preset: MetaGamePreset): PresetEditorModel {
     skinId: preset.skinId ?? '',
     imageUrl: preset.imageUrl ?? '',
     volatility: preset.volatility ?? '',
-    useCases: [...preset.useCases],
+    useCases: normalizePresetUseCases([], preset.useCases),
     expiryHours: preset.expiryHours === null ? '' : String(preset.expiryHours),
   };
 }
@@ -124,7 +124,7 @@ export function presetModelToInput(model: PresetEditorModel, configs: GameConfig
     skinId: model.skinId.trim() || null,
     imageUrl: model.imageUrl.trim() || null,
     volatility: model.volatility || null,
-    useCases: [...model.useCases],
+    useCases: normalizePresetUseCases([], model.useCases),
     expiryHours: model.expiryHours.trim() ? Number(model.expiryHours) : null,
   };
 }
@@ -152,4 +152,23 @@ export function shouldShowPresetError(touched: boolean, submitAttempted: boolean
 export function isPreviewableImageUrl(value: string): boolean {
   const url = value.trim();
   return /^(https?:\/\/|data:image\/|blob:|\/|file:)/i.test(url);
+}
+
+export function presetImagePreviewMode(
+  imageUrl: string | null | undefined,
+  loadFailed = false
+): 'image' | 'placeholder' {
+  return imageUrl && isPreviewableImageUrl(imageUrl) && !loadFailed ? 'image' : 'placeholder';
+}
+
+export function normalizePresetUseCases(
+  current: PresetUseCase[],
+  next: PresetUseCase[]
+): PresetUseCase[] {
+  const newlySelected = next.find((useCase) => !current.includes(useCase));
+  if (newlySelected === 'All') return ['All'];
+  if (newlySelected === 'Store') return ['Store'];
+  if (next.includes('All')) return ['All'];
+  if (next.includes('Store')) return ['Store'];
+  return [];
 }
