@@ -18,6 +18,9 @@ seems to conflict with a grammar doc, the doc wins; flag it.
 3. Audit checks (refuse politely with the rule if violated):
    - batch actions present without a justification → cite the
      complexity clause, ask for the workflow or drop them
+   - sub-page actions aligned right (the batch strip, Add-anything) →
+     bounce, cite the altitude rule (grammar §4 / list-grammar §3):
+     LEFT strip above the organism; the right edge is page-only
    - any styling/color/spacing request beyond tokens + grammar
      defaults → design lane, flag to Deyan
 4. Propose: data shape, file list, nav diff, any organism gap the spec

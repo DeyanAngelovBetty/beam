@@ -95,6 +95,12 @@ Destructive reads error-tinted per surface (grouped-last menu item · error
 button); disabled stays visible with its reason. This killed a live drift:
 PayoutConfigs' kebab and expansion footer had shown different sets.
 
+*Amended 2026-07-31 — altitude determines alignment (detail-grammar §4).* Sub-page
+action strips (the batch strip, Add Row / Add Rule) render **LEFT, directly above
+the organism** they operate on; the page's right edge (the `BeamPageHeader`
+actions slot) is page-only. Per-item rail/cell controls keep their anatomy;
+collapse carets are disclosure, not actions.
+
 **The one carve-out — inline cell controls:** a single, safe, high-frequency toggle
 that *is a field of the record* (Users → Active, Loyalty → Daily Wheel) may render
 inline as its control, with an aria-label. This is a cell showing its value, not a

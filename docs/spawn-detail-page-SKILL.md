@@ -19,6 +19,9 @@ docs/detail-page-grammar.md and the worked examples
      grammar §4
    - hand-rolled back link / status chip in the actions slot → the
      back prop · status-is-identity rule
+   - sub-page actions aligned right (section/organism strips) →
+     bounce, cite the altitude rule (grammar §4): actions render as a
+     LEFT strip above the organism; the right edge is page-only
    - any validation rule not classified structural-vs-aggregate →
      ask for the classification, don't pick
    - styling beyond tokens + grammar defaults → design lane
