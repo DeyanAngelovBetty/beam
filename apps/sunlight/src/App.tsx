@@ -17,6 +17,7 @@ import { UsersPage } from './sunlight/UsersPage';
 import { RolesPage } from './sunlight/RolesPage';
 import { UserPage } from './sunlight/UserPage';
 import { RolePage } from './sunlight/RolePage';
+import { PerksPage } from './sunlight/PerksPage';
 import { PayoutConfigsPage } from './sunlight/PayoutConfigsPage';
 import { PayoutConfigEditor } from './sunlight/PayoutConfigEditor';
 import { GameConfigsPage } from './sunlight/GameConfigsPage';
@@ -77,7 +78,7 @@ const router = createBrowserRouter(
       element: <Layout />,
       children: [
         { index: true, element: <LoyaltyStatusPage /> },
-        { path: 'perks', element: <PlaceholderPage title="Perks" /> },
+        { path: 'perks', element: <PerksPage /> },
         { path: 'payout-configs', element: <PayoutConfigsPage /> },
         { path: 'payout-configs/new', element: <PayoutConfigEditor /> },
         { path: 'payout-configs/:id', element: <PayoutConfigEditor /> },
