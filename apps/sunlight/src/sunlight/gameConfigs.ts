@@ -79,6 +79,20 @@ export const GAME_CONFIGS: GameConfig[] = [
     ],
   },
   {
+    id: 'gc-wheel-promotion',
+    code: 'WHEEL_PROMOTION',
+    gameType: 'Wheel',
+    status: 'Disabled',
+    targetingRules: [
+      {
+        id: 'tr-wheel-promotion-fallback',
+        priority: 0,
+        status: 'Enabled',
+        payoutConfigId: 'pc-no-loss-abs',
+      },
+    ],
+  },
+  {
     id: 'gc-daily-scratcher',
     code: 'DAILY_SCRATCHER_CA',
     gameType: 'DailyScratcher',
