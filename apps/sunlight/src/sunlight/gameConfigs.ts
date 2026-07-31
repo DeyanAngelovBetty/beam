@@ -1,5 +1,8 @@
 import type { GameType, PayoutStatus } from './payoutConfigs';
 
+// ID prefixes for the mock store (the real API assigns these).
+export type GcIdPrefix = 'gc' | 'tr';
+
 export type MatchMode = 'All' | 'Any';
 
 export interface TargetingCondition {
@@ -148,3 +151,60 @@ export const GAME_CONFIGS: GameConfig[] = [
     ],
   },
 ];
+
+// ---- Mock persistence (the seed store as a stand-in API) --------------------
+// Extends Georgi's merged domain with the editor's create/update helpers,
+// mirroring payoutConfigs.ts. Aggregate PUT shape: TargetingRule.id retained,
+// new rules assigned, omitted rules removed (the editor sends the full list).
+// Mutates GAME_CONFIGS; the list remounts on navigate and reflects it.
+
+let gcIdSeq = 0;
+export function newGcId(prefix: GcIdPrefix): string {
+  gcIdSeq += 1;
+  return `${prefix}-${Date.now().toString(36)}-${gcIdSeq}`;
+}
+
+export function getGameConfig(id: string): GameConfig | undefined {
+  return GAME_CONFIGS.find((c) => c.id === id);
+}
+
+/** Config code must be unique within its GameType. Excludes the config being edited. */
+export function gameConfigNameIsUnique(code: string, gameType: GameType, excludeId?: string): boolean {
+  const c = code.trim().toLowerCase();
+  return !GAME_CONFIGS.some(
+    (g) => g.id !== excludeId && g.gameType === gameType && g.code.trim().toLowerCase() === c
+  );
+}
+
+/** The editor payload — code + gameType + the full (already-adapted) rule list. */
+export interface GameConfigInput {
+  code: string;
+  gameType: GameType;
+  targetingRules: TargetingRule[];
+}
+
+function stampRules(rules: TargetingRule[]): TargetingRule[] {
+  return rules.map((r) => ({ ...r, id: r.id || newGcId('tr') }));
+}
+
+/** Create — always Disabled (activation is a separate action). */
+export function createGameConfig(input: GameConfigInput): GameConfig {
+  const config: GameConfig = {
+    id: newGcId('gc'),
+    code: input.code.trim(),
+    gameType: input.gameType,
+    status: 'Disabled',
+    targetingRules: stampRules(input.targetingRules),
+  };
+  GAME_CONFIGS.push(config);
+  return config;
+}
+
+/** Update — aggregate replace. GameType is read-only on edit, so it is untouched. */
+export function updateGameConfig(id: string, input: GameConfigInput): GameConfig | undefined {
+  const config = GAME_CONFIGS.find((c) => c.id === id);
+  if (!config) return undefined;
+  config.code = input.code.trim();
+  config.targetingRules = stampRules(input.targetingRules);
+  return config;
+}

@@ -128,6 +128,47 @@ by param.
   the condition-builder editor remains design-lane and is not part of this
   slice.
 
+## Game Config — Create / Edit page (2026-07-31)
+
+*Spec archived at `docs/specs/game-config-editor-spec.md` (the skill's first run).
+Built on Georgi's merged `gameConfigs.ts` + list — extended, not duplicated.*
+
+- Routes: **`/game-configs/new`** · **`/game-configs/:id`** → one
+  `GameConfigEditor`. **Create + Edit only, no view mode** (MetaGame default).
+- Save (Cancel + Create/Save in the header actions slot, grammar §4) is gated on:
+  name valid+unique · every rule has a valid PayoutConfig · every rule's
+  condition passes `isValidConditionTree` · fallback has its PayoutConfig. Status
+  chip below the title (identity, not editable). Unsaved guard = `useBlocker` + dialog.
+- **TargetingRules list:** order IS priority (no numbers); per rule a header
+  (Rule n · Enabled/Disabled · Delete), a GameType-filtered PayoutConfig select
+  (options show name + status badge; Disabled selectable), and the
+  **ConditionBuilder** (consumed via its API only). **Reorder = up/down arrows**
+  (drag is a later enhancement, dated + revisitable). The **fallback** is a
+  structurally-fixed last row: always present, always Enabled, conditionless,
+  only its PayoutConfig editable.
+- **GameType change on create → mark-invalid** (least destructive): selections
+  are kept; if they no longer match the type they mark invalid and the operator
+  re-picks. Nothing is deleted, no confirm.
+- **Disabled-PayoutConfig reference** is an AGGREGATE, **non-blocking** warning by
+  the rules header ("can't be Enabled while rule n uses a Disabled Payout
+  Config") — the Enable *action* (list) enforces it, not Save.
+
+### Flags (for Georgi)
+- **Condition-model mismatch.** His `TargetingRule.condition` is **flat**
+  (`{match, conditions[]}`, display-string operators, string values); the
+  ConditionBuilder is a **nested tree**. An adapter (`gameConfigForm.ts`) bridges
+  them, but the flat model **can't persist nested groups** — a rule's condition
+  is Save-valid only when flat. Resolve: the model grows to a tree, or Game
+  Config conditions stay flat.
+- **Rule display name.** The sketch shows rule names; the API defines none. Built
+  **without** a name field (ConditionSummary is the rule's identity); existing
+  `name` is retained on save. Georgi's call.
+- **Seed cross-references.** Georgi's `GAME_CONFIGS` reference PayoutConfig ids
+  and condition value vocabularies that predate the real `payoutConfigs.ts` /
+  `conditionTree.ts` seeds — editing those configs shows orphan selections
+  (flagged, re-select). A data-cleanup follow-up, not machinery.
+- **ConditionBuilder nesting visuals:** still `pending design pass` (Deyan's bench).
+
 ## Pages planned (brief screen inventory)
 
 - **Payout Configs — list** ✓ (`/payout-configs`).
