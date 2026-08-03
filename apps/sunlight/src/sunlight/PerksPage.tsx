@@ -9,6 +9,7 @@ import {
   TableRow,
   TableCell,
   BeamPageHeader,
+  Box,
 } from '@betty/beam';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -29,19 +30,44 @@ const granted: PerkCell = { kind: 'granted' };
 const denied: PerkCell = { kind: 'denied' };
 const text = (t: string): PerkCell => ({ kind: 'text', text: t });
 
+
+type PerkColumnKind = 'flag' | 'value';
+
+interface PerkColumn {
+  label: string;
+  kind: PerkColumnKind;
+}
+
+// Column widths are a design decision, not an emergent property of the seed.
+const COL_WIDTH: Record<PerkColumnKind, number> = { flag: 120, value: 160 };
+const STATUS_COL_WIDTH = 140;
+
+const PERK_COLUMNS: PerkColumn[] = [
+  { label: 'Gem Stones', kind: 'value' },
+  { label: 'Daily Wheel', kind: 'flag' },
+  { label: 'Weekly Deposit Offer', kind: 'flag' },
+  { label: 'Shop Weekly Promotion', kind: 'flag' },
+  { label: 'Access to Better RAF', kind: 'flag' },
+  { label: 'Status Exclusive Games', kind: 'flag' },
+  { label: 'Multiplier on Level Up', kind: 'value' },
+  { label: 'Priority Customer Support', kind: 'flag' },
+  { label: 'Cashback', kind: 'flag' },
+  { label: 'VIP Host', kind: 'flag' },
+];
+
 // Capability columns, in screenshot order (Status is the pinned first column).
-const PERK_COLUMNS = [
-  'Gem Stones',
-  'Daily Wheel',
-  'Weekly Deposit Offer',
-  'Shop Weekly Promotion',
-  'Access to Better RAF',
-  'Status Exclusive Games',
-  'Multiplier on Level Up',
-  'Priority Customer Support',
-  'Cashback',
-  'VIP Host',
-] as const;
+// const PERK_COLUMNS = [
+//   'Gem Stones',
+//   'Daily Wheel',
+//   'Weekly Deposit Offer',
+//   'Shop Weekly Promotion',
+//   'Access to Better RAF',
+//   'Status Exclusive Games',
+//   'Multiplier on Level Up',
+//   'Priority Customer Support',
+//   'Cashback',
+//   'VIP Host',
+// ] as const;
 
 interface PerkRow {
   status: string;
@@ -65,11 +91,11 @@ const UNLOCK: Record<string, number> = {
 
 const PERKS_MATRIX: PerkRow[] = TIERS.map((status, i) => ({
   status,
-  cells: PERK_COLUMNS.map((col) => {
-    if (col === 'Gem Stones') return text(`Up to ${(i + 1) * 100} Coins`);
-    if (col === 'Multiplier on Level Up') return text(`${MULTIPLIER[i]}x Multiplier`);
-    if (col === 'Cashback') return i < 6 ? denied : text(`${i - 4}%`);
-    return i >= (UNLOCK[col] ?? 99) ? granted : denied;
+  cells: PERK_COLUMNS.map(({ label }) => {
+    if (label === 'Gem Stones') return text(`Up to ${(i + 1) * 100} Coins`);
+    if (label === 'Multiplier on Level Up') return text(`${MULTIPLIER[i]}x Multiplier`);
+    if (label === 'Cashback') return i < 6 ? denied : text(`${i - 4}%`);
+    return i >= (UNLOCK[label] ?? 99) ? granted : denied;
   }),
 }));
 
@@ -153,13 +179,31 @@ export function PerksPage() {
         ref={scrollRef}
         sx={{ overflowX: 'auto', containerType: 'scroll-state' as 'normal' }}
       >
-        <Table size="small" sx={{ '& td, & th': { whiteSpace: 'nowrap' } }} aria-label="Loyalty perks by status">
+        <Table size="small" 
+          // sx={{ '& td, & th': { whiteSpace: 'nowrap' } }} 
+          aria-label="Loyalty perks by status">
+
+          <colgroup>
+            <col style={{ width: STATUS_COL_WIDTH }} />
+            {PERK_COLUMNS.map((c) => (
+              <col key={c.label} style={{ width: COL_WIDTH[c.kind] }} />
+            ))}
+          </colgroup>
+
           <TableHead>
             <TableRow>
-              <TableCell sx={{ ...stickyStatusSx, zIndex: 3 }}>Status</TableCell>
-              {PERK_COLUMNS.map((col) => (
-                <TableCell key={col} align="center">
-                  {col}
+              <TableCell sx={{ ...stickyStatusSx, zIndex: 3, verticalAlign: 'bottom' }}>Status</TableCell>
+              {PERK_COLUMNS.map((c) => (
+                <TableCell
+                  key={c.label}
+                  align={'center'}
+                  sx={{ verticalAlign: 'bottom', textWrap: 'balance' }}
+                >
+                  <Box 
+                    sx={{ width: (c.kind === 'flag') ? '90px' : '120px', textWrap: 'balance', mx: 'auto' }}>
+                    {c.label}
+                  </Box>
+                  
                 </TableCell>
               ))}
             </TableRow>
@@ -167,11 +211,14 @@ export function PerksPage() {
           <TableBody>
             {PERKS_MATRIX.map((row) => (
               <TableRow key={row.status} hover>
-                <TableCell component="th" scope="row" sx={{ ...stickyStatusSx, zIndex: 2, fontWeight: 500 }}>
+                <TableCell component="th" scope="row" 
+                  sx={{ ...stickyStatusSx, zIndex: 2, fontWeight: 500 }}>
                   {row.status}
                 </TableCell>
                 {row.cells.map((cell, i) => (
-                  <TableCell key={i} align={cell.kind === 'text' ? 'left' : 'center'}>
+                  <TableCell key={i}
+                     align={'center'}>
+                    {/*  align={cell.kind === 'text' ? 'left' : 'center'} */}
                     <PerkCellView cell={cell} />
                   </TableCell>
                 ))}
