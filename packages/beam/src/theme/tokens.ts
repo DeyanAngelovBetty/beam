@@ -98,6 +98,16 @@ export const roleRamp: readonly string[] = [
 export const roleColor = (index: number): string => roleRamp[((index % roleRamp.length) + roleRamp.length) % roleRamp.length];
 
 /**
+ * SEED — mode-scoped step size for the surface ramp (Figma: palette/surfaceStep,
+ * modes light|dark). Figma is truth (§4.1); this mirrors the seed pending the
+ * Figma add + re-sync. Unitless (an oklch lightness delta per step),
+ * brand-invariant. TRACER (§9): one step only — the ramp is the same machinery
+ * with more rows. The ×N is folded INTO the seed (channel arithmetic stays
+ * trivial `l + step`, so a bake failure is diagnostic, not confounded).
+ */
+export const surfaceStep = { light: 0.02, dark: 0.07 };
+
+/**
  * DERIVED TOKENS — computed in CSS from other tokens at runtime.
  * These have no literal Figma value (Figma cannot express color-mix /
  * relative color syntax); their Figma twin, when needed, is a static
@@ -127,6 +137,17 @@ export const derived = {
    */
   pageGradient:
     'linear-gradient(180deg, color-mix(in oklch, var(--mui-palette-primary-main) 10%, var(--mui-palette-background-default)) 0%, var(--mui-palette-background-default) 320px)',
+
+  /**
+   * SURFACE 1 — one step up from surface 0 (background.default) in oklch L.
+   * The FORMULA is mode-invariant; the STEP is a mode-scoped seed
+   * (`--beam-surface-step`), so this single expression resolves differently per
+   * mode via its inputs. TRACER (§9) for a NEW kind of derived token: a
+   * mode-scoped delta seed. Channel arithmetic is trivial (`l + step`) on
+   * purpose — the ×N lives in the seed. ADDITIVE — nothing consumes this;
+   * `background.paper` is NOT repointed at it this pass.
+   */
+  surface1: 'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-step)) c h)',
 
   /**
    * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,

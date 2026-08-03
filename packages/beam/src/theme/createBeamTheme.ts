@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, derived, type BrandName, type ProductName } from './tokens';
+import { products, derived, surfaceStep, type BrandName, type ProductName } from './tokens';
 import { meta } from './textStyles';
 
 /**
@@ -74,6 +74,14 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-spine-default': derived.spine.default,
             '--beam-spine-warning': derived.spine.warning,
             '--beam-spine-danger': derived.spine.danger,
+            // Surface ramp TRACER (§9): a mode-scoped delta seed feeding a
+            // derived surface. The step's :root default (= dark, defaultMode)
+            // guards SSR / the no-attribute frame; the mode selectors below flip
+            // it on the data-beam-mode layer with NO theme rebuild (§5). The
+            // surface-1 FORMULA is scheme-invariant — it resolves per mode via
+            // the step + background.default it references. Additive; unconsumed.
+            '--beam-surface-step': String(surfaceStep.dark),
+            '--beam-surface-1': derived.surface1,
             // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
             // are independently addressable (durations may become Figma number
             // variables; easings stay code strings), plus a composed shorthand.
@@ -92,6 +100,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-motion-fade':
               'var(--beam-motion-fade-duration) var(--beam-motion-fade-easing)',
           },
+          // Mode-scoped surface step (TRACER): set on the same data-beam-mode
+          // layer MUI flips its palette vars on, so a mode change updates the
+          // step — and thus --beam-surface-1 — with NO theme rebuild (§5). The
+          // formula var stays in :root; only its input flips here.
+          '[data-beam-mode="light"]': { '--beam-surface-step': String(surfaceStep.light) },
+          '[data-beam-mode="dark"]': { '--beam-surface-step': String(surfaceStep.dark) },
+
           // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the
           // duration vars at the injection layer. Everything built on the motion
           // tokens collapses to instant — one switch, no per-component checks.
