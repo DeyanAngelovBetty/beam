@@ -109,3 +109,47 @@ Hover/selected washes derived from primary · focus rings (`primary` at 30% — 
 by rotating OKLCH hue · elevation tints (surface + n% primary per level) · product-
 accent derivatives once Gaspar's identity lands · status-badge soft variants
 (status color at 12% over background). Each is one formula. That's the point.
+
+## 7. The surface ramp — elevation as a derived L-offset (tracer · 2026-08-03)
+
+The tracer (`derived.surface1`, commit `ee10823`) proved a new *kind* of derived
+token: one whose formula is mode-invariant but whose step size is a mode-scoped
+seed. What it settled, and what it left for the foundations session:
+
+**DECIDED — the mechanism.** Surfaces are positions on an elevation **ramp**, not
+a vocabulary list. Each surface is an OKLCH **lightness offset** from surface 0
+(the page background), with **c and h passed through** so surfaces stay faintly
+branded instead of going flat grey:
+`oklch(from <surface 0> calc(l + <step>) c h)`.
+
+**DECIDED — mode-scoped step seeds.** The formula is mode-**invariant**; only the
+step *size* is a mode-scoped seed (`--beam-surface-step`). It is emitted under
+`[data-beam-mode]` — the same attribute-flip layer MUI uses for its palette vars
+— so a mode change updates every surface with **no theme rebuild** (BEAM §5).
+This is the reusable shape for any derived token whose *size*, not whose *rule*,
+varies by mode: the rule lives in `:root`, the mode-scoped magnitude on the
+`[data-beam-mode]` selectors.
+
+**DECIDED — the light/dark asymmetry is deliberate, not a bug.** Light mode has
+no headroom above paper-white, so its ramp is nearly flat and **shadow carries
+elevation**. Dark mode's shadow is invisible against a near-black surface, so
+**lightness carries elevation**. One doctrine either way: *elevation is carried
+by the surface ramp; shadow is a contact cue, not the elevation itself.* The two
+modes look structurally different because of this, on purpose.
+
+**DECIDED — never mix toward a literal.** Derived colors mix toward a mode-scoped
+seed (`--beam-mix-lift` / `--beam-mix-sink`), never `white` / `black`: white over
+a near-black dark surface is the classic tint bug. Applies to the relative-color
+fallback shape and to any future gradient or shadow formula.
+
+**PROPOSED — for the foundations session, not decided:**
+- The five-step vocabulary — `surface -1` sunken · `0` page · `1` paper · `2`
+  raised · `3` top. Names and count go to the session for argument.
+- The specific deltas (step: light `0.02` / dark `0.07`). Placeholder numbers.
+
+**STATUS — tracer, additive.** `derived.surface1` exists and is consumed by
+nothing; `background.paper` is **not** repointed at it. It proves the CSS half of
+the pipeline only — **bake and contrast audit are un-runnable in-repo** (BEAM
+Appendix C), so this token is **unbaked and unaudited**. The full ramp,
+borders-derived-from-their-own-surface, shadows, and gradients are pending the
+foundations session.

@@ -93,7 +93,8 @@ pain each one prevents:
      `derived-color-tokens.md`.
 2. **No hardcoded colors, spacing, or type in components or designs.** Because the sync
    pipeline audits tokens (it caught a real WCAG failure); hardcoded values escape the audit.
-   Exception: one-off communication artifacts (diagrams, decks).
+   Exception: one-off communication artifacts (diagrams, decks). *(That audit is the Figma-side
+   `audit:contrast` lane — not an in-repo gate; typecheck/build don't run it. See Appendix C.)*
 3. **Three independent theming axes** — product, jurisdiction, theme — governed by the
    "Axes & dimensionality" section. They multiply through the collection chain; they never
    collapse into one axis or into mode cross-products.
@@ -293,5 +294,17 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   graduated 2026-07-24 — spine motif + `meta` key + severity; no longer a placeholder.)*
 - Asset pipeline: gems done (GemIcon self-registering registry); coins & collection art
   pending; automated Figma→repo export pending network allowlist (`www.figma.com`)
-- Productionized sync now has **three output lanes**: seeds→`tokens.ts` · contrast checks ·
-  bake→`_derived (baked)`
+- **The token sync — three NAMED lanes, none in this repo yet:**
+
+  | Lane | Direction | Trigger | Truth | Status |
+  |---|---|---|---|---|
+  | `sync:seeds` | Figma → `tokens.ts` | any variable change | Figma | **not in repo** |
+  | `bake:derived` | code → Figma `_derived (baked)` | any derived-formula change | code | **not in repo** |
+  | `audit:contrast` | reads resolved values, gates | after either lane | — | **not in repo** |
+
+  None of the three exists as a repo script. They are executed Figma-side via the
+  MCP connector, on demand, by Deyan. **A seed or derived-token change is
+  UNVERIFIED until that run happens** — typecheck and build do not audit tokens.
+  At least two ad-hoc implementations exist (Deyan's and Alex's); neither is
+  authoritative. Landing one implementation in-repo, under these three names, is
+  an open item. *(2026-08-03.)*
