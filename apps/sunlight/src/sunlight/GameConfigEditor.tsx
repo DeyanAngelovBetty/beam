@@ -138,7 +138,7 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
           error={Boolean(v.code) && (touched.code || submitAttempted)}
           helperText={touched.code || submitAttempted ? v.code : undefined}
           sx={{ maxWidth: 480 }}
-          inputProps={{ maxLength: MAX_GC_NAME }}
+          slotProps={{ htmlInput: { maxLength: MAX_GC_NAME } }}
         />
         {isEdit ? (
           <TextField

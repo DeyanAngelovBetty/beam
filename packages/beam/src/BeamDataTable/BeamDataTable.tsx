@@ -412,7 +412,7 @@ export function BeamDataTable<Row>({
                       checked={table.getIsAllRowsSelected()}
                       indeterminate={table.getIsSomeRowsSelected()}
                       onChange={table.getToggleAllRowsSelectedHandler()}
-                      inputProps={{ 'aria-label': 'Select all rows' }}
+                      slotProps={{ input: { 'aria-label': 'Select all rows' } }}
                     />
                   )}
                 </TableCell>
@@ -496,7 +496,7 @@ export function BeamDataTable<Row>({
                           <Checkbox
                             checked={row.getIsSelected()}
                             onChange={row.getToggleSelectedHandler()}
-                            inputProps={{ 'aria-label': `Select row ${row.id}` }}
+                            slotProps={{ input: { 'aria-label': `Select row ${row.id}` } }}
                           />
                         )}
                         {actions.length > 0 && <RailKebab items={actions} />}

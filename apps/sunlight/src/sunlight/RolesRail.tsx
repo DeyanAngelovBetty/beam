@@ -76,7 +76,7 @@ export function RolesRail({ mode, assignedIds, onToggle, linking }: RolesRailPro
                     checked={isAssigned}
                     onChange={() => onToggle?.(role.id)}
                     onClick={(e) => e.stopPropagation()}
-                    inputProps={{ 'aria-label': `Assign role ${role.name}` }}
+                    slotProps={{ input: { 'aria-label': `Assign role ${role.name}` } }}
                     sx={{ p: 0 }}
                   />
                 ) : (

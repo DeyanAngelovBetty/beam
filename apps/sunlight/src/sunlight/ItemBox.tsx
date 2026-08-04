@@ -130,7 +130,7 @@ export function ItemBox({ group, mode, granted, provenance, onTogglePermission, 
           checked={state === 'full'}
           indeterminate={state === 'partial'}
           onChange={() => onToggleGroup?.(ids, state !== 'full')}
-          inputProps={{ 'aria-label': `Toggle all ${group.name} permissions` }}
+          slotProps={{ input: { 'aria-label': `Toggle all ${group.name} permissions` } }}
           sx={{ p: 0, visibility: mode === 'edit' ? 'visible' : 'hidden' }}
           disabled={mode !== 'edit'}
         />
@@ -158,7 +158,7 @@ export function ItemBox({ group, mode, granted, provenance, onTogglePermission, 
                     size="small"
                     checked={on}
                     onChange={() => onTogglePermission?.(p.id)}
-                    inputProps={{ 'aria-label': p.label }}
+                    slotProps={{ input: { 'aria-label': p.label } }}
                     sx={{ p: 0 }}
                   />
                 ) : (

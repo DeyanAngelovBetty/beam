@@ -287,7 +287,7 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
               useCases: normalizePresetUseCases(current.useCases, next),
             }));
           }}
-          SelectProps={{ multiple: true, renderValue: (selected: PresetUseCase[]) => (selected as PresetUseCase[]).join(', ') }}
+          slotProps={{ select: { multiple: true, renderValue: (selected) => (selected as PresetUseCase[]).join(', ') } }}
         >
           {PRESET_USE_CASES.map((useCase) => <MenuItem key={useCase} value={useCase}>{useCase}</MenuItem>)}
         </TextField>
@@ -299,7 +299,7 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
           onBlur={() => markTouched('expiryHours')}
           error={showError('expiryHours') && Boolean(validation.expiryHours)}
           helperText={showError('expiryHours') ? validation.expiryHours : 'Optional positive whole number.'}
-          inputProps={{ min: 1, step: 1 }}
+          slotProps={{ htmlInput: { min: 1, step: 1 } }}
         />
       </Stack>
 

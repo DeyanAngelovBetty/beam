@@ -80,12 +80,14 @@ export function DefaultGameConfigsPage() {
               size="small"
               value={selections[row.gameType] ?? ''}
               onChange={(event) => selectConfig(row.gameType, event.target.value)}
-              inputProps={{ 'aria-label': `${row.gameType} Default Game Config` }}
-              SelectProps={{
-                displayEmpty: true,
-                renderValue: (selected: string) => {
-                  const option = options.find((candidate) => candidate.id === selected);
-                  return option ? `${option.code} — ${option.status}` : 'Not configured';
+              slotProps={{
+                htmlInput: { 'aria-label': `${row.gameType} Default Game Config` },
+                select: {
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    const option = options.find((candidate) => candidate.id === selected);
+                    return option ? `${option.code} — ${option.status}` : 'Not configured';
+                  },
                 },
               }}
               sx={{ minWidth: 360, maxWidth: 480 }}

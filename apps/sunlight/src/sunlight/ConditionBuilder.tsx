@@ -106,7 +106,7 @@ function GroupEditor({
           value={node.operator}
           onChange={(e) => setOperator(e.target.value as GroupOperator)}
           sx={{ minWidth: 220 }}
-          inputProps={{ 'aria-label': 'Group operator' }}
+          slotProps={{ htmlInput: { 'aria-label': 'Group operator' } }}
         >
           {GROUP_OPERATORS.map((op) => (
             <MenuItem key={op} value={op}>
@@ -208,16 +208,16 @@ function LeafEditor({
         onChange={(e) => setValues(e.target.value as unknown as (string | number)[])}
         error={Boolean(err)}
         helperText={err}
-        SelectProps={{
+        slotProps={{ select: {
           multiple: true,
-          renderValue: (selected: (string | number)[]) => (
+          renderValue: (selected) => (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {(selected as (string | number)[]).map((val) => (
                 <Chip key={String(val)} size="small" label={labelForValue(node.field, val)} />
               ))}
             </Box>
           ),
-        }}
+        } }}
       >
         {FIELD_OPTIONS[node.field].map((o) => (
           <MenuItem key={String(o.value)} value={o.value}>

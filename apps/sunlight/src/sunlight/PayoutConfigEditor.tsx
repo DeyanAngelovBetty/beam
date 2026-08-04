@@ -157,7 +157,7 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
           error={Boolean(v.name && (touched.name || submitAttempted))}
           helperText={touched.name || submitAttempted ? v.name : undefined}
           sx={{ maxWidth: 480 }}
-          inputProps={{ maxLength: MAX_NAME }}
+          slotProps={{ htmlInput: { maxLength: MAX_NAME } }}
         />
         {isEdit ? (
           <TextField

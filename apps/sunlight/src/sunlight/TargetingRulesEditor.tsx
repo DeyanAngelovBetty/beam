@@ -165,7 +165,7 @@ function RuleCard({
                 size="small"
                 checked={rule.status === 'Enabled'}
                 onChange={(e) => onStatus(e.target.checked ? 'Enabled' : 'Disabled')}
-                inputProps={{ 'aria-label': `Rule ${index + 1} enabled` }}
+                slotProps={{ input: { 'aria-label': `Rule ${index + 1} enabled` } }}
               />
               <Typography variant="body2" color="text.secondary">
                 {rule.status}
@@ -246,11 +246,13 @@ function PayoutConfigSelect({
         onChange={(e) => onChange(e.target.value)}
         error={Boolean(error)}
         helperText={error}
-        inputProps={{ 'aria-label': ariaLabel }}
-        SelectProps={{
-          renderValue: (selected: string) => {
+        slotProps={{
+          htmlInput: { 'aria-label': ariaLabel },
+          select: {
+          renderValue: (selected) => {
             const o = options.find((x) => x.id === selected);
             return o ? `${o.label} — ${o.status}` : '';
+          },
           },
         }}
       >

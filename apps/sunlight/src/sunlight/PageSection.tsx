@@ -51,7 +51,7 @@ export function PageSection({
           checked={state === 'full'}
           indeterminate={state === 'partial'}
           onChange={() => onToggleGroup?.(allIds, state !== 'full')}
-          inputProps={{ 'aria-label': `Toggle all ${section.name} permissions` }}
+          slotProps={{ input: { 'aria-label': `Toggle all ${section.name} permissions` } }}
           sx={{ p: 0, visibility: mode === 'edit' ? 'visible' : 'hidden' }}
           disabled={mode !== 'edit'}
         />

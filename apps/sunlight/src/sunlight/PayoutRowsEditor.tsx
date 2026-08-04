@@ -167,7 +167,7 @@ export function PayoutRowsEditor({
                       onBlur={() => markTouched(`winMessage:${row._key}`)}
                       error={Boolean(rowErr?.winMessage && showError(`winMessage:${row._key}`))}
                       helperText={showError(`winMessage:${row._key}`) ? rowErr?.winMessage : undefined}
-                      inputProps={{ 'aria-label': `Win message, row ${ri + 1}` }}
+                      slotProps={{ htmlInput: { 'aria-label': `Win message, row ${ri + 1}` } }}
                     />
                   </TableCell>
                   <TableCell align="right">
@@ -182,7 +182,7 @@ export function PayoutRowsEditor({
                       }}
                       error={Boolean(rowErr?.probability && showError(`probability:${row._key}`))}
                       helperText={showError(`probability:${row._key}`) ? rowErr?.probability : undefined}
-                      inputProps={{ inputMode: 'decimal', 'aria-label': `Probability percent, row ${ri + 1}` }}
+                      slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Probability percent, row ${ri + 1}` } }}
                     />
                   </TableCell>
                   <TableCell>
@@ -218,7 +218,7 @@ export function PayoutRowsEditor({
                               onBlur={() => markTouched(`amount:${row._key}:${rw._key}`)}
                               error={Boolean(amtErr && showError(`amount:${row._key}:${rw._key}`))}
                               helperText={showError(`amount:${row._key}:${rw._key}`) ? amtErr : undefined}
-                              inputProps={{ inputMode: 'numeric', 'aria-label': `Amount, reward ${rwi + 1}, row ${ri + 1}` }}
+                              slotProps={{ htmlInput: { inputMode: 'numeric', 'aria-label': `Amount, reward ${rwi + 1}, row ${ri + 1}` } }}
                             />
                             {/* ≥1 reward per row is structural — Remove disabled at the last. */}
                             <Tooltip title={lastReward ? 'A row needs at least one reward.' : 'Remove reward'}>

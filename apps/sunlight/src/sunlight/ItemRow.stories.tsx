@@ -40,7 +40,7 @@ function DemoRow({ mode, label, dimmed, marker, checked }: DemoArgs) {
     marker === 'ticks' ? (
       <ProvenanceTicks roleIds={['player-ops', 'live-ops']} />
     ) : marker === 'checkbox' ? (
-      <Checkbox size="small" checked={checked} onChange={() => {}} inputProps={{ 'aria-label': label }} sx={{ p: 0 }} />
+      <Checkbox size="small" checked={checked} onChange={() => {}} slotProps={{ input: { 'aria-label': label } }} sx={{ p: 0 }} />
     ) : (
       <ItemDot />
     );

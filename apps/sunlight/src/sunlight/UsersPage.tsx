@@ -103,7 +103,7 @@ export function UsersPage() {
             onChange={(e) =>
               setActiveOverrides((o) => ({ ...o, [u.id]: e.target.checked }))
             }
-            inputProps={{ 'aria-label': `Active — ${u.name}` }}
+            slotProps={{ input: { 'aria-label': `Active — ${u.name}` } }}
           />
         );
       },
