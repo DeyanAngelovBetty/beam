@@ -123,9 +123,10 @@ pain each one prevents:
   SSR frame per `defaultMode`, overridden per mode by `[data-beam-mode="light"|"dark"]`), so it
   flips with no theme rebuild like every other mode-scoped token. Do not confuse the two
   same-named mechanisms: MUI's `colorSchemes` config themes *our tokens* (the palette); the
-  native `color-scheme` property themes the *browser's own* widgets. The cascade analysis behind
-  the hand-written seam (`:root` emits first, equal specificity, so the attribute rules win) is
-  pinned to **MUI v7.3.11** — re-verify on any major bump (v9 is one major ahead; see Appendix C).
+  native `color-scheme` property themes the *browser's own* widgets. The cascade behind the
+  hand-written seam (`:root` emits first, equal specificity, so the attribute rules win) was
+  **re-verified byte-identical at the v9 bump** — same emitted order, and v9 emits no native
+  `color-scheme` of its own — and is now pinned to **MUI 9.2.0**. Re-verify on the next major.
 - **Brand is deploy-time in player-facing surfaces** (the payment SDK: one build, one brand)
   but **runtime in back offices** (operators manage multiple jurisdictions from one seat —
   header Location switcher). Brand switch may rebuild the theme; mode switch must not.
@@ -214,6 +215,9 @@ Design against the real model, not a generic BO:
   under `Lab/<Product>/<Name>` for isolated design iteration *before* page integration. A Lab 
   entry is a question, not a home: it either graduates with its component via the promotion 
   path (§2), or is deleted once its question is answered. *(2026-07-25.)*
+- **Major dependency upgrades** follow [docs/major-upgrades.md](docs/major-upgrades.md): a red,
+  install-only commit first (typecheck is *not* the blast radius), then staged fixes — and the
+  barrel makes upstream codemods inert, so mind the import-rewrite recipe. *(2026-08-04.)*
 
 ## 10. For AI assistants generating designs (Cowork / Figma agents)
 
@@ -290,8 +294,11 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
 - Code Connect mapping is "simple" flavor (no template snippet) — refine via CLI later
 - Organisms → separate Figma library file: the second consumer now exists in code
   (`apps/gaspar`), so the Figma-side split is due
-- MUI major version for the real Sunlight repo: current MUI is v9, POC is v7 — decide before
-  scaffold
+- ~~MUI major version: POC is v7, upstream is v9 — decide before scaffold~~ — **resolved
+  2026-08-04:** the estate runs **`@mui/material` 9.2.0** as of the v9 bump (branch
+  `bump/mui-v9`, fast-forward merged to `main` at `ff19c69`). There is **no MUI v8** —
+  Material UI went 7 → 9 to realign its major with MUI X — so the history skips a number by
+  design, not omission. Migration findings: [docs/major-upgrades.md](docs/major-upgrades.md).
 - ~~`@betty/beam` as a published package vs in-repo~~ — **decided 2026-07-20: in-repo npm
   workspace, consumed as source** (apps alias `@betty/beam` → `packages/beam/src`, no build
   step). Forced by `GemIcon`'s `import.meta.glob` asset registry, which resolves at Vite
