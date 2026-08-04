@@ -287,7 +287,7 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
               useCases: normalizePresetUseCases(current.useCases, next),
             }));
           }}
-          SelectProps={{ multiple: true, renderValue: (selected) => (selected as PresetUseCase[]).join(', ') }}
+          SelectProps={{ multiple: true, renderValue: (selected: PresetUseCase[]) => (selected as PresetUseCase[]).join(', ') }}
         >
           {PRESET_USE_CASES.map((useCase) => <MenuItem key={useCase} value={useCase}>{useCase}</MenuItem>)}
         </TextField>

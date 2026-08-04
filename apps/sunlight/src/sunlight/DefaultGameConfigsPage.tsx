@@ -83,7 +83,7 @@ export function DefaultGameConfigsPage() {
               inputProps={{ 'aria-label': `${row.gameType} Default Game Config` }}
               SelectProps={{
                 displayEmpty: true,
-                renderValue: (selected) => {
+                renderValue: (selected: string) => {
                   const option = options.find((candidate) => candidate.id === selected);
                   return option ? `${option.code} — ${option.status}` : 'Not configured';
                 },

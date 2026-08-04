@@ -248,7 +248,7 @@ function PayoutConfigSelect({
         helperText={error}
         inputProps={{ 'aria-label': ariaLabel }}
         SelectProps={{
-          renderValue: (selected) => {
+          renderValue: (selected: string) => {
             const o = options.find((x) => x.id === selected);
             return o ? `${o.label} — ${o.status}` : '';
           },

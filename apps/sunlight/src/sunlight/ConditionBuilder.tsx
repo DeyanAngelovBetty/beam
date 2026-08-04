@@ -210,7 +210,7 @@ function LeafEditor({
         helperText={err}
         SelectProps={{
           multiple: true,
-          renderValue: (selected) => (
+          renderValue: (selected: (string | number)[]) => (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {(selected as (string | number)[]).map((val) => (
                 <Chip key={String(val)} size="small" label={labelForValue(node.field, val)} />
