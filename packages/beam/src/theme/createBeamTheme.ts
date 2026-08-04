@@ -69,6 +69,22 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
         styleOverrides: {
           ':root': {
             '--beam-page-gradient': derived.pageGradient,
+            // Native `color-scheme` DEFAULT (§5). Themes the browser's OWN
+            // widgets — scrollbars, native <select>, date/time inputs,
+            // checkbox/radio, Chrome autofill — which MUI's token palette never
+            // touches. defaultMode is dark, so :root guards the no-attribute /
+            // SSR frame to dark; the data-beam-mode rules below flip it per mode
+            // with NO theme rebuild (§5) — same layer + posture as
+            // --beam-surface-step. DISTINCT from MUI's `colorSchemes` config,
+            // which themes our TOKENS: two mechanisms, confusingly similar names.
+            // MUI's own enableColorScheme can't supply this default under
+            // cssVariables (its html default is gated `!theme.vars`), and its
+            // per-mode rules land in baseStyles AHEAD of our styleOverrides — so
+            // a :root guard added on top would win at equal specificity and pin
+            // light mode dark. Hence hand-written here, :root FIRST so the
+            // attribute rules below (later, equal specificity) override it.
+            // Cascade analysis pinned to MUI v7.3.11 — re-verify on any major bump.
+            colorScheme: 'dark',
             // Spine motif tokens (detail-page §2). All scheme-invariant
             // formulas, so one :root block serves both modes.
             '--beam-spine-default': derived.spine.default,
@@ -104,8 +120,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // layer MUI flips its palette vars on, so a mode change updates the
           // step — and thus --beam-surface-1 — with NO theme rebuild (§5). The
           // formula var stays in :root; only its input flips here.
-          '[data-beam-mode="light"]': { '--beam-surface-step': String(surfaceStep.light) },
-          '[data-beam-mode="dark"]': { '--beam-surface-step': String(surfaceStep.dark) },
+          '[data-beam-mode="light"]': { colorScheme: 'light', '--beam-surface-step': String(surfaceStep.light) },
+          '[data-beam-mode="dark"]': { colorScheme: 'dark', '--beam-surface-step': String(surfaceStep.dark) },
 
           // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the
           // duration vars at the injection layer. Everything built on the motion

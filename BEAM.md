@@ -116,6 +116,16 @@ pain each one prevents:
 - **Mode (light/dark) switches via CSS variables** — an attribute flip (`data-beam-mode`),
   never JS theme reconstruction. This is a deliberate inversion of Midnight's architecture and
   its re-render cost.
+- **The estate emits the native CSS `color-scheme` property on the same `data-beam-mode`
+  layer** *(2026-08-04):* so the browser's OWN widgets — scrollbars, native `<select>`,
+  date/time inputs, checkbox/radio, Chrome autofill — follow app mode, not the OS. Set at one
+  seam in `createBeamTheme` `MuiCssBaseline` (a `:root` dark default guarding the no-attribute /
+  SSR frame per `defaultMode`, overridden per mode by `[data-beam-mode="light"|"dark"]`), so it
+  flips with no theme rebuild like every other mode-scoped token. Do not confuse the two
+  same-named mechanisms: MUI's `colorSchemes` config themes *our tokens* (the palette); the
+  native `color-scheme` property themes the *browser's own* widgets. The cascade analysis behind
+  the hand-written seam (`:root` emits first, equal specificity, so the attribute rules win) is
+  pinned to **MUI v7.3.11** — re-verify on any major bump (v9 is one major ahead; see Appendix C).
 - **Brand is deploy-time in player-facing surfaces** (the payment SDK: one build, one brand)
   but **runtime in back offices** (operators manage multiple jurisdictions from one seat —
   header Location switcher). Brand switch may rebuild the theme; mode switch must not.
