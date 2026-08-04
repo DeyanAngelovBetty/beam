@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
-import type { BrandName } from '@betty/beam';
+import type { BrandName, BeamNavItem } from '@betty/beam';
+import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
 import GASPAR_MARK from './assets/GASPAR.svg';
 import { GASPAR_NAV } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
 import { TransactionsPage } from './gaspar/TransactionsPage';
+import { DashboardBench } from './bench/DashboardBench';
 
 // Brand mark is app-owned (shell-grammar §3). Color for content-adjacent chrome;
 // ghost = the same asset desaturated to a watermark. Ghost opacity is a bench
@@ -34,18 +36,37 @@ const brandMark = {
  */
 export function App() {
   const [brand, setBrand] = useState<BrandName>('ontario');
+  // Minimal view switch — Gaspar has no router yet; the bench is a Lab route.
+  const [view, setView] = useState<'transactions' | 'bench'>('transactions');
   const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
+
+  const navItems = useMemo<BeamNavItem[]>(
+    () => [
+      ...GASPAR_NAV.map((item, i) =>
+        i === 0
+          ? { ...item, selected: view === 'transactions', onClick: () => setView('transactions') }
+          : item,
+      ),
+      {
+        label: 'Dashboard bench',
+        icon: <SpaceDashboardIcon />,
+        selected: view === 'bench',
+        onClick: () => setView('bench'),
+      },
+    ],
+    [view],
+  );
 
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
       <CssBaseline />
       <BeamAppShell
         brandMark={brandMark}
-        navItems={GASPAR_NAV}
+        navItems={navItems}
         persistKey="beam.shell.gaspar"
         footer={<ShellFooter brand={brand} onBrandChange={setBrand} />}
       >
-        <TransactionsPage />
+        {view === 'bench' ? <DashboardBench /> : <TransactionsPage />}
       </BeamAppShell>
     </ThemeProvider>
   );
