@@ -19,7 +19,7 @@ import {
 import type { BeamStatSeverity, BeamStatTone } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { PRIZE_TYPE_LABEL, type RewardType } from './payoutConfigs';
 import {
   REWARD_TYPES,

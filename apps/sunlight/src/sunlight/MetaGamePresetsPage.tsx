@@ -19,7 +19,7 @@ import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { GAME_CONFIGS } from './gameConfigs';
 import {
   META_GAME_PRESETS,

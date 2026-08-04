@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
-import type { ResponsiveStyleValue } from '@mui/system';
+import type { Breakpoint } from '@mui/material/styles';
+
+// v9 no longer surfaces `ResponsiveStyleValue` through `@mui/material`, and
+// `@mui/system` isn't a direct dependency (it resolves nested under
+// `@mui/material` only). Reconstruct its small, stable shape from the public
+// `Breakpoint` export rather than take a new `@mui/system` dep (Stage 1.5 A).
+type ResponsiveStyleValue<T> = T | Array<T | null> | { [K in Breakpoint]?: T };
 
 /**
  * BeamAppShell v2 — the frame every Beam product wears (shell-grammar.md).

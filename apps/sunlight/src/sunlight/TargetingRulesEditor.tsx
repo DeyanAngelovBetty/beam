@@ -13,7 +13,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { PAYOUT_CONFIGS, type GameType, type PayoutStatus } from './payoutConfigs';
 import { ConditionBuilder } from './ConditionBuilder';
