@@ -48,7 +48,7 @@ export const AllStatuses: Story = {
         <Typography variant="overline" color="text.secondary">
           Lifecycle
         </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
           {LIFECYCLE.map((s) => (
             <BeamStatusBadge key={s} status={s} />
           ))}
@@ -58,7 +58,7 @@ export const AllStatuses: Story = {
         <Typography variant="overline" color="text.secondary">
           Settlement
         </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
           {SETTLEMENT.map((s) => (
             <BeamStatusBadge key={s} status={s} />
           ))}

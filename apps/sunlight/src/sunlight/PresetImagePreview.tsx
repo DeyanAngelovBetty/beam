@@ -28,7 +28,7 @@ export function PresetImagePreview({
           sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 1 }}
         />
       ) : (
-        <Stack alignItems="center" justifyContent="center" spacing={0.5} sx={{ height: '100%' }}>
+        <Stack spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'center', height: '100%' }}>
           <SportsEsportsOutlinedIcon color="disabled" />
           <Typography variant="body2" color="text.secondary">No image</Typography>
         </Stack>

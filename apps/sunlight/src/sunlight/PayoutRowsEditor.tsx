@@ -112,13 +112,13 @@ export function PayoutRowsEditor({
         {/* Chrome strip ABOVE the grid: Live Check (+ aggregate errors) left,
             Add Row right. The Live Check is BeamStat severity's first consumer
             (detail §2): exact = quiet · under = warning · over = danger. */}
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+        <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Button size="small" startIcon={<AddIcon />} onClick={addRow}>
             Add Row
           </Button>
 
           <Stack spacing={0.5}>
-            <Stack direction="row" spacing={4} alignItems="flex-start">
+            <Stack direction="row" spacing={4} sx={{ alignItems: 'flex-start' }}>
               <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
               <BeamStat label="Remaining" value={`${v.remaining}%`} tone={remainingTone} />
             </Stack>
@@ -194,7 +194,7 @@ export function PayoutRowsEditor({
                         const amtErr = rowErr?.rewards[rwi]?.amount;
                         const lastReward = row.rewards.length === 1;
                         return (
-                          <Stack key={rw._key} direction="row" spacing={1} alignItems="flex-start">
+                          <Stack key={rw._key} direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
                             <TextField
                               select
                               size="small"

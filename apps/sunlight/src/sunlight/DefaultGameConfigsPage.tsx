@@ -124,7 +124,7 @@ export function DefaultGameConfigsPage() {
         const selectedId = selections[row.gameType] ?? '';
         const changed = isDefaultGameConfigChanged(savedSelections[row.gameType] ?? '', selectedId);
         return (
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button size="small" variant="outlined" disabled={!changed} onClick={() => saveMapping(row.gameType)}>
               Save
             </Button>

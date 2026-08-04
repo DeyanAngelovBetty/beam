@@ -280,12 +280,12 @@ export const PaytablesYodaPatterns: StoryObj = {
         return (
           <Stack spacing={1} sx={{ maxWidth: 480 }}>
             {r.payouts.map((p, i) => (
-              <Stack key={i} direction="row" justifyContent="space-between">
+              <Stack key={i} direction="row" sx={{ justifyContent: 'space-between' }}>
                 <span>{p.reward} × {p.amount.toLocaleString()}</span>
                 <span>{Math.round(p.probability * 100)}%</span>
               </Stack>
             ))}
-            <Stack direction="row" justifyContent="space-between" sx={{ borderTop: 1, borderColor: 'divider', pt: 1 }}>
+            <Stack direction="row" sx={{ justifyContent: 'space-between', borderTop: 1, borderColor: 'divider', pt: 1 }}>
               <strong>Probabilities sum to {sum}</strong>
               <strong>Expected avg payout: {r.avgPayout.toLocaleString()}</strong>
             </Stack>

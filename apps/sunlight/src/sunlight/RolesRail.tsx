@@ -38,9 +38,9 @@ export function RolesRail({ mode, assignedIds, onToggle, linking }: RolesRailPro
     <Paper elevation={mode === 'edit' ? 0 : 1} sx={{ ...modeBorder(mode === 'edit') }}>
       <Stack
         direction="row"
-        alignItems="center"
         spacing={1}
         sx={{
+          alignItems: 'center',
           px: 1,
           py: 0.5,
           pl: 1.5,
@@ -88,7 +88,7 @@ export function RolesRail({ mode, assignedIds, onToggle, linking }: RolesRailPro
           );
         })}
         {mode === 'view' && roles.length === 0 && (
-          <Stack direction="row" alignItems="center" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               No roles assigned.
             </Typography>

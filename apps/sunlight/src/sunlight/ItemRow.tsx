@@ -76,7 +76,7 @@ export function ItemRow({
 /** The small filled dot used as the read-only row marker (view mode). */
 export function ItemDot() {
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" sx={{ width: 20, height: 20, flexShrink: 0 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 20, height: 20, flexShrink: 0 }}>
       <FiberManualRecordIcon sx={{ fontSize: 7 }} />
     </Box>
   );

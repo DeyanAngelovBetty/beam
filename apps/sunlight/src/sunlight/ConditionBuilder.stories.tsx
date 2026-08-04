@@ -40,7 +40,7 @@ function Harness({ initial, summary = false }: { initial: ConditionGroup; summar
   const [value, setValue] = useState<ConditionGroup>(initial);
   if (!summary) return <ConditionBuilder value={value} onChange={setValue} />;
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} alignItems="flex-start">
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ alignItems: 'flex-start' }}>
       <ConditionBuilder value={value} onChange={setValue} />
       <Box>
         <Typography variant="caption" color="text.secondary">

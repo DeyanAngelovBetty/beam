@@ -48,7 +48,7 @@ export const Row: Story = {
   args: { label: 'Status', value: 'Approved' },
   render: () => (
     <Paper variant="outlined" sx={{ p: 2 }}>
-      <Stack direction="row" spacing={4} flexWrap="wrap" useFlexGap>
+      <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
         <BeamStat label="Status" value="Approved" tone="success" caption="Online" />
         <BeamStat label="Cash balance" value="$20.00" caption="CAD" />
         <BeamStat label="Betty coins" value="0" />

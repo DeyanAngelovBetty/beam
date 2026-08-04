@@ -34,7 +34,7 @@ export function BeamFilterBar({
     >
       <Stack spacing={2}>
         {presets.length > 0 && (
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
             {presets.map((preset) => (
               <Chip
                 key={preset.id}
@@ -100,7 +100,7 @@ export function BeamFilterBar({
         </Box>
 
         {(onFilter || onClearAll) && (
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             {onFilter && (
               <Button variant={applied ? 'contained' : 'outlined'} onClick={onFilter}>
                 Filter

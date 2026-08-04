@@ -99,7 +99,7 @@ function GroupEditor({
 
   return (
     <Stack spacing={1} sx={isRoot ? undefined : { py: 1.5 }}>
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <TextField
           select
           size="small"
@@ -126,7 +126,7 @@ function GroupEditor({
       {/* Nesting = indentation + a plain left rule. STRUCTURAL ONLY — the visual
           language of nesting is the design pass. // nesting visuals: pending design pass */}
       <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
-        <Stack spacing={1} alignItems="flex-start">
+        <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
           {node.children.map((child, i) => (
             <NodeEditor
               key={keyOf(child)}
@@ -170,7 +170,7 @@ function LeafEditor({
   const setValues = (values: (string | number)[]) => emit({ ...node, values });
 
   return (
-    <Stack direction="row" spacing={1} alignItems="flex-start" sx={err ? { pb: 1 } : undefined}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', ...(err && { pb: 1 }) }}>
       <TextField
         select
         size="small"

@@ -58,7 +58,7 @@ function gameConfigName(preset: MetaGamePreset): string {
 function PresetPreview({ preset }: { preset: MetaGamePreset }) {
   const source = presetSource(preset);
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'flex-start' }}>
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'flex-start' } }}>
       <PresetImagePreview imageUrl={preset.imageUrl} alt={`${preset.displayName} preview`} />
       <Stack spacing={0.75}>
         <Typography variant="body2"><strong>Skin:</strong> {preset.skinId ?? 'Not set'}</Typography>

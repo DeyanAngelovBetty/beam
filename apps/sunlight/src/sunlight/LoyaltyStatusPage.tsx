@@ -78,7 +78,7 @@ export function LoyaltyStatusPage() {
       header: 'Loyalty status',
       getValue: (r) => r.name,
       render: (r) => (
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <GemIcon gem={r.gem} size={20} />
           <span>{r.name}</span>
         </Stack>
@@ -125,7 +125,7 @@ function ExpandedLoyaltyPanel({ status, next }: { status: LoyaltyStatus; next?: 
   const rewards = REWARDS[status.id] ?? [];
 
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} alignItems={{ md: 'flex-start' }}>
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ alignItems: { md: 'flex-start' } }}>
       <NextGemPanel
         currentGem={status.gem}
         nextStatus={

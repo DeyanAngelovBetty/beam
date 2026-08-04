@@ -101,7 +101,7 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
         status={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : undefined}
         description={isEdit ? undefined : 'New configurations are created as Disabled.'}
         action={
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button variant="text" onClick={() => navigate('/game-configs')}>
               Cancel
             </Button>

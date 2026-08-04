@@ -320,7 +320,7 @@ export function BeamDataTable<Row>({
           action always renders, disabled at zero selection. Destructive actions
           confirm. // styling: pending design pass */}
       {bulkActions.length > 0 && (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 0.5, minHeight: 40 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 0.5, minHeight: 40 }}>
           {bulkActions.map((a) => {
             const disabled = selectedCount === 0;
             return (
@@ -491,7 +491,7 @@ export function BeamDataTable<Row>({
                       onClick={(e) => e.stopPropagation()}
                       sx={{ ...railStickySx, zIndex: 2, whiteSpace: 'nowrap' }}
                     >
-                      <Stack direction="row" alignItems="center">
+                      <Stack direction="row" sx={{ alignItems: 'center' }}>
                         {selectable && (
                           <Checkbox
                             checked={row.getIsSelected()}

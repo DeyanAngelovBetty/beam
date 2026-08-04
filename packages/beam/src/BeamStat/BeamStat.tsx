@@ -33,7 +33,7 @@ export function BeamStat({ label, value, caption, tone = 'default', severity }: 
         sx={{ flexShrink: 0, width: '2px', borderRadius: 1, alignSelf: 'stretch', bgcolor: spine }}
       />
       <Stack spacing={0.25} sx={{ pl: 1.5, minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" spacing={0.5}>
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
           {severity === 'warning' && (
             <WarningAmberIcon titleAccess="Warning" sx={{ fontSize: 14, color: 'warning.main' }} />
           )}

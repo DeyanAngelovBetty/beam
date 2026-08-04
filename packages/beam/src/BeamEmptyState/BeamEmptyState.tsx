@@ -8,9 +8,7 @@ export function BeamEmptyState({ title, description, icon, action }: BeamEmptySt
     <Stack
       component="section"
       spacing={2}
-      alignItems="center"
-      justifyContent="center"
-      sx={{ textAlign: 'center', py: 10, px: 3 }}
+      sx={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center', py: 10, px: 3 }}
     >
       {icon && (
         <Box

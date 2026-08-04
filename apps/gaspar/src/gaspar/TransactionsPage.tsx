@@ -146,7 +146,7 @@ function RoutePanel({ transaction }: { transaction: Transaction }) {
         >
           {transaction.route.map((step) => (
             <Box key={step.step} sx={{ px: 1.5, py: 1 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 {step.step}
               </Typography>
               <Typography variant="body2">{step.detail}</Typography>
@@ -159,7 +159,7 @@ function RoutePanel({ transaction }: { transaction: Transaction }) {
         <Typography variant="subtitle2" color="text.secondary">
           Settlement
         </Typography>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <BeamStatusBadge status={transaction.status} />
           <Typography variant="body2" color="text.secondary">
             {money(transaction.amount, transaction.currency)} · {transaction.createdAt}

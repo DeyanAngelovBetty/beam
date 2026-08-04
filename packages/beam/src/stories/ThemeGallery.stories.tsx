@@ -32,7 +32,7 @@ function Gallery() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <BeamStatusBadge status="active" />
         <BeamStatusBadge status="scheduled" />
         <BeamStatusBadge status="paused" />
@@ -47,7 +47,7 @@ function Gallery() {
           notch). Diagnostic only — the resting look is a design decision. */}
       <TextField label="Empty label" fullWidth />
 
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Switch defaultChecked />
         <Checkbox defaultChecked />
         <Checkbox />

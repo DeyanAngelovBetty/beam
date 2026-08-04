@@ -65,10 +65,9 @@ export function BeamPageHeader({
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={2}
-        alignItems={{ sm: 'center' }}
-        justifyContent="space-between"
+        sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}
       >
-        <Stack spacing={0.5} alignItems="flex-start">
+        <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
           <Typography variant="h4" component="h1">
             {title}
           </Typography>
@@ -82,7 +81,7 @@ export function BeamPageHeader({
         </Stack>
         {/* Secondary actions sit to the left of the primary action. */}
         {(action || secondaryActions) && (
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             {secondaryActions}
             {action}
           </Stack>
@@ -91,7 +90,7 @@ export function BeamPageHeader({
 
       {summary && (
         <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack direction="row" spacing={4} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
             {summary}
           </Stack>
         </Paper>

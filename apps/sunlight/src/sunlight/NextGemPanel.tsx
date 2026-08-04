@@ -49,7 +49,7 @@ export function NextGemPanel({
   const [nextHover, setNextHover] = useState(false);
 
   return (
-    <Stack spacing={3} alignItems="center" sx={{ minWidth: 240, pt: 1 }}>
+    <Stack spacing={3} sx={{ alignItems: 'center', minWidth: 240, pt: 1 }}>
       <Box sx={{ position: 'relative', width: SIZE, height: SIZE }}>
         <Box component="svg" viewBox={`0 0 ${SIZE} ${SIZE}`} sx={{ width: '100%', height: '100%' }}>
           <circle
@@ -57,9 +57,9 @@ export function NextGemPanel({
             stroke="var(--mui-palette-divider)" strokeWidth={STROKE}
           />
         </Box>
-        <Stack spacing={0.25} alignItems="center" sx={{ position: 'absolute', inset: 0, justifyContent: 'center' }}>
+        <Stack spacing={0.25} sx={{ alignItems: 'center', position: 'absolute', inset: 0, justifyContent: 'center' }}>
           <GemIcon gem={currentGem} size={72} />
-          <Typography variant="caption" fontWeight={600}>Next Gem</Typography>
+          <Typography variant="caption" sx={{ fontWeight: 600 }}>Next Gem</Typography>
           <Typography variant="caption" color="text.secondary">
             {milestoneCost.toLocaleString()} pts.
           </Typography>
@@ -67,9 +67,9 @@ export function NextGemPanel({
       </Box>
 
       {/* Gem track — 1:1 with reward rows, hover-linked; all unselected by default */}
-      <Stack direction="row" alignItems="center">
+      <Stack direction="row" sx={{ alignItems: 'center' }}>
         {milestones.map((m, i) => (
-          <Stack key={m.id} direction="row" alignItems="center">
+          <Stack key={m.id} direction="row" sx={{ alignItems: 'center' }}>
             {i > 0 && <Box sx={{ width: 20, height: 2, bgcolor: 'divider' }} />}
             <Box
               onMouseEnter={onMilestoneHover ? () => onMilestoneHover(m.id) : undefined}
@@ -96,7 +96,7 @@ export function NextGemPanel({
               }
             >
               <Stack
-                alignItems="center"
+                sx={{ alignItems: 'center' }}
                 onMouseEnter={() => setNextHover(true)}
                 onMouseLeave={() => setNextHover(false)}
               >

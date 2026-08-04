@@ -26,7 +26,7 @@ export const TwoSizes: StoryObj = {
   render: () => (
     <Stack spacing={2}>
       {[20, 64].map((size) => (
-        <Stack key={size} direction="row" spacing={1.5} alignItems="center">
+        <Stack key={size} direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
           <Typography variant="caption" sx={{ width: 32 }}>{size}px</Typography>
           {ALL.map((g) => <GemIcon key={g} gem={g} size={size} />)}
         </Stack>

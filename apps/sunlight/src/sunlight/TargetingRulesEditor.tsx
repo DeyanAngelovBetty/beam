@@ -157,10 +157,10 @@ function RuleCard({
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack spacing={2}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <Typography variant="subtitle2">Rule {index + 1}</Typography>
-            <Stack direction="row" spacing={0.5} alignItems="center">
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
               <Switch
                 size="small"
                 checked={rule.status === 'Enabled'}
@@ -268,7 +268,7 @@ function PayoutConfigSelect({
         })}
       </TextField>
       {selectedOption?.status === 'Disabled' && (
-        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: 'warning.main' }} role="status">
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', color: 'warning.main' }} role="status">
           <WarningAmberIcon fontSize="small" />
           <Typography variant="body2">
             This PayoutConfig must be enabled before the GameConfig can be enabled.

@@ -122,9 +122,8 @@ export function ItemBox({ group, mode, granted, provenance, onTogglePermission, 
     <Paper elevation={0} sx={{ overflow: 'hidden', ...modeBorder(mode === 'edit') }}>
       <Stack
         direction="row"
-        alignItems="center"
         spacing={1}
-        sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}
+        sx={{ alignItems: 'center', p: 1, borderBottom: 1, borderColor: 'divider' }}
       >
         <Checkbox
           size="small"

@@ -351,9 +351,8 @@ export function BeamAppShell({
         {/* Panel header — brand mark + chevrons (grammar §3). */}
         <Stack
           direction="row"
-          alignItems="center"
           spacing={1}
-          sx={{ px: 1.5, minHeight: STRIP_HEIGHT, borderBottom: 1, borderColor: 'divider' }}
+          sx={{ alignItems: 'center', px: 1.5, minHeight: STRIP_HEIGHT, borderBottom: 1, borderColor: 'divider' }}
         >
           {drawer ? (
             // Narrow drawer: color mark + a close button. No ghost, no lock —
@@ -454,9 +453,8 @@ export function BeamAppShell({
       {/* Brand strip (grammar §3): hamburger + color mark, top-left, no bar. */}
       <Stack
         direction="row"
-        alignItems="center"
         spacing={1}
-        sx={{ position: 'fixed', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
+        sx={{ alignItems: 'center', position: 'fixed', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
       >
         {/* Hamburger, dual role (grammar §3, §6): wide = lock toggle (hover still
             peeks); narrow = open the modal drawer, no lock. */}

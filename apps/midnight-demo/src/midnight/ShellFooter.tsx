@@ -40,7 +40,7 @@ export function ShellFooter({
 }) {
   const jurisdictions = Object.keys(products.sunlight) as BrandName[];
   return (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ p: 1.5 }}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', p: 1.5 }}>
       <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
         <InputLabel id="midnight-location">Location</InputLabel>
         <Select

@@ -54,7 +54,7 @@ const CONTROLS: Spec[] = [
 
 function Specimen({ name, px, note }: Spec) {
   return (
-    <Stack direction="row" spacing={2} alignItems="center">
+    <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
       <Box sx={{ width: 220, flexShrink: 0, textAlign: 'right' }}>
         <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
           {name}
