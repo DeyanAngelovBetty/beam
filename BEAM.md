@@ -211,10 +211,29 @@ Design against the real model, not a generic BO:
   design iteration *before* page integration. A Lab entry is a question, not a home: it either
   graduates with its component via the promotion path (§2), or is deleted once its question is
   answered. *(2026-07-25.)*
-- **Product collaborators and their agents:** App-local patterns get bench stories 
-  under `Lab/<Product>/<Name>` for isolated design iteration *before* page integration. A Lab 
-  entry is a question, not a home: it either graduates with its component via the promotion 
-  path (§2), or is deleted once its question is answered. *(2026-07-25.)*
+- **Product collaborators and their agents.** Collaborators work in this repo directly, by
+  branch and PR; their agents read BEAM.md and the grammars and follow them — a collaborator can
+  ship a coherent page without ever reasoning about the doctrine behind it. That is the
+  mechanism, and it works. *(2026-08-04.)*
+  - **Assembly is self-serve; invention is design lane.** A page built from existing grammars
+    with existing organisms is *assembly* — branch, build, PR, no gate. A new page species,
+    organism, save model, or interaction — anything that sets a precedent the grammars don't
+    already answer — is *invention*: it goes through Deyan **before** it is built, not after (the
+    promotion path, §2). The test is not size — a 300-line page from settled patterns is
+    assembly; six lines that change nesting rhythm are invention.
+  - **Stories are a byproduct, not a burden.** Agents write Storybook entries by following the
+    grammars (§6.3, the regression harness); nobody budgets for them. A collaborator who believes
+    supporting Storybook is separate work they must do has been misinformed — at the Presets and
+    Default Game Configs pages *(2026-07-31)*, a collaborator's agent produced pages, components,
+    and Storybook entries in one pass; the collaborator did not write or maintain a story, and is
+    unlikely to know any were created.
+  - **The docs travel with the package.** Beam without BEAM.md and `docs/` is a component
+    library, and a worse one than MUI. Consuming Beam means consuming the docs — or it is not
+    Beam being consumed.
+  - **Agents cannot see each other.** Two agents in separate sessions share no view of who did
+    what; an unexplained ref move is more likely a human or another session than a fault. Report
+    state, don't repair it, and never take an irreversible or outward-facing action — force-push,
+    remote branch deletion, history rewrite — without an explicit go from Deyan in that session.
 - **Major dependency upgrades** follow [docs/major-upgrades.md](docs/major-upgrades.md): a red,
   install-only commit first (typecheck is *not* the blast radius), then staged fixes — and the
   barrel makes upstream codemods inert, so mind the import-rewrite recipe. *(2026-08-04.)*
