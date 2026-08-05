@@ -177,6 +177,19 @@ export const borderIntensity: Record<ThemeMode, { calm: number; hover: number }>
 };
 
 /**
+ * SEED — brand-mark lightness, PER SCHEME. The app-owned brand mark (a CSS-masked
+ * silhouette) paints its brand hues at THIS oklch L, so the mark follows the ramp
+ * and stays legible: a light mark on the dark shell, a dark mark on light.
+ *
+ * It's a pinned L, not a live `anchor-L + Δ`: relative colour reads channels from
+ * ONE origin, so `oklch(from primary …)` can't also pull the anchor's L, and CSS
+ * can't extract a channel to a scalar to bridge them. Emitted as `--beam-mark-l`
+ * (mode-scoped, Beam's one seam). Chosen ~0.6 from the current anchors in the
+ * contrast direction; a large anchor move re-tunes this one number.
+ */
+export const markLightness: Record<ThemeMode, number> = { dark: 0.82, light: 0.4 };
+
+/**
  * DERIVED TOKENS — computed in CSS from other tokens at runtime.
  * These have no literal Figma value (Figma cannot express color-mix /
  * relative color syntax); their Figma twin, when needed, is a static

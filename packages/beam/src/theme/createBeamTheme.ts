@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, derived, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, derived, type BrandName, type ProductName } from './tokens';
 import { meta } from './textStyles';
 
 /**
@@ -109,6 +109,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // dial: light needs more than dark. :root default = dark.
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
+            // Brand-mark lightness (app-owned mask consumes it). :root default = dark.
+            '--beam-mark-l': String(markLightness.dark),
             // Native `color-scheme` DEFAULT (§5). Themes the browser's OWN
             // widgets — scrollbars, native <select>, date/time inputs,
             // checkbox/radio, Chrome autofill — which MUI's token palette never
@@ -172,6 +174,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-gradient-intensity': `${g.light.intensity}%`,
             '--beam-border-intensity': `${borderIntensity.light.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.light.hover}%`,
+            '--beam-mark-l': String(markLightness.light),
           },
           '[data-beam-mode="dark"]': {
             colorScheme: 'dark',
@@ -180,6 +183,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
+            '--beam-mark-l': String(markLightness.dark),
           },
 
           // Page mesh — a FIXED paint layer behind the whole document. `position:

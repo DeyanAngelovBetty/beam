@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
 import GASPAR_MARK from './assets/GASPAR.svg';
 import { GASPAR_NAV, type GasparView } from './gaspar/navItems';
@@ -7,19 +7,41 @@ import { ShellFooter } from './gaspar/ShellFooter';
 import { TransactionsPage } from './gaspar/TransactionsPage';
 import { DashboardPage } from './gaspar/DashboardPage';
 
-// Brand mark is app-owned (shell-grammar §3). Color for content-adjacent chrome;
-// ghost = the same asset desaturated to a watermark. Ghost opacity is a bench
-// value — the motion/polish pass owns it.
+// Brand mark is app-owned (shell-grammar §3), but PAINTED from the token system.
+// An <img>-loaded SVG is a separate document page CSS can't reach, so the mark is
+// rendered as a CSS-MASKED silhouette (the .svg stays the source of truth) filled
+// by a brand-hued gradient — so it follows the ramp instead of carrying its own
+// hardcoded colours. -webkit-mask-* alongside mask-* for Safari.
+const MARK_MASK = {
+  height: 20,
+  aspectRatio: '889 / 152', // the GASPAR wordmark's intrinsic ratio
+  display: 'block',
+  maskImage: `url(${GASPAR_MARK})`,
+  WebkitMaskImage: `url(${GASPAR_MARK})`,
+  maskSize: 'contain',
+  WebkitMaskSize: 'contain',
+  maskRepeat: 'no-repeat',
+  WebkitMaskRepeat: 'no-repeat',
+  maskPosition: 'left center',
+  WebkitMaskPosition: 'left center',
+} as const;
+
+// The same three tint points as the page mesh / gradient border, pinned to the
+// per-scheme mark lightness (--beam-mark-l) so the mark stays legible as the ramp
+// moves. Hues stay brand (no computed complement — Gaspar stays teal).
+const MARK_GRADIENT =
+  'linear-gradient(115deg, ' +
+  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c h), ' +
+  'oklch(from var(--beam-gradient-hue-b) var(--beam-mark-l) c h), ' +
+  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c calc(h + 45)))';
+
+// Ghost = a DESATURATED watermark (chroma 0 → grey), not a dim logo — it reads as
+// absence and doesn't compete with the live mark. Same silhouette + weight.
+const MARK_GHOST = 'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) 0 h)';
+
 const brandMark = {
-  color: <img src={GASPAR_MARK} alt="Gaspar" style={{ height: 20, display: 'block' }} />,
-  ghost: (
-    <img
-      src={GASPAR_MARK}
-      alt=""
-      aria-hidden
-      style={{ height: 20, display: 'block', filter: 'grayscale(1)', opacity: 0.16 }}
-    />
-  ),
+  color: <Box role="img" aria-label="Gaspar" sx={{ ...MARK_MASK, background: MARK_GRADIENT }} />,
+  ghost: <Box aria-hidden sx={{ ...MARK_MASK, background: MARK_GHOST, opacity: 0.16 }} />,
 };
 
 /**

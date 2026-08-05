@@ -127,6 +127,18 @@ Gaspar dashboard widget shells.
 Posture: the BO is Chrome-first, same stance as the squircle — modern CSS is welcome;
 anything player-facing gets a stricter support review.
 
+**Limitation — relative colour reads channels from ONE origin** *(2026-08-06)*. `oklch(from
+X l c h)` decomposes a single origin `X`; you can't take L from one colour and C/H from
+another in one expression, and CSS can't extract a channel to a scalar `var()` to bridge
+them. So "anchor-L + brand-hue" — a colour whose lightness tracks `background-default` while
+its hue stays brand — **is not expressible**. The workaround is a **pinned L per scheme**
+(a mode-scoped seed), set relative to the anchor by hand and re-tuned if the anchor moves;
+the alternative (JS hex→oklch maths at theme build) is the runtime colour computation this
+whole system exists to avoid. First hit: the Gaspar **brand mark** — a CSS-masked silhouette
+(the `.svg` stays the source) filled by the three mesh tint points at `--beam-mark-l`
+(dark 0.82 · light 0.40), so it follows the ramp instead of carrying hardcoded colours. The
+ghost is the same mask desaturated (chroma 0 → grey), a watermark that reads as absence.
+
 ## 5. Guardrails (especially for AI assistants)
 
 - **Never precompute a formula's result into a component.** If you know the answer
