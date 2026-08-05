@@ -304,7 +304,7 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
 | `…/primary/{theme}/primary -1 / (default) / 1` | `palette.primary.dark / main / light` |
 | `…/primary/{theme}/alpha 4·8·12%` | `palette.action.{hover,selected,focus}Opacity` |
 | `product/font/{title,body}` | **body** → `theme.typography.fontFamily`; **title** → `typography.h1`–`h6` (`createBeamTheme` via `productFonts`) · webfont links in app **and** Storybook head |
-| `jurisdiction {Product}/bg/screen · overlay` | dark `background.default / paper` |
+| `product/surface/{dark,light}/{anchor,step}` | `surfaceSeeds` → a 5-position derived ramp (`derived.surface`): `background.default`→0, `background.paper`→1, Menu/Popover→2, Dialog→3; sunken −1 reserved. Jurisdiction no longer carries background *(product-scoped since 2026-08-05; the old `bg/*` vars were deleted — don't restore)*. See docs/derived-color-tokens.md §7 |
 | `derived.tableBorder` — code formula | `palette.divider` + MUI `TableCell.border`; baked → `_derived (baked)` |
 | `derived.pageGradient` — code formula | `--beam-page-gradient` via CssBaseline (non-bakeable; Figma twin = a style) |
 | `_derived (baked)` collection | GENERATED snapshots of code formulas — never hand-edit |

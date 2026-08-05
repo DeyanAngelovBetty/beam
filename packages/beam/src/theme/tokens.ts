@@ -34,23 +34,21 @@ export interface BrandTokens {
     focusVisible: number;
     outlinedBorder: number;
   };
-  surfaces: { screen: string; overlay: string };
 }
 
 const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, outlinedBorder: 0.5 };
-const SURFACES = { screen: '#0B0F19', overlay: '#111827' };
 
 export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
   sunlight: {
     ontario: {
       light: { primaryDown1: '#3832A0', primary0: '#5048E5', primaryUp1: '#828DF8', contrastText: '#FFFFFF' },
       dark: { primaryDown1: '#515BA4', primary0: '#7582EB', primaryUp1: '#909BEF', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES,
+      states: STATES,
     },
     alberta: {
       light: { primaryDown1: '#906013', primary0: '#CB871B', primaryUp1: '#E9AF54', contrastText: '#111827' },
       dark: { primaryDown1: '#BD7E19', primary0: '#E7A946', primaryUp1: '#EEC481', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES,
+      states: STATES,
     },
   },
   gaspar: {
@@ -58,12 +56,12 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
       light: { primaryDown1: '#0B534D', primary0: '#0F766E', primaryUp1: '#3F918B', contrastText: '#FFFFFF' },
       // dark default as entered in Figma (pre-correction footnote value) — Figma is seed truth
       dark: { primaryDown1: '#209486', primary0: '#57DDCC', primaryUp1: '#57DDCC', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES,
+      states: STATES,
     },
     alberta: {
       light: { primaryDown1: '#861B94', primary0: '#C026D3', primaryUp1: '#CD51DC', contrastText: '#FFFFFF' },
       dark: { primaryDown1: '#A255AE', primary0: '#ED94FA', primaryUp1: '#ED94FA', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES,
+      states: STATES,
     },
   },
 };
@@ -118,14 +116,31 @@ export const roleRamp: readonly string[] = [
 export const roleColor = (index: number): string => roleRamp[((index % roleRamp.length) + roleRamp.length) % roleRamp.length];
 
 /**
- * SEED — mode-scoped step size for the surface ramp (Figma: palette/surfaceStep,
- * modes light|dark). Figma is truth (§4.1); this mirrors the seed pending the
- * Figma add + re-sync. Unitless (an oklch lightness delta per step),
- * brand-invariant. TRACER (§9): one step only — the ramp is the same machinery
- * with more rows. The ×N is folded INTO the seed (channel arithmetic stays
- * trivial `l + step`, so a bake failure is diagnostic, not confounded).
+ * SEED — product-scoped surface ramp: an anchor (surface 0, the page) + a step
+ * size per scheme (Figma: `product/surface/{dark,light}/{anchor,step}`). Font
+ * and surface are the two PRODUCT-axis seed groups; jurisdiction no longer
+ * carries background — the old product-background and per-jurisdiction bg
+ * variables were deleted in Figma, so surfaces are product-scoped only now.
+ *
+ * The step is an oklch lightness delta per position. Its ×N stays in the derived
+ * formula (not the seed) so all five positions read one step var; the arithmetic
+ * stays `l + N * step` — as trivial as the bake parser allows.
+ *
+ * Midnight isn't a ProductName (it renders via `product: 'sunlight'`), so it
+ * inherits Sunlight's ramp — same posture as fonts (Appendix C).
+ *
+ * ⚠️ Light step is 0.010, NOT dark's 0.07: light mode has only ~0.045 of L
+ * headroom above the page, so its ramp is necessarily compressed and shadow
+ * carries elevation there. At 0.02 surface 3 would compute to L 1.0151 — past
+ * pure white, impossible. See docs/derived-color-tokens.md §7.
  */
-export const surfaceStep = { light: 0.02, dark: 0.07 };
+export const surfaceSeeds: Record<
+  ProductName,
+  { dark: { anchor: string; step: number }; light: { anchor: string; step: number } }
+> = {
+  sunlight: { dark: { anchor: '#0B0F19', step: 0.07 }, light: { anchor: '#F0F0F0', step: 0.01 } },
+  gaspar: { dark: { anchor: '#041213', step: 0.085 }, light: { anchor: '#EDF1F1', step: 0.01 } },
+};
 
 /**
  * DERIVED TOKENS — computed in CSS from other tokens at runtime.
@@ -159,15 +174,24 @@ export const derived = {
     'linear-gradient(180deg, color-mix(in oklch, var(--mui-palette-primary-main) 10%, var(--mui-palette-background-default)) 0%, var(--mui-palette-background-default) 320px)',
 
   /**
-   * SURFACE 1 — one step up from surface 0 (background.default) in oklch L.
-   * The FORMULA is mode-invariant; the STEP is a mode-scoped seed
-   * (`--beam-surface-step`), so this single expression resolves differently per
-   * mode via its inputs. TRACER (§9) for a NEW kind of derived token: a
-   * mode-scoped delta seed. Channel arithmetic is trivial (`l + step`) on
-   * purpose — the ×N lives in the seed. ADDITIVE — nothing consumes this;
-   * `background.paper` is NOT repointed at it this pass.
+   * SURFACE RAMP — five elevation positions as oklch L-offsets from surface 0
+   * (`background.default`, the anchor). c and h pass through, so surfaces stay
+   * faintly branded instead of going flat grey. The formula is mode- AND
+   * product-invariant: it resolves through `--mui-palette-background-default`
+   * (which flips per mode/product) and `--beam-surface-step` (emitted per
+   * product+mode in createBeamTheme). ×N lives here, not in the seed, so all
+   * positions read one step var; arithmetic stays `l + N * step`.
+   *
+   * LOAD-BEARING (2026-08-05, was the additive `surface1` tracer): roles alias
+   * positions — `background.default`→0, `background.paper`→1, Menu/Popover→2,
+   * Dialog→3. `sunken` (-1) is emitted but consumed by nothing (reserved).
    */
-  surface1: 'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-step)) c h)',
+  surface: {
+    sunken: 'oklch(from var(--mui-palette-background-default) calc(l - 1 * var(--beam-surface-step)) c h)',
+    paper: 'oklch(from var(--mui-palette-background-default) calc(l + 1 * var(--beam-surface-step)) c h)',
+    raised: 'oklch(from var(--mui-palette-background-default) calc(l + 2 * var(--beam-surface-step)) c h)',
+    top: 'oklch(from var(--mui-palette-background-default) calc(l + 3 * var(--beam-surface-step)) c h)',
+  },
 
   /**
    * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,

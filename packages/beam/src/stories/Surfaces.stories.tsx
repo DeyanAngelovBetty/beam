@@ -3,10 +3,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Stack, Typography } from '../index';
 
 /**
- * TRACER (BEAM §9) — proves a NEW kind of derived token: one whose FORMULA is
- * mode-invariant but whose STEP is a mode-scoped seed (`--beam-surface-step`,
- * light 0.02 · dark 0.07). `--beam-surface-1` = one step up from surface 0
- * (background.default) in oklch L. Additive — nothing in product consumes it.
+ * SURFACE RAMP (BEAM §9) — a derived token whose FORMULA is mode+product-
+ * invariant but whose STEP is a product+mode-scoped seed (`--beam-surface-step`,
+ * Sunlight light 0.010 · dark 0.07). `--beam-surface-1` = surface 1 = one step up
+ * from surface 0 (background.default) in oklch L — now LOAD-BEARING: it IS
+ * `background.paper` (promoted 2026-08-05, docs/derived-color-tokens.md §7).
  *
  * Surface 0 and surface 1 render FLUSH (no gap, no divider) so the step is
  * judged as an EDGE — a ramp step invisible edge-to-edge is too small whatever

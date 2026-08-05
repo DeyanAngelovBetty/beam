@@ -110,11 +110,12 @@ by rotating OKLCH hue · elevation tints (surface + n% primary per level) · pro
 accent derivatives once Gaspar's identity lands · status-badge soft variants
 (status color at 12% over background). Each is one formula. That's the point.
 
-## 7. The surface ramp — elevation as a derived L-offset (tracer · 2026-08-03)
+## 7. The surface ramp — elevation as a derived L-offset (load-bearing · 2026-08-05)
 
 The tracer (`derived.surface1`, commit `ee10823`) proved a new *kind* of derived
-token: one whose formula is mode-invariant but whose step size is a mode-scoped
-seed. What it settled, and what it left for the foundations session:
+token: one whose formula is mode-invariant but whose step size is a scoped seed.
+Promoted to load-bearing on 2026-08-05 — the five-position `derived.surface` now
+drives every background in every product. What it settled, then how it landed:
 
 **DECIDED — the mechanism.** Surfaces are positions on an elevation **ramp**, not
 a vocabulary list. Each surface is an OKLCH **lightness offset** from surface 0
@@ -142,14 +143,33 @@ seed (`--beam-mix-lift` / `--beam-mix-sink`), never `white` / `black`: white ove
 a near-black dark surface is the classic tint bug. Applies to the relative-color
 fallback shape and to any future gradient or shadow formula.
 
-**PROPOSED — for the foundations session, not decided:**
-- The five-step vocabulary — `surface -1` sunken · `0` page · `1` paper · `2`
-  raised · `3` top. Names and count go to the session for argument.
-- The specific deltas (step: light `0.02` / dark `0.07`). Placeholder numbers.
+**DECIDED — the five positions, load-bearing (2026-08-05).** The tracer
+graduated: `derived.surface` holds all five positions and the roles **alias**
+them — `background.default`→0 (page), `background.paper`→1 (paper),
+Menu/Popover→2 (raised), Dialog→3 (top). `surface -1` (sunken) is emitted and
+reserved (no consumer yet). **A role never carries its own hex** — it points at a
+ramp position, and the arithmetic guarantees the order.
 
-**STATUS — tracer, additive.** `derived.surface1` exists and is consumed by
-nothing; `background.paper` is **not** repointed at it. It proves the CSS half of
-the pipeline only — **bake and contrast audit are un-runnable in-repo** (BEAM
-Appendix C), so this token is **unbaked and unaudited**. The full ramp,
-borders-derived-from-their-own-surface, shadows, and gradients are pending the
-foundations session.
+**What the repoint fixed.** Hand-picked surfaces had drifted out of order: dark
+`paper` (L 0.228) sat *above* the old `overlay` (L 0.210), so a menu rendered
+**darker** than the card it opened over. Positions computed from one anchor + one
+step cannot invert like that — the ordering bug is now corrected by arithmetic,
+not vigilance. That correction is the point of the whole change.
+
+**Seeds are PRODUCT-scoped** (`surfaceSeeds`, tokens.ts): anchor + step per
+scheme, per product (Figma `product/surface`). The old product-background and
+per-jurisdiction bg variables were **deleted** — **jurisdiction no longer affects
+surfaces, deliberately; do not restore it.** The step is now product- *and*
+mode-scoped: the product half bakes at theme construction (product is a rebuild),
+the mode half still flips on `[data-beam-mode]`.
+
+**Light step is 0.010, not 0.02** — a correction, not a placeholder. At 0.02,
+surface 3 computes to L 1.0151 — past pure white, impossible. Light mode has only
+~0.045 of L headroom above the page, so its ramp is necessarily compressed and
+**shadow carries elevation there** (the asymmetry above). Dark keeps 0.07 (0.085
+for Gaspar — a wider separation).
+
+**STILL un-baked, un-audited.** Bake and contrast audit remain un-runnable
+in-repo (BEAM Appendix C), so the live ramp is unverified against those lanes. The
+Figma `_derived surfaces (baked)` collection is a designer SNAPSHOT, not the
+source — code computes the real values; do not read or mirror it.

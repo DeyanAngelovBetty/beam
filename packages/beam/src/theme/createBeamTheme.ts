@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, derived, surfaceStep, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, derived, type BrandName, type ProductName } from './tokens';
 import { meta } from './textStyles';
 
 /**
@@ -18,6 +18,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   const f = productFonts[product];
   const bodyFont = `"${f.body}", "Helvetica", "Arial", sans-serif`;
   const titleFont = `"${f.title}", "Helvetica", "Arial", sans-serif`;
+  // Product-scoped surface ramp. The step's PRODUCT half bakes here (per scheme);
+  // its MODE half flips on the data-beam-mode seam below (product is a theme
+  // rebuild, so it resolves at construction — no second seam). Anchor = surface 0.
+  const s = surfaceSeeds[product];
 
   const action = {
     hoverOpacity: t.states.hover,
@@ -41,6 +45,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             contrastText: t.light.contrastText,
           },
           action,
+          background: {
+            default: s.light.anchor, // surface 0 — the page (light anchor seed)
+            paper: derived.surface.paper, // surface 1 — one compressed step up
+            ...({ paperChannel: undefined } as object),
+          },
         },
       },
       dark: {
@@ -55,8 +64,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
           action,
           background: {
-            default: t.surfaces.screen, // Figma: brand bg/screen
-            paper: t.surfaces.overlay, // Figma: brand bg/overlay/base
+            default: s.dark.anchor, // surface 0 — the page (anchor seed)
+            paper: derived.surface.paper, // surface 1 — one step up (derived)
+            // paper is a relative-color expr MUI can't extract a channel from;
+            // provide the key so it skips channel-gen silently. Nothing reads it.
+            ...({ paperChannel: undefined } as object),
           },
         },
       },
@@ -104,14 +116,19 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-spine-default': derived.spine.default,
             '--beam-spine-warning': derived.spine.warning,
             '--beam-spine-danger': derived.spine.danger,
-            // Surface ramp TRACER (§9): a mode-scoped delta seed feeding a
-            // derived surface. The step's :root default (= dark, defaultMode)
-            // guards SSR / the no-attribute frame; the mode selectors below flip
-            // it on the data-beam-mode layer with NO theme rebuild (§5). The
-            // surface-1 FORMULA is scheme-invariant — it resolves per mode via
-            // the step + background.default it references. Additive; unconsumed.
-            '--beam-surface-step': String(surfaceStep.dark),
-            '--beam-surface-1': derived.surface1,
+            // Surface ramp (§9), now LOAD-BEARING. The step's :root default is
+            // this product's DARK step (defaultMode), guarding SSR / the
+            // no-attribute frame; the mode selectors below flip it with NO theme
+            // rebuild (§5). Each surface FORMULA is mode+product-invariant — it
+            // resolves through --mui-palette-background-default and the step var.
+            // Roles alias positions: 0 = background.default, 1 = background.paper,
+            // 2 = Menu/Popover, 3 = Dialog. `--beam-surface--1` (sunken) is
+            // emitted but reserved — no consumer this pass.
+            '--beam-surface-step': String(s.dark.step),
+            '--beam-surface--1': derived.surface.sunken,
+            '--beam-surface-1': derived.surface.paper,
+            '--beam-surface-2': derived.surface.raised,
+            '--beam-surface-3': derived.surface.top,
             // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
             // are independently addressable (durations may become Figma number
             // variables; easings stay code strings), plus a composed shorthand.
@@ -134,8 +151,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // layer MUI flips its palette vars on, so a mode change updates the
           // step — and thus --beam-surface-1 — with NO theme rebuild (§5). The
           // formula var stays in :root; only its input flips here.
-          '[data-beam-mode="light"]': { colorScheme: 'light', '--beam-surface-step': String(surfaceStep.light) },
-          '[data-beam-mode="dark"]': { colorScheme: 'dark', '--beam-surface-step': String(surfaceStep.dark) },
+          '[data-beam-mode="light"]': { colorScheme: 'light', '--beam-surface-step': String(s.light.step) },
+          '[data-beam-mode="dark"]': { colorScheme: 'dark', '--beam-surface-step': String(s.dark.step) },
 
           // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the
           // duration vars at the injection layer. Everything built on the motion
@@ -231,6 +248,20 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             cornerShape: 'squircle',
           },
         },
+      },
+      // Overlay surfaces sit ABOVE cards on the ramp: a menu/popover is surface 2,
+      // a dialog surface 3 (the top position — the reserved slot, taken here). This
+      // corrects the old ordering bug where paper rendered lighter than nothing
+      // above it: today a menu opened over a card was DARKER than that card
+      // (paper L 0.228 sat above overlay L 0.210). Now arithmetic guarantees the
+      // order. Menu renders its Paper through Popover, so MuiPopover covers both.
+      // Drawer is shell chrome, NOT an overlay — deliberately left as-is (a
+      // persistent nav sits alongside content, not above it; shell pass owns it).
+      MuiPopover: {
+        styleOverrides: { paper: { backgroundColor: 'var(--beam-surface-2)' } },
+      },
+      MuiDialog: {
+        styleOverrides: { paper: { backgroundColor: 'var(--beam-surface-3)' } },
       },
       // The `meta` category rule (detail-page §3): keys everywhere speak one
       // caps voice. One definition (theme/textStyles), several bindings.
