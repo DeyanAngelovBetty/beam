@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
 import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
-import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
 import GASPAR_MARK from './assets/GASPAR.svg';
-import { GASPAR_NAV } from './gaspar/navItems';
+import { GASPAR_NAV, type GasparView } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
 import { TransactionsPage } from './gaspar/TransactionsPage';
-import { DashboardBench } from './bench/DashboardBench';
+import { DashboardPage } from './gaspar/DashboardPage';
 
 // Brand mark is app-owned (shell-grammar §3). Color for content-adjacent chrome;
 // ghost = the same asset desaturated to a watermark. Ghost opacity is a bench
@@ -36,24 +35,19 @@ const brandMark = {
  */
 export function App() {
   const [brand, setBrand] = useState<BrandName>('ontario');
-  // Minimal view switch — Gaspar has no router yet; the bench is a Lab route.
-  const [view, setView] = useState<'transactions' | 'bench'>('transactions');
+  // Minimal view switch — Gaspar has no router yet. Nav leaves that route carry a
+  // `view` tag (navItems.tsx); we wire selected/onClick from it. Dashboard is the
+  // default landing view; the bench lives in Storybook, not the app.
+  const [view, setView] = useState<GasparView>('dashboard');
   const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
 
   const navItems = useMemo<BeamNavItem[]>(
-    () => [
-      ...GASPAR_NAV.map((item, i) =>
-        i === 0
-          ? { ...item, selected: view === 'transactions', onClick: () => setView('transactions') }
+    () =>
+      GASPAR_NAV.map(({ view: itemView, ...item }) =>
+        itemView
+          ? { ...item, selected: view === itemView, onClick: () => setView(itemView) }
           : item,
       ),
-      {
-        label: 'Dashboard bench',
-        icon: <SpaceDashboardIcon />,
-        selected: view === 'bench',
-        onClick: () => setView('bench'),
-      },
-    ],
     [view],
   );
 
@@ -66,7 +60,7 @@ export function App() {
         persistKey="beam.shell.gaspar"
         footer={<ShellFooter brand={brand} onBrandChange={setBrand} />}
       >
-        {view === 'bench' ? <DashboardBench /> : <TransactionsPage />}
+        {view === 'dashboard' ? <DashboardPage /> : <TransactionsPage />}
       </BeamAppShell>
     </ThemeProvider>
   );
