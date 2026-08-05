@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, derived, surfaceStep, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, derived, surfaceStep, type BrandName, type ProductName } from './tokens';
 import { meta } from './textStyles';
 
 /**
@@ -14,6 +14,10 @@ import { meta } from './textStyles';
  */
 export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlight'): Theme {
   const t = products[product][brand];
+  // Product-scoped typeface pair. Every stack ends in a system sans.
+  const f = productFonts[product];
+  const bodyFont = `"${f.body}", "Helvetica", "Arial", sans-serif`;
+  const titleFont = `"${f.title}", "Helvetica", "Arial", sans-serif`;
 
   const action = {
     hoverOpacity: t.states.hover,
@@ -59,10 +63,20 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
     },
     shape: { borderRadius: 8 },
     typography: {
-      // Brand-differentiated typeface (Figma: brand fontFamily → typography alias).
-      // Webfont loading is the app's job: see .storybook/preview-head.html.
-      // TODO: sync the rest of the typography collection (sizes, weights)
-      fontFamily: `"${t.fontFamily}", "Helvetica", "Arial", sans-serif`,
+      // Product-scoped title/body pair (Figma: product/font/{title,body}). The BODY face
+      // is the base fontFamily — the workhorse for data, `meta` keys (textStyles.ts omits
+      // fontFamily on purpose, so it inherits THIS), and everything below headline. The
+      // TITLE face binds to the heading scale h1–h6 only, so expressive type lives at
+      // headline size and never in data. No organism sets a fontFamily; BeamPageHeader's
+      // h4 title inherits the title face for free. Webfont loading is the app's job (§4.5).
+      // TODO: sync the rest of the typography collection (sizes, weights).
+      fontFamily: bodyFont,
+      h1: { fontFamily: titleFont },
+      h2: { fontFamily: titleFont },
+      h3: { fontFamily: titleFont },
+      h4: { fontFamily: titleFont },
+      h5: { fontFamily: titleFont },
+      h6: { fontFamily: titleFont },
     },
     components: {
       MuiCssBaseline: {

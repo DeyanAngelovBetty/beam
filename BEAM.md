@@ -102,9 +102,17 @@ pain each one prevents:
    decision of its own background — never to a neighboring color's (an Alberta error button
    must not inherit brand-primary ink). This rule exists because we shipped and reverted
    exactly that mistake.
-5. **New brand typeface = one Figma value + one webfont line.** Figma renders installed fonts
-   for free; browsers must load them (each app's `index.html` +
-  `packages/beam/.storybook/preview-head.html`).
+5. **Typeface is a PRODUCT-axis seed — a title/body pair.** *(2026-08-05.)* `product/font/{title,
+   body}` (tokens.ts `productFonts`): the **body** face is the base `typography.fontFamily` — the
+   workhorse for data and for the `meta` key voice, which omits `fontFamily` *on purpose*
+   (`textStyles.ts`) so it inherits the body face. The **title** face binds to **h1–h6 only**, so
+   expressive type lives at headline size and never in data. Numeric columns in that data use
+   **tabular figures** (`font-variant-numeric: tabular-nums`, applied to right-aligned cells in
+   BeamDataTable) — Gaspar's body face is Geist chosen for exactly this. Font moved off the
+   per-jurisdiction collection where it never belonged: **Alberta no longer renders Poppins, and
+   that is the correction landing, not a regression — do not restore it.** Swapping a face is one
+   seed edit + one webfont line per app `index.html` + `packages/beam/.storybook/preview-head.html`
+   (Figma renders installed fonts for free; browsers must load them).
 6. **Alias hygiene:** palette aliases into brand; components bind to palette (semantic), not
    brand (raw), and never to `material/colors` primitives.
 7. Plan-tier constraints are real: 4 modes per collection below Enterprise. Current
@@ -291,7 +299,7 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
 | `palette` collection — modes light\|dark; groupless; what components bind to | MUI `colorSchemes` as CSS variables (`data-beam-mode`) |
 | `…/primary/{theme}/primary -1 / (default) / 1` | `palette.primary.dark / main / light` |
 | `…/primary/{theme}/alpha 4·8·12%` | `palette.action.{hover,selected,focus}Opacity` |
-| `jurisdiction {Product}/fontFamily` | `theme.typography.fontFamily` (+ webfont links in app **and** Storybook head) |
+| `product/font/{title,body}` | **body** → `theme.typography.fontFamily`; **title** → `typography.h1`–`h6` (`createBeamTheme` via `productFonts`) · webfont links in app **and** Storybook head |
 | `jurisdiction {Product}/bg/screen · overlay` | dark `background.default / paper` |
 | `derived.tableBorder` — code formula | `palette.divider` + MUI `TableCell.border`; baked → `_derived (baked)` |
 | `derived.pageGradient` — code formula | `--beam-page-gradient` via CssBaseline (non-bakeable; Figma twin = a style) |
@@ -309,7 +317,13 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
 - Gaspar backgrounds currently identical to Sunlight (teal-cast option open). Gaspar app
   environment **spawned 2026-07-20** (`apps/gaspar`, transactions screen); its marquee
   node-graph rule builder is still to come — graph library to be chosen with Ivan
-- typography collection mobile mode: `fontFamily` still raw Roboto (needs jurisdiction alias)
+- typography collection mobile mode: `fontFamily` still raw Roboto (needs a product-axis alias
+  into `productFonts`)
+- **Midnight is not a product** — it renders via `product: 'sunlight'` (`apps/midnight-demo`) and
+  so inherits Sunlight's Inter body/title. Figma's `product/font` may carry a distinct Midnight
+  title face; code does not chase an aspirational seed (2026-08-05, Figma to be corrected to
+  match). Promoting Midnight to a real product — its own `ProductName` value and axis corner — is
+  its own decision on its own day, not a side effect of a font change.
 - Code Connect mapping is "simple" flavor (no template snippet) — refine via CLI later
 - Organisms → separate Figma library file: the second consumer now exists in code
   (`apps/gaspar`), so the Figma-side split is due

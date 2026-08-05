@@ -517,7 +517,15 @@ export function BeamDataTable<Row>({
                     </TableCell>
                   )}
                   {columns.map((c) => (
-                    <TableCell key={c.key} align={c.align}>
+                    // Numeric-cell treatment: right-alignment signals a numeric column in
+                    // this estate, so tabular figures are applied there — columns line up
+                    // digit-for-digit. Requires the body face to carry tabular-nums (Geist
+                    // does; it's why it was chosen over a geometric face). BEAM Appendix B.
+                    <TableCell
+                      key={c.key}
+                      align={c.align}
+                      sx={c.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : undefined}
+                    >
                       {renderCell(c, row.original, LinkComponent)}
                     </TableCell>
                   ))}

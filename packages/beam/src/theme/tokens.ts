@@ -35,7 +35,6 @@ export interface BrandTokens {
     outlinedBorder: number;
   };
   surfaces: { screen: string; overlay: string };
-  fontFamily: string;
 }
 
 const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, outlinedBorder: 0.5 };
@@ -46,12 +45,12 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
     ontario: {
       light: { primaryDown1: '#3832A0', primary0: '#5048E5', primaryUp1: '#828DF8', contrastText: '#FFFFFF' },
       dark: { primaryDown1: '#515BA4', primary0: '#7582EB', primaryUp1: '#909BEF', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES, fontFamily: 'Inter',
+      states: STATES, surfaces: SURFACES,
     },
     alberta: {
       light: { primaryDown1: '#906013', primary0: '#CB871B', primaryUp1: '#E9AF54', contrastText: '#111827' },
       dark: { primaryDown1: '#BD7E19', primary0: '#E7A946', primaryUp1: '#EEC481', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES, fontFamily: 'Poppins',
+      states: STATES, surfaces: SURFACES,
     },
   },
   gaspar: {
@@ -59,14 +58,35 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
       light: { primaryDown1: '#0B534D', primary0: '#0F766E', primaryUp1: '#3F918B', contrastText: '#FFFFFF' },
       // dark default as entered in Figma (pre-correction footnote value) — Figma is seed truth
       dark: { primaryDown1: '#209486', primary0: '#57DDCC', primaryUp1: '#57DDCC', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES, fontFamily: 'Inter',
+      states: STATES, surfaces: SURFACES,
     },
     alberta: {
       light: { primaryDown1: '#861B94', primary0: '#C026D3', primaryUp1: '#CD51DC', contrastText: '#FFFFFF' },
       dark: { primaryDown1: '#A255AE', primary0: '#ED94FA', primaryUp1: '#ED94FA', contrastText: '#111827' },
-      states: STATES, surfaces: SURFACES, fontFamily: 'Poppins',
+      states: STATES, surfaces: SURFACES,
     },
   },
+};
+
+/**
+ * SEED — product-scoped title/body typeface pair (Figma: `product/font/{title,body}`).
+ * Font is a PRODUCT-axis seed, NOT jurisdiction — it moved out of the per-jurisdiction
+ * `BrandTokens` on 2026-08-05 (font-by-jurisdiction was always the wrong collection; the
+ * old Alberta=Poppins split is deliberately gone). Two seeds, not one: the body face is
+ * the workhorse (data, `meta` keys, everything that isn't a headline); the title face is
+ * display-only, bound to h1–h6 in `createBeamTheme`. Swapping a face is a one-line edit
+ * here + the matching webfont line in each app / Storybook head (§4.5).
+ *
+ * Midnight is NOT a product (it renders via `product: 'sunlight'`), so it inherits
+ * Sunlight's Inter/Inter — see Appendix C for the open item to promote it.
+ *
+ * ⚠️ Gaspar's pair (Sora display + Geist body) is real, not placeholder. Geist is the body
+ * face specifically for its tabular figures (`font-variant-numeric: tabular-nums`, applied
+ * in BeamDataTable's numeric cells) — the reason it beat a geometric face.
+ */
+export const productFonts: Record<ProductName, { title: string; body: string }> = {
+  sunlight: { title: 'Inter', body: 'Inter' },
+  gaspar: { title: 'Sora', body: 'Geist' },
 };
 
 /** Back-compat alias for pre-product-axis callers. */
