@@ -218,7 +218,11 @@ Design against the real model, not a generic BO:
 - **The Lab.** App-local patterns get bench stories under `Lab/<Product>/<Name>` for isolated
   design iteration *before* page integration. A Lab entry is a question, not a home: it either
   graduates with its component via the promotion path (§2), or is deleted once its question is
-  answered. *(2026-07-25.)*
+  answered. *(2026-07-25.)* **A comparison bench is the exception:** when the question is "which
+  of these," the *winner* graduates into a product page while the bench itself **stays put** as
+  the record of the decision — the head-to-head is the evidence, and evidence outlives the choice.
+  (First case: `Lab/Bench/Dashboard` — Variant 1 graduated to Gaspar's Dashboard; the bench and
+  its losing Variant 2 remain.) *(2026-08-05.)*
 - **Product collaborators and their agents.** Collaborators work in this repo directly, by
   branch and PR; their agents read BEAM.md and the grammars and follow them — a collaborator can
   ship a coherent page without ever reasoning about the doctrine behind it. That is the
@@ -324,6 +328,15 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   title face; code does not chase an aspirational seed (2026-08-05, Figma to be corrected to
   match). Promoting Midnight to a real product — its own `ProductName` value and axis corner — is
   its own decision on its own day, not a side effect of a font change.
+- **Gaspar Dashboard renders the default widget set.** `DashboardPage` renders
+  `BenchDashboardStatic` with its default `visibleWidgetIds` (every widget in `dashboardConfig`).
+  Per-role narrowing is a **prop that already exists but is not wired** — there's no
+  role→widget-set mapping feeding it yet. *(2026-08-05.)*
+- **`dockview-react` is a spike dependency awaiting bench retirement.** It backs the
+  dashboard-bench's losing Variant 2 (`apps/gaspar/src/bench`); the bench stays as the record of
+  the decision (§9 Lab exception), so the dep stays with it. Removing `dockview-react` + Variant 2
+  is deferred until the bench is retired — removal sites are marked `// SPIKE: remove if Variant 1
+  wins`. *(2026-08-05.)*
 - Code Connect mapping is "simple" flavor (no template snippet) — refine via CLI later
 - Organisms → separate Figma library file: the second consumer now exists in code
   (`apps/gaspar`), so the Figma-side split is due
