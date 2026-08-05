@@ -8,6 +8,7 @@ import {
   BeamStatusBadge,
   BeamDataTable,
   BeamFilterBar,
+  beamGradientBorder,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
 import type { WidgetId } from '../dashboardConfig';
@@ -26,7 +27,15 @@ import { NextGemStandIn } from './NextGemStandIn';
  * grid AND inside a dockview panel, unchanged.
  */
 
-export function WidgetShell({ title, children }: { title: string; children: ReactNode }) {
+export function WidgetShell({
+  title,
+  children,
+  gradientBorder = false,
+}: {
+  title: string;
+  children: ReactNode;
+  gradientBorder?: boolean;
+}) {
   return (
     <Paper
       variant="outlined"
@@ -38,6 +47,12 @@ export function WidgetShell({ title, children }: { title: string; children: Reac
         gap: 1,
         containerType: 'inline-size',
         overflow: 'hidden',
+        // Opt-in lit-edge treatment. surface = paper (= surface 1, correct for a
+        // widget shell); interactive so hover resumes the rotation. It replaces
+        // the outlined 1px border (same 1px → no reflow); the squircle from
+        // MuiPaper.rounded is left intact (its clipping vs the gradient is the
+        // visual check).
+        ...(gradientBorder ? (beamGradientBorder({ interactive: true }) as object) : {}),
       }}
     >
       <Typography

@@ -164,6 +164,19 @@ export const gradientSeeds: Record<
 };
 
 /**
+ * SEED — gradient-border intensity, PER SCHEME (tunable dials, not inline
+ * numbers). The opt-in gradient border (`beamGradientBorder`) reuses the page-
+ * mesh tint points; this is how strongly they read at the 1px edge. `calm` is
+ * the always-on state (constant geometry — the border never appears on hover);
+ * `hover` is the interactive lift. LIGHT needs MORE than dark: a low-contrast
+ * edge on a near-white surface can vanish entirely. Starting points — move them.
+ */
+export const borderIntensity: Record<ThemeMode, { calm: number; hover: number }> = {
+  dark: { calm: 32, hover: 60 },
+  light: { calm: 45, hover: 72 },
+};
+
+/**
  * DERIVED TOKENS — computed in CSS from other tokens at runtime.
  * These have no literal Figma value (Figma cannot express color-mix /
  * relative color syntax); their Figma twin, when needed, is a static

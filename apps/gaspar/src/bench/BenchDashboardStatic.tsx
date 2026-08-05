@@ -22,10 +22,13 @@ import { WIDGETS, WidgetShell } from './widgets/registry';
 interface BenchDashboardStaticProps {
   /** Permission set. Defaults to every widget. */
   visibleWidgetIds?: readonly WidgetId[];
+  /** Opt-in gradient-border treatment on every widget shell (product dashboard). */
+  gradientBorder?: boolean;
 }
 
 export function BenchDashboardStatic({
   visibleWidgetIds = ALL_WIDGET_IDS,
+  gradientBorder = false,
 }: BenchDashboardStaticProps) {
   const visible = DASHBOARD_CONFIG.filter((w) => visibleWidgetIds.includes(w.id)).slice().sort(
     (a, b) => a.order - b.order,
@@ -52,7 +55,9 @@ export function BenchDashboardStatic({
               minWidth: 0, // let cells shrink so the grid never overflows
             }}
           >
-            <WidgetShell title={widget.title}>{widget.node}</WidgetShell>
+            <WidgetShell title={widget.title} gradientBorder={gradientBorder}>
+              {widget.node}
+            </WidgetShell>
           </Box>
         );
       })}

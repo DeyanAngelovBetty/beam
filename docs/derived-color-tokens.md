@@ -70,6 +70,30 @@ radial-gradient(130% 130% at 50% 120%,color-mix(in oklch, oklch(from var(--mui-p
 - **Chrome-first**: nested `var()` (including a var in the `color-mix` percentage slot)
   and `oklch(from …)` need a modern engine — same posture as the rest of this doc.
 
+### `beamGradientBorder` — an opt-in lit edge from the same points *(2026-08-05)*
+
+A barrel-exported sx factory (Kevin Powell's two-background technique): a
+`conic-gradient(from var(--beam-border-angle), …)` in `border-box` shows through a
+`1px solid transparent` border, masked by a solid `padding-box` layer of the actual
+surface. Stops **reuse the page-mesh tint points** (primary · `hue-b` · primary +45°),
+each mixed toward the surface so it's a lit edge, not a rainbow — border and background
+come from one palette. **Opt-in only** (never global on Paper); applied this pass to the
+Gaspar dashboard widget shells.
+
+- **Constant geometry** — the border is `1px solid transparent` at all times; calm is a
+  low-intensity conic, so nothing appears on hover and nothing reflows.
+- **Intensity is a per-scheme seed** (`borderIntensity`, `{calm, hover}`); light needs
+  more than dark or the edge vanishes on a near-white surface. Tune freely.
+- **Surface is a parameter** — must be the real surface behind the element (default
+  `background.paper` = surface 1); pass `--beam-surface-2/-3` for Menu/Dialog.
+- **Animation** — `--beam-border-angle` is a registered `@property` (a typed `<angle>`,
+  so it can interpolate; `inherits: false` so it doesn't leak). The rotation runs
+  **paused** and resumes on hover (never restarts → no snap-back); it stays paused under
+  `prefers-reduced-motion` — static but still lit.
+- **Squircle caveat** — `MuiPaper.rounded` carries `corner-shape: squircle`; whether
+  `background-clip` follows the squircle corner is untested. Left intact, pending a visual
+  check.
+
 ## 3. Recipe: adding a new derived token
 
 1. **Name the rule, not the color.** "Selection wash is 8% primary over background"

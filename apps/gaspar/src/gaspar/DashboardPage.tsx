@@ -20,7 +20,7 @@ export function DashboardPage() {
         title="Dashboard"
         description="Routing, settlement, and gateway health at a glance."
       />
-      <BenchDashboardStatic />
+      <BenchDashboardStatic gradientBorder />
     </Stack>
   );
 }

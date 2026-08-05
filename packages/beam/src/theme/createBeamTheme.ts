@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, gradientSeeds, derived, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, derived, type BrandName, type ProductName } from './tokens';
 import { meta } from './textStyles';
 
 /**
@@ -105,6 +105,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-page-mesh': derived.pageMesh,
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
+            // Gradient-border intensity (opt-in beamGradientBorder). Per-scheme
+            // dial: light needs more than dark. :root default = dark.
+            '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
+            '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
             // Native `color-scheme` DEFAULT (§5). Themes the browser's OWN
             // widgets — scrollbars, native <select>, date/time inputs,
             // checkbox/radio, Chrome autofill — which MUI's token palette never
@@ -166,12 +170,16 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-step': String(s.light.step),
             '--beam-gradient-hue-b': g.light.hueB,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
+            '--beam-border-intensity': `${borderIntensity.light.calm}%`,
+            '--beam-border-intensity-hover': `${borderIntensity.light.hover}%`,
           },
           '[data-beam-mode="dark"]': {
             colorScheme: 'dark',
             '--beam-surface-step': String(s.dark.step),
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
+            '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
+            '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
           },
 
           // Page mesh — a FIXED paint layer behind the whole document. `position:
@@ -189,6 +197,20 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             pointerEvents: 'none',
             backgroundColor: 'var(--mui-palette-background-default)',
             backgroundImage: 'var(--beam-page-mesh)',
+          },
+
+          // Gradient-border angle (opt-in beamGradientBorder). Registered as an
+          // @property so it's a typed <angle> and can be INTERPOLATED — an
+          // unregistered custom prop cannot animate. `inherits: false` so the
+          // angle doesn't leak into nested bordered elements. The keyframe spins
+          // one full turn; elements run it paused and resume on hover.
+          '@property --beam-border-angle': {
+            syntax: "'<angle>'",
+            inherits: 'false',
+            initialValue: '135deg',
+          },
+          '@keyframes beam-border-spin': {
+            to: { '--beam-border-angle': '495deg' },
           },
 
           // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the
