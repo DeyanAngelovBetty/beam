@@ -10,6 +10,7 @@ const config: StorybookConfig = {
   stories: [
     '../src/**/*.stories.@(ts|tsx)',
     '../../../apps/sunlight/src/**/*.stories.@(ts|tsx)', // Lab/ residents
+    '../../../apps/gaspar/src/**/*.stories.@(ts|tsx)', // Lab/Bench residents
   ],
   addons: ['@storybook/addon-docs'],
   viteFinal: async (viteConfig) => {
