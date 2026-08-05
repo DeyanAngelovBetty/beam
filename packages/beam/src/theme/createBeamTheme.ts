@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, derived, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, gradientSeeds, derived, type BrandName, type ProductName } from './tokens';
 import { meta } from './textStyles';
 
 /**
@@ -22,6 +22,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   // its MODE half flips on the data-beam-mode seam below (product is a theme
   // rebuild, so it resolves at construction — no second seam). Anchor = surface 0.
   const s = surfaceSeeds[product];
+  // Product-scoped page-mesh seeds. hue-b + intensity bake per scheme here (the
+  // product half); the mode half flips on the data-beam-mode seam below. intensity
+  // carries its unit so it drops straight into the color-mix percentage slot.
+  const g = gradientSeeds[product];
 
   const action = {
     hoverOpacity: t.states.hover,
@@ -94,7 +98,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       MuiCssBaseline: {
         styleOverrides: {
           ':root': {
-            '--beam-page-gradient': derived.pageGradient,
+            // Page mesh (§2): one derived formula, resolving through the two
+            // product+mode-scoped seeds below. :root defaults are DARK (defaultMode);
+            // the data-beam-mode rules flip them. Painted on a fixed layer in
+            // BeamAppShell — behind everything, occluded by the opaque ramp surfaces.
+            '--beam-page-mesh': derived.pageMesh,
+            '--beam-gradient-hue-b': g.dark.hueB,
+            '--beam-gradient-intensity': `${g.dark.intensity}%`,
             // Native `color-scheme` DEFAULT (§5). Themes the browser's OWN
             // widgets — scrollbars, native <select>, date/time inputs,
             // checkbox/radio, Chrome autofill — which MUI's token palette never
@@ -151,8 +161,35 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // layer MUI flips its palette vars on, so a mode change updates the
           // step — and thus --beam-surface-1 — with NO theme rebuild (§5). The
           // formula var stays in :root; only its input flips here.
-          '[data-beam-mode="light"]': { colorScheme: 'light', '--beam-surface-step': String(s.light.step) },
-          '[data-beam-mode="dark"]': { colorScheme: 'dark', '--beam-surface-step': String(s.dark.step) },
+          '[data-beam-mode="light"]': {
+            colorScheme: 'light',
+            '--beam-surface-step': String(s.light.step),
+            '--beam-gradient-hue-b': g.light.hueB,
+            '--beam-gradient-intensity': `${g.light.intensity}%`,
+          },
+          '[data-beam-mode="dark"]': {
+            colorScheme: 'dark',
+            '--beam-surface-step': String(s.dark.step),
+            '--beam-gradient-hue-b': g.dark.hueB,
+            '--beam-gradient-intensity': `${g.dark.intensity}%`,
+          },
+
+          // Page mesh — a FIXED paint layer behind the whole document. `position:
+          // fixed` = composited, no repaint on scroll (the reason it moved off the
+          // tall content element). z-index -1 + opaque ramp surfaces means it shows
+          // ONLY in page-background gaps — never through Paper/Menu/Dialog. It sits
+          // behind the Drawer too (viewport-fixed): deliberate — a translucent
+          // Drawer treatment later will let the mesh show through as a feature, not
+          // a surprise. Decorative, so pointer-events: none.
+          'body::before': {
+            content: '""',
+            position: 'fixed',
+            inset: 0,
+            zIndex: -1,
+            pointerEvents: 'none',
+            backgroundColor: 'var(--mui-palette-background-default)',
+            backgroundImage: 'var(--beam-page-mesh)',
+          },
 
           // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the
           // duration vars at the injection layer. Everything built on the motion

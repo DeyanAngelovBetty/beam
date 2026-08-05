@@ -39,20 +39,36 @@ Decoded, inside-out:
 - Applied to `palette.divider` *and* MUI's internal `TableCell.border`, so Paper
   outlines, cell rules, and connector lines share one voice.
 
-### `pageGradient` — brand wash on every page
+### `pageMesh` — a three-point tint field on every page *(2026-08-05, replaced the linear `pageGradient`)*
+
+Three large soft radials, one formula, all products — each a subtle tint fading to
+`transparent` over the page background:
 
 ```css
-linear-gradient(180deg,
-  color-mix(in oklch, var(--mui-palette-primary-main) 10%, var(--mui-palette-background-default)) 0%,
-  var(--mui-palette-background-default) 320px)
+radial-gradient(120% 120% at 0% 0%,   color-mix(in oklch, var(--mui-palette-primary-main)          I, var(--mui-palette-background-default)) 0%, transparent 55%),  /* hue-a */
+radial-gradient(110% 110% at 100% 0%, color-mix(in oklch, var(--beam-gradient-hue-b)                I, var(--mui-palette-background-default)) 0%, transparent 55%),  /* hue-b */
+radial-gradient(130% 130% at 50% 120%,color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) I, var(--mui-palette-background-default)) 0%, transparent 55%)  /* hue-c */
+/* I = var(--beam-gradient-intensity) */
 ```
 
-- **One formula, no per-scheme variants** — both inputs are themselves CSS variables
-  that flip with mode/brand/product, so the gradient adapts everywhere by itself.
-  Prefer this shape whenever possible; mirror per scheme only when the contrast
-  direction genuinely matters (as in `tableBorder`).
-- Emitted as a custom property (`--beam-page-gradient`) via a CssBaseline override;
-  consumed with `backgroundImage: 'var(--beam-page-gradient)'`.
+- **Three tint points, one recipe.** `hue-a` is primary (existing seed); `hue-b` is a
+  designer-controlled seed (`--beam-gradient-hue-b`); `hue-c` is **derived by +45°
+  hue rotation** off primary, so it rotates per product for free — no seed.
+- **Product identity is the intensity dial, not a forked formula.** `gradientSeeds`
+  carries `hueB` + `intensity` per product per scheme; the single formula reads them.
+- **Every tint mixes toward `background-default`, never white/black** (the dark-mode
+  tint bug). The fade is to `transparent` *only*, so the three layers blend and reveal
+  the base beneath.
+- **Light intensity < dark** (Sunlight 6/10, Gaspar 14/22): a light page has less
+  headroom for tint before it muddies — the same asymmetry family as the surface ramp.
+- **Painted on a FIXED `body::before` layer** (CssBaseline override): `position:
+  fixed` so it's composited and never repaints on scroll, `pointer-events: none`,
+  `z-index: -1`. Opaque ramp surfaces (Paper/Menu/Dialog) occlude it, so it shows only
+  in page-background gaps. It sits behind the **Drawer** too (viewport-fixed) — a
+  deliberate property: a translucent Drawer treatment later will let the mesh show
+  through as a feature, not a surprise.
+- **Chrome-first**: nested `var()` (including a var in the `color-mix` percentage slot)
+  and `oklch(from …)` need a modern engine — same posture as the rest of this doc.
 
 ## 3. Recipe: adding a new derived token
 

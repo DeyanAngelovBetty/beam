@@ -143,6 +143,27 @@ export const surfaceSeeds: Record<
 };
 
 /**
+ * SEED — product-scoped page-mesh controls (Figma `product/gradient`). Same shape
+ * as surfaceSeeds. The page mesh is a THREE-point recipe (derived.pageMesh): one
+ * formula, all products — product identity is the `intensity` dial, not a forked
+ * formula. `hueB` is the designer-controlled second tint; `intensity` is the mix
+ * percentage each tint takes over background-default.
+ *
+ * Light intensity is lower than dark (a light page has less headroom for tint
+ * before it muddies) — the same asymmetry family as the surface ramp.
+ *
+ * Midnight isn't a ProductName (renders via `product: 'sunlight'`), so it inherits
+ * Sunlight's mesh — same posture as fonts/surfaces.
+ */
+export const gradientSeeds: Record<
+  ProductName,
+  { dark: { hueB: string; intensity: number }; light: { hueB: string; intensity: number } }
+> = {
+  sunlight: { dark: { hueB: '#75EBDE', intensity: 10 }, light: { hueB: '#48DDE5', intensity: 6 } },
+  gaspar: { dark: { hueB: '#68DD57', intensity: 22 }, light: { hueB: '#17760F', intensity: 14 } },
+};
+
+/**
  * DERIVED TOKENS — computed in CSS from other tokens at runtime.
  * These have no literal Figma value (Figma cannot express color-mix /
  * relative color syntax); their Figma twin, when needed, is a static
@@ -164,14 +185,22 @@ export const derived = {
     light: 'color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, black)',
   },
   /**
-   * Brand-tinted page wash — a whisper of primary fading into the page
-   * background over the first ~320px. ONE formula serves every brand and
-   * both schemes: its inputs are themselves CSS variables that flip.
-   * Not bakeable to a Figma variable (gradients aren't a variable type);
-   * its Figma twin, if needed, is a style.
+   * PAGE MESH — a three-point tint field over the page background. ONE formula,
+   * all products; product identity is the intensity dial (`gradientSeeds`), not a
+   * forked formula. Three large soft radials, each anchored at a different edge:
+   *   hue-a = primary (seed)          · top-left
+   *   hue-b = --beam-gradient-hue-b   · top-right (designer seed)
+   *   hue-c = primary rotated +45° h  · bottom (derived — rotates per product free)
+   * Each tint MIXES TOWARD background-default at `--beam-gradient-intensity`
+   * (never white/black — that's the dark-mode tint bug); the fade is to
+   * `transparent` only, so the layers blend and reveal the base beneath. Painted
+   * over `background-default` as the background-color. Not bakeable to a Figma
+   * variable (gradients aren't a variable type); its Figma twin is a style.
    */
-  pageGradient:
-    'linear-gradient(180deg, color-mix(in oklch, var(--mui-palette-primary-main) 10%, var(--mui-palette-background-default)) 0%, var(--mui-palette-background-default) 320px)',
+  pageMesh:
+    'radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
+    'radial-gradient(110% 110% at 100% 0%, color-mix(in oklch, var(--beam-gradient-hue-b) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
+    'radial-gradient(130% 130% at 50% 120%, color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%)',
 
   /**
    * SURFACE RAMP — five elevation positions as oklch L-offsets from surface 0

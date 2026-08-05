@@ -94,13 +94,9 @@ export function App() {
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
       <CssBaseline />
-      <Box
-        sx={{
-          minHeight: '100vh',
-          backgroundImage: 'var(--beam-page-gradient)',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
+      {/* Page mesh is painted globally on a fixed body::before (createBeamTheme
+          MuiCssBaseline); nothing to apply here. */}
+      <Box sx={{ minHeight: '100vh' }}>
         <Box sx={{ maxWidth: 1100, mx: 'auto', p: { xs: 3, md: 6 } }}>
           <Stack spacing={5}>
             <BeamPageHeader

@@ -426,8 +426,9 @@ export function BeamAppShell({
         pb: CONTENT_VERTICAL,
         // pt: effectiveLocked ? CONTENT_VERTICAL : `${STRIP_HEIGHT}px`,
         pt: CONTENT_VERTICAL,
-        backgroundImage: 'var(--beam-page-gradient)',
-        backgroundRepeat: 'no-repeat',
+        // Page mesh moved to a fixed body::before layer (createBeamTheme
+        // MuiCssBaseline) — off this tall scrolling element so it doesn't repaint
+        // on scroll, and behind every opaque ramp surface.
       }}
     >
       {children}

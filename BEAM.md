@@ -337,6 +337,10 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   the decision (§9 Lab exception), so the dep stays with it. Removing `dockview-react` + Variant 2
   is deferred until the bench is retired — removal sites are marked `// SPIKE: remove if Variant 1
   wins`. *(2026-08-05.)*
+- **The page mesh sits behind the Drawer** (a viewport-fixed `body::before`), occluded by the
+  Drawer's opaque surface today. Deliberate: the shell pass intends a **translucent Drawer**, at
+  which point the mesh showing through becomes a feature, not a surprise. (The Drawer also still
+  renders flat — not on the surface ramp — the same shell-pass item.) *(2026-08-05.)*
 - Code Connect mapping is "simple" flavor (no template snippet) — refine via CLI later
 - Organisms → separate Figma library file: the second consumer now exists in code
   (`apps/gaspar`), so the Figma-side split is due
