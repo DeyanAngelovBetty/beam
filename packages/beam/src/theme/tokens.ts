@@ -140,15 +140,22 @@ type NavSchemeSeed = {
   navOffset: number;
   navChroma: number;
   navSpread: number;
+  // Frosted-glass rail. glassAlpha is HIGHER in light on purpose: blur over a
+  // near-white backdrop returns near-white, so a light rail must keep more of its
+  // own tint or it dissolves into the page. Blur stays at the seed (bigger erases
+  // the 56px mesh dots). See docs/shell-grammar.md §2 / derived-color-tokens §2.
+  navGlassAlpha: number;
+  navGlassBlur: number;
+  navGlassSaturate: number;
 };
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
-    dark: { anchor: '#0B0F19', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7 },
-    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7 },
+    dark: { anchor: '#0B0F19', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.72, navGlassBlur: 24, navGlassSaturate: 1.5 },
+    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.82, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
   gaspar: {
-    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7 },
-    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7 },
+    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.72, navGlassBlur: 24, navGlassSaturate: 1.5 },
+    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.82, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
 };
 
@@ -180,11 +187,11 @@ export const gradientSeeds: Record<
 > = {
   sunlight: {
     dark: { hueB: '#75EBDE', intensity: 10, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
-    light: { hueB: '#48DDE5', intensity: 6, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.035 },
+    light: { hueB: '#48DDE5', intensity: 6, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.019 },
   },
   gaspar: {
     dark: { hueB: '#68DD57', intensity: 22, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
-    light: { hueB: '#17760F', intensity: 14, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.035 },
+    light: { hueB: '#17760F', intensity: 14, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.019 },
   },
 };
 
@@ -309,8 +316,19 @@ export const derived = {
    */
   navSurface:
     'linear-gradient(180deg, ' +
-    'oklch(from var(--mui-palette-background-default) calc(l + (var(--beam-surface-nav-offset) + var(--beam-surface-nav-spread)) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h), ' +
-    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-nav-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h))',
+    'oklch(from var(--mui-palette-background-default) calc(l + (var(--beam-surface-nav-offset) + var(--beam-surface-nav-spread)) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-glass-alpha)), ' +
+    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-nav-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-glass-alpha)))',
+
+  /**
+   * NAV EDGE — a 1px catch of light on the frosted rail's top + right inner edges
+   * (applied as an inset shadow, no added width — constant geometry). The rail's
+   * OWN tint lifted in lightness, never a white literal. The lift lives in a single
+   * baked offset (`--beam-nav-edge-offset` = navOffset + navSpread + EDGE_LIFT,
+   * summed in JS) so this stays a single-var calc and does NOT re-raise the channel
+   * high-water mark (see §7).
+   */
+  navEdge:
+    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-nav-edge-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h)',
 
   /**
    * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,

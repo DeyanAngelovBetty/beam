@@ -51,6 +51,38 @@ const VT_GHOST = 'beam-shell-ghost'; // fades out: the peek's watermark
 const VT_PANEL = 'beam-shell-sidebar'; // grows/collapses: the locked panel
 const VT_CONTENT = 'beam-shell-content'; // reflows: full-width ↔ right column
 
+// Frosted-glass rail — ONE recipe applied at both rail sites (locked panel +
+// narrow MuiDrawer-paper). Extending it (alpha, blur, saturate, the edge) happens
+// HERE, not per-site. The nav-surface gradient is now translucent (its stops carry
+// --beam-nav-glass-alpha), and backdrop-filter blurs + re-saturates what shows
+// through (blur desaturates; the boost makes it a tinted pane, not fog).
+//   • blur stays at the 24px seed — a bigger radius erases the 56px mesh dots, the
+//     only structure the backdrop has.
+//   • The lit EDGE is a ::after pseudo (1px top+right inner catch, the rail's own
+//     tint lifted — never white), so it adds no width and doesn't collide with the
+//     peek's drop shadow. `position` is added by each site (the locked panel is
+//     static → relative; the drawer paper is already MUI-fixed → leave it).
+//   • Fallback: where backdrop-filter is unsupported, recompute the gradient fully
+//     opaque (alpha 1) — a translucent unblurred smear looks broken; plain is
+//     intentional. backdrop-filter is simply ignored where unsupported.
+//   • No `will-change`: it can force a layer that breaks the effect outright.
+const NAV_GLASS_SX = {
+  background: 'var(--beam-nav-surface)',
+  backdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate))',
+  WebkitBackdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate))',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    borderTop: '1px solid var(--beam-nav-edge)',
+    borderRight: '1px solid var(--beam-nav-edge)',
+  },
+  '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
+    '--beam-nav-glass-alpha': '1',
+  },
+};
+
 // The lock shortcut — ONE definition, used by both the keydown listener and
 // the chevron tooltips. Platform-aware: ⌘ on Mac, Ctrl elsewhere.
 const LOCK_KEY = '\\';
@@ -355,13 +387,13 @@ export function BeamAppShell({
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          // Nav rail — one swappable recipe (--beam-nav-surface, a vertical tinted
-          // gradient that lifts under the mark and settles toward the footer). The
-          // rail sinks below the page (chrome sinks; content rises); its own chroma
-          // identity keeps it tinted, not a void. Frosted glass later changes the
-          // RECIPE, not this call. NB the narrow-viewport peek floats this same
-          // recessed surface OVER content — a contradiction, flagged for review.
-          background: 'var(--beam-nav-surface)',
+          // Nav rail — the shared frosted-glass recipe (NAV_GLASS_SX): a translucent
+          // tinted gradient (chrome sinks; content rises) + backdrop-filter. NB the
+          // narrow-viewport peek floats this same recessed surface OVER content — a
+          // contradiction, flagged for review. `position: relative` so the edge
+          // ::after insets to the panel (the locked panel is otherwise static).
+          position: 'relative',
+          ...NAV_GLASS_SX,
           // Constant-geometry border (detail grammar §1) — present in both
           // natures; nature changes radius + elevation, not geometry.
           borderStyle: 'solid',
@@ -541,7 +573,7 @@ export function BeamAppShell({
           open={peekOpen}
           onClose={closeNow}
           ModalProps={{ keepMounted: true }}
-          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, background: 'var(--beam-nav-surface)' } }}
+          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, ...NAV_GLASS_SX } }}
         >
           {panel('peek', true)}
         </Drawer>

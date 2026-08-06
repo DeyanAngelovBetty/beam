@@ -26,6 +26,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   // product half); the mode half flips on the data-beam-mode seam below. intensity
   // carries its unit so it drops straight into the color-mix percentage slot.
   const g = gradientSeeds[product];
+  // Edge highlight lift — how many surface steps ABOVE the rail's top stop the 1px
+  // light catch sits. Summed with the nav offsets in JS (seed arithmetic, not colour
+  // maths) so --beam-nav-edge-offset stays a single var and doesn't re-raise the
+  // channel high-water mark (§7). TUNABLE — expect to adjust once the catch is visible.
+  const EDGE_LIFT = 2;
+  const navEdgeOffset = {
+    dark: s.dark.navOffset + s.dark.navSpread + EDGE_LIFT,
+    light: s.light.navOffset + s.light.navSpread + EDGE_LIFT,
+  };
 
   const action = {
     hoverOpacity: t.states.hover,
@@ -156,6 +165,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-3': derived.surface.top,
             // Rail background — one swappable recipe, consumed at the two rail sites.
             '--beam-nav-surface': derived.navSurface,
+            // Frosted-glass rail. Blur is scheme-invariant; alpha + saturate flip.
+            '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
+            '--beam-nav-glass-blur': `${s.dark.navGlassBlur}px`,
+            '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
+            '--beam-nav-edge': derived.navEdge,
+            '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
             // are independently addressable (durations may become Figma number
             // variables; easings stay code strings), plus a composed shorthand.
@@ -184,6 +199,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-offset': String(s.light.navOffset),
             '--beam-surface-nav-chroma': String(s.light.navChroma),
             '--beam-surface-nav-spread': String(s.light.navSpread),
+            '--beam-nav-glass-alpha': String(s.light.navGlassAlpha),
+            '--beam-nav-glass-saturate': String(s.light.navGlassSaturate),
+            '--beam-nav-edge-offset': String(navEdgeOffset.light),
             '--beam-gradient-hue-b': g.light.hueB,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
             '--beam-dot-opacity': String(g.light.dotOpacity),
@@ -197,6 +215,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-offset': String(s.dark.navOffset),
             '--beam-surface-nav-chroma': String(s.dark.navChroma),
             '--beam-surface-nav-spread': String(s.dark.navSpread),
+            '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
+            '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
+            '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             '--beam-dot-opacity': String(g.dark.dotOpacity),

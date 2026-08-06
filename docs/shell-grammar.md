@@ -55,6 +55,14 @@ content never read as one surface. *Open contradiction:* in the narrow-viewport 
 surface — a below-the-page colour on an above-the-page container. Whether peek
 should instead take surface 2 is a doctrine call, pending review.
 
+**The rail is frosted glass** *(2026-08-06)*. Its gradient is translucent
+(`--beam-nav-glass-alpha`, higher in light so a near-white blur doesn't dissolve it)
+and `backdrop-filter` blurs + re-saturates the mesh + dots behind it — the dots exist
+to give it something to diffuse. A 1px lit edge (top + right, the rail's own tint
+lifted) sells it as a pane. Blur stays at the dot-pitch-bound seed; where
+`backdrop-filter` is unsupported it falls back to the opaque rail. One recipe
+(`NAV_GLASS_SX`), two sites — see BEAM Appendix C for the open items.
+
 Border presence follows the constant-geometry doctrine (detail grammar §1):
 the panel carries its border in both natures; nature changes pigment and
 elevation, never geometry.

@@ -337,10 +337,13 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   the decision (§9 Lab exception), so the dep stays with it. Removing `dockview-react` + Variant 2
   is deferred until the bench is retired — removal sites are marked `// SPIKE: remove if Variant 1
   wins`. *(2026-08-05.)*
-- **The page mesh sits behind the Drawer** (a viewport-fixed `body::before`), occluded by the
-  Drawer's opaque surface today. Deliberate: the shell pass intends a **translucent Drawer**, at
-  which point the mesh showing through becomes a feature, not a surprise. (The Drawer also still
-  renders flat — not on the surface ramp — the same shell-pass item.) *(2026-08-05.)*
+- ~~The page mesh sits behind the Drawer; the shell pass intends a translucent Drawer~~ —
+  **landed 2026-08-06:** the rail is **frosted glass** (translucent nav-surface + `backdrop-filter`
+  blur/saturate), so the mesh + dots diffuse through it as intended. Two OPEN items: (a) the
+  **narrow-viewport** drawer is a MUI modal, so its `backdrop-filter` blurs the **scrim**
+  (semi-transparent dark), not the raw mesh — acceptable for now; the raw backdrop there is a
+  Modal/`Backdrop` change, a separate conversation. (b) the rail shows the mesh's viewport-fixed
+  **left edge** — verify it doesn't unify rail and page and undercut chrome-recedes.
 - Code Connect mapping is "simple" flavor (no template snippet) — refine via CLI later
 - Organisms → separate Figma library file: the second consumer now exists in code
   (`apps/gaspar`), so the Figma-side split is due
