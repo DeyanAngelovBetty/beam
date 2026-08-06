@@ -86,27 +86,49 @@ radial-gradient(130% 130% at 50% 120%,color-mix(in oklch, oklch(from var(--mui-p
 
 ### `beamGradientBorder` — an opt-in lit edge from the same points *(2026-08-05)*
 
-A barrel-exported sx factory (Kevin Powell's two-background technique): a
-`conic-gradient(from var(--beam-border-angle), …)` in `border-box` shows through a
-`1px solid transparent` border, masked by a solid `padding-box` layer of the actual
-surface. Stops **reuse the page-mesh tint points** (primary · `hue-b` · primary +45°),
-each mixed toward the surface so it's a lit edge, not a rainbow — border and background
-come from one palette. **Opt-in only** (never global on Paper); applied this pass to the
-Gaspar dashboard widget shells.
+A barrel-exported sx factory. The rim is a `conic-gradient(from var(--beam-border-angle), …)`
+drawn on an absolutely-positioned `::after` that sits just OUTSIDE the element (negative
+`inset`) and grows OUTWARD on hover — 1px calm → 2px — so the element's own box never
+changes size and nothing in layout moves *(reworked 2026-08-06 from the earlier inset-mask,
+which only made the border look thinner from inside)*. Stops **reuse the page-mesh tint
+points** (primary · `hue-b` · primary +45°), each mixed toward the surface so it's a lit
+edge, not a rainbow. **Opt-in only** (never global on Paper); applied to the Gaspar
+dashboard widget shells.
 
-- **Constant geometry** — the border is `1px solid transparent` at all times; calm is a
-  low-intensity conic, so nothing appears on hover and nothing reflows.
+- **Grows outward, not `scale()`** — the ring width is an ABSOLUTE px change
+  (`--beam-ring`, a registered `@property <length>` so it interpolates). `scale()` is
+  relative, so the same factor gives different absolute growth on a narrow vs wide card —
+  rims wouldn't match across a dashboard row — and non-uniform scale distorts the radius.
+- **Concentric corners** — the pseudo's radius is `card-radius + ring` and grows with the
+  ring, so the rim never pinches at the corner. `radius` must equal the element's own
+  border-radius (default 24 = `MuiPaper.rounded`).
+- **Constant geometry** — the rim exists at all times (1px calm, 2px hover); nothing
+  appears on hover, and the element itself carries `border: none` (the pseudo is the whole
+  rim). Consumers must NOT set `overflow: hidden` on the rim-bearing box — it clips the
+  outward pseudo (clip inner content on an inner box instead).
+- **Stacking** — `z-index: -1` puts the rim behind the element's own bg: the outward ring
+  shows on the page, the center hides under the card → never over content, and an
+  over-reaching rim tucks behind a neighbour. Relies on the element establishing no
+  stacking context of its own (no transform/opacity/filter/z-index). The rim still paints
+  **above** the page mesh: the mesh is `body::before` at root-level `z-index: -1`, and the
+  card subtree paints later in the tree (and typically inside a nested stacking context),
+  so the ring lands between mesh and card, not behind the mesh.
 - **Intensity is a per-scheme seed** (`borderIntensity`, `{calm, hover}`); light needs
   more than dark or the edge vanishes on a near-white surface. Tune freely.
 - **Surface is a parameter** — must be the real surface behind the element (default
   `background.paper` = surface 1); pass `--beam-surface-2/-3` for Menu/Dialog.
 - **Animation** — `--beam-border-angle` is a registered `@property` (a typed `<angle>`,
-  so it can interpolate; `inherits: false` so it doesn't leak). The rotation runs
-  **paused** and resumes on hover (never restarts → no snap-back); it stays paused under
+  so it can interpolate; `inherits: false`). Because it doesn't inherit, the rotation runs
+  **on the pseudo itself** so the animated angle reaches its gradient; it runs **paused**
+  and resumes on hover (never restarts → no snap-back), and stays paused under
   `prefers-reduced-motion` — static but still lit.
-- **Squircle caveat** — `MuiPaper.rounded` carries `corner-shape: squircle`; whether
-  `background-clip` follows the squircle corner is untested. Left intact, pending a visual
-  check.
+- **`corner-shape` does NOT inherit to pseudo-elements** *(2026-08-06)*. A squircle
+  surface (`MuiPaper.rounded`) does not pass its corner geometry to its own `::before`/
+  `::after`; the pseudo would render a plain-radius ring around a squircle card — an
+  obvious mismatch. Set `corner-shape: squircle` **explicitly** on any pseudo-based
+  treatment layered on a squircle surface (radius and corner-shape both fall back together
+  where squircle is unsupported, staying concentric). Applies to any future pseudo
+  treatment here, not just this rim.
 
 ## 3. Recipe: adding a new derived token
 

@@ -46,12 +46,16 @@ export function WidgetShell({
         flexDirection: 'column',
         gap: 1,
         containerType: 'inline-size',
-        overflow: 'hidden',
-        // Opt-in lit-edge treatment. surface = paper (= surface 1, correct for a
-        // widget shell); interactive so hover resumes the rotation. It replaces
-        // the outlined 1px border (same 1px → no reflow); the squircle from
-        // MuiPaper.rounded is left intact (its clipping vs the gradient is the
-        // visual check).
+        // NO `overflow: hidden` here — it would CLIP the outward gradient rim
+        // (beamGradientBorder draws it on an `::after` that sits OUTSIDE this box).
+        // The rounded bg/border still self-clip to the squircle without it; content is
+        // inset by `p: 1.5`. If a widget's content ever bleeds past the corner, clip it
+        // on the INNER content Box below — never restore overflow:hidden here or the rim
+        // silently disappears.
+        // Opt-in lit-edge treatment. surface = paper (= surface 1, correct for a widget
+        // shell); interactive so hover resumes the rotation and grows the rim 1px → 2px
+        // OUTWARD. It sets border:none and carries the whole rim on the pseudo (no
+        // reflow — the box never changes size); squircle is matched explicitly on the rim.
         ...(gradientBorder ? (beamGradientBorder({ interactive: true }) as object) : {}),
       }}
     >
