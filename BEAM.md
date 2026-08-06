@@ -344,6 +344,12 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   (semi-transparent dark), not the raw mesh — acceptable for now; the raw backdrop there is a
   Modal/`Backdrop` change, a separate conversation. (b) the rail shows the mesh's viewport-fixed
   **left edge** — verify it doesn't unify rail and page and undercut chrome-recedes.
+- **The peek/float panel's `boxShadow: 8` is a raw MUI (black-literal) shadow** — the last
+  thing in the shell still using a non-tokenized colour. The docked rail's separation shadow
+  is surface-derived (`--beam-nav-shadow`, per-scheme alpha); peek should follow rather than
+  carry MUI's black elevation. Not urgent — peek genuinely floats and the black reads fine on
+  its own — but it's inconsistent with the no-black-literals doctrine. Retokenize when the
+  shell gets its next pass. *(2026-08-06.)*
 - Code Connect mapping is "simple" flavor (no template snippet) — refine via CLI later
 - Organisms → separate Figma library file: the second consumer now exists in code
   (`apps/gaspar`), so the Figma-side split is due

@@ -63,6 +63,20 @@ lifted) sells it as a pane. Blur stays at the dot-pitch-bound seed; where
 `backdrop-filter` is unsupported it falls back to the opaque rail. One recipe
 (`NAV_GLASS_SX`), two sites — see BEAM Appendix C for the open items.
 
+**The docked rail's separation is an OUTWARD shadow, not an inset one** *(2026-08-06)*.
+The docked rail was dissolving into the page (worst in light). The fix is an outward
+drop shadow cast **right onto the page** (`6px 0 18px -2px var(--beam-nav-shadow)`,
+surface-derived colour, per-scheme alpha) — because it falls on the *page*, not on the
+rail, there is no ambiguity about which surface casts it, and it reads the same in both
+schemes. An **inset** shadow (tried first) darkens the rail's *own* right edge: in light
+the page is brighter so that reads as a recess, but in dark the rail is already darker
+than the page, so the same darkening reads as **self-shadowing** — a lit face with a
+shaded edge, i.e. an object *in front of* the page. Identical CSS, inverted metaphor;
+**retired, do not restore.** Note the doctrine honestly: the rail is *still* a recessed
+surface — `navOffset` stays negative, chrome still sinks — the shadow is **separation,
+not elevation signalling.** Docked only; peek keeps its float shadow (genuinely
+elevated), narrow keeps its scrim.
+
 Border presence follows the constant-geometry doctrine (detail grammar §1):
 the panel carries its border in both natures; nature changes pigment and
 elevation, never geometry.

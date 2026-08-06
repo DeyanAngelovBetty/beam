@@ -413,13 +413,18 @@ export function BeamAppShell({
             borderTopLeftRadius: 0, 
             borderBottomLeftRadius: 0, 
             boxShadow: 8 } : { borderRadius: 0 }),
-          // DOCKED only: the well RECEIVES a shadow from the content plane above it
-          // (chrome sinks; content rises). An INSET shadow tight to the right inner
-          // edge — the page sitting proud of the well, not the rail casting outward
-          // (which would read as elevated, contradicting §2). No width, nothing moves.
-          // Peek keeps its drop shadow (it floats); narrow keeps its scrim.
+          // DOCKED only: an OUTWARD drop shadow, cast RIGHT onto the page. It falls on
+          // the page, not on the rail, so there's no ambiguity about which surface
+          // casts it — reads the same in both schemes. (An inset shadow darkens the
+          // rail's OWN edge, which in dark — rail darker than page — reads as
+          // self-shadowing, i.e. IN FRONT; identical CSS, inverted metaphor. Retired,
+          // don't restore — shell-grammar §2.) 0 vertical offset: a full-height column
+          // casts horizontally onto adjacent content, not down into a clipped viewport
+          // edge. Surface-derived colour + per-scheme alpha (WELL_SHADOW), lighter than
+          // peek's float. The rail is still a RECESSED surface (navOffset < 0) — this is
+          // separation, not elevation. Peek keeps boxShadow: 8; narrow keeps its scrim.
           ...(nature === 'locked'
-            ? { boxShadow: 'inset -6px 0 10px -4px var(--beam-nav-shadow)' }
+            ? { boxShadow: '6px 0 18px -2px var(--beam-nav-shadow)' }
             : {}),
         }}
       >

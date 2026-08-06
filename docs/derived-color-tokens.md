@@ -255,6 +255,16 @@ anchor (−0.15) and let the lit page be the brighter thing. The intent is const
 the direction flips. **Same asymmetry family as shadow-carries-elevation-in-light /
 lightness-in-dark** — the second time this pattern has bitten, hence written down.
 
+**Sixth instance — and the first that broke MEANING, not intensity** *(2026-08-06)*.
+The docked rail's separation shadow: an **inset** shadow darkening the rail's own edge
+reads as a recess in light (page brighter) but as **self-shadowing** in dark (rail
+darker than page → lit face + shaded edge → looks *in front* of the page) — identical
+CSS, inverted *metaphor*, not merely inverted strength. Every prior instance (navOffset,
+dot opacity, glass alpha, edge lift, well-shadow alpha) was a magnitude/direction tune;
+this one changed what the pixels *mean*, so the fix was structural — an **outward** drop
+shadow that falls on the page, not the rail (shell-grammar §2) — not a re-tune. The inset
+is retired, not adjusted.
+
 **The chroma lever.** The rail is the ONLY surface with chroma identity of its own:
 `c` is multiplied by `navChroma` (`calc(c * var(--beam-surface-nav-chroma))`); every
 other ramp position passes anchor chroma through ×1. That's what keeps Gaspar's dark
