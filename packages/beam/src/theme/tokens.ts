@@ -165,12 +165,27 @@ export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: Nav
  * Midnight isn't a ProductName (renders via `product: 'sunlight'`), so it inherits
  * Sunlight's mesh — same posture as fonts/surfaces.
  */
+type GradientSchemeSeed = {
+  hueB: string;
+  intensity: number;
+  // Dot layer of the page mesh. pitch is tuned AGAINST THE BLUR (>= ~2x the
+  // frosted-rail blur radius), not taste — see docs/derived-color-tokens.md §2.
+  dotPitch: number;
+  dotSize: number;
+  dotOpacity: number;
+};
 export const gradientSeeds: Record<
   ProductName,
-  { dark: { hueB: string; intensity: number }; light: { hueB: string; intensity: number } }
+  { dark: GradientSchemeSeed; light: GradientSchemeSeed }
 > = {
-  sunlight: { dark: { hueB: '#75EBDE', intensity: 10 }, light: { hueB: '#48DDE5', intensity: 6 } },
-  gaspar: { dark: { hueB: '#68DD57', intensity: 22 }, light: { hueB: '#17760F', intensity: 14 } },
+  sunlight: {
+    dark: { hueB: '#75EBDE', intensity: 10, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
+    light: { hueB: '#48DDE5', intensity: 6, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.035 },
+  },
+  gaspar: {
+    dark: { hueB: '#68DD57', intensity: 22, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
+    light: { hueB: '#17760F', intensity: 14, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.035 },
+  },
 };
 
 /**
@@ -234,9 +249,22 @@ export const derived = {
    * variable (gradients aren't a variable type); its Figma twin is a style.
    */
   pageMesh:
+    // DOT layer FIRST (first-on-top → above the three radials). Its tile size
+    // (pitch) + repeat live on body::before, alongside the radials' explicit
+    // sizes so they don't inherit the tile and repeat.
+    'radial-gradient(circle at center, oklch(from var(--beam-dot-color) l c h / var(--beam-dot-opacity)) var(--beam-dot-size), transparent var(--beam-dot-size)), ' +
     'radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
     'radial-gradient(110% 110% at 100% 0%, color-mix(in oklch, var(--beam-gradient-hue-b) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
     'radial-gradient(130% 130% at 50% 120%, color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%)',
+
+  /**
+   * DOT colour for the mesh dot layer — a mesh tint (primary) mixed TOWARD the
+   * foreground (`text.primary`), so it flips per scheme: lighter dots on dark
+   * pages, darker on light. Never a white/black literal. Alpha is applied at use
+   * (`--beam-dot-opacity`); the 45/55 lean is the tunable knob, dotOpacity the
+   * visibility dial.
+   */
+  dotColor: 'color-mix(in oklch, var(--mui-palette-primary-main) 45%, var(--mui-palette-text-primary))',
 
   /**
    * SURFACE RAMP — five elevation positions as oklch L-offsets from surface 0

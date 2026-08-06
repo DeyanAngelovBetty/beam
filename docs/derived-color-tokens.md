@@ -69,6 +69,20 @@ radial-gradient(130% 130% at 50% 120%,color-mix(in oklch, oklch(from var(--mui-p
   through as a feature, not a surprise.
 - **Chrome-first**: nested `var()` (including a var in the `color-mix` percentage slot)
   and `oklch(from …)` need a modern engine — same posture as the rest of this doc.
+- **The dot layer** *(2026-08-06)*. A repeating `radial-gradient` dot is layered FIRST
+  in the mesh's `background-image` (first-on-top), tiled at `dotPitch`. Its **pitch is
+  tuned against the blur, not taste**: `backdrop-filter` averages, so any pattern finer
+  than the blur radius (24px) smears to flat and shows nothing through the frosted rail
+  — hence pitch ≥ ~2× blur (56). This is also why **grain is the wrong texture here**:
+  `feTurbulence` is high-frequency by definition, so it averages to nothing at any alpha.
+  The dots exist to give the frosted rail something to diffuse; canvas texture is
+  secondary. **Dot colour** (`dotColor`) is a mesh tint mixed *toward* `text.primary`,
+  the foreground — so it **flips per scheme** (lighter dots on dark pages, darker on
+  light), never a white/black literal; `dotOpacity` is lower in light (0.035 vs 0.055)
+  because a dark dot on near-white reads louder than a light dot on dark. **Coupling to
+  respect:** with 4 background layers, `background-size`/`-repeat` must be matching
+  4-value lists (`pitch, auto, auto, auto` / `repeat, no-repeat, no-repeat, no-repeat`),
+  or the three radials inherit the dot tile and repeat.
 
 ### `beamGradientBorder` — an opt-in lit edge from the same points *(2026-08-05)*
 

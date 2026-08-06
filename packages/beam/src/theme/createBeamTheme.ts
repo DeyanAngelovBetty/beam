@@ -105,6 +105,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-page-mesh': derived.pageMesh,
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
+            // Mesh dot layer. Pitch/size are scheme-invariant; only opacity flips
+            // (a dark dot on near-white reads louder, so light is held lower).
+            '--beam-dot-color': derived.dotColor,
+            '--beam-dot-pitch': `${g.dark.dotPitch}px`,
+            '--beam-dot-size': `${g.dark.dotSize}px`,
+            '--beam-dot-opacity': String(g.dark.dotOpacity),
             // Gradient-border intensity (opt-in beamGradientBorder). Per-scheme
             // dial: light needs more than dark. :root default = dark.
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
@@ -180,6 +186,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.light.navSpread),
             '--beam-gradient-hue-b': g.light.hueB,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
+            '--beam-dot-opacity': String(g.light.dotOpacity),
             '--beam-border-intensity': `${borderIntensity.light.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.light.hover}%`,
             '--beam-mark-l': String(markLightness.light),
@@ -192,6 +199,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.dark.navSpread),
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
+            '--beam-dot-opacity': String(g.dark.dotOpacity),
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
             '--beam-mark-l': String(markLightness.dark),
@@ -212,6 +220,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             pointerEvents: 'none',
             backgroundColor: 'var(--mui-palette-background-default)',
             backgroundImage: 'var(--beam-page-mesh)',
+            // 4 layers now (dot + 3 radials). Matching 4-value lists so the radials
+            // do NOT inherit the dot tile: the dot tiles at pitch, the radials fill
+            // (auto) and don't repeat. This is the coupling that would break the mesh.
+            backgroundSize: 'var(--beam-dot-pitch) var(--beam-dot-pitch), auto, auto, auto',
+            backgroundRepeat: 'repeat, no-repeat, no-repeat, no-repeat',
           },
 
           // Gradient-border angle (opt-in beamGradientBorder). Registered as an
