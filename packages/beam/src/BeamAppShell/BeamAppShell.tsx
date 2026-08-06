@@ -355,12 +355,13 @@ export function BeamAppShell({
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          // Nav rail sits BELOW the page (chrome sinks; content rises) — the
-          // recessed surface-nav, not paper. Fixes the near-white light-mode rail
-          // that out-shouted the content. NB in the narrow-viewport peek this same
-          // surface floats OVER content (a recessed surface above the page is a
-          // contradiction) — flagged for review.
-          backgroundColor: 'var(--beam-surface-nav)',
+          // Nav rail — one swappable recipe (--beam-nav-surface, a vertical tinted
+          // gradient that lifts under the mark and settles toward the footer). The
+          // rail sinks below the page (chrome sinks; content rises); its own chroma
+          // identity keeps it tinted, not a void. Frosted glass later changes the
+          // RECIPE, not this call. NB the narrow-viewport peek floats this same
+          // recessed surface OVER content — a contradiction, flagged for review.
+          background: 'var(--beam-nav-surface)',
           // Constant-geometry border (detail grammar §1) — present in both
           // natures; nature changes radius + elevation, not geometry.
           borderStyle: 'solid',
@@ -540,7 +541,7 @@ export function BeamAppShell({
           open={peekOpen}
           onClose={closeNow}
           ModalProps={{ keepMounted: true }}
-          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, backgroundColor: 'var(--beam-surface-nav)' } }}
+          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, background: 'var(--beam-nav-surface)' } }}
         >
           {panel('peek', true)}
         </Drawer>

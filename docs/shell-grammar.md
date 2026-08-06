@@ -47,7 +47,10 @@ ramp — `--beam-surface-nav`, a *negative* step-offset from the anchor
 1–3) because they hold content you look at. The **active** nav item is the
 exception: it rises to **paper level** (surface 1), the same altitude as the
 content it shows, out of the recessed rail — altitude, not a tint, marks the
-current page. *Open contradiction:* in the narrow-viewport **peek** the rail floats
+current page. The rail's surface is a **vertical tinted gradient**
+(`--beam-nav-surface`) that lifts slightly under the brand mark and settles toward
+the footer — a different *shape* from the page mesh's radial field, so chrome and
+content never read as one surface. *Open contradiction:* in the narrow-viewport **peek** the rail floats
 *above* the content (nature = above the page) yet still wears the recessed nav
 surface — a below-the-page colour on an above-the-page container. Whether peek
 should instead take surface 2 is a doctrine call, pending review.

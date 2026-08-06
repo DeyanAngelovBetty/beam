@@ -134,20 +134,21 @@ export const roleColor = (index: number): string => roleRamp[((index % roleRamp.
  * carries elevation there. At 0.02 surface 3 would compute to L 1.0151 — past
  * pure white, impossible. See docs/derived-color-tokens.md §7.
  */
-export const surfaceSeeds: Record<
-  ProductName,
-  {
-    dark: { anchor: string; step: number; navOffset: number };
-    light: { anchor: string; step: number; navOffset: number };
-  }
-> = {
+type NavSchemeSeed = {
+  anchor: string;
+  step: number;
+  navOffset: number;
+  navChroma: number;
+  navSpread: number;
+};
+export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
-    dark: { anchor: '#0B0F19', step: 0.07, navOffset: -0.5 },
-    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3 },
+    dark: { anchor: '#0B0F19', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7 },
+    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7 },
   },
   gaspar: {
-    dark: { anchor: '#041213', step: 0.085, navOffset: -0.5 },
-    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3 },
+    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7 },
+    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7 },
   },
 };
 
@@ -255,11 +256,33 @@ export const derived = {
     paper: 'oklch(from var(--mui-palette-background-default) calc(l + 1 * var(--beam-surface-step)) c h)',
     raised: 'oklch(from var(--mui-palette-background-default) calc(l + 2 * var(--beam-surface-step)) c h)',
     top: 'oklch(from var(--mui-palette-background-default) calc(l + 3 * var(--beam-surface-step)) c h)',
-    // NAV rail — BELOW the anchor (content rises, chrome sinks). navOffset is a
-    // compensator, not a ramp position: it multiplies the step, so it varies
-    // inversely with it per scheme (dark −0.5 · light −3). Consumed by the Drawer.
-    nav: 'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-nav-offset) * var(--beam-surface-step)) c h)',
   },
+
+  /**
+   * NAV SURFACE — the rail's background, a single swappable recipe (emitted as
+   * `--beam-nav-surface`, applied ONLY at panel()/MuiDrawer-paper). Translucency
+   * is next: adding an alpha channel + backdrop-filter should be a change HERE,
+   * not a hunt through the shell.
+   *
+   * A 2-stop VERTICAL linear gradient — deliberately a different SHAPE from the
+   * page mesh's 3-point radial field, so chrome and content never read as one
+   * continuous surface. Top = `navOffset + navSpread` steps (lifts under the brand
+   * mark); bottom = `navOffset` (settles toward the footer).
+   *
+   * The rail is the ONLY surface with chroma identity of its own: `c` is
+   * multiplied by `--beam-surface-nav-chroma` (every other ramp position passes
+   * anchor chroma through ×1). Sunlight's light anchor is C 0.0000, so its rail
+   * stays neutral grey at any multiplier — correct, not a bug; no floor.
+   *
+   * ⚠️ HIGH-WATER MARK for `bake:derived`: the top stop's lightness is
+   * `calc(l + (navOffset + navSpread) * step)` — two custom vars in a sum, times a
+   * third. This is the most complex channel expression in the estate and the one
+   * that will break a naive bake parser FIRST. See derived-color-tokens §7.
+   */
+  navSurface:
+    'linear-gradient(180deg, ' +
+    'oklch(from var(--mui-palette-background-default) calc(l + (var(--beam-surface-nav-offset) + var(--beam-surface-nav-spread)) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h), ' +
+    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-nav-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h))',
 
   /**
    * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,

@@ -226,10 +226,33 @@ in-repo (BEAM Appendix C), so the live ramp is unverified against those lanes. T
 Figma `_derived surfaces (baked)` collection is a designer SNAPSHOT, not the
 source — code computes the real values; do not read or mirror it.
 
-**The nav rail — a compensator, not a ramp position** *(2026-08-06)*. `surface.nav`
+**The nav rail — a compensator, not a ramp position** *(2026-08-06)*. `navSurface`
 sits *below* the anchor (`calc(l + navOffset * step)`, navOffset < 0) so the shell
-chrome recedes (content rises, chrome sinks — shell-grammar §2). `navOffset` lives
-in `surfaceSeeds` alongside anchor/step, but it is **not** an integer ramp rung: it
-multiplies the step, so it must vary *inversely* with it per scheme (dark −0.5 ·
-light −3). Dark's big step reaches the floor fast (−1 lands Gaspar at ~#000303, a
-hole); light's 0.010 step needs −3 to recede at all. Fractional values are correct.
+chrome recedes (content rises, chrome sinks — shell-grammar §2). `navOffset` lives in
+`surfaceSeeds` alongside anchor/step, but it is **not** an integer ramp rung: it
+multiplies the step, so it varies with it per scheme.
+
+**"Recede" inverts direction by scheme** *(corrected 2026-08-06; navOffset dark
+−0.5 → −0.15)*. In LIGHT there is room below the anchor, so recede = darker and a big
+multiple (−3 against the 0.010 step) works. In DARK there is *no room* — −0.5 put
+Gaspar's rail at a near-black void that grabbed **more** attention than the mesh-lit
+page, the opposite of the intent. So in dark the rail must sit **close** to the
+anchor (−0.15) and let the lit page be the brighter thing. The intent is constant;
+the direction flips. **Same asymmetry family as shadow-carries-elevation-in-light /
+lightness-in-dark** — the second time this pattern has bitten, hence written down.
+
+**The chroma lever.** The rail is the ONLY surface with chroma identity of its own:
+`c` is multiplied by `navChroma` (`calc(c * var(--beam-surface-nav-chroma))`); every
+other ramp position passes anchor chroma through ×1. That's what keeps Gaspar's dark
+rail *tinted chrome* rather than a grey/black void. **Sunlight's light anchor is
+C 0.0000, so its rail stays neutral grey at any multiplier — correct, not a bug; do
+not add a floor.**
+
+**⚠️ STANDING NOTE — the current high-water mark for `bake:derived`.** The nav
+gradient's top stop pins lightness at `calc(l + (navOffset + navSpread) * step)` —
+**two custom vars in a sum, times a third.** This is the most complex channel
+expression in the estate; nothing else nests arithmetic this deep. Whoever writes
+`bake:derived` (BEAM Appendix C) should know **before they start** that this is the
+expression that will break a naive parser first — it is the shape to design against,
+not discover. Until then it stays the high-water mark; anything more complex is a
+warning sign.

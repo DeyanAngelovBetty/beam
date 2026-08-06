@@ -142,11 +142,14 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // emitted but reserved — no consumer this pass.
             '--beam-surface-step': String(s.dark.step),
             '--beam-surface-nav-offset': String(s.dark.navOffset),
+            '--beam-surface-nav-chroma': String(s.dark.navChroma),
+            '--beam-surface-nav-spread': String(s.dark.navSpread),
             '--beam-surface--1': derived.surface.sunken,
             '--beam-surface-1': derived.surface.paper,
             '--beam-surface-2': derived.surface.raised,
             '--beam-surface-3': derived.surface.top,
-            '--beam-surface-nav': derived.surface.nav,
+            // Rail background — one swappable recipe, consumed at the two rail sites.
+            '--beam-nav-surface': derived.navSurface,
             // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
             // are independently addressable (durations may become Figma number
             // variables; easings stay code strings), plus a composed shorthand.
@@ -173,6 +176,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             colorScheme: 'light',
             '--beam-surface-step': String(s.light.step),
             '--beam-surface-nav-offset': String(s.light.navOffset),
+            '--beam-surface-nav-chroma': String(s.light.navChroma),
+            '--beam-surface-nav-spread': String(s.light.navSpread),
             '--beam-gradient-hue-b': g.light.hueB,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
             '--beam-border-intensity': `${borderIntensity.light.calm}%`,
@@ -183,6 +188,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             colorScheme: 'dark',
             '--beam-surface-step': String(s.dark.step),
             '--beam-surface-nav-offset': String(s.dark.navOffset),
+            '--beam-surface-nav-chroma': String(s.dark.navChroma),
+            '--beam-surface-nav-spread': String(s.dark.navSpread),
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
