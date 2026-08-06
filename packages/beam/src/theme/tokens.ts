@@ -331,6 +331,16 @@ export const derived = {
     'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-nav-edge-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-edge-alpha))',
 
   /**
+   * NAV WELL SHADOW — the recessed rail RECEIVES a shadow from the content plane
+   * above it (chrome sinks; content rises — shell-grammar §2), applied as an inset
+   * shadow on the docked rail's right inner edge. A dark, SURFACE-tinted colour (30%
+   * of the anchor's L, keeping its hue/chroma) — never a black literal. Alpha is
+   * per-scheme (`--beam-nav-shadow-alpha`), stronger in light.
+   */
+  navShadow:
+    'oklch(from var(--mui-palette-background-default) calc(l * 0.3) c h / var(--beam-nav-shadow-alpha))',
+
+  /**
    * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,
    * NOT a reference to tableBorder: the day table borders get tuned, spines
    * must not silently retune with them. Baked → `_derived (baked)` for Figma.

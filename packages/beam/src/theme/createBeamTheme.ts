@@ -41,8 +41,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   // the thing this avoids). Commented consts, no Figma seed. TUNABLE.
   const EDGE = {
     dark: { lift: 2, alpha: 0.5 },
-    light: { lift: -1.5, alpha: 0.35 },
+    light: { lift: -1.5, alpha: 0.5 }, // alpha raised from 0.35 — the refraction line was too faint
   };
+  // Well shadow the DOCKED rail receives from the content plane above it, per scheme
+  // (the recurring surface asymmetry, 5th time). LIGHT stronger — a shadow on a
+  // near-white surface is the readable separation cue, and this is where it earns its
+  // keep. DARK light-touch: 0.06 may be invisible, which is FINE — dark already
+  // separates via the rail's own tint + edge catch, and a heavy shadow on near-black
+  // reads as a smudge. Do NOT crank it. Tunable, no Figma seed.
+  const WELL_SHADOW = { dark: 0.06, light: 0.14 };
   const navEdgeOffset = {
     dark: s.dark.navOffset + s.dark.navSpread + EDGE.dark.lift,
     light: s.light.navOffset + s.light.navSpread + EDGE.light.lift,
@@ -184,6 +191,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
+            '--beam-nav-shadow': derived.navShadow,
+            '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),
             // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
             // are independently addressable (durations may become Figma number
             // variables; easings stay code strings), plus a composed shorthand.
@@ -216,6 +225,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-glass-saturate': String(s.light.navGlassSaturate),
             '--beam-nav-edge-offset': String(navEdgeOffset.light),
             '--beam-nav-edge-alpha': String(EDGE.light.alpha),
+            '--beam-nav-shadow-alpha': String(WELL_SHADOW.light),
             '--beam-gradient-hue-b': g.light.hueB,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
             '--beam-dot-opacity': String(g.light.dotOpacity),
@@ -233,6 +243,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
+            '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             '--beam-dot-opacity': String(g.dark.dotOpacity),

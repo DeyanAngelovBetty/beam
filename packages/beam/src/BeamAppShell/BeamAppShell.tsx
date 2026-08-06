@@ -413,6 +413,14 @@ export function BeamAppShell({
             borderTopLeftRadius: 0, 
             borderBottomLeftRadius: 0, 
             boxShadow: 8 } : { borderRadius: 0 }),
+          // DOCKED only: the well RECEIVES a shadow from the content plane above it
+          // (chrome sinks; content rises). An INSET shadow tight to the right inner
+          // edge — the page sitting proud of the well, not the rail casting outward
+          // (which would read as elevated, contradicting §2). No width, nothing moves.
+          // Peek keeps its drop shadow (it floats); narrow keeps its scrim.
+          ...(nature === 'locked'
+            ? { boxShadow: 'inset -6px 0 10px -4px var(--beam-nav-shadow)' }
+            : {}),
         }}
       >
         {/* Panel header — brand mark + chevrons (grammar §3). */}
