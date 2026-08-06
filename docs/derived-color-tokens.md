@@ -225,3 +225,11 @@ for Gaspar — a wider separation).
 in-repo (BEAM Appendix C), so the live ramp is unverified against those lanes. The
 Figma `_derived surfaces (baked)` collection is a designer SNAPSHOT, not the
 source — code computes the real values; do not read or mirror it.
+
+**The nav rail — a compensator, not a ramp position** *(2026-08-06)*. `surface.nav`
+sits *below* the anchor (`calc(l + navOffset * step)`, navOffset < 0) so the shell
+chrome recedes (content rises, chrome sinks — shell-grammar §2). `navOffset` lives
+in `surfaceSeeds` alongside anchor/step, but it is **not** an integer ramp rung: it
+multiplies the step, so it must vary *inversely* with it per scheme (dark −0.5 ·
+light −3). Dark's big step reaches the floor fast (−1 lands Gaspar at ~#000303, a
+hole); light's 0.010 step needs −3 to recede at all. Fractional values are correct.

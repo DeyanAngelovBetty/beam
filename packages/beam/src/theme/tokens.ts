@@ -136,10 +136,19 @@ export const roleColor = (index: number): string => roleRamp[((index % roleRamp.
  */
 export const surfaceSeeds: Record<
   ProductName,
-  { dark: { anchor: string; step: number }; light: { anchor: string; step: number } }
+  {
+    dark: { anchor: string; step: number; navOffset: number };
+    light: { anchor: string; step: number; navOffset: number };
+  }
 > = {
-  sunlight: { dark: { anchor: '#0B0F19', step: 0.07 }, light: { anchor: '#F0F0F0', step: 0.01 } },
-  gaspar: { dark: { anchor: '#041213', step: 0.085 }, light: { anchor: '#EDF1F1', step: 0.01 } },
+  sunlight: {
+    dark: { anchor: '#0B0F19', step: 0.07, navOffset: -0.5 },
+    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3 },
+  },
+  gaspar: {
+    dark: { anchor: '#041213', step: 0.085, navOffset: -0.5 },
+    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3 },
+  },
 };
 
 /**
@@ -246,6 +255,10 @@ export const derived = {
     paper: 'oklch(from var(--mui-palette-background-default) calc(l + 1 * var(--beam-surface-step)) c h)',
     raised: 'oklch(from var(--mui-palette-background-default) calc(l + 2 * var(--beam-surface-step)) c h)',
     top: 'oklch(from var(--mui-palette-background-default) calc(l + 3 * var(--beam-surface-step)) c h)',
+    // NAV rail — BELOW the anchor (content rises, chrome sinks). navOffset is a
+    // compensator, not a ramp position: it multiplies the step, so it varies
+    // inversely with it per scheme (dark −0.5 · light −3). Consumed by the Drawer.
+    nav: 'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-nav-offset) * var(--beam-surface-step)) c h)',
   },
 
   /**

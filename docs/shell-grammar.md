@@ -40,6 +40,18 @@ changes is the **container's nature**:
   strip stays visible; the panel does not cover it), rounded, elevated
   shadow.
 
+**Surface altitude — content rises, chrome sinks** *(2026-08-06)*. The rail is
+navigation: you look *past* it, not *at* it, so it sits **below** the page on the
+ramp — `--beam-surface-nav`, a *negative* step-offset from the anchor
+(`surfaceSeeds.navOffset`) — while Paper, menus, and dialogs sit above (surfaces
+1–3) because they hold content you look at. The **active** nav item is the
+exception: it rises to **paper level** (surface 1), the same altitude as the
+content it shows, out of the recessed rail — altitude, not a tint, marks the
+current page. *Open contradiction:* in the narrow-viewport **peek** the rail floats
+*above* the content (nature = above the page) yet still wears the recessed nav
+surface — a below-the-page colour on an above-the-page container. Whether peek
+should instead take surface 2 is a doctrine call, pending review.
+
 Border presence follows the constant-geometry doctrine (detail grammar §1):
 the panel carries its border in both natures; nature changes pigment and
 elevation, never geometry.

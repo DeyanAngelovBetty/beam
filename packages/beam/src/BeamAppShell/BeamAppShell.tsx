@@ -114,7 +114,27 @@ function Wordmark({ title, ghost = false }: { title?: string; ghost?: boolean })
 
 function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }) {
   return (
-    <ListItemButton selected={item.selected} onClick={item.onClick} sx={inset ? { pl: 4 } : undefined}>
+    <ListItemButton
+      selected={item.selected}
+      onClick={item.onClick}
+      sx={(theme) => {
+        // Same CSS-vars-aware access BeamDataTable uses for hover overlays.
+        const hover = (theme.vars || theme).palette.action.hover;
+        return {
+          ...(inset && { pl: 4 }),
+          // Active item rises to PAPER (surface 1) out of the recessed rail — the
+          // page at the altitude of the content it shows. Opaque paper REPLACES
+          // MUI's faint action.selected tint; altitude carries the state.
+          '&.Mui-selected': { backgroundColor: 'var(--mui-palette-background-paper)' },
+          // Hover on the selected item composes action.hover OVER paper — the case
+          // to judge: does the overlay read as ABOVE paper (outranking content)?
+          '&.Mui-selected:hover': {
+            backgroundColor: 'var(--mui-palette-background-paper)',
+            backgroundImage: `linear-gradient(${hover}, ${hover})`,
+          },
+        };
+      }}
+    >
       {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
       <ListItemText primary={item.label} />
     </ListItemButton>
@@ -335,7 +355,12 @@ export function BeamAppShell({
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          bgcolor: 'background.paper',
+          // Nav rail sits BELOW the page (chrome sinks; content rises) — the
+          // recessed surface-nav, not paper. Fixes the near-white light-mode rail
+          // that out-shouted the content. NB in the narrow-viewport peek this same
+          // surface floats OVER content (a recessed surface above the page is a
+          // contradiction) — flagged for review.
+          backgroundColor: 'var(--beam-surface-nav)',
           // Constant-geometry border (detail grammar §1) — present in both
           // natures; nature changes radius + elevation, not geometry.
           borderStyle: 'solid',
@@ -515,7 +540,7 @@ export function BeamAppShell({
           open={peekOpen}
           onClose={closeNow}
           ModalProps={{ keepMounted: true }}
-          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0 } }}
+          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, backgroundColor: 'var(--beam-surface-nav)' } }}
         >
           {panel('peek', true)}
         </Drawer>
