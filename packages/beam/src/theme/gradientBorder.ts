@@ -36,21 +36,33 @@ export function beamGradientBorder(opts?: {
   ].join(', ');
 
   return {
-    border: '1px solid transparent',
+    // Border is PERMANENTLY 2px (constant geometry forever). An inset box-shadow in
+    // the SURFACE colour masks the inner `--beam-border-mask` px from inside, so the
+    // border READS as calm 1px. Hover drops the mask to 0 → the full 2px gradient
+    // shows — apparent weight changes with nothing moving (box-shadow is out of
+    // layout; border-box grows the border inward). The mask reuses `surface` (the
+    // same var the padding-box uses), so it's correct on surface 1/2/3. Transition
+    // the MASK width, never border-width; `--beam-border-mask` is an @property
+    // <length> so it interpolates, and the motion token respects reduced-motion.
+    border: '2px solid transparent',
     background: [
       `linear-gradient(${surface}, ${surface}) padding-box`,
       `conic-gradient(from var(--beam-border-angle), ${stops}) border-box`,
     ].join(', '),
+    boxShadow: `inset 0 0 0 var(--beam-border-mask) ${surface}`,
+    transition: '--beam-border-mask var(--beam-motion-quick)',
     ...(interactive && {
       animation: 'beam-border-spin 6s linear infinite',
       animationPlayState: 'paused',
       '&:hover': {
-        // Lift the intensity (a var swap — no geometry change) and RESUME the
+        // Lift the intensity + reveal the full 2px (mask → 0) and RESUME the
         // rotation from wherever it paused (not restart).
         '--beam-border-intensity': 'var(--beam-border-intensity-hover)',
+        '--beam-border-mask': '0px',
         animationPlayState: 'running',
       },
-      // Reduced motion: never resume. Still lit, never moving.
+      // Reduced motion: never resume the spin. Still lit; the mask still snaps
+      // (the motion token's duration is zeroed), so weight still changes, instantly.
       '@media (prefers-reduced-motion: reduce)': {
         '&:hover': { animationPlayState: 'paused' },
       },

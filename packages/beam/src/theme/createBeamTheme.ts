@@ -258,6 +258,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inherits: 'false',
             initialValue: '135deg',
           },
+          // Gradient-border weight mask (beamGradientBorder). Registered <length> so
+          // it INTERPOLATES — an unregistered custom prop would snap, not transition
+          // (same trap as the angle). Calm 1px masks the inner half of the permanent
+          // 2px border; hover → 0px reveals the full 2px. No layout: it's a box-shadow.
+          '@property --beam-border-mask': {
+            syntax: "'<length>'",
+            inherits: 'false',
+            initialValue: '1px',
+          },
           '@keyframes beam-border-spin': {
             to: { '--beam-border-angle': '495deg' },
           },

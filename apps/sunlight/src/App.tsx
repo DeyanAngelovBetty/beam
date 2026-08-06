@@ -6,7 +6,7 @@ import {
   useNavigate,
   useLocation,
 } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import SUNLIGHT_MARK from './assets/SUNLIGHT.svg';
 import { buildSunlightNav } from './sunlight/navItems';
@@ -38,20 +38,38 @@ const BrandContext = createContext<{ brand: BrandName; setBrand: (b: BrandName) 
   setBrand: () => {},
 });
 
-// Brand mark is app-owned (shell-grammar §3): the shell ships no logos. Color =
-// the full SVG for content-adjacent chrome; ghost = the same asset desaturated
-// to a watermark, the peek's destination marker. Ghost opacity is a bench value
-// — the motion/polish pass owns it.
+// Brand mark is app-owned (shell-grammar §3) but PAINTED from the token system: a
+// CSS-masked silhouette (the .svg stays the source) filled by a brand-hued gradient
+// pinned to --beam-mark-l, so it follows the ramp instead of carrying hardcoded
+// colours. Same treatment as Gaspar, reusing the global --beam-mark-l. -webkit-mask
+// for Safari.
+const MARK_MASK = {
+  height: 20,
+  aspectRatio: '207 / 36', // the SUNLIGHT wordmark's intrinsic ratio
+  display: 'block',
+  maskImage: `url(${SUNLIGHT_MARK})`,
+  WebkitMaskImage: `url(${SUNLIGHT_MARK})`,
+  maskSize: 'contain',
+  WebkitMaskSize: 'contain',
+  maskRepeat: 'no-repeat',
+  WebkitMaskRepeat: 'no-repeat',
+  maskPosition: 'left center',
+  WebkitMaskPosition: 'left center',
+} as const;
+
+const MARK_GRADIENT =
+  'linear-gradient(115deg, ' +
+  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c h), ' +
+  'oklch(from var(--beam-gradient-hue-b) var(--beam-mark-l) c h), ' +
+  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c calc(h + 45)))';
+
+// Ghost = the same mask DESATURATED (chroma 0 → grey), a watermark that reads as
+// absence — not a dim logo competing with the live mark.
+const MARK_GHOST = 'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) 0 h)';
+
 const brandMark = {
-  color: <img src={SUNLIGHT_MARK} alt="Sunlight" style={{ height: 20, display: 'block' }} />,
-  ghost: (
-    <img
-      src={SUNLIGHT_MARK}
-      alt=""
-      aria-hidden
-      style={{ height: 20, display: 'block', filter: 'grayscale(1)', opacity: 0.16 }}
-    />
-  ),
+  color: <Box role="img" aria-label="Sunlight" sx={{ ...MARK_MASK, background: MARK_GRADIENT }} />,
+  ghost: <Box aria-hidden sx={{ ...MARK_MASK, background: MARK_GHOST, opacity: 0.16 }} />,
 };
 
 /** The persistent shell around every route. A data-router layout route. */

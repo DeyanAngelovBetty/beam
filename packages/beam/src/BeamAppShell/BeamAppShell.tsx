@@ -394,11 +394,16 @@ export function BeamAppShell({
           // ::after insets to the panel (the locked panel is otherwise static).
           position: 'relative',
           ...NAV_GLASS_SX,
-          // Constant-geometry border (detail grammar §1) — present in both
-          // natures; nature changes radius + elevation, not geometry.
+          // Constant-geometry border (detail grammar §1) — present in both natures;
+          // nature changes PIGMENT, never geometry (§2). On the glass rail the pigment
+          // is TRANSPARENT: a drawn opaque outline is the strongest "solid object" cue
+          // and would override the translucent fill. The lit --beam-nav-edge catch is
+          // the glass's visible edge; this keeps the box geometry so locked↔peek
+          // doesn't reflow. (Peek's bottom, which the edge catch doesn't reach, leans
+          // on its drop shadow — under review.)
           borderStyle: 'solid',
           borderWidth: nature === 'peek' ? '1px 1px 1px 0' : '0 1px 0 0',
-          borderColor: 'divider',
+          borderColor: 'transparent',
           ...(floating ? { 
             borderRadius: 2, 
             borderTopLeftRadius: 0, 
