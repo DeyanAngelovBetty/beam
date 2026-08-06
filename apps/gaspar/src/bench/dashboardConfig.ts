@@ -28,7 +28,11 @@ export interface WidgetConfig {
  * width via container queries (see CQ below), not to the viewport.
  */
 export const DASHBOARD_CONFIG: readonly WidgetConfig[] = [
-  { id: 'kpi', order: 1, colSpan: 3, rowSpan: 1 },
+  // rowSpan 2: at ≥threeCol WIDTH the KPI reveals its bar chart, which needs the
+  // height (stat + delta + 40px chart + caption don't fit a 140px row). The honest
+  // fix — NOT a height-gated reveal, since a chart that silently never appears is
+  // harder to reason about than a card that's simply tall enough.
+  { id: 'kpi', order: 1, colSpan: 3, rowSpan: 2 },
   { id: 'band', order: 2, colSpan: 6, rowSpan: 2 },
   { id: 'status', order: 3, colSpan: 3, rowSpan: 1 },
   { id: 'filter', order: 4, colSpan: 12, rowSpan: 1 },

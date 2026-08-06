@@ -21,10 +21,10 @@ export function KpiCardWidget() {
   // Clip content HERE, on the widget's own box — NOT on the rim-bearing Paper
   // (WidgetShell), which must stay unclipped or beamGradientBorder's outward `::after`
   // rim gets sliced (same reason as the WidgetShell registry comment).
-  // SIZING NOTE: the chart reveals at ≥threeCol WIDTH, but this widget is rowSpan 1
-  // (a 140px cell). stat + delta + the 40px bar row + caption can exceed that height,
-  // so the clip contains it — but it CUTS the trailing caption. The clip is not the
-  // real fix: a height budget is (kpi → rowSpan 2, or gate the chart on height too).
+  // The height budget is fixed in the CONFIG (kpi is rowSpan 2, so the chart actually
+  // fits — dashboardConfig). THIS clip is defence-in-depth, not that fix: it keeps
+  // content contained on any future width/config combination that would otherwise
+  // overflow, without ever reaching for overflow:hidden on the Paper.
   return (
     <Stack spacing={1} sx={{ height: '100%', minWidth: 0, overflow: 'hidden' }}>
       <BeamStat label="Settled volume" value={VALUE} />
