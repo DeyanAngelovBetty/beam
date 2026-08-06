@@ -75,6 +75,10 @@ const NAV_GLASS_SX = {
     position: 'absolute',
     inset: 0,
     pointerEvents: 'none',
+    // Inherit the panel's radius or the square pseudo overhangs the rounded
+    // corner (a hard right-angle around the peek). Works for every state — locked
+    // (r0), peek (r2 top/bottom-right), narrow — each inherits its own radius.
+    borderRadius: 'inherit',
     borderTop: '1px solid var(--beam-nav-edge)',
     borderRight: '1px solid var(--beam-nav-edge)',
   },

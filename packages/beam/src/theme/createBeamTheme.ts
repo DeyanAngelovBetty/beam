@@ -30,10 +30,22 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   // light catch sits. Summed with the nav offsets in JS (seed arithmetic, not colour
   // maths) so --beam-nav-edge-offset stays a single var and doesn't re-raise the
   // channel high-water mark (§7). TUNABLE — expect to adjust once the catch is visible.
-  const EDGE_LIFT = 2;
+  // Glass edge catch, PER SCHEME — the recurring surface asymmetry (navOffset, dot
+  // opacity, glass alpha, now this). DARK has headroom above the rail, so a POSITIVE
+  // lift brightens into a light catch. LIGHT is already near-white, so a positive lift
+  // is indistinguishable from white (a hard bright line); a small NEGATIVE lift reads
+  // as a definition/refraction line instead — how real glass shows its edge on white.
+  // `alpha` keeps it a catch of light, not a drawn stroke, on the translucent pane.
+  // ⚠️ If the light edge VANISHES on review, the fix is raising light `alpha` toward
+  // 0.5 while KEEPING the negative lift — do NOT flip the lift positive (that's glare,
+  // the thing this avoids). Commented consts, no Figma seed. TUNABLE.
+  const EDGE = {
+    dark: { lift: 2, alpha: 0.5 },
+    light: { lift: -1.5, alpha: 0.35 },
+  };
   const navEdgeOffset = {
-    dark: s.dark.navOffset + s.dark.navSpread + EDGE_LIFT,
-    light: s.light.navOffset + s.light.navSpread + EDGE_LIFT,
+    dark: s.dark.navOffset + s.dark.navSpread + EDGE.dark.lift,
+    light: s.light.navOffset + s.light.navSpread + EDGE.light.lift,
   };
 
   const action = {
@@ -171,6 +183,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
+            '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             // Motion tokens (shell-grammar §4) — Beam's first. Duration + easing
             // are independently addressable (durations may become Figma number
             // variables; easings stay code strings), plus a composed shorthand.
@@ -202,6 +215,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-glass-alpha': String(s.light.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.light.navGlassSaturate),
             '--beam-nav-edge-offset': String(navEdgeOffset.light),
+            '--beam-nav-edge-alpha': String(EDGE.light.alpha),
             '--beam-gradient-hue-b': g.light.hueB,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
             '--beam-dot-opacity': String(g.light.dotOpacity),
@@ -218,6 +232,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
+            '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             '--beam-dot-opacity': String(g.dark.dotOpacity),

@@ -328,7 +328,7 @@ export const derived = {
    * high-water mark (see §7).
    */
   navEdge:
-    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-nav-edge-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h)',
+    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-nav-edge-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-edge-alpha))',
 
   /**
    * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,
