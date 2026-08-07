@@ -5,6 +5,7 @@ import type { WidgetId } from './dashboardConfig';
 import { WIDGETS } from './widgets/registry';
 import { BenchDashboardStatic } from './BenchDashboardStatic';
 import { BenchDashboardDock } from './BenchDashboardDock';
+import { BenchDashboardDeclare } from './BenchDashboardDeclare';
 
 /**
  * DashboardBench — the head-to-head host (Lab/Bench + the Gaspar
@@ -14,7 +15,7 @@ import { BenchDashboardDock } from './BenchDashboardDock';
  * point of the bench.
  */
 export function DashboardBench() {
-  const [variant, setVariant] = useState<'static' | 'dock'>('static');
+  const [variant, setVariant] = useState<'static' | 'dock' | 'declare'>('static');
   const [hidden, setHidden] = useState<ReadonlySet<WidgetId>>(new Set());
 
   const visibleWidgetIds = ALL_WIDGET_IDS.filter((id) => !hidden.has(id));
@@ -31,14 +32,17 @@ export function DashboardBench() {
       <Stack spacing={0.5}>
         <Typography variant="h5">Dashboard bench</Typography>
         <Typography variant="body2" color="text.secondary">
-          Two layout implementations, one config and one permission set. Variant 1 is a static
-          12-column grid; Variant 2 is a dockview workspace aimed at the investigation layout.
+          Three layout implementations, one config and one permission set. Variant 1 is a static
+          12-column grid; Variant 2 is a dockview workspace aimed at the investigation layout;
+          Variant 3 inverts the authority — cards declare their width, the auto-fit container
+          satisfies it (config keeps only which cards, in what order).
         </Typography>
       </Stack>
 
-      <Tabs value={variant} onChange={(_e, v) => setVariant(v as 'static' | 'dock')}>
+      <Tabs value={variant} onChange={(_e, v) => setVariant(v as 'static' | 'dock' | 'declare')}>
         <Tab value="static" label="Variant 1 · Static grid" />
         <Tab value="dock" label="Variant 2 · Dockview" />
+        <Tab value="declare" label="Variant 3 · Declarative" />
       </Tabs>
 
       {/* Shared permission control — same ids feed both variants. */}
@@ -64,6 +68,8 @@ export function DashboardBench() {
       <Box sx={{ mt: 1 }}>
         {variant === 'static' ? (
           <BenchDashboardStatic visibleWidgetIds={visibleWidgetIds} />
+        ) : variant === 'declare' ? (
+          <BenchDashboardDeclare visibleWidgetIds={visibleWidgetIds} />
         ) : (
           // key forces a fresh dockview when the visible set changes (bench:
           // simplest correct behaviour; a real impl would diff panels).

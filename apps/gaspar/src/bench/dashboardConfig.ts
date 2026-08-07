@@ -14,9 +14,13 @@ export interface WidgetConfig {
   id: WidgetId;
   /** Placement order (dense grid flow + dock default arrangement). */
   order: number;
-  /** Grid columns spanned, 1–12. */
+  /**
+   * Grid columns spanned, 1–12. Read by Variants 1 & 2. Variant 3 IGNORES this: it
+   * holds that size is the card's to declare (`WIDGETS[id].span`), not config's — so
+   * V3 reads only `id` + `order`. If V3 graduates, colSpan/rowSpan leave this shape.
+   */
   colSpan: number;
-  /** Grid rows spanned. */
+  /** Grid rows spanned. Read by Variants 1 & 2; ignored by Variant 3 (see colSpan). */
   rowSpan: number;
 }
 

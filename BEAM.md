@@ -337,6 +337,27 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   the decision (§9 Lab exception), so the dep stays with it. Removing `dockview-react` + Variant 2
   is deferred until the bench is retired — removal sites are marked `// SPIKE: remove if Variant 1
   wins`. *(2026-08-05.)*
+- **Dashboard bench — Variant 3 "cards declare, container satisfies" (under evaluation).**
+  *(2026-08-07.)* A third contender (`BenchDashboardDeclare`, Storybook-only, judged against
+  Variant 1) inverting layout authority: config keeps only `id` + `order`; the **card** declares
+  its width (`WIDGETS[id].span`, in the widget definition); a `repeat(auto-fit, minmax(min(240px,
+  100%), 1fr))` + `grid-auto-flow: dense` + `grid-auto-rows: auto` grid satisfies it. Kills the
+  KPI height bug *structurally* — content-sized rows mean a card takes the height it needs, so the
+  chart fits with no rowSpan anywhere (the two-authorities split that caused the bug is gone).
+  **Deliberate product consequence: a user CANNOT drag a card wider — the card decides its span.**
+  Findings for the judging: (1) Trap 1 (a `span N` exceeding the track count) is clamped in pure
+  CSS — the container publishes its track count as `--cols` via a container-query ladder and each
+  card takes `span min(--span, --cols)`; the ladder and auto-fit are **two derivations of the same
+  count** and stay honest only while both read the shared `BASE`/`GAP` (commented at both sites).
+  `min()`-in-grid-span is modern-Chrome — if it doesn't resolve, cards collapse to one track. (2)
+  `dense` diverges visual from DOM order: at 3 cols `status` backfills row 1 col 3 ahead of `band`;
+  at 4 cols `table` backfills ahead of `filter`. Reading/tab order stays = config `order`. (3)
+  **"No empty slots" is not absolute** — dense removes the *large* holes, but a **residual 1-track
+  hole persists at 2 and 3 columns** because the lone `span: 1` card (`status`) doesn't tessellate
+  with its `span: 2/3` neighbours; 4 columns pack fully. Tuning spans to tessellate would mean a
+  card lying about its content need — not done. Reordering (Trap 3) is reported, not solved: DOM
+  order follows config, but `auto-fit` + `dense` place cards, so a role cannot pin a position
+  without positioning authority the model exists to avoid.
 - ~~The page mesh sits behind the Drawer; the shell pass intends a translucent Drawer~~ —
   **landed 2026-08-06:** the rail is **frosted glass** (translucent nav-surface + `backdrop-filter`
   blur/saturate), so the mesh + dots diffuse through it as intended. Two OPEN items: (a) the

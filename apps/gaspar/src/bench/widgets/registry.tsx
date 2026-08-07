@@ -100,11 +100,20 @@ const TXN_COLUMNS: BeamColumn<TxnRow>[] = [
 
 // ---- the registry ------------------------------------------------------------
 
-export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode }> = {
-  kpi: { title: 'KPI', node: <KpiCardWidget /> },
-  band: { title: 'Trend', node: <BandWidget /> },
+/**
+ * `span` is the CARD's OWN width declaration — how many grid tracks it wants when
+ * there's room (Variant 3's "cards declare, container satisfies" model). It lives HERE,
+ * in the widget definition, NOT in dashboardConfig — the card knows its content, the
+ * config author doesn't. Variant 3 reads it (clamped to the real track count); Variants
+ * 1 & 2 ignore it and use colSpan/rowSpan from config. A card cannot be dragged wider —
+ * the card decides its span. That is deliberate (BEAM Appendix C).
+ */
+export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: number }> = {
+  kpi: { title: 'KPI', node: <KpiCardWidget />, span: 2 }, // ≥2 tracks reveals its chart (CQ.threeCol)
+  band: { title: 'Trend', node: <BandWidget />, span: 2 }, // trend chart wants width
   status: {
     title: 'Gateway status',
+    span: 1, // three badges, compact
     node: (
       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
         <BeamStatusBadge status="active" label="Routing" />
@@ -115,6 +124,7 @@ export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode }> = {
   },
   filter: {
     title: 'Filters',
+    span: 4, // wants to run full-width — clamped to the track count, so effectively full
     node: (
       <BeamFilterBar
         aria-label="Dashboard filters"
@@ -129,6 +139,7 @@ export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode }> = {
   },
   table: {
     title: 'Recent transactions',
+    span: 3, // a data table wants width
     node: (
       <BeamDataTable<TxnRow>
         aria-label="Recent transactions"
@@ -138,5 +149,5 @@ export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode }> = {
       />
     ),
   },
-  nextgem: { title: 'Cutoff', node: <NextGemStandIn /> },
+  nextgem: { title: 'Cutoff', node: <NextGemStandIn />, span: 2 }, // progress + figures
 };

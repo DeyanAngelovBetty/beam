@@ -3,6 +3,7 @@ import { Box } from '@betty/beam';
 import { DashboardBench } from './DashboardBench';
 import { BenchDashboardStatic } from './BenchDashboardStatic';
 import { BenchDashboardDock } from './BenchDashboardDock';
+import { BenchDashboardDeclare } from './BenchDashboardDeclare';
 
 /**
  * Lab/Bench — head-to-head dashboard layout spike (Gaspar). Two implementations
@@ -30,6 +31,16 @@ export const StaticGrid: StoryObj<typeof BenchDashboardStatic> = {
 /** Variant 2 in isolation — drag panels; layout persists via the stub hook. */
 export const Dockview: StoryObj<typeof BenchDashboardDock> = {
   render: () => <BenchDashboardDock />,
+};
+
+/**
+ * Variant 3 in isolation — cards declare, container satisfies. Resize the canvas
+ * across the track-count boundaries (~495 / 751 / 1007px) to watch spans clamp and
+ * cards re-pack with no empty slots (mind the residual 1-track gap at 2–3 cols — see
+ * the component). KPI's chart appears at ≥2 tracks and the row grows to fit it.
+ */
+export const Declarative: StoryObj<typeof BenchDashboardDeclare> = {
+  render: () => <BenchDashboardDeclare />,
 };
 
 /**
