@@ -31,11 +31,21 @@ export function LoyaltyRewardsEditor({
   onChange,
   errors,
   showAllErrors = false,
+  activeId = null,
+  onRowHover,
+  onRowFocus,
 }: {
   rows: EditorReward[];
   onChange: (rows: EditorReward[]) => void;
   errors: RewardErrors[];
   showAllErrors?: boolean;
+  /** Row-linking (editor only): the currently active row id, and hover/focus emitters.
+   *  Focus-within a row (any input) drives the highlight; the parent lets focus win over
+   *  hover. Same shared-state + data pattern as the view's milestone linking, plus the
+   *  §5 keyboard-focus parity. Row id is `_key` (the same id the milestone uses). */
+  activeId?: string | null;
+  onRowHover?: (id: string | null) => void;
+  onRowFocus?: (id: string | null) => void;
 }) {
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
   const markTouched = (key: string) => setTouched((current) => new Set(current).add(key));
@@ -102,7 +112,15 @@ export function LoyaltyRewardsEditor({
               {rows.map((row, ri) => {
                 const e = errors[ri] ?? {};
                 return (
-                  <TableRow key={row._key}>
+                  <TableRow
+                    key={row._key}
+                    data-reward-id={row._key}
+                    onMouseEnter={() => onRowHover?.(row._key)}
+                    onMouseLeave={() => onRowHover?.(null)}
+                    onFocus={() => onRowFocus?.(row._key)}
+                    onBlur={() => onRowFocus?.(null)}
+                    sx={{ backgroundColor: row._key === activeId ? 'action.hover' : undefined }}
+                  >
                     <TableCell>{cell(row, 'pointsToClaim', 'Points to claim', e.pointsToClaim, ri, 130)}</TableCell>
                     <TableCell>{cell(row, 'rewardType', 'Reward type', e.rewardType, ri, 120)}</TableCell>
                     <TableCell align="right">{cell(row, 'rewardAmount', 'Reward amount', e.rewardAmount, ri, 120)}</TableCell>

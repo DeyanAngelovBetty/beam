@@ -47,3 +47,26 @@ The perks **data is placeholder** — the screenshot is the spec and wasn't
 provided when this was built. Tiers + "Multiplier on Level Up" are real (from
 `LoyaltyStatusPage`); the rest is a transparent unlock-ladder scaffold. **Replace
 verbatim from the screenshot before this page is trusted.**
+
+## The status gem panel — companion, both modes *(2026-08-10)*
+
+**Table-left, panel-right — one anatomy, view and edit.** The rewards table is the
+primary record (scanning starts left); `NextGemPanel` is a companion annex on the
+right, in both the expanded view row and the editor. On narrow widths the row stacks
+**table-first**. This flip (the panel led before) makes the record primary and the
+visualization secondary — and gives the editor the "same thing, now editable" bridge:
+identical layout, one now has inputs.
+
+**The editor's panel derives from the LIVE model, not the store.** Adding a reward row
+grows the milestone ladder immediately; editing points reflects at once. Milestones are
+keyed by the reward row's `_key` (the same id the React key uses), so a new row links the
+moment it exists.
+
+**Linking is hover AND focus-within, focus wins.** The view's hover linking carries over;
+the editor, being keyboard-first, lets the row containing the focused input drive the
+highlight even when the pointer rests elsewhere — the roles-rail keyboard-focus parity
+(detail-grammar §5), applied to the milestone pattern it was scaled from. Mechanism is the
+existing shared-state + `data-` attribute linking, extended for focus; the shared
+`useLinking` hook (the roles-scoped, dim-based variant) is deliberately *not* bent to fit —
+its semantics differ and it has other consumers. The panel is companion, not control:
+clicking a milestone does nothing this pass.

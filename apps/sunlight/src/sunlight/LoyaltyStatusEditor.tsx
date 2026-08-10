@@ -17,7 +17,8 @@ import {
 } from '@betty/beam';
 import { backTo } from './backTo';
 import { LoyaltyRewardsEditor } from './LoyaltyRewardsEditor';
-import { getLoyaltyStatus, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
+import { NextGemPanel } from './NextGemPanel';
+import { getLoyaltyStatus, LOYALTY_STATUSES, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
 import { submit, getPendingFor } from './changeRequests';
 import { getCurrentUser } from './currentUser';
 import {
@@ -71,6 +72,14 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
   const [model, setModel] = useState<EditorModel>(initialModel);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Milestone ↔ reward-row linking for the companion gem panel: hover + focus-within,
+  // FOCUS WINS (the editor is keyboard-first — §5 parity). Same shared-state pattern the
+  // view uses, extended with focus. The panel derives from the LIVE model, not the store.
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const activeId = focusId ?? hoverId;
+  const nextTier = LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === status.id) + 1];
   const originalSerialized = useMemo(() => serializeModel(initialModel), [initialModel]);
   const isDirty = serializeModel(model) !== originalSerialized;
   const submittingRef = useRef(false);
@@ -170,12 +179,28 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
         </Stack>
       </Stack>
 
-      <LoyaltyRewardsEditor
-        rows={model.rewards}
-        onChange={(rewards) => setModel((m) => ({ ...m, rewards }))}
-        errors={v.rewards}
-        showAllErrors={submitAttempted}
-      />
+      {/* Table-left / panel-right — the same anatomy as the view (one anatomy, both
+          modes: the "same thing, now editable" bridge). The panel derives live from the
+          editor model, so adding a reward row grows the milestone ladder immediately. */}
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ alignItems: { md: 'flex-start' } }}>
+        <LoyaltyRewardsEditor
+          rows={model.rewards}
+          onChange={(rewards) => setModel((m) => ({ ...m, rewards }))}
+          errors={v.rewards}
+          showAllErrors={submitAttempted}
+          activeId={activeId}
+          onRowHover={setHoverId}
+          onRowFocus={setFocusId}
+        />
+        <NextGemPanel
+          currentGem={status.gem}
+          nextStatus={nextTier ? { gem: nextTier.gem, name: nextTier.name, assignedOnly: nextTier.gem === 'vip' } : undefined}
+          milestoneCost={Number(model.rewards[0]?.pointsToClaim) || 2000}
+          milestones={model.rewards.map((r) => ({ id: r._key }))}
+          highlightId={activeId}
+          onMilestoneHover={setHoverId}
+        />
+      </Stack>
 
       <Dialog open={blocker.state === 'blocked'} onClose={() => blocker.reset?.()}>
         <DialogTitle>Discard changes?</DialogTitle>

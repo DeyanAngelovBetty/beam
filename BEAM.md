@@ -249,6 +249,10 @@ Design against the real model, not a generic BO:
 - **Major dependency upgrades** follow [docs/major-upgrades.md](docs/major-upgrades.md): a red,
   install-only commit first (typecheck is *not* the blast radius), then staged fixes — and the
   barrel makes upstream codemods inert, so mind the import-rewrite recipe. *(2026-08-04.)*
+- **The approval save model** — under maker-checker, **Save creates a change request** (the live
+  entity is untouched until a different user approves) — follows
+  [docs/approval-flow.md](docs/approval-flow.md), the way each page species follows its grammar.
+  Tracer landed on Loyalty Status (`a4c64a0`). *(2026-08-10.)*
 
 ## 10. For AI assistants generating designs (Cowork / Figma agents)
 
@@ -315,6 +319,13 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
 
 ## Appendix C — Known gaps / open items
 
+- **Maker-checker (four-eyes) — tracer landed, generalization open** *(`a4c64a0`, 2026-08-10)*.
+  The full loop is proven end-to-end on **Loyalty Status** (edit → change request →
+  approve/reject, with a versioned archive as history). OPEN: generalization to payout/game
+  configs (the change-request store is generic over an applicator registry — a registration per
+  entity, not a store change), and the notifications / app-level pending indicator (a derived
+  selector over `listPending()` — nothing built). Doctrine:
+  [docs/approval-flow.md](docs/approval-flow.md).
 - Gaspar values are glanceable **demo placeholders**, not identity — real design pass
   pending; two dark defaults carry pre-correction values (`#57DDCC`/`#ED94FA`; intended
   `#2DD4BF`/`#E879F9`) — true up or bless

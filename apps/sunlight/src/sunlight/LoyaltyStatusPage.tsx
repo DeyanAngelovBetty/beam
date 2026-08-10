@@ -95,15 +95,11 @@ function ExpandedLoyaltyPanel({ status, next }: { status: LoyaltyStatus; next?: 
   const rewards = status.rewards;
 
   return (
+    // Table-left / panel-right (both modes, one anatomy): the rewards table is the
+    // primary record and scanning starts left; the gem panel is a companion annex on the
+    // right. On xs the row stacks — table-first now. Hover linking (milestones ↔ rows)
+    // is unchanged.
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ alignItems: { md: 'flex-start' } }}>
-      <NextGemPanel
-        currentGem={status.gem}
-        nextStatus={next ? { gem: next.gem, name: next.name, assignedOnly: next.gem === 'vip' } : undefined}
-        milestoneCost={rewards[0]?.pointsToClaim ?? 2000}
-        milestones={rewards.map((rw) => ({ id: rw.id }))}
-        highlightId={hoverId}
-        onMilestoneHover={setHoverId}
-      />
       <Stack spacing={1} sx={{ flex: 1, maxWidth: 720 }}>
         <Typography variant="subtitle2" color="text.secondary">
           {status.name} — claimable rewards
@@ -118,6 +114,14 @@ function ExpandedLoyaltyPanel({ status, next }: { status: LoyaltyStatus; next?: 
           aria-label={`Rewards for ${status.name}`}
         />
       </Stack>
+      <NextGemPanel
+        currentGem={status.gem}
+        nextStatus={next ? { gem: next.gem, name: next.name, assignedOnly: next.gem === 'vip' } : undefined}
+        milestoneCost={rewards[0]?.pointsToClaim ?? 2000}
+        milestones={rewards.map((rw) => ({ id: rw.id }))}
+        highlightId={hoverId}
+        onMilestoneHover={setHoverId}
+      />
     </Stack>
   );
 }
