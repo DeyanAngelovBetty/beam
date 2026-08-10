@@ -3,6 +3,7 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import RedeemIcon from '@mui/icons-material/Redeem';
 import PeopleIcon from '@mui/icons-material/People';
 import BadgeIcon from '@mui/icons-material/Badge';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import type { BeamNavItem } from '@betty/beam';
 
 /** Every navigable destination in Sunlight, and its route. */
@@ -14,6 +15,7 @@ export type SunlightPage =
   | 'default-game-configs'
   | 'meta-game-presets'
   | 'prize-wall'
+  | 'pending-approvals'
   | 'users'
   | 'roles';
 
@@ -25,6 +27,7 @@ export const PAGE_PATH: Record<SunlightPage, string> = {
   'default-game-configs': '/default-game-configs',
   'meta-game-presets': '/meta-game-presets',
   'prize-wall': '/prize-wall',
+  'pending-approvals': '/pending-approvals',
   users: '/users',
   roles: '/roles',
 };
@@ -74,6 +77,7 @@ export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[]
       label: 'Administration',
       section: true,
       children: [
+        { ...leaf('Pending Approvals', 'pending-approvals'), icon: <FactCheckIcon fontSize="small" /> },
         { ...leaf('Users', 'users'), icon: <PeopleIcon fontSize="small" /> },
         { ...leaf('Roles', 'roles'), icon: <BadgeIcon fontSize="small" /> },
       ],

@@ -12,6 +12,8 @@ import SUNLIGHT_MARK from './assets/SUNLIGHT.svg';
 import { buildSunlightNav } from './sunlight/navItems';
 import { ShellFooter } from './sunlight/ShellFooter';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
+import { LoyaltyStatusEditor } from './sunlight/LoyaltyStatusEditor';
+import { PendingApprovalsPage } from './sunlight/PendingApprovalsPage';
 import { PlaceholderPage } from './sunlight/PlaceholderPage';
 import { UsersPage } from './sunlight/UsersPage';
 import { RolesPage } from './sunlight/RolesPage';
@@ -99,6 +101,10 @@ const router = createBrowserRouter(
       element: <Layout />,
       children: [
         { index: true, element: <LoyaltyStatusPage /> },
+        // Maker-checker tracer: the loyalty ladder is fixed, so the editor only edits an
+        // existing status (no /new). Approvals is the reviewer's queue.
+        { path: 'loyalty-status/:id', element: <LoyaltyStatusEditor /> },
+        { path: 'pending-approvals', element: <PendingApprovalsPage /> },
         { path: 'perks', element: <PerksPage /> },
         { path: 'payout-configs', element: <PayoutConfigsPage /> },
         { path: 'payout-configs/new', element: <PayoutConfigEditor /> },
