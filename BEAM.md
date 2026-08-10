@@ -355,7 +355,8 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   such card. **The ladder has a real ceiling:** past `trackStart(9) = 2288px` auto-fit yields 9
   tracks while `--cols` saturates at 8 — inert today (largest numeric span is 3, and `'full'` is
   ladder-independent), but a card wanting > 8 tracks would need `MAX_COLS` raised or `'full'`.
-  `min()`-in-grid-span is modern-Chrome — if it doesn't resolve, numeric cards collapse to one track. (2)
+  `min()`-in-grid-span **resolves in Chrome — confirmed in devtools 2026-08-10** (at 1314px cards took
+  distinct widths); the fallback, if it ever regressed, is numeric cards collapsing to one track. (2)
   `dense` diverges visual from DOM order: at 3 cols `status` backfills row 1 col 3 ahead of `band`;
   at 4 cols `table` backfills ahead of `filter`. Reading/tab order stays = config `order`. (3)
   **"No empty slots" is not absolute** — dense removes the *large* holes, but a **1-track parity
@@ -372,7 +373,9 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   12-column grid gives **3 interior empty cells, constant at every width** (the rowSpan-1 `status`
   leaves a 3-wide gap beneath it), whereas V3's worst case at any single width is **1** (0 at most
   widths). V3 has *strictly fewer* holes than the grid it's judged against. `round(down, …)` for the
-  proportional value is a fresh modern-Chrome bet (CSS Values 4), same class as `min()`. **Row-
+  proportional value (CSS Values 4) **also resolves in a grid span — confirmed in devtools 2026-08-10:**
+  at 1551px Trend rendered `--min 2 / --max 4 / --divisor 2` and occupied **3 of 6 tracks** =
+  `round(down, 6/2)` clamped and guarded; `'full'` spanned every track. **Row-
   leftover absorption ("stretch to fill the free tracks beside me") is NOT expressible** and must
   not be re-added: a card can read the total track count but not its own row occupancy, so faking it
   needs position maths — the thing this model exists to avoid; a static floor only moves the hole.

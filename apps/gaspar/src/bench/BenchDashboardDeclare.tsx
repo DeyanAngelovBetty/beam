@@ -119,9 +119,9 @@ export function BenchDashboardDeclare({
             // more than --max." The bounds do real work ONLY because the middle value is
             // DYNAMIC (round(--cols/divisor)) — min/max around a STATIC span are inert:
             // clamp(2, 2, 4) = 2, the bounds never fire. round(down, x, 1) = floor, needed
-            // because cols/divisor is fractional; round() is CSS Values 4 (modern Chrome),
-            // the same support bet as min() — if it doesn't resolve in a grid span,
-            // grid-column falls back to auto and the card collapses to one track.
+            // because cols/divisor is fractional. round() is CSS Values 4; it RESOLVES in a
+            // grid span (confirmed in devtools 2026-08-10, as min() is) — if it ever
+            // regressed the tell is grid-column falling back to auto (card → one track).
             //
             // What is NOT here and CANNOT be: "stretch to fill the leftover on my row." A
             // card can read the grid's TOTAL track count (--cols) but NOT its own row
@@ -140,7 +140,7 @@ export function BenchDashboardDeclare({
           } else {
             // Fixed: span min(--cols, --span) = "the tracks I want, or all that exist,
             // whichever is smaller." Ask for more than the grid has → just get what there
-            // is, never an overflow. (min() in a grid span is the same support bet.)
+            // is, never an overflow. (min() in a grid span resolves — confirmed in devtools.)
             vars = { '--span': span } as CSSProperties;
             gridColumn = 'span min(var(--cols), var(--span, 1))';
           }

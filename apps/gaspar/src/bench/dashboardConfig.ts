@@ -15,12 +15,13 @@ export interface WidgetConfig {
   /** Placement order (dense grid flow + dock default arrangement). */
   order: number;
   /**
-   * Grid columns spanned, 1–12. Read by Variants 1 & 2. Variant 3 IGNORES this: it
-   * holds that size is the card's to declare (`WIDGETS[id].span`), not config's — so
-   * V3 reads only `id` + `order`. If V3 graduates, colSpan/rowSpan leave this shape.
+   * Grid columns spanned, 1–12. Read by **Variant 1 only** — V2/dockview uses just
+   * `id` + `order`, and V3 ignores size (the card declares its own `span`). Graduating
+   * V3 does NOT free these: retiring bench Variant 1 does, and the Lab keeps the losing
+   * variants as the record (§9), so colSpan/rowSpan stay for as long as V1 stays.
    */
   colSpan: number;
-  /** Grid rows spanned. Read by Variants 1 & 2; ignored by Variant 3 (see colSpan). */
+  /** Grid rows spanned. Read by Variant 1 only (see colSpan). */
   rowSpan: number;
 }
 
