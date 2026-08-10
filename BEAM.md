@@ -346,10 +346,16 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   chart fits with no rowSpan anywhere (the two-authorities split that caused the bug is gone).
   **Deliberate product consequence: a user CANNOT drag a card wider — the card decides its span.**
   Findings for the judging: (1) Trap 1 (a `span N` exceeding the track count) is clamped in pure
-  CSS — the container publishes its track count as `--cols` via a container-query ladder and each
-  card takes `span min(--span, --cols)`; the ladder and auto-fit are **two derivations of the same
-  count** and stay honest only while both read the shared `BASE`/`GAP` (commented at both sites).
-  `min()`-in-grid-span is modern-Chrome — if it doesn't resolve, cards collapse to one track. (2)
+  CSS — the container publishes its track count as `--cols` via a **min-width container-query
+  ladder generated from the shared `BASE`/`GAP`** (rungs at `trackStart(n)`, up to `MAX_COLS = 8`),
+  and each card takes `span min(--span, --cols)` = "the tracks I want, or all that exist, whichever
+  is smaller." The ladder and auto-fit are **two derivations of the same count** and stay honest
+  only while both read those roots (commented at both sites). A card that must always fill the row
+  declares `span: 'full'` → `grid-column: 1 / -1` (ceiling-free, no `--cols`); `filter` is the one
+  such card. **The ladder has a real ceiling:** past `trackStart(9) = 2288px` auto-fit yields 9
+  tracks while `--cols` saturates at 8 — inert today (largest numeric span is 3, and `'full'` is
+  ladder-independent), but a card wanting > 8 tracks would need `MAX_COLS` raised or `'full'`.
+  `min()`-in-grid-span is modern-Chrome — if it doesn't resolve, numeric cards collapse to one track. (2)
   `dense` diverges visual from DOM order: at 3 cols `status` backfills row 1 col 3 ahead of `band`;
   at 4 cols `table` backfills ahead of `filter`. Reading/tab order stays = config `order`. (3)
   **"No empty slots" is not absolute** — dense removes the *large* holes, but a **residual 1-track

@@ -101,14 +101,18 @@ const TXN_COLUMNS: BeamColumn<TxnRow>[] = [
 // ---- the registry ------------------------------------------------------------
 
 /**
- * `span` is the CARD's OWN width declaration — how many grid tracks it wants when
- * there's room (Variant 3's "cards declare, container satisfies" model). It lives HERE,
- * in the widget definition, NOT in dashboardConfig — the card knows its content, the
- * config author doesn't. Variant 3 reads it (clamped to the real track count); Variants
- * 1 & 2 ignore it and use colSpan/rowSpan from config. A card cannot be dragged wider —
- * the card decides its span. That is deliberate (BEAM Appendix C).
+ * `span` is the CARD's OWN width declaration — how many grid tracks it wants (Variant 3's
+ * "cards declare, container satisfies" model). It lives HERE, in the widget definition,
+ * NOT in dashboardConfig — the card knows its content, the config author doesn't. Three
+ * forms:
+ *   1        — never spans; always a single track (a compact card)
+ *   N        — wants N tracks, but takes what exists if the grid is narrower
+ *   'full'   — always EVERY track, at any count (grid-column: 1 / -1; ceiling-free)
+ * Variant 3 reads it (numeric spans clamped to the real track count); Variants 1 & 2
+ * ignore it and use colSpan/rowSpan from config. A card cannot be dragged wider — the
+ * card decides its span. That is deliberate (BEAM Appendix C).
  */
-export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: number }> = {
+export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: number | 'full' }> = {
   kpi: { title: 'KPI', node: <KpiCardWidget />, span: 2 }, // ≥2 tracks reveals its chart (CQ.threeCol)
   band: { title: 'Trend', node: <BandWidget />, span: 2 }, // trend chart wants width
   status: {
@@ -124,7 +128,7 @@ export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: n
   },
   filter: {
     title: 'Filters',
-    span: 4, // wants to run full-width — clamped to the track count, so effectively full
+    span: 'full', // a filter bar owns its whole row at every width (1 / -1) — "span 4" was a proxy for this
     node: (
       <BeamFilterBar
         aria-label="Dashboard filters"
