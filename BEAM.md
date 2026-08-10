@@ -416,8 +416,24 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   | Lane | Direction | Trigger | Truth | Status |
   |---|---|---|---|---|
   | `sync:seeds` | Figma → `tokens.ts` | any variable change | Figma | **not in repo** |
-  | `bake:derived` | code → Figma `_derived (baked)` | any derived-formula change | code | **not in repo** |
+  | `bake:derived` | code → Figma (two targets, below) | any derived-formula change | code | **not in repo** |
   | `audit:contrast` | reads resolved values, gates | after either lane | — | **not in repo** |
+
+  **`bake:derived` has TWO targets, on different axes** *(2026-08-10)* — the earlier
+  single-`_derived (baked)` description was incomplete:
+
+  | Baked output | Modes (axis) | What bakes there, and why that axis |
+  |---|---|---|
+  | `_derived (baked)` | Ontario · Alberta (**jurisdiction**) | `tableBorder`, spine — they derive from `primary`, which IS jurisdiction-scoped |
+  | `product/_ramp/*` | Sunlight · Gaspar · Midnight Assistant (**product**) | the surface ramp — product-scoped |
+
+  The surface ramp was **moved INTO the `product` collection on 2026-08-10.** It
+  previously lived in its own `_derived surfaces (baked)` collection, which duplicated
+  the product axis: a frame had to set the product mode **twice** (once per collection),
+  and a mismatch silently paired one product's fonts with another product's surfaces.
+  One collection, one switch. Naming convention now separating seeds from derived
+  *inside* `product`: **`surface/*` and `gradient/*` are seeds you author in Figma;
+  `_ramp/*` is baked output, never hand-edited** (the `_` marks generated, as `_derived` does).
 
   None of the three exists as a repo script. They are executed Figma-side via the
   MCP connector, on demand, by Deyan. **A seed or derived-token change is

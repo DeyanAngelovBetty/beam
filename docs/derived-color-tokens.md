@@ -246,8 +246,11 @@ not vigilance. That correction is the point of the whole change.
 
 **Seeds are PRODUCT-scoped** (`surfaceSeeds`, tokens.ts): anchor + step per
 scheme, per product (Figma `product/surface`). The old product-background and
-per-jurisdiction bg variables were **deleted** — **jurisdiction no longer affects
-surfaces, deliberately; do not restore it.** The step is now product- *and*
+per-jurisdiction bg variables were **deleted** — **surfaces are NOT jurisdiction-
+scoped; do not restore it.** *Why:* the jurisdiction collection holds per-product
+**primaries** because primary genuinely varies by market; **surfaces do not**, so
+duplicating them onto the jurisdiction axis produced *identical* values in both
+modes (Ontario == Alberta) — noise, not signal. The step is now product- *and*
 mode-scoped: the product half bakes at theme construction (product is a rebuild),
 the mode half still flips on `[data-beam-mode]`.
 
@@ -258,9 +261,12 @@ surface 3 computes to L 1.0151 — past pure white, impossible. Light mode has o
 for Gaspar — a wider separation).
 
 **STILL un-baked, un-audited.** Bake and contrast audit remain un-runnable
-in-repo (BEAM Appendix C), so the live ramp is unverified against those lanes. The
-Figma `_derived surfaces (baked)` collection is a designer SNAPSHOT, not the
-source — code computes the real values; do not read or mirror it.
+in-repo (BEAM Appendix C), so the live ramp is unverified against those lanes. Its
+baked output now lives at **`product/_ramp/*`** — moved into the `product` collection
+on 2026-08-10 from the standalone `_derived surfaces (baked)` collection, which
+duplicated the product axis (BEAM Appendix C). It is a designer SNAPSHOT, not the
+source — code computes the real values; do not read or mirror it. Inside `product`,
+`surface/*` and `gradient/*` are hand-authored seeds; `_ramp/*` is baked.
 
 **The nav rail — a compensator, not a ramp position** *(2026-08-06)*. `navSurface`
 sits *below* the anchor (`calc(l + navOffset * step)`, navOffset < 0) so the shell
