@@ -101,20 +101,28 @@ const TXN_COLUMNS: BeamColumn<TxnRow>[] = [
 // ---- the registry ------------------------------------------------------------
 
 /**
- * `span` is the CARD's OWN width declaration — how many grid tracks it wants (Variant 3's
- * "cards declare, container satisfies" model). It lives HERE, in the widget definition,
- * NOT in dashboardConfig — the card knows its content, the config author doesn't. Three
- * forms:
- *   1        — never spans; always a single track (a compact card)
- *   N        — wants N tracks, but takes what exists if the grid is narrower
- *   'full'   — always EVERY track, at any count (grid-column: 1 / -1; ceiling-free)
- * Variant 3 reads it (numeric spans clamped to the real track count); Variants 1 & 2
- * ignore it and use colSpan/rowSpan from config. A card cannot be dragged wider — the
- * card decides its span. That is deliberate (BEAM Appendix C).
+ * A card's OWN width declaration for Variant 3 ("cards declare, container satisfies").
+ * FOUR forms:
+ *   1            — never spans; always a single track (a compact card)
+ *   N            — wants N tracks, but takes what exists if the grid is narrower
+ *   {divisor,…}  — a PROPORTION of the grid (~1/divisor), bounded [min, max]; responds
+ *                  to track count — the ONLY dynamic input a card has
+ *   'full'       — always EVERY track, at any count (grid-column: 1 / -1; ceiling-free)
  */
-export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: number | 'full' }> = {
+export type CardSpan = number | 'full' | { divisor: number; min: number; max: number };
+
+/**
+ * `span` lives HERE, in the widget definition, NOT in dashboardConfig — the card knows its
+ * content, the config author doesn't. Variant 3 reads it (numeric/proportional spans
+ * clamped to the real track count); Variants 1 & 2 ignore it and use colSpan/rowSpan from
+ * config. A card cannot be dragged wider — the card decides its span (BEAM Appendix C).
+ */
+export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: CardSpan }> = {
   kpi: { title: 'KPI', node: <KpiCardWidget />, span: 2 }, // ≥2 tracks reveals its chart (CQ.threeCol)
-  band: { title: 'Trend', node: <BandWidget />, span: 2 }, // trend chart wants width
+  // Proportional: ~half the grid, never < 2, never > 4. Responds to track count — a wider
+  // grid gives the trend chart more room. (Bench finding: it RELOCATES the parity hole
+  // 6→7, does not reduce it — a monotonic span can't fix a parity gap. See BEAM App. C.)
+  band: { title: 'Trend', node: <BandWidget />, span: { divisor: 2, min: 2, max: 4 } },
   status: {
     title: 'Gateway status',
     span: 1, // three badges, compact

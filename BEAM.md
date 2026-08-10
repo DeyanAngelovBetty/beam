@@ -358,12 +358,26 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   `min()`-in-grid-span is modern-Chrome — if it doesn't resolve, numeric cards collapse to one track. (2)
   `dense` diverges visual from DOM order: at 3 cols `status` backfills row 1 col 3 ahead of `band`;
   at 4 cols `table` backfills ahead of `filter`. Reading/tab order stays = config `order`. (3)
-  **"No empty slots" is not absolute** — dense removes the *large* holes, but a **residual 1-track
-  hole persists at 2 and 3 columns** because the lone `span: 1` card (`status`) doesn't tessellate
-  with its `span: 2/3` neighbours; 4 columns pack fully. Tuning spans to tessellate would mean a
-  card lying about its content need — not done. Reordering (Trap 3) is reported, not solved: DOM
-  order follows config, but `auto-fit` + `dense` place cards, so a role cannot pin a position
-  without positioning authority the model exists to avoid.
+  **"No empty slots" is not absolute** — dense removes the *large* holes, but a **1-track parity
+  hole** appears at some counts (current set: one hole at 2, 3 and 6 tracks; 4/5/7 pack clean)
+  because the lone `span: 1` card (`status`) doesn't tessellate with its neighbours and no other
+  1-track card remains to backfill. Tuning spans to tessellate would mean a card lying about its
+  content need — not done. (4) **Proportional spans (Trend, `{divisor:2,min:2,max:4}` = "~half the
+  grid, 2–4") — a NEGATIVE finding, recorded plainly *(2026-08-10)*: a proportional span RELOCATES
+  the parity hole (6→7), it does NOT reduce it.** It is monotonic in `--cols`, so the value that
+  closes the 6-track hole (Trend = 3) also applies at 7, opening one there; a monotonic span cannot
+  fix a parity gap. Its real, judgeable value is the *other* thing — a card asking for a proportion
+  of the grid and GROWING with it (Trend 2→2→3→3→4 across 4–8 tracks). **But the parity gap is a
+  property of the CARD SET, not a mark against V3:** the same simulation on Variant 1's fixed
+  12-column grid gives **3 interior empty cells, constant at every width** (the rowSpan-1 `status`
+  leaves a 3-wide gap beneath it), whereas V3's worst case at any single width is **1** (0 at most
+  widths). V3 has *strictly fewer* holes than the grid it's judged against. `round(down, …)` for the
+  proportional value is a fresh modern-Chrome bet (CSS Values 4), same class as `min()`. **Row-
+  leftover absorption ("stretch to fill the free tracks beside me") is NOT expressible** and must
+  not be re-added: a card can read the total track count but not its own row occupancy, so faking it
+  needs position maths — the thing this model exists to avoid; a static floor only moves the hole.
+  Reordering (Trap 3) is reported, not solved: DOM order follows config, but `auto-fit` + `dense`
+  place cards, so a role cannot pin a position without positioning authority the model avoids.
 - ~~The page mesh sits behind the Drawer; the shell pass intends a translucent Drawer~~ —
   **landed 2026-08-06:** the rail is **frosted glass** (translucent nav-surface + `backdrop-filter`
   blur/saturate), so the mesh + dots diffuse through it as intended. Two OPEN items: (a) the

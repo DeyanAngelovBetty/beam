@@ -95,32 +95,57 @@ export function BenchDashboardDeclare({
       >
         {visible.map((w) => {
           const card = WIDGETS[w.id];
-          // A card makes ONE of three declarations about its width:
-          //   1        — never spans; always a single track (e.g. the compact status card)
-          //   N        — wants N tracks, but takes what exists if the grid is narrower
-          //   'full'   — always EVERY track, at any count (the filter bar owns its row)
-          const full = card.span === 'full';
+          // A card makes ONE of FOUR width declarations (see the CardSpan type):
+          //   1            — never spans; always a single track (the compact status card)
+          //   N            — wants N tracks, takes what exists if the grid is narrower
+          //   {divisor,…}  — a PROPORTION of the grid (~1/divisor), bounded [min, max]
+          //   'full'       — always EVERY track, at any count (1 / -1, ladder-independent)
+          //
+          // In EVERY numeric form, min(var(--cols), …) is the OUTERMOST operation. --cols
+          // is a hard ceiling and NOTHING may sit outside it — not even the proportional
+          // clamp's --min floor — or a card overflows its grid. (The trap is putting a
+          // floor outside the guard: max(3, min(--span, --cols)) at 2 tracks = max(3, 2) =
+          // 3, a 3-track span in a 2-track grid. The clamp always goes INSIDE the min.)
+          const { span } = card;
+          let vars: CSSProperties | undefined;
+          let gridColumn: string;
+          if (span === 'full') {
+            // 'full' can't be a number (min() needs one), so it uses the CSS-native
+            // 1 / -1 = "first line to the LAST line of the explicit grid" = every track.
+            // No --cols: it re-resolves at any track count, past the ladder ceiling too.
+            gridColumn = '1 / -1';
+          } else if (typeof span === 'object') {
+            // "About 1/divisor of whatever tracks exist, never fewer than --min, never
+            // more than --max." The bounds do real work ONLY because the middle value is
+            // DYNAMIC (round(--cols/divisor)) — min/max around a STATIC span are inert:
+            // clamp(2, 2, 4) = 2, the bounds never fire. round(down, x, 1) = floor, needed
+            // because cols/divisor is fractional; round() is CSS Values 4 (modern Chrome),
+            // the same support bet as min() — if it doesn't resolve in a grid span,
+            // grid-column falls back to auto and the card collapses to one track.
+            //
+            // What is NOT here and CANNOT be: "stretch to fill the leftover on my row." A
+            // card can read the grid's TOTAL track count (--cols) but NOT its own row
+            // occupancy — how many tracks are still free beside it. Grid does not expose
+            // that; deriving it means computing positions in JS, the exact thing this
+            // model exists to avoid. Proportional-to-total is expressible; absorb-the-
+            // leftover is not — and do NOT fake it with a static floor, which only moves
+            // the hole to another track count (Trend floored at 3 fills 6, strands 7).
+            vars = {
+              '--min': span.min,
+              '--max': span.max,
+              '--divisor': span.divisor,
+            } as CSSProperties;
+            gridColumn =
+              'span min(var(--cols), clamp(var(--min), round(down, var(--cols) / var(--divisor), 1), var(--max)))';
+          } else {
+            // Fixed: span min(--cols, --span) = "the tracks I want, or all that exist,
+            // whichever is smaller." Ask for more than the grid has → just get what there
+            // is, never an overflow. (min() in a grid span is the same support bet.)
+            vars = { '--span': span } as CSSProperties;
+            gridColumn = 'span min(var(--cols), var(--span, 1))';
+          }
           return (
-            <Box
-              key={w.id}
-              // A numeric card publishes its wish as --span; a 'full' card needs no number.
-              style={full ? undefined : ({ '--span': card.span } as CSSProperties)}
-              sx={{
-                // span min(--span, --cols) = "give me the tracks I want, or all that
-                // exist, whichever is smaller." A card can ask for more than the grid
-                // has; it just gets what there is, and never overflows. No JS, no
-                // positions — the container satisfies. (min() in a grid span is modern
-                // Chrome; if it doesn't resolve, grid-column falls back to auto and every
-                // numeric card collapses to one track — KPI's chart never appears.)
-                //
-                // 'full' can't be a number (min() needs one), so it uses the CSS-native
-                // 1 / -1 = "first line to the LAST line of the explicit grid" = every
-                // track. No --cols involved: it re-resolves itself at any track count,
-                // including past the ladder's ceiling — the ceiling-free way to say "all".
-                gridColumn: full ? '1 / -1' : 'span min(var(--span, 1), var(--cols))',
-                minWidth: 0,
-              }}
-            >
+            <Box key={w.id} style={vars} sx={{ gridColumn, minWidth: 0 }}>
               <WidgetShell title={card.title} gradientBorder={gradientBorder}>
                 {card.node}
               </WidgetShell>
