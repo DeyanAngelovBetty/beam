@@ -1,0 +1,23 @@
+{
+  "name": "@betty/beam-lab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "//": "The Theme Lab — graduated out of apps/gaspar on the second consumer (Sunlight, BEAM.md §2). Consumed as SOURCE via alias like @betty/beam; no build step. Imports @betty/beam through the barrel as any consumer. culori is THIS package's dep; @betty/beam stays dep-free.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@betty/beam": "*",
+    "@mui/icons-material": "^9.0.0",
+    "culori": "^4.0.2"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
+  }
+}

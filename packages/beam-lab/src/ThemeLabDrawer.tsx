@@ -71,12 +71,16 @@ const fmt = (v: number, step: number) => (step >= 1 ? String(Math.round(v)) : v.
 export function ThemeLabDrawer({
   open,
   onClose,
-  jurisdiction = 'ontario',
+  product,
+  jurisdiction,
 }: {
   open: boolean;
   onClose: () => void;
-  /** Current brand mode, carried by the app (gaspar App holds it as `brand`) → combo.scope. */
-  jurisdiction?: string;
+  /** The mounting app's product → export scope.product. Every colour read/write is live CSS
+   *  vars, already product-scoped by the app's theme; this only labels the exported combo. */
+  product: 'gaspar' | 'sunlight';
+  /** The app's current brand/jurisdiction (apps hold it as `brand`; pass it) → scope.jurisdiction. */
+  jurisdiction: string;
 }) {
   const { mode, setMode } = useColorScheme();
   const editing: Scheme = mode === 'light' ? 'light' : 'dark';
@@ -237,7 +241,7 @@ export function ThemeLabDrawer({
       // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
       // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
       // author field — the Lab has no identity; the git commit that lands the combo carries it.
-      scope: { product: 'gaspar', jurisdiction },
+      scope: { product, jurisdiction },
       createdAt: new Date().toISOString(),
       // `brand` is kept SEPARATE from surface/gradient — it routes to the BRAND collection, the
       // others to PRODUCT. The panel drafts both; the lanes officiate the split (runbook §6).

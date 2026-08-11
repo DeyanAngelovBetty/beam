@@ -8,15 +8,17 @@ import { ThemeLabDrawer } from './ThemeLabDrawer';
  * Paper (surface 1), a raised surface (2), the nav rail, and a gradient title. The override
  * sheet targets THIS iframe's document, so the mechanism is real.
  *
- * Target-chip model: pick a chip ([anchor] [hue-b]; primary is locked) → the shared L/C/H
- * group hydrates from it → drag re-derives live (anchor → the ramp strip + surfaces; hue-b →
- * the mesh/atmosphere). H/C link toggles carry edits across dark/light. Copy combo works.
+ * Target-chip model: pick a chip ([anchor] [hue-b] [hue-c ƒ] [primary BRAND]) → the shared
+ * L/C/H group hydrates from it → drag re-derives live (anchor → the ramp strip + surfaces;
+ * hue-b/hue-c → the mesh; primary → the whole family incl. alpha states). H/C link toggles
+ * carry edits across dark/light; the painted strip shows what the canvas actually wears.
+ * Copy combo exports a scoped v3 JSON.
  *
- * NOTE: the override sheet is shared module state for the session — Reset (or a refresh)
- * clears it. Expected for a live tool.
+ * Graduated from apps/gaspar to @betty/beam-lab on the second consumer (Sunlight) — BEAM.md §2.
+ * NOTE: the override sheet is shared module state for the session — Reset (or refresh) clears it.
  */
 const meta: Meta<typeof ThemeLabDrawer> = {
-  title: 'Lab/Gaspar/Theme Lab',
+  title: 'BeamLab/Theme Lab',
   component: ThemeLabDrawer,
   parameters: { layout: 'fullscreen' },
 };
@@ -65,7 +67,7 @@ export const OverSurfacesBoard: Story = {
   render: () => (
     <>
       <SurfacesBoard />
-      <ThemeLabDrawer open onClose={() => {}} />
+      <ThemeLabDrawer open onClose={() => {}} product="sunlight" jurisdiction="ontario" />
     </>
   ),
 };

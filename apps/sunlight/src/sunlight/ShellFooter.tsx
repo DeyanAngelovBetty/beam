@@ -11,6 +11,7 @@ import {
 import type { BrandName } from '@betty/beam';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 
 const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
@@ -34,9 +35,12 @@ function ModeToggle() {
 export function ShellFooter({
   brand,
   onBrandChange,
+  onOpenThemeLab,
 }: {
   brand: BrandName;
   onBrandChange: (brand: BrandName) => void;
+  /** Opens the Theme Lab drawer (@betty/beam-lab). Lives with the chrome controls. */
+  onOpenThemeLab?: () => void;
 }) {
   const jurisdictions = Object.keys(products.sunlight) as BrandName[];
   return (
@@ -56,6 +60,11 @@ export function ShellFooter({
           ))}
         </Select>
       </FormControl>
+      {onOpenThemeLab && (
+        <IconButton onClick={onOpenThemeLab} aria-label="Open Theme Lab" color="inherit">
+          <PaletteOutlinedIcon />
+        </IconButton>
+      )}
       <ModeToggle />
     </Stack>
   );

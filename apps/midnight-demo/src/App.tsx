@@ -36,6 +36,9 @@ export function App() {
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
       <CssBaseline />
+      {/* NO Theme Lab entry here (deliberate, parked): Midnight renders as product 'sunlight',
+          so a Lab mounted here would export sunlight-scoped combos from a demo retrofit shell —
+          confusing provenance. If Midnight ever graduates to a real product axis, revisit. */}
       <BeamAppShell
         title="MIDNIGHT"
         navItems={nav}

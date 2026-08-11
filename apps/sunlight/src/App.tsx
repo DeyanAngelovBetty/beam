@@ -11,6 +11,7 @@ import type { BrandName } from '@betty/beam';
 import SUNLIGHT_MARK from './assets/SUNLIGHT.svg';
 import { buildSunlightNav } from './sunlight/navItems';
 import { ShellFooter } from './sunlight/ShellFooter';
+import { ThemeLabDrawer } from '@betty/beam-lab';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { LoyaltyStatusEditor } from './sunlight/LoyaltyStatusEditor';
 import { PendingApprovalsPage } from './sunlight/PendingApprovalsPage';
@@ -80,16 +81,21 @@ function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const nav = buildSunlightNav({ pathname, navigate });
+  const [labOpen, setLabOpen] = useState(false); // Theme Lab drawer (@betty/beam-lab)
 
   return (
-    <BeamAppShell
-      brandMark={brandMark}
-      navItems={nav}
-      persistKey="beam.shell.sunlight"
-      footer={<ShellFooter brand={brand} onBrandChange={setBrand} />}
-    >
-      <Outlet />
-    </BeamAppShell>
+    <>
+      <BeamAppShell
+        brandMark={brandMark}
+        navItems={nav}
+        persistKey="beam.shell.sunlight"
+        footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
+      >
+        <Outlet />
+      </BeamAppShell>
+      {/* Non-modal — the live Sunlight app above IS the preview. product='sunlight' scopes the export. */}
+      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="sunlight" jurisdiction={brand} />
+    </>
   );
 }
 

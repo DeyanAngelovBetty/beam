@@ -13,7 +13,8 @@
     "types": ["vite/client", "node"],
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@betty/beam": ["./packages/beam/src/index.ts"]
+      "@betty/beam": ["./packages/beam/src/index.ts"],
+      "@betty/beam-lab": ["./packages/beam-lab/src/index.ts"]
     }
   }
 }

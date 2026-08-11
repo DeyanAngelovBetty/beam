@@ -4,7 +4,7 @@ import type { BrandName, BeamNavItem } from '@betty/beam';
 import GASPAR_MARK from './assets/GASPAR.svg';
 import { GASPAR_NAV, type GasparView } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
-import { ThemeLabDrawer } from './gaspar/ThemeLab/ThemeLabDrawer';
+import { ThemeLabDrawer } from '@betty/beam-lab';
 import { TransactionsPage } from './gaspar/TransactionsPage';
 import { DashboardPage } from './gaspar/DashboardPage';
 
@@ -87,7 +87,7 @@ export function App() {
         {view === 'dashboard' ? <DashboardPage /> : <TransactionsPage />}
       </BeamAppShell>
       {/* Non-modal — the live app above IS the preview; it stays interactable. */}
-      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} jurisdiction={brand} />
+      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />
     </ThemeProvider>
   );
 }
