@@ -96,7 +96,8 @@ export function BeamPageHeader({
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                bottom: 0,
+                bottom: '.65rem',
+                zIndex: -1,
                 height: 'var(--beam-title-underline-weight)',
                 borderRadius: 'var(--beam-title-underline-weight)',
                 backgroundImage:
