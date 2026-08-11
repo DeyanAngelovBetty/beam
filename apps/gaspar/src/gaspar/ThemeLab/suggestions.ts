@@ -55,9 +55,10 @@ export function readVarForScheme(scheme: 'dark' | 'light', name: string): string
   return getComputedStyle(el).getPropertyValue(name).trim();
 }
 
-/** Suggestion (starting position): light anchor from dark — L pinned, C = ratio seed, H follows. */
-export function lightAnchorFromDark(darkAnchor: string): string {
-  return resolveColor(`oklch(from ${darkAnchor} 0.9551 calc(c * 0.2) h)`);
+/** Suggestion (starting position, any target): light from dark — L pinned to the estate
+ *  constant, C = ratio seed, H follows. A start, never a binding — sliders continue from here. */
+export function lightFromDark(darkColor: string): string {
+  return resolveColor(`oklch(from ${darkColor} 0.9551 calc(c * 0.2) h)`);
 }
 
 /** Suggestion: accent (hue-b) candidates — h+90 / h+150 / h+180 at the source's own chroma. */

@@ -6,8 +6,11 @@ import { ThemeLabDrawer } from './ThemeLabDrawer';
  * Theme Lab over a SURFACES BOARD. A drawer that drives the real page is dishonest to demo
  * over nothing, so the story puts it over a compact set of genuine Beam surfaces — page,
  * Paper (surface 1), a raised surface (2), the nav rail, and a gradient title. The override
- * sheet targets THIS iframe's document, so the mechanism is real: drag the anchor and the
- * ramp swatch strip + every surface here re-derive live; Copy combo works.
+ * sheet targets THIS iframe's document, so the mechanism is real.
+ *
+ * Target-chip model: pick a chip ([anchor] [hue-b]; primary is locked) → the shared L/C/H
+ * group hydrates from it → drag re-derives live (anchor → the ramp strip + surfaces; hue-b →
+ * the mesh/atmosphere). H/C link toggles carry edits across dark/light. Copy combo works.
  *
  * NOTE: the override sheet is shared module state for the session — Reset (or a refresh)
  * clears it. Expected for a live tool.
