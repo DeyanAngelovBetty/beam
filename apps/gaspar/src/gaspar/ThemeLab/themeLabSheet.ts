@@ -54,6 +54,18 @@ export function hasDraft(): boolean {
   return Object.keys(draft.dark).length > 0 || Object.keys(draft.light).length > 0;
 }
 
+/** Is a var currently overridden for a scheme? (hue-c ƒ state: derived vs overridden.) */
+export function hasVar(scheme: Scheme, name: string): boolean {
+  return draft[scheme][name] !== undefined;
+}
+
+/** Remove ONE override for a scheme — the var falls back to its theme default (e.g. hue-c
+ *  returns to the rotation). Just that override, not the whole sheet. */
+export function removeVar(scheme: Scheme, name: string): void {
+  delete draft[scheme][name];
+  render();
+}
+
 /** Remove the sheet and clear the draft — the estate snaps back to its seeds. */
 export function reset(): void {
   draft.dark = {};

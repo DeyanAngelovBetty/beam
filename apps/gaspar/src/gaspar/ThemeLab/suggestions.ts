@@ -44,7 +44,7 @@ export function readVar(name: string): string {
  * ramp is inherited from :root, so it is NOT read this way — the ramp isn't exported anyway.)
  */
 const schemeProbes: Partial<Record<'dark' | 'light', HTMLSpanElement>> = {};
-export function readVarForScheme(scheme: 'dark' | 'light', name: string): string {
+function schemeProbe(scheme: 'dark' | 'light'): HTMLSpanElement {
   let el = schemeProbes[scheme];
   if (!el) {
     el = document.createElement('span');
@@ -53,7 +53,23 @@ export function readVarForScheme(scheme: 'dark' | 'light', name: string): string
     document.body.appendChild(el);
     schemeProbes[scheme] = el;
   }
-  return getComputedStyle(el).getPropertyValue(name).trim();
+  return el;
+}
+export function readVarForScheme(scheme: 'dark' | 'light', name: string): string {
+  return getComputedStyle(schemeProbe(scheme)).getPropertyValue(name).trim();
+}
+
+/**
+ * Resolve a colour EXPRESSION in a specific scheme's context: the probe carries
+ * data-beam-mode=scheme, so a derived `oklch(from var(--mui-palette-primary-main) …)` uses
+ * THAT scheme's primary (a hex passes straight through). Needed to read a derived hue-c for
+ * the counterpart scheme when linking / ratio-capturing.
+ */
+export function resolveForScheme(scheme: 'dark' | 'light', expr: string): string {
+  const el = schemeProbe(scheme);
+  el.style.color = 'transparent';
+  el.style.color = expr;
+  return getComputedStyle(el).color;
 }
 
 /** Suggestion (starting position, any target): light from dark — L pinned to the estate

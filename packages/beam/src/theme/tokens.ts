@@ -303,7 +303,14 @@ export const derived = {
    * forked formula. Three large soft radials, each anchored at a different edge:
    *   hue-a = primary (seed)          · top-left
    *   hue-b = --beam-gradient-hue-b   · top-right (designer seed)
-   *   hue-c = primary rotated +45° h  · bottom (derived — rotates per product free)
+   *   hue-c = --beam-gradient-hue-c   · bottom (DERIVED default, with an OVERRIDE seam)
+   * hue-c is derived-with-override: its default VALUE is the rotation expression (emitted
+   * per scheme in createBeamTheme via `derived.gradientHueC`), so it stays brand-reactive —
+   * each jurisdiction's primary rotates to its own hue-c. AXIS NOTE: the rotation is
+   * brand-reactive (follows the jurisdiction primary); an override (e.g. the Theme Lab writing
+   * a literal to the var) is a PRODUCT literal that stops following — no Figma twin until an
+   * override is officiated (derived-tokens doctrine). Reading it inlined the rotation before;
+   * the var indirection is byte-invisible.
    * Each tint MIXES TOWARD background-default at `--beam-gradient-intensity`
    * (never white/black — that's the dark-mode tint bug); the fade is to
    * `transparent` only, so the layers blend and reveal the base beneath. Painted
@@ -317,7 +324,15 @@ export const derived = {
     'radial-gradient(circle at center, oklch(from var(--beam-dot-color) l c h / var(--beam-dot-opacity)) var(--beam-dot-size), transparent var(--beam-dot-size)), ' +
     'radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
     'radial-gradient(110% 110% at 100% 0%, color-mix(in oklch, var(--beam-gradient-hue-b) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
-    'radial-gradient(130% 130% at 50% 120%, color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%)',
+    'radial-gradient(130% 130% at 50% 120%, color-mix(in oklch, var(--beam-gradient-hue-c) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%)',
+
+  /**
+   * hue-c DEFAULT — the primary rotated +45° in hue. Its value IS this expression (not a
+   * literal), so emitting it per scheme keeps it brand-reactive. The Theme Lab overrides it by
+   * writing a literal to `--beam-gradient-hue-c` on the mode block (product literal); removing
+   * that override returns it to this rotation. (See the pageMesh comment's axis note.)
+   */
+  gradientHueC: 'oklch(from var(--mui-palette-primary-main) l c calc(h + 45))',
 
   /**
    * DOT colour for the mesh dot layer — a mesh tint (primary) mixed TOWARD the
