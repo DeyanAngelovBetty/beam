@@ -86,3 +86,34 @@ export const WithBackCallback: Story = {
     action: <Button variant="contained">Quick actions</Button>,
   },
 };
+
+/**
+ * Gradient title stress — a long title that WRAPS. Verify: the text gradient spans the
+ * text box sanely, and the underline tracks the box as ONE line under the whole box (not
+ * one per line). Flip product/mode in the toolbar for the per-product dials; toggle
+ * reduced-motion to confirm the underline lands static-and-visible.
+ */
+export const LongWrappingTitle: Story = {
+  args: {
+    title: 'Default MetaGame configuration for the Ontario weekend multiplier promotion',
+    description: 'A title long enough to wrap at most widths.',
+    action: <Button variant="contained">Quick actions</Button>,
+  },
+};
+
+/**
+ * Editor-page header — back link + Cancel/primary action. The underline reveal shouldn't
+ * fight the actions layout (the title's reserved underline space is constant geometry).
+ */
+export const EditorHeader: Story = {
+  args: {
+    title: 'Topaz',
+    back: { label: 'Loyalty Status', href: '#/' },
+    action: (
+      <>
+        <Button variant="text">Cancel</Button>
+        <Button variant="contained">Submit for approval</Button>
+      </>
+    ),
+  },
+};

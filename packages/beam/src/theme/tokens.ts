@@ -82,9 +82,35 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
  * face specifically for its tabular figures (`font-variant-numeric: tabular-nums`, applied
  * in BeamDataTable's numeric cells) — the reason it beat a geometric face.
  */
-export const productFonts: Record<ProductName, { title: string; body: string }> = {
-  sunlight: { title: 'Inter', body: 'Inter' },
-  gaspar: { title: 'Sora', body: 'Geist' },
+export const productFonts: Record<ProductName, { title: string; body: string; titleWeight: number }> = {
+  // titleWeight (Figma twin: `product/font/titleWeight`; Deyan syncs Figma separately) rides
+  // with the faces and wires to the whole heading scale h1–h6 in createBeamTheme — one seed,
+  // same as the face. 600 for both to start; they diverge the day one looks wrong.
+  sunlight: { title: 'Inter', body: 'Inter', titleWeight: 600 },
+  gaspar: { title: 'Sora', body: 'Geist', titleWeight: 600 },
+};
+
+/**
+ * TITLE TREATMENT — the gradient title recipe's per-product dials (BeamPageHeader, default
+ * on). Figma twins: `product/title/{tint,underlineWeight,underlineFade}` (Deyan syncs Figma).
+ * Two gradients, deliberately different (see BeamPageHeader):
+ *  - `tint`  — % of primary mixed into text-primary for the TEXT gradient's far end. Per MODE:
+ *              a dark near-white text tolerates more tint than a light near-black one, where a
+ *              high mix raises L and costs contrast. Light values are proposals — flag: unsure,
+ *              Deyan tunes on the bench.
+ *  - `underlineWeight` — the decorative underline's px height. Per product, mode-invariant.
+ *  - `underlineFade`   — % of primary in the underline gradient's far end (mixed toward
+ *              background.default, which flips by mode — so mode variance comes free). Per
+ *              product, mode-invariant for now.
+ * A product wanting the treatment OFF dials `tint` to 0% (text renders flat text-primary) and
+ * `underlineWeight` to 0px (no underline). No prop, no branch — identity is the dials.
+ */
+export const titleSeeds: Record<
+  ProductName,
+  { tint: { dark: string; light: string }; underlineWeight: string; underlineFade: string }
+> = {
+  sunlight: { tint: { dark: '30%', light: '18%' }, underlineWeight: '2px', underlineFade: '50%' },
+  gaspar: { tint: { dark: '55%', light: '32%' }, underlineWeight: '3px', underlineFade: '50%' },
 };
 
 /** Back-compat alias for pre-product-axis callers. */

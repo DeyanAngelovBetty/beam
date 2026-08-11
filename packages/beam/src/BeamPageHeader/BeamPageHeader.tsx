@@ -68,7 +68,46 @@ export function BeamPageHeader({
         sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}
       >
         <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
-          <Typography variant="h4" component="h1">
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              position: 'relative',
+              // TEXT gradient — contrast-safe by construction: the left stop is pure
+              // text-primary; only the far end mixes in --beam-title-tint of primary, so L
+              // stays pinned near text. Clipped to the glyphs (WebkitTextFillColor guard).
+              backgroundImage:
+                'linear-gradient(to right, var(--mui-palette-text-primary), color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-title-tint), var(--mui-palette-text-primary)))',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent',
+              WebkitTextFillColor: 'transparent',
+              // Reserved block space for the underline — CONSTANT GEOMETRY: the ::after is
+              // out of flow and this padding is fixed, so the scaleX reveal never shifts
+              // layout (title wrap and the header's alignItems are unaffected).
+              pb: 'calc(var(--beam-title-underline-weight) + 4px)',
+              // Decorative UNDERLINE — the dramatic fade lives here. Under the FULL text box
+              // (left:0/right:0 span the box), so a wrapping title gets ONE underline across
+              // its box, not one per line. Reveal: left-anchored scaleX 0→1 on mount, via the
+              // `move` motion pair; transform-only. Reduced-motion zeroes the duration → it
+              // lands static at scaleX(1), visible (same standard as the gradient ring).
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 'var(--beam-title-underline-weight)',
+                borderRadius: 'var(--beam-title-underline-weight)',
+                backgroundImage:
+                  'linear-gradient(to right, var(--mui-palette-primary-main), color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-title-underline-fade), var(--mui-palette-background-default)))',
+                transformOrigin: 'left',
+                transform: 'scaleX(1)',
+                animation:
+                  'beam-title-underline-reveal var(--beam-motion-move-duration) var(--beam-motion-move-easing)',
+              },
+            }}
+          >
             {title}
           </Typography>
           {/* Status/identity slot — under the title, above the description (§4). */}

@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, derived, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, type BrandName, type ProductName } from './tokens';
 import { meta } from './textStyles';
 
 /**
@@ -18,6 +18,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   const f = productFonts[product];
   const bodyFont = `"${f.body}", "Helvetica", "Arial", sans-serif`;
   const titleFont = `"${f.title}", "Helvetica", "Arial", sans-serif`;
+  const titleWeight = f.titleWeight; // seed (Figma twin product/font/titleWeight) → whole heading scale
+  // Gradient title dials (BeamPageHeader). tint is per-mode; underline weight/fade per-product.
+  const ti = titleSeeds[product];
   // Product-scoped surface ramp. The step's PRODUCT half bakes here (per scheme);
   // its MODE half flips on the data-beam-mode seam below (product is a theme
   // rebuild, so it resolves at construction — no second seam). Anchor = surface 0.
@@ -113,14 +116,16 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // TITLE face binds to the heading scale h1–h6 only, so expressive type lives at
       // headline size and never in data. No organism sets a fontFamily; BeamPageHeader's
       // h4 title inherits the title face for free. Webfont loading is the app's job (§4.5).
-      // TODO: sync the rest of the typography collection (sizes, weights).
+      // The title WEIGHT is now a seed too (Figma twin product/font/titleWeight), shared by
+      // the whole heading scale h1–h6 exactly as the face is — one edit restyles every
+      // heading. No fontWeight appears in any organism. TODO: sync the rest (sizes).
       fontFamily: bodyFont,
-      h1: { fontFamily: titleFont },
-      h2: { fontFamily: titleFont },
-      h3: { fontFamily: titleFont },
-      h4: { fontFamily: titleFont },
-      h5: { fontFamily: titleFont },
-      h6: { fontFamily: titleFont },
+      h1: { fontFamily: titleFont, fontWeight: titleWeight },
+      h2: { fontFamily: titleFont, fontWeight: titleWeight },
+      h3: { fontFamily: titleFont, fontWeight: titleWeight },
+      h4: { fontFamily: titleFont, fontWeight: titleWeight },
+      h5: { fontFamily: titleFont, fontWeight: titleWeight },
+      h6: { fontFamily: titleFont, fontWeight: titleWeight },
     },
     components: {
       MuiCssBaseline: {
@@ -210,6 +215,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-motion-fade-easing': derived.motion.fade.easing,
             '--beam-motion-fade':
               'var(--beam-motion-fade-duration) var(--beam-motion-fade-easing)',
+            // Gradient title dials (BeamPageHeader). `tint` is per-MODE (:root = dark
+            // default; the mode selectors flip it). underline weight + fade are per-product,
+            // mode-invariant — the underline's mode variance comes free via background.default
+            // in its color-mix. Dial tint→0% / weight→0px to turn the treatment off.
+            '--beam-title-tint': ti.tint.dark,
+            '--beam-title-underline-weight': ti.underlineWeight,
+            '--beam-title-underline-fade': ti.underlineFade,
           },
           // Mode-scoped surface step (TRACER): set on the same data-beam-mode
           // layer MUI flips its palette vars on, so a mode change updates the
@@ -232,6 +244,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-border-intensity': `${borderIntensity.light.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.light.hover}%`,
             '--beam-mark-l': String(markLightness.light),
+            '--beam-title-tint': ti.tint.light,
           },
           '[data-beam-mode="dark"]': {
             colorScheme: 'dark',
@@ -250,6 +263,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
             '--beam-mark-l': String(markLightness.dark),
+            '--beam-title-tint': ti.tint.dark,
           },
 
           // Page mesh — a FIXED paint layer behind the whole document. `position:
@@ -296,6 +310,14 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
           '@keyframes beam-border-spin': {
             to: { '--beam-border-angle': '495deg' },
+          },
+          // Gradient-title underline reveal (BeamPageHeader): a left-anchored scaleX sweep on
+          // page mount. transform-only (no layout). Driven by the `move` motion pair, so the
+          // reduced-motion kill switch (which zeroes --beam-motion-move-duration) lands it
+          // instantly at scaleX(1) — static AND visible, never absent.
+          '@keyframes beam-title-underline-reveal': {
+            from: { transform: 'scaleX(0)' },
+            to: { transform: 'scaleX(1)' },
           },
 
           // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the
