@@ -12,6 +12,7 @@ import { converter, formatHex, wcagContrast } from 'culori';
  */
 
 const toOklch = converter('oklch');
+const toRgb = converter('rgb');
 
 let probe: HTMLSpanElement | null = null;
 function getProbe(): HTMLSpanElement {
@@ -85,6 +86,13 @@ export function toHex(color: string): string {
 /** WCAG contrast ratio between two colours (foreground over background). */
 export function contrast(a: string, b: string): number {
   return wcagContrast(a, b);
+}
+
+/** MUI channel format: "R G B", space-separated 0–255 integers (verified vs emitted CSS). */
+export function channelTriple(color: string): string {
+  const c = toRgb(color);
+  const to255 = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 255);
+  return c ? `${to255(c.r)} ${to255(c.g)} ${to255(c.b)}` : '0 0 0';
 }
 
 /** Smallest circular hue distance in degrees (0–180). */

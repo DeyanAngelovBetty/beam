@@ -8,7 +8,15 @@ declare module 'culori' {
     h?: number;
     alpha?: number;
   }
+  export interface Rgb {
+    mode: 'rgb';
+    r: number;
+    g: number;
+    b: number;
+    alpha?: number;
+  }
   export function converter(mode: 'oklch'): (color: string) => Oklch | undefined;
+  export function converter(mode: 'rgb'): (color: string) => Rgb | undefined;
   export function formatHex(color: string | { mode: string; [k: string]: unknown }): string;
   export function wcagContrast(a: string, b: string): number;
 }

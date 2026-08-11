@@ -22,6 +22,7 @@ import {
   resolveColor,
   toChannels,
   channelsToHex,
+  channelTriple,
   toHex,
   lightFromDark,
   accentCandidates,
@@ -106,10 +107,17 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
   // (main = pick; light/dark = pick.L + captured Δ, same C/H); contrastText is left as-is.
   const writePrimaryFamily = (scheme: Scheme, main: { l: number; c: number; h: number }) => {
     const d = familyDeltas[scheme];
-    const mk = (dl: number) => channelsToHex(clamp(main.l + dl, 0, 1), main.c, main.h);
-    setVar(scheme, '--mui-palette-primary-main', channelsToHex(main.l, main.c, main.h));
-    setVar(scheme, '--mui-palette-primary-light', mk(d.light));
-    setVar(scheme, '--mui-palette-primary-dark', mk(d.dark));
+    const hexes = {
+      main: channelsToHex(main.l, main.c, main.h),
+      light: channelsToHex(clamp(main.l + d.light, 0, 1), main.c, main.h),
+      dark: channelsToHex(clamp(main.l + d.dark, 0, 1), main.c, main.h),
+    } as const;
+    (['main', 'light', 'dark'] as const).forEach((slot) => {
+      setVar(scheme, `--mui-palette-primary-${slot}`, hexes[slot]);
+      // Also the matching CHANNEL triple ("R G B", 0–255 — MUI's format), so alpha-derived
+      // usages (hover / selected / focus) follow the draft, not the stale seed channel.
+      setVar(scheme, `--mui-palette-primary-${slot}Channel`, channelTriple(hexes[slot]));
+    });
   };
   const writeTarget = (scheme: Scheme, c: { l: number; c: number; h: number }) => {
     if (selected === 'primary') writePrimaryFamily(scheme, c);
