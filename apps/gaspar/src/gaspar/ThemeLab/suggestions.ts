@@ -1,4 +1,4 @@
-import { converter, formatHex } from 'culori';
+import { converter, formatHex, wcagContrast } from 'culori';
 
 /**
  * Colour math WITHOUT re-implementing oklch: the browser computes it. The probe element
@@ -80,4 +80,15 @@ export function channelsToHex(l: number, c: number, h: number): string {
 /** Normalize any resolved colour to hex (export + swatch labels). */
 export function toHex(color: string): string {
   return formatHex(color);
+}
+
+/** WCAG contrast ratio between two colours (foreground over background). */
+export function contrast(a: string, b: string): number {
+  return wcagContrast(a, b);
+}
+
+/** Smallest circular hue distance in degrees (0–180). */
+export function hueDistance(a: number, b: number): number {
+  const d = Math.abs(((a - b) % 360) + 360) % 360;
+  return Math.min(d, 360 - d);
 }

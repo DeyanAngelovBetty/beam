@@ -15,16 +15,18 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { setVar, reset, hasDraft, type Scheme } from './themeLabSheet';
 import {
   readVar,
   readVarForScheme,
+  resolveColor,
   toChannels,
   channelsToHex,
   toHex,
   lightFromDark,
   accentCandidates,
+  contrast,
+  hueDistance,
 } from './suggestions';
 
 /**
@@ -37,14 +39,21 @@ import {
  * officiated through docs/sync-lanes-runbook.md — no Figma/repo writes.
  */
 
-type Target = 'anchor' | 'hueB';
-const TARGET_META: Record<Target, { label: string; var: string }> = {
+type Target = 'anchor' | 'hueB' | 'primary';
+// primary's `var` is its MAIN; the family (light/dark/contrastText) derives from it (see
+// writePrimaryFamily). primary is BRAND-axis — drafts here, but export routes it separately.
+const TARGET_META: Record<Target, { label: string; var: string; brand?: boolean }> = {
   anchor: { label: 'anchor', var: '--beam-surface-anchor' },
   hueB: { label: 'hue-b', var: '--beam-gradient-hue-b' },
+  primary: { label: 'primary', var: '--mui-palette-primary-main', brand: true },
 };
+const PRIMARY_TOOLTIP =
+  'Brand-axis seed (jurisdiction). Drafts here; export routes it to the brand collection, not product.';
 const RAMP_VARS = ['--beam-ramp--1', '--beam-ramp-0', '--beam-ramp-1', '--beam-ramp-2', '--beam-ramp-3'];
 const RAMP_LABELS = ['−1', '0', '1', '2', '3'];
 const C_FALLBACK = 0.2; // estate constant: light C ≈ 0.2 × dark C
+const MIN_CONTRAST = 4.5; // WCAG AA for contrastText over primary main
+const SUBTLE_HUE_DEG = 30; // painted mesh tint within this of the canvas hue reads as subtle
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 const fmt = (v: number, step: number) => (step >= 1 ? String(Math.round(v)) : v.toFixed(3));
@@ -60,8 +69,14 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
   const [links, setLinks] = useState<Record<Target, { h: boolean; c: boolean }>>({
     anchor: { h: true, c: true },
     hueB: { h: true, c: true },
+    primary: { h: true, c: true },
   });
-  const [cRatio, setCRatio] = useState<Record<Target, number>>({ anchor: C_FALLBACK, hueB: C_FALLBACK });
+  const [cRatio, setCRatio] = useState<Record<Target, number>>({ anchor: C_FALLBACK, hueB: C_FALLBACK, primary: C_FALLBACK });
+  // primary family L-deltas (light.L − main.L, dark.L − main.L) captured per scheme on hydrate.
+  const [familyDeltas, setFamilyDeltas] = useState<Record<Scheme, { light: number; dark: number }>>({
+    dark: { light: 0, dark: 0 },
+    light: { light: 0, dark: 0 },
+  });
   const [tick, setTick] = useState(0);
   const [copied, setCopied] = useState(false);
   const bump = () => setTick((t) => t + 1);
@@ -76,11 +91,37 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
     setCRatio((r) => ({ ...r, [target]: darkC < 1e-4 ? C_FALLBACK : lightC / darkC }));
   };
 
+  // Capture the primary family's L-relationships (light/dark relative to main) for BOTH
+  // schemes, so a one-pick edit re-derives the family per scheme.
+  const captureFamily = () => {
+    const read = (s: Scheme, slot: string) => toChannels(readVarForScheme(s, `--mui-palette-primary-${slot}`)).l;
+    const forScheme = (s: Scheme) => {
+      const main = read(s, 'main');
+      return { light: read(s, 'light') - main, dark: read(s, 'dark') - main };
+    };
+    setFamilyDeltas({ dark: forScheme('dark'), light: forScheme('light') });
+  };
+
+  // Write a target's value(s) for a scheme. Primary writes the whole FAMILY from the one pick
+  // (main = pick; light/dark = pick.L + captured Δ, same C/H); contrastText is left as-is.
+  const writePrimaryFamily = (scheme: Scheme, main: { l: number; c: number; h: number }) => {
+    const d = familyDeltas[scheme];
+    const mk = (dl: number) => channelsToHex(clamp(main.l + dl, 0, 1), main.c, main.h);
+    setVar(scheme, '--mui-palette-primary-main', channelsToHex(main.l, main.c, main.h));
+    setVar(scheme, '--mui-palette-primary-light', mk(d.light));
+    setVar(scheme, '--mui-palette-primary-dark', mk(d.dark));
+  };
+  const writeTarget = (scheme: Scheme, c: { l: number; c: number; h: number }) => {
+    if (selected === 'primary') writePrimaryFamily(scheme, c);
+    else setVar(scheme, targetVar, channelsToHex(c.l, c.c, c.h));
+  };
+
   // Hydrate the sliders from the selected target's live value on open / target / scheme change.
   useEffect(() => {
     if (!open) return;
     setCh(toChannels(readVar(TARGET_META[selected].var)));
     if (selected === 'hueB') setIntensity(parseFloat(readVar('--beam-gradient-intensity')) || 0);
+    if (selected === 'primary') captureFamily();
     if (links[selected].c) captureRatio(selected);
     bump();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,18 +138,18 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
   const writeChannel = (channel: 'l' | 'c' | 'h', value: number) => {
     const next = { ...ch, [channel]: value };
     setCh(next);
-    setVar(editing, targetVar, channelsToHex(next.l, next.c, next.h));
+    writeTarget(editing, next);
     // Cross-scheme links (H = identity, C = ratio). Reconstruct the counterpart's full colour
-    // from its current L/H so only the linked channel changes.
+    // from its current main so only the linked channel changes (primary re-derives its family).
     if (channel === 'h' && links[selected].h) {
       const cp = toChannels(readVarForScheme(counterpart, targetVar));
-      setVar(counterpart, targetVar, channelsToHex(cp.l, cp.c, value));
+      writeTarget(counterpart, { l: cp.l, c: cp.c, h: value });
     }
     if (channel === 'c' && links[selected].c) {
       const cp = toChannels(readVarForScheme(counterpart, targetVar));
       const r = cRatio[selected];
       const cpC = editing === 'dark' ? value * r : value / r; // maintain light/dark = r
-      setVar(counterpart, targetVar, channelsToHex(cp.l, cpC, cp.h));
+      writeTarget(counterpart, { l: cp.l, c: cpC, h: cp.h });
     }
     bump();
   };
@@ -116,7 +157,7 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
   const applyColor = (hex: string) => {
     const c = toChannels(hex);
     setCh(c);
-    setVar(editing, targetVar, hex);
+    writeTarget(editing, c);
     bump();
   };
   const applyIntensity = (val: number) => {
@@ -140,18 +181,24 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
   };
 
   const copyCombo = () => {
-    const g = (s: Scheme) => ({
-      anchor: toHex(readVarForScheme(s, '--beam-surface-anchor')),
+    const surfaceOf = (s: Scheme) => toHex(readVarForScheme(s, '--beam-surface-anchor'));
+    const gradientOf = (s: Scheme) => ({
       hueB: toHex(readVarForScheme(s, '--beam-gradient-hue-b')),
       intensity: readVarForScheme(s, '--beam-gradient-intensity'),
     });
+    const primaryOf = (s: Scheme) => ({
+      main: toHex(readVarForScheme(s, '--mui-palette-primary-main')),
+      light: toHex(readVarForScheme(s, '--mui-palette-primary-light')),
+      dark: toHex(readVarForScheme(s, '--mui-palette-primary-dark')),
+    });
     const combo = {
-      version: 1, // schema version — the combo shape will grow (title dials in v2)
-      surface: { dark: { anchor: g('dark').anchor }, light: { anchor: g('light').anchor } },
-      gradient: {
-        dark: { hueB: g('dark').hueB, intensity: g('dark').intensity },
-        light: { hueB: g('light').hueB, intensity: g('light').intensity },
-      },
+      version: 2, // v2: adds the brand block (title dials still a later addition)
+      // `brand` is kept SEPARATE from surface/gradient on purpose — it routes to the BRAND
+      // (jurisdiction) collection, the others to PRODUCT. The panel drafts both; the lanes
+      // officiate the split (docs/sync-lanes-runbook.md).
+      brand: { primary: { dark: primaryOf('dark'), light: primaryOf('light') } },
+      surface: { dark: { anchor: surfaceOf('dark') }, light: { anchor: surfaceOf('light') } },
+      gradient: { dark: gradientOf('dark'), light: gradientOf('light') },
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -162,6 +209,22 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
   const ramp = RAMP_VARS.map(readVar);
   const accents = accentCandidates(readVar('--beam-gradient-hue-b'));
   const ratioLabel = cRatio[selected].toFixed(2);
+
+  // Primary contrastText check (no auto-flip in v1 — warn only).
+  const primaryContrast =
+    selected === 'primary'
+      ? contrast(readVar('--mui-palette-primary-contrastText'), readVar('--mui-palette-primary-main'))
+      : null;
+
+  // Painted-tint truth (hue-b): the mesh mixes the seed TOWARD the canvas, so the raw seed and
+  // what the canvas shows diverge. Probe-read the actual mix; flag when it lands near the canvas
+  // hue (reads as subtle). Instrumentation only — the mesh formula (mix-toward-canvas) is doctrine.
+  const canvas = readVar('--mui-palette-background-default');
+  const paintedTint =
+    selected === 'hueB' ? resolveColor(`color-mix(in oklch, ${readVar('--beam-gradient-hue-b')} ${readVar('--beam-gradient-intensity')}, ${canvas})`) : '';
+  const canvasCh = toChannels(canvas);
+  const paintedCh = paintedTint ? toChannels(paintedTint) : { l: 0, c: 0, h: 0 };
+  const subtleHue = Boolean(paintedTint) && canvasCh.c > 0.005 && hueDistance(paintedCh.h, canvasCh.h) <= SUBTLE_HUE_DEG;
 
   return (
     <>
@@ -222,16 +285,17 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
           {/* Target chips + hex readout of the selected target. */}
           <Stack spacing={1}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
-              {(['anchor', 'hueB'] as const).map((t) => (
+              {(['anchor', 'hueB', 'primary'] as const).map((t) => (
                 <TargetChip
                   key={t}
                   label={TARGET_META[t].label}
                   color={readVar(TARGET_META[t].var)}
                   selected={selected === t}
+                  brand={TARGET_META[t].brand}
+                  tooltip={TARGET_META[t].brand ? PRIMARY_TOOLTIP : `Edit ${TARGET_META[t].label}`}
                   onSelect={() => setSelected(t)}
                 />
               ))}
-              <PrimaryChip color={readVar('--mui-palette-primary-main')} />
             </Stack>
             <Typography variant="caption" color="text.secondary">
               {TARGET_META[selected].label}: {channelsToHex(ch.l, ch.c, ch.h)}
@@ -265,6 +329,12 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
                 Suggest light from dark
               </Button>
             )}
+            {selected === 'primary' && primaryContrast !== null && primaryContrast < MIN_CONTRAST && (
+              <Typography variant="caption" color="warning.main" role="alert">
+                contrastText ⁄ main contrast {primaryContrast.toFixed(2)}:1 — below {MIN_CONTRAST}:1. Left
+                as-is (no auto-flip in v1).
+              </Typography>
+            )}
           </Stack>
 
           {/* Suggestions + intensity — ONLY when hue-b is the target. */}
@@ -286,6 +356,21 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
                 ))}
               </Stack>
               <ChannelRow label="Int %" value={intensity} min={0} max={100} step={1} onChange={applyIntensity} />
+              {/* Painted-tint truth — the mesh mixes the seed TOWARD the canvas, so this is what
+                  the atmosphere actually shows (not the raw seed). */}
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">
+                  Mesh paints:
+                </Typography>
+                <Tooltip title={`Resolved mesh tint ${paintedTint ? toHex(paintedTint) : ''}`}>
+                  <Box sx={{ width: 40, height: 24, borderRadius: 1, backgroundColor: paintedTint, border: '1px solid', borderColor: 'divider' }} />
+                </Tooltip>
+              </Stack>
+              {subtleHue && (
+                <Typography variant="caption" color="text.secondary">
+                  This hue mixes close to the canvas — it will read as subtle.
+                </Typography>
+              )}
             </Stack>
           )}
 
@@ -318,8 +403,9 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
               </Button>
             </Stack>
             <Typography variant="caption" color="text.secondary">
-              Session only — refresh discards. This panel drafts; officiating runs through the sync
-              lanes (docs/sync-lanes-runbook.md). No writes to Figma or the repo.
+              Session only — refresh discards. This panel drafts; the sync lanes officiate
+              (docs/sync-lanes-runbook.md) — brand (primary) routes to the jurisdiction collection,
+              surface/gradient to product. No writes to Figma or the repo.
             </Typography>
           </Stack>
         </Stack>
@@ -385,55 +471,63 @@ function LinkToggle({ on, onToggle, tooltip }: { on: boolean; onToggle: () => vo
   );
 }
 
-function TargetChip({ label, color, selected, onSelect }: { label: string; color: string; selected: boolean; onSelect: () => void }) {
+function TargetChip({
+  label,
+  color,
+  selected,
+  brand,
+  tooltip,
+  onSelect,
+}: {
+  label: string;
+  color: string;
+  selected: boolean;
+  brand?: boolean;
+  tooltip: string;
+  onSelect: () => void;
+}) {
   return (
-    <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
-      <Box
-        component="button"
-        aria-pressed={selected}
-        aria-label={`Edit ${label}`}
-        onClick={onSelect}
-        sx={{
-          width: 44,
-          height: 44,
-          borderRadius: 1.5,
-          cursor: 'pointer',
-          backgroundColor: color,
-          border: 'none',
-          boxShadow: selected
-            ? '0 0 0 2px var(--mui-palette-primary-main)'
-            : 'inset 0 0 0 1px var(--mui-palette-divider)',
-        }}
-      />
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-    </Stack>
-  );
-}
-
-function PrimaryChip({ color }: { color: string }) {
-  return (
-    <Tooltip title="Brand-axis seed (jurisdiction) — not editable from the product panel.">
-      <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
+    <Tooltip title={tooltip}>
+      <Stack spacing={0.5} sx={{ alignItems: 'center', position: 'relative' }}>
+        {/* BRAND tag — marks the axis boundary without a lock (it's editable now, just routed). */}
+        {brand && (
+          <Box
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              top: -7,
+              zIndex: 1,
+              px: 0.5,
+              borderRadius: 0.5,
+              fontSize: 9,
+              lineHeight: '14px',
+              letterSpacing: 0.5,
+              backgroundColor: 'var(--mui-palette-primary-main)',
+              color: 'var(--mui-palette-primary-contrastText)',
+            }}
+          >
+            BRAND
+          </Box>
+        )}
         <Box
-          aria-label="primary — brand-axis seed, locked"
+          component="button"
+          aria-pressed={selected}
+          aria-label={`Edit ${label}`}
+          onClick={onSelect}
           sx={{
             width: 44,
             height: 44,
             borderRadius: 1.5,
+            cursor: 'pointer',
             backgroundColor: color,
-            boxShadow: 'inset 0 0 0 1px var(--mui-palette-divider)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--mui-palette-primary-contrastText)',
+            border: 'none',
+            boxShadow: selected
+              ? '0 0 0 2px var(--mui-palette-primary-main)'
+              : 'inset 0 0 0 1px var(--mui-palette-divider)',
           }}
-        >
-          <LockOutlinedIcon fontSize="small" />
-        </Box>
+        />
         <Typography variant="caption" color="text.secondary">
-          primary
+          {label}
         </Typography>
       </Stack>
     </Tooltip>
