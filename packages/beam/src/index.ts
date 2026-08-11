@@ -57,6 +57,7 @@ export {
   Stack,
   Box,
   Divider,
+  Slider,
   Pagination,
   Paper,
   // Layout / navigation — the app-shell vocabulary. Here because SunlightShell

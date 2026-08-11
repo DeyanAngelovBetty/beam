@@ -4,6 +4,7 @@ import type { BrandName, BeamNavItem } from '@betty/beam';
 import GASPAR_MARK from './assets/GASPAR.svg';
 import { GASPAR_NAV, type GasparView } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
+import { ThemeLabDrawer } from './gaspar/ThemeLab/ThemeLabDrawer';
 import { TransactionsPage } from './gaspar/TransactionsPage';
 import { DashboardPage } from './gaspar/DashboardPage';
 
@@ -61,6 +62,7 @@ export function App() {
   // `view` tag (navItems.tsx); we wire selected/onClick from it. Dashboard is the
   // default landing view; the bench lives in Storybook, not the app.
   const [view, setView] = useState<GasparView>('dashboard');
+  const [labOpen, setLabOpen] = useState(false); // Theme Lab drawer (Gaspar only)
   const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
 
   const navItems = useMemo<BeamNavItem[]>(
@@ -80,10 +82,12 @@ export function App() {
         brandMark={brandMark}
         navItems={navItems}
         persistKey="beam.shell.gaspar"
-        footer={<ShellFooter brand={brand} onBrandChange={setBrand} />}
+        footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
       >
         {view === 'dashboard' ? <DashboardPage /> : <TransactionsPage />}
       </BeamAppShell>
+      {/* Non-modal — the live app above IS the preview; it stays interactable. */}
+      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} />
     </ThemeProvider>
   );
 }

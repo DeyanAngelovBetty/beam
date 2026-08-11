@@ -1,0 +1,68 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Box, Stack, Typography, Paper, BeamPageHeader, BeamStatusBadge } from '@betty/beam';
+import { ThemeLabDrawer } from './ThemeLabDrawer';
+
+/**
+ * Theme Lab over a SURFACES BOARD. A drawer that drives the real page is dishonest to demo
+ * over nothing, so the story puts it over a compact set of genuine Beam surfaces — page,
+ * Paper (surface 1), a raised surface (2), the nav rail, and a gradient title. The override
+ * sheet targets THIS iframe's document, so the mechanism is real: drag the anchor and the
+ * ramp swatch strip + every surface here re-derive live; Copy combo works.
+ *
+ * NOTE: the override sheet is shared module state for the session — Reset (or a refresh)
+ * clears it. Expected for a live tool.
+ */
+const meta: Meta<typeof ThemeLabDrawer> = {
+  title: 'Lab/Gaspar/Theme Lab',
+  component: ThemeLabDrawer,
+  parameters: { layout: 'fullscreen' },
+};
+export default meta;
+type Story = StoryObj<typeof ThemeLabDrawer>;
+
+function SurfacesBoard() {
+  return (
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', display: 'flex' }}>
+      {/* Nav rail — derives from the anchor (nav surface/edge). */}
+      <Box sx={{ width: 200, background: 'var(--beam-nav-surface)', borderRight: '1px solid', borderColor: 'divider', p: 2 }}>
+        <Stack spacing={1}>
+          <Typography variant="overline" color="text.secondary">Nav rail</Typography>
+          {['Dashboard', 'Transactions', 'Routing'].map((l) => (
+            <Typography key={l} variant="body2">{l}</Typography>
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Content — page bg + the ramp surfaces + a gradient title. */}
+      <Stack spacing={3} sx={{ flex: 1, p: 4, pr: '400px' /* clear the fixed drawer */ }}>
+        <BeamPageHeader title="Theme Lab preview" description="Drag the anchor — every surface re-derives." />
+
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Stack spacing={1.5}>
+            <Typography variant="subtitle2">Surface 1 (Paper)</Typography>
+            <Stack direction="row" spacing={1}>
+              <BeamStatusBadge status="active" />
+              <BeamStatusBadge status="pending" label="Pending" />
+              <BeamStatusBadge status="error" />
+            </Stack>
+            <Box sx={{ backgroundColor: 'var(--beam-surface-2)', borderRadius: 2, p: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Surface 2 (Menu / raised) — one more step up the ramp.
+              </Typography>
+            </Box>
+          </Stack>
+        </Paper>
+      </Stack>
+    </Box>
+  );
+}
+
+/** The drawer open over the board — the honest live-mechanism demo. */
+export const OverSurfacesBoard: Story = {
+  render: () => (
+    <>
+      <SurfacesBoard />
+      <ThemeLabDrawer open onClose={() => {}} />
+    </>
+  ),
+};
