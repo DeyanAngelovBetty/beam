@@ -91,6 +91,29 @@ one formula source imported from the package.)
 fails the run below threshold. This is the lane that once caught a real WCAG
 failure — it is the reason hardcoded colours are banned (BEAM.md §3).
 
+## §6 — Officiating a combo (the lanes with a JSON front door)
+
+A Theme Lab export (schema v3+) is the input format for a full lane
+run. "Official" = three stores agree + one gate passes: Figma
+seeds (product + brand collections per combo.scope) · tokens.ts
+mirror · _ramp bake · audit:contrast green.
+
+Procedure (manual, current): combo JSON → validate scope → §1 seed
+write in Figma (routing: surface/gradient → product collection at
+scope.product's mode; brand.primary → brand collection at
+scope.jurisdiction — never cross) → §2 code mirror → commit the
+combo into design/combos/ as the record → §4 bake → §5 audit.
+Git review of the combo file is the four-eyes; the combos directory
+is the version history. (Same governance shape as the maker-checker
+flow in docs/approval-flow.md — one org, one approval grammar.)
+
+Automation seams, in order of arrival: sync:seeds grows a
+--combo <file> input (tokens.ts codegen has no gate); the Figma
+half needs either the connector-assisted lane (today) or the
+planned combo-import plugin (Plugin API has no plan gate; REST
+variable writes are Enterprise-only — the plugin is the honest
+path). audit:contrast gates both.
+
 ## Open
 
 - `underlineOffset` variable carries `FONT_FAMILY` scope (mirrored from the

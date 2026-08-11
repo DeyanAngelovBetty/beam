@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "name": "gaspar-plum-baseline",
+  "scope": { "product": "gaspar", "jurisdiction": "ontario" },
+  "createdAt": "2026-08-11T00:00:00.000Z",
+  "brand": {
+    "primary": {
+      "dark": { "main": "#57ddcc", "light": "#57ddcc", "dark": "#209486" },
+      "light": { "main": "#0f766e", "light": "#3f918b", "dark": "#0b534d" }
+    }
+  },
+  "surface": {
+    "dark": { "anchor": "#160b11" },
+    "light": { "anchor": "#f2eff1" }
+  },
+  "gradient": {
+    "dark": { "hueB": "#68dd57", "intensity": "22%" },
+    "light": { "hueB": "#17760f", "intensity": "14%" }
+  }
+}

@@ -61,10 +61,23 @@ const C_FALLBACK = 0.2; // estate constant: light C ≈ 0.2 × dark C
 const MIN_CONTRAST = 4.5; // WCAG AA for contrastText over primary main
 const SUBTLE_HUE_DEG = 30; // painted mesh tint within this of the canvas hue reads as subtle
 
+/** Slug-safe combo name (lowercase, hyphens) — the eventual design/combos/<slug>.json name. */
+const slug = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled-combo';
+
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 const fmt = (v: number, step: number) => (step >= 1 ? String(Math.round(v)) : v.toFixed(3));
 
-export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ThemeLabDrawer({
+  open,
+  onClose,
+  jurisdiction = 'ontario',
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** Current brand mode, carried by the app (gaspar App holds it as `brand`) → combo.scope. */
+  jurisdiction?: string;
+}) {
   const { mode, setMode } = useColorScheme();
   const editing: Scheme = mode === 'light' ? 'light' : 'dark';
   const counterpart: Scheme = editing === 'dark' ? 'light' : 'dark';
@@ -86,6 +99,7 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
   });
   const [tick, setTick] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [comboName, setComboName] = useState('');
   const bump = () => setTick((t) => t + 1);
 
   const targetVar = TARGET_META[selected].var;
@@ -218,10 +232,15 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
       dark: toHex(readVarForScheme(s, '--mui-palette-primary-dark')),
     });
     const combo = {
-      version: 2, // v2: adds the brand block (title dials still a later addition)
-      // `brand` is kept SEPARATE from surface/gradient on purpose — it routes to the BRAND
-      // (jurisdiction) collection, the others to PRODUCT. The panel drafts both; the lanes
-      // officiate the split (docs/sync-lanes-runbook.md).
+      version: 3, // v3: combos know their scope (name / scope / createdAt)
+      name: slug(comboName || 'untitled-combo'),
+      // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
+      // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
+      // author field — the Lab has no identity; the git commit that lands the combo carries it.
+      scope: { product: 'gaspar', jurisdiction },
+      createdAt: new Date().toISOString(),
+      // `brand` is kept SEPARATE from surface/gradient — it routes to the BRAND collection, the
+      // others to PRODUCT. The panel drafts both; the lanes officiate the split (runbook §6).
       brand: { primary: { dark: primaryOf('dark'), light: primaryOf('light') } },
       surface: { dark: { anchor: surfaceOf('dark') }, light: { anchor: surfaceOf('light') } },
       gradient: { dark: gradientOf('dark'), light: gradientOf('light') },
@@ -465,18 +484,31 @@ export function ThemeLabDrawer({ open, onClose }: { open: boolean; onClose: () =
 
           {/* Footer */}
           <Stack spacing={1}>
-            <Stack direction="row" spacing={1}>
-              <Button variant="contained" size="small" onClick={copyCombo} sx={{ flex: 1 }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <TextField
+                size="small"
+                value={comboName}
+                onChange={(e) => setComboName(e.target.value)}
+                placeholder="combo name"
+                aria-label="Combo name"
+                sx={{ flex: 1 }}
+              />
+              <Button variant="contained" size="small" onClick={copyCombo}>
                 Copy combo
               </Button>
-              <Button variant="outlined" size="small" onClick={resetAll} disabled={!hasDraft()}>
-                Reset
-              </Button>
             </Stack>
+            {comboName.trim() && (
+              <Typography variant="caption" color="text.secondary">
+                → {slug(comboName)}.json
+              </Typography>
+            )}
+            <Button variant="outlined" size="small" onClick={resetAll} disabled={!hasDraft()} sx={{ alignSelf: 'flex-start' }}>
+              Reset
+            </Button>
             <Typography variant="caption" color="text.secondary">
               Session only — refresh discards. This panel drafts; the sync lanes officiate
-              (docs/sync-lanes-runbook.md) — brand (primary) routes to the jurisdiction collection,
-              surface/gradient to product. No writes to Figma or the repo.
+              (docs/sync-lanes-runbook.md §6) — brand (primary) routes to the jurisdiction
+              collection, surface/gradient to product. No writes to Figma or the repo.
             </Typography>
           </Stack>
         </Stack>

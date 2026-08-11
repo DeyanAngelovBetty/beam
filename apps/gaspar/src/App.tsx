@@ -87,7 +87,7 @@ export function App() {
         {view === 'dashboard' ? <DashboardPage /> : <TransactionsPage />}
       </BeamAppShell>
       {/* Non-modal — the live app above IS the preview; it stays interactable. */}
-      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} />
+      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} jurisdiction={brand} />
     </ThemeProvider>
   );
 }
