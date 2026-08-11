@@ -102,15 +102,40 @@ export const productFonts: Record<ProductName, { title: string; body: string; ti
  *  - `underlineFade`   — % of primary in the underline gradient's far end (mixed toward
  *              background.default, which flips by mode — so mode variance comes free). Per
  *              product, mode-invariant for now.
- * A product wanting the treatment OFF dials `tint` to 0% (text renders flat text-primary) and
- * `underlineWeight` to 0px (no underline). No prop, no branch — identity is the dials.
+ *  - `underlineOffset` — the underline's tuck depth (its `bottom`), so it passes BEHIND the
+ *              glyphs (marker posture). Per product, mode-invariant (geometry).
+ *  - `halo`   — the halo-clone's text-shadow blur radius. The halo impersonates the CANVAS
+ *              (background.default) to carve a skip-ink gap between glyph edges and the
+ *              underline. Per MODE (a near-white light-mode halo reads differently from a
+ *              near-black dark one) — light values are proposals, flag: unsure, Deyan tunes.
+ * A product wanting the treatment OFF dials `tint`→0% (flat text-primary), `underlineWeight`
+ * →0px (no underline), and/or `halo`→0px (no separation). No prop, no branch — the dials are
+ * the identity.
  */
 export const titleSeeds: Record<
   ProductName,
-  { tint: { dark: string; light: string }; underlineWeight: string; underlineFade: string }
+  {
+    tint: { dark: string; light: string };
+    underlineWeight: string;
+    underlineFade: string;
+    underlineOffset: string;
+    halo: { dark: string; light: string };
+  }
 > = {
-  sunlight: { tint: { dark: '30%', light: '18%' }, underlineWeight: '2px', underlineFade: '50%' },
-  gaspar: { tint: { dark: '55%', light: '32%' }, underlineWeight: '3px', underlineFade: '50%' },
+  sunlight: {
+    tint: { dark: '30%', light: '18%' },
+    underlineWeight: '2px',
+    underlineFade: '50%',
+    underlineOffset: '.5rem', // shallower than gaspar — calmer with the 2px weight (proposed)
+    halo: { dark: '4px', light: '5px' },
+  },
+  gaspar: {
+    tint: { dark: '55%', light: '32%' },
+    underlineWeight: '3px',
+    underlineFade: '50%',
+    underlineOffset: '.65rem', // Deyan's bench value
+    halo: { dark: '5px', light: '6px' },
+  },
 };
 
 /** Back-compat alias for pre-product-axis callers. */

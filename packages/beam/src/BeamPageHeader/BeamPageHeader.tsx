@@ -68,36 +68,36 @@ export function BeamPageHeader({
         sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}
       >
         <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
+          {/* The title renders TWICE inside one h1: a HALO clone underneath (impersonates
+              the canvas to carve a skip-ink gap between glyph edges and the underline) and
+              the GRADIENT fill on top (defines the box). text-shadow can't do this — with
+              background-clip:text the gradient IS the background and a shadow paints above
+              it, smearing the fill; a layered clone separates cleanly. The halo is
+              aria-hidden + unselectable, so the title announces & copies ONCE. */}
           <Typography
             variant="h4"
             component="h1"
             sx={{
               position: 'relative',
-              // TEXT gradient — contrast-safe by construction: the left stop is pure
-              // text-primary; only the far end mixes in --beam-title-tint of primary, so L
-              // stays pinned near text. Clipped to the glyphs (WebkitTextFillColor guard).
-              backgroundImage:
-                'linear-gradient(to right, var(--mui-palette-text-primary), color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-title-tint), var(--mui-palette-text-primary)))',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent',
-              WebkitTextFillColor: 'transparent',
-              // Reserved block space for the underline — CONSTANT GEOMETRY: the ::after is
-              // out of flow and this padding is fixed, so the scaleX reveal never shifts
-              // layout (title wrap and the header's alignItems are unaffected).
+              // Isolate so the z-ladder stays LOCAL — a bare negative z falls behind PARENT
+              // backgrounds (the old inline -1 worked by accident of ambient stacking).
+              // Ladder inside this context, bottom → top: underline ::after (z1) · halo (z2)
+              // · gradient (z3).
+              isolation: 'isolate',
+              // Reserved block space — CONSTANT GEOMETRY: the ::after is out of flow and this
+              // padding is fixed, so the scaleX reveal never shifts layout.
               pb: 'calc(var(--beam-title-underline-weight) + 4px)',
-              // Decorative UNDERLINE — the dramatic fade lives here. Under the FULL text box
-              // (left:0/right:0 span the box), so a wrapping title gets ONE underline across
-              // its box, not one per line. Reveal: left-anchored scaleX 0→1 on mount, via the
-              // `move` motion pair; transform-only. Reduced-motion zeroes the duration → it
-              // lands static at scaleX(1), visible (same standard as the gradient ring).
+              // UNDERLINE (z1, bottom) — tucked BEHIND the glyphs (marker posture) by
+              // --beam-title-underline-offset. Under the FULL text box (one line, not per
+              // line). Reveal: scaleX 0→1 on mount, `move` pair, transform-only; reduced
+              // motion zeroes the duration → lands static at scaleX(1), visible.
               '&::after': {
                 content: '""',
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                bottom: '.65rem',
-                zIndex: -1,
+                bottom: 'var(--beam-title-underline-offset)',
+                zIndex: 1,
                 height: 'var(--beam-title-underline-weight)',
                 borderRadius: 'var(--beam-title-underline-weight)',
                 backgroundImage:
@@ -107,9 +107,40 @@ export function BeamPageHeader({
                 animation:
                   'beam-title-underline-reveal var(--beam-motion-move-duration) var(--beam-motion-move-easing)',
               },
+              // HALO clone (z2) — absolute over the box, so it tracks the fill's wrapping for
+              // free. Colour = the CANVAS (background.default), NEVER a black literal (the
+              // anchor changes this afternoon), with a soft same-colour blur
+              // (--beam-title-halo). Halo 0px = separation off. aria-hidden + no
+              // pointer/select → the title is announced & copied once.
+              '& .BeamPageHeader-titleHalo': {
+                position: 'absolute',
+                inset: 0,
+                zIndex: 2,
+                pointerEvents: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                color: 'var(--mui-palette-background-default)',
+                textShadow: '0 0 var(--beam-title-halo) var(--mui-palette-background-default)',
+              },
+              // GRADIENT fill (z3, top) — in NORMAL FLOW, so it DEFINES the box (the halo
+              // tracks it → wrapping stays correct for free). Contrast-safe: left stop pure
+              // text-primary, far end mixes --beam-title-tint of primary → L pinned near text.
+              '& .BeamPageHeader-titleFill': {
+                position: 'relative',
+                zIndex: 3,
+                backgroundImage:
+                  'linear-gradient(to right, var(--mui-palette-text-primary), color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-title-tint), var(--mui-palette-text-primary)))',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                color: 'transparent',
+                WebkitTextFillColor: 'transparent',
+              },
             }}
           >
-            {title}
+            <span aria-hidden className="BeamPageHeader-titleHalo">
+              {title}
+            </span>
+            <span className="BeamPageHeader-titleFill">{title}</span>
           </Typography>
           {/* Status/identity slot — under the title, above the description (§4). */}
           {status}
