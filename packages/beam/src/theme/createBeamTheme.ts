@@ -81,9 +81,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
           action,
           background: {
-            default: s.light.anchor, // surface 0 — the page (light anchor seed)
-            paper: derived.surface.paper, // surface 1 — one compressed step up
-            ...({ paperChannel: undefined } as object),
+            // Aliases to the REGISTERED ramp. The anchor hex now lives in --beam-surface-anchor
+            // (emitted per scheme below); the ramp derives from it, so a live anchor change
+            // re-derives the whole surface chain. Byte-identical: ramp-0 = anchor, ramp-1 = the
+            // old paper formula.
+            default: 'var(--beam-ramp-0)', // surface 0 — the page
+            paper: 'var(--beam-ramp-1)', // surface 1 — one step up
+            // Both are var() refs MUI can't extract a channel from; skip channel-gen (nothing
+            // reads *Channel — verified). Same trick paper already used.
+            ...({ defaultChannel: undefined, paperChannel: undefined } as object),
           },
         },
       },
@@ -99,11 +105,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
           action,
           background: {
-            default: s.dark.anchor, // surface 0 — the page (anchor seed)
-            paper: derived.surface.paper, // surface 1 — one step up (derived)
-            // paper is a relative-color expr MUI can't extract a channel from;
-            // provide the key so it skips channel-gen silently. Nothing reads it.
-            ...({ paperChannel: undefined } as object),
+            // Aliases to the registered ramp (see the light block). Anchor lives in
+            // --beam-surface-anchor; ramp-0 = anchor, ramp-1 = the old paper formula.
+            default: 'var(--beam-ramp-0)', // surface 0 — the page
+            paper: 'var(--beam-ramp-1)', // surface 1 — one step up
+            // Both are var() refs MUI can't channel-extract; skip channel-gen (nothing reads it).
+            ...({ defaultChannel: undefined, paperChannel: undefined } as object),
           },
         },
       },
@@ -171,22 +178,31 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-spine-default': derived.spine.default,
             '--beam-spine-warning': derived.spine.warning,
             '--beam-spine-danger': derived.spine.danger,
-            // Surface ramp (§9), now LOAD-BEARING. The step's :root default is
-            // this product's DARK step (defaultMode), guarding SSR / the
-            // no-attribute frame; the mode selectors below flip it with NO theme
-            // rebuild (§5). Each surface FORMULA is mode+product-invariant — it
-            // resolves through --mui-palette-background-default and the step var.
-            // Roles alias positions: 0 = background.default, 1 = background.paper,
-            // 2 = Menu/Popover, 3 = Dialog. `--beam-surface--1` (sunken) is
-            // emitted but reserved — no consumer this pass.
+            // Surface ramp (§9), now LOAD-BEARING and MATERIALIZED as a chain: the anchor
+            // SEED (the ONE hex, per scheme) → the registered ramp (formula once per slot) →
+            // aliases. The anchor + step :root defaults are this product's DARK values
+            // (defaultMode), guarding SSR / the no-attribute frame; the mode selectors below
+            // flip them with NO theme rebuild (§5).
+            '--beam-surface-anchor': s.dark.anchor,
             '--beam-surface-step': String(s.dark.step),
             '--beam-surface-nav-offset': String(s.dark.navOffset),
             '--beam-surface-nav-chroma': String(s.dark.navChroma),
             '--beam-surface-nav-spread': String(s.dark.navSpread),
-            '--beam-surface--1': derived.surface.sunken,
-            '--beam-surface-1': derived.surface.paper,
-            '--beam-surface-2': derived.surface.raised,
-            '--beam-surface-3': derived.surface.top,
+            // The ramp — formula ONCE per slot, from the anchor seed. Registered <color>
+            // (above) so these COMPUTE to resolved colours. Mode-invariant: the anchor + step
+            // they read flip per scheme, so the ramp flips with them.
+            '--beam-ramp--1': derived.ramp.sunken,
+            '--beam-ramp-0': derived.ramp.anchor,
+            '--beam-ramp-1': derived.ramp.paper,
+            '--beam-ramp-2': derived.ramp.raised,
+            '--beam-ramp-3': derived.ramp.top,
+            // Elevation aliases — point at the ramp, never repeat the formula. Roles:
+            // 0 = background.default, 1 = background.paper, 2 = Menu/Popover, 3 = Dialog.
+            // `--beam-surface--1` (sunken) reserved — no consumer this pass.
+            '--beam-surface--1': 'var(--beam-ramp--1)',
+            '--beam-surface-1': 'var(--beam-ramp-1)',
+            '--beam-surface-2': 'var(--beam-ramp-2)',
+            '--beam-surface-3': 'var(--beam-ramp-3)',
             // Rail background — one swappable recipe, consumed at the two rail sites.
             '--beam-nav-surface': derived.navSurface,
             // Frosted-glass rail. Blur is scheme-invariant; alpha + saturate flip.
@@ -233,6 +249,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // formula var stays in :root; only its input flips here.
           '[data-beam-mode="light"]': {
             colorScheme: 'light',
+            '--beam-surface-anchor': s.light.anchor,
             '--beam-surface-step': String(s.light.step),
             '--beam-surface-nav-offset': String(s.light.navOffset),
             '--beam-surface-nav-chroma': String(s.light.navChroma),
@@ -253,6 +270,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
           '[data-beam-mode="dark"]': {
             colorScheme: 'dark',
+            '--beam-surface-anchor': s.dark.anchor,
             '--beam-surface-step': String(s.dark.step),
             '--beam-surface-nav-offset': String(s.dark.navOffset),
             '--beam-surface-nav-chroma': String(s.dark.navChroma),
@@ -314,6 +332,17 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inherits: 'false',
             initialValue: '1px',
           },
+          // Surface ramp, REGISTERED as <color> so the browser COMPUTES the oklch(from …)
+          // formula to a resolved colour — getComputedStyle('--beam-ramp-N') returns a real
+          // value, not the formula string. That makes the browser the formula engine for the
+          // bake lane and the Theme Lab panel (both READ the ramp). inherits: true so the
+          // resolved colours are available everywhere. initialValue is a never-used fallback
+          // (the formula is always set at :root); transparent makes a resolution failure LOUD.
+          '@property --beam-ramp--1': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          '@property --beam-ramp-0': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          '@property --beam-ramp-1': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          '@property --beam-ramp-2': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          '@property --beam-ramp-3': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
           '@keyframes beam-border-spin': {
             to: { '--beam-border-angle': '495deg' },
           },

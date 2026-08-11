@@ -329,23 +329,29 @@ export const derived = {
   dotColor: 'color-mix(in oklch, var(--mui-palette-primary-main) 45%, var(--mui-palette-text-primary))',
 
   /**
-   * SURFACE RAMP — five elevation positions as oklch L-offsets from surface 0
-   * (`background.default`, the anchor). c and h pass through, so surfaces stay
-   * faintly branded instead of going flat grey. The formula is mode- AND
-   * product-invariant: it resolves through `--mui-palette-background-default`
-   * (which flips per mode/product) and `--beam-surface-step` (emitted per
-   * product+mode in createBeamTheme). ×N lives here, not in the seed, so all
-   * positions read one step var; arithmetic stays `l + N * step`.
+   * SURFACE RAMP — five elevation positions as oklch L-offsets from the ANCHOR seed
+   * (`--beam-surface-anchor`, surface 0, the page). c and h pass through, so surfaces stay
+   * faintly branded instead of going flat grey. Mode- AND product-invariant: the formula
+   * appears ONCE per slot and resolves through `--beam-surface-anchor` (the ONE hex, flipped
+   * per mode/product in createBeamTheme) + `--beam-surface-step`. ×N lives here, not in the
+   * seed, so all positions read one step var; arithmetic stays `l + N * step`.
    *
-   * LOAD-BEARING (2026-08-05, was the additive `surface1` tracer): roles alias
-   * positions — `background.default`→0, `background.paper`→1, Menu/Popover→2,
-   * Dialog→3. `sunken` (-1) is emitted but consumed by nothing (reserved).
+   * These emit as REGISTERED @property `<color>` vars (`--beam-ramp--1`…`3`) so the browser
+   * COMPUTES them to resolved colours — `getComputedStyle` returns a real value, making the
+   * browser the formula engine (the future bake lane and the Theme Lab panel both READ the
+   * ramp, never re-implement the oklch math; precedent: `--beam-border-angle`). Aliases then
+   * point at the ramp — `background.default`→ramp-0, `background.paper`→ramp-1, Menu/Popover→
+   * ramp-2, Dialog→ramp-3; a consumer never repeats the formula. `sunken` (-1) reserved.
    */
-  surface: {
-    sunken: 'oklch(from var(--mui-palette-background-default) calc(l - 1 * var(--beam-surface-step)) c h)',
-    paper: 'oklch(from var(--mui-palette-background-default) calc(l + 1 * var(--beam-surface-step)) c h)',
-    raised: 'oklch(from var(--mui-palette-background-default) calc(l + 2 * var(--beam-surface-step)) c h)',
-    top: 'oklch(from var(--mui-palette-background-default) calc(l + 3 * var(--beam-surface-step)) c h)',
+  ramp: {
+    sunken: 'oklch(from var(--beam-surface-anchor) calc(l - 1 * var(--beam-surface-step)) c h)',
+    // Slot 0 is the anchor PASSTHROUGH, not the n=0 formula — an `oklch(from hex l c h)`
+    // round-trip could drift the page colour by a rounding ulp vs the old raw hex. This keeps
+    // background.default byte-identical; the registered <color> still resolves it for reads.
+    anchor: 'var(--beam-surface-anchor)',
+    paper: 'oklch(from var(--beam-surface-anchor) calc(l + 1 * var(--beam-surface-step)) c h)',
+    raised: 'oklch(from var(--beam-surface-anchor) calc(l + 2 * var(--beam-surface-step)) c h)',
+    top: 'oklch(from var(--beam-surface-anchor) calc(l + 3 * var(--beam-surface-step)) c h)',
   },
 
   /**
@@ -371,8 +377,8 @@ export const derived = {
    */
   navSurface:
     'linear-gradient(180deg, ' +
-    'oklch(from var(--mui-palette-background-default) calc(l + (var(--beam-surface-nav-offset) + var(--beam-surface-nav-spread)) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-glass-alpha)), ' +
-    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-surface-nav-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-glass-alpha)))',
+    'oklch(from var(--beam-surface-anchor) calc(l + (var(--beam-surface-nav-offset) + var(--beam-surface-nav-spread)) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-glass-alpha)), ' +
+    'oklch(from var(--beam-surface-anchor) calc(l + var(--beam-surface-nav-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-glass-alpha)))',
 
   /**
    * NAV EDGE — a 1px catch of light on the frosted rail's top + right inner edges
@@ -383,7 +389,7 @@ export const derived = {
    * high-water mark (see §7).
    */
   navEdge:
-    'oklch(from var(--mui-palette-background-default) calc(l + var(--beam-nav-edge-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-edge-alpha))',
+    'oklch(from var(--beam-surface-anchor) calc(l + var(--beam-nav-edge-offset) * var(--beam-surface-step)) calc(c * var(--beam-surface-nav-chroma)) h / var(--beam-nav-edge-alpha))',
 
   /**
    * NAV WELL SHADOW — the recessed rail RECEIVES a shadow from the content plane
@@ -393,7 +399,7 @@ export const derived = {
    * per-scheme (`--beam-nav-shadow-alpha`), stronger in light.
    */
   navShadow:
-    'oklch(from var(--mui-palette-background-default) calc(l * 0.3) c h / var(--beam-nav-shadow-alpha))',
+    'oklch(from var(--beam-surface-anchor) calc(l * 0.3) c h / var(--beam-nav-shadow-alpha))',
 
   /**
    * SPINE — the left-rule motif (detail-page-grammar §2). Its own tokens,
