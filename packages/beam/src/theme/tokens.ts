@@ -53,9 +53,10 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
   },
   gaspar: {
     ontario: {
-      light: { primaryDown1: '#0B534D', primary0: '#0F766E', primaryUp1: '#3F918B', contrastText: '#FFFFFF' },
-      // dark default as entered in Figma (pre-correction footnote value) — Figma is seed truth
-      dark: { primaryDown1: '#209486', primary0: '#57DDCC', primaryUp1: '#57DDCC', contrastText: '#111827' },
+      // candy combo (§6 run): Gaspar/primary @ Ontario → lavender family. contrastText UNTOUCHED
+      // (WCAG probe reported, not retuned: dark #111827/#D8AFFF = 9.71:1, light #FFFFFF/#7C6296 = 5.19:1).
+      light: { primaryDown1: '#5C4374', primary0: '#7C6296', primaryUp1: '#987EB3', contrastText: '#FFFFFF' },
+      dark: { primaryDown1: '#946CB8', primary0: '#D8AFFF', primaryUp1: '#D8AFFF', contrastText: '#111827' },
       states: STATES,
     },
     alberta: {
@@ -206,11 +207,13 @@ export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: Nav
     light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
   gaspar: {
-    // Anchor rotated teal → plum, HUE-ONLY (H → 345; L and C unchanged: L holds at
-    // 0.1693 dark / 0.9551 light). --beam-mark-l needs NO retune — its comment warns only
-    // about large L moves, and a hue-only rotation is exactly the move that doesn't touch L.
-    dark: { anchor: '#160B11', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
-    light: { anchor: '#F2EFF1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
+    // candy combo (§6 run): anchors → near-black dark / cool off-white light. UNLIKE the plum
+    // mirror this MOVED L (dark 0.168 → 0.068). --beam-mark-l still holds, NOT retuned: dark
+    // mark-l 0.82 now sits 0.75 above the anchor (was 0.65 at plum) — light-on-dark, MORE
+    // margin; light anchor 0.952, mark-l 0.40 sits 0.55 below (≈unchanged). The "large L move"
+    // caveat in the mark-l comment was checked: direction holds, margin grows. Reported, not retuned.
+    dark: { anchor: '#000104', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
+    light: { anchor: '#EEEFF2', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
 };
 
@@ -230,6 +233,10 @@ export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: Nav
 type GradientSchemeSeed = {
   hueB: string;
   intensity: number;
+  // hue-c is DERIVED-BY-DEFAULT (primary rotated +45°, `derived.gradientHueC`); this optional
+  // seed is the OFFICIATED OVERRIDE — present = a product literal pins it, ABSENT = still
+  // derived. First override officiated via the combo lanes (docs/sync-lanes-runbook.md §6).
+  hueC?: string;
   // Dot layer of the page mesh. pitch is tuned AGAINST THE BLUR (>= ~2x the
   // frosted-rail blur radius), not taste — see docs/derived-color-tokens.md §2.
   dotPitch: number;
@@ -245,8 +252,9 @@ export const gradientSeeds: Record<
     light: { hueB: '#48DDE5', intensity: 6, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.019 },
   },
   gaspar: {
-    dark: { hueB: '#68DD57', intensity: 22, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
-    light: { hueB: '#17760F', intensity: 14, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.019 },
+    // candy combo (§6 officiating run): hue-c pinned as the first officiated override.
+    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
+    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', dotPitch: 56, dotSize: 1.5, dotOpacity: 0.019 },
   },
 };
 

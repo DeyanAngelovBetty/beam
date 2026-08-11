@@ -144,9 +144,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // BeamAppShell — behind everything, occluded by the opaque ramp surfaces.
             '--beam-page-mesh': derived.pageMesh,
             '--beam-gradient-hue-b': g.dark.hueB,
-            // hue-c DEFAULT = the rotation expression (derived, brand-reactive). The Theme Lab
-            // overrides it per scheme via the sheet; removing the override returns to rotation.
-            '--beam-gradient-hue-c': derived.gradientHueC,
+            // hue-c: officiated override SEED if present (gaspar candy), else the derived
+            // rotation (Sunlight/Midnight — absent seed → byte-identical to before).
+            '--beam-gradient-hue-c': g.dark.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             // Mesh dot layer. Pitch/size are scheme-invariant; only opacity flips
             // (a dark dot on near-white reads louder, so light is held lower).
@@ -263,7 +263,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-edge-alpha': String(EDGE.light.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.light),
             '--beam-gradient-hue-b': g.light.hueB,
-            '--beam-gradient-hue-c': derived.gradientHueC,
+            // hue-c: the officiated override seed if present, else the derived rotation.
+            '--beam-gradient-hue-c': g.light.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
             '--beam-dot-opacity': String(g.light.dotOpacity),
             '--beam-border-intensity': `${borderIntensity.light.calm}%`,
@@ -285,7 +286,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),
             '--beam-gradient-hue-b': g.dark.hueB,
-            '--beam-gradient-hue-c': derived.gradientHueC,
+            '--beam-gradient-hue-c': g.dark.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             '--beam-dot-opacity': String(g.dark.dotOpacity),
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
