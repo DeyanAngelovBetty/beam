@@ -24,7 +24,7 @@ construction).*
 Cardinal rule (BEAM.md §3): Figma owns seed *values*; code owns *formulas*;
 `_ramp/*` in Figma is a **baked mirror of code's output**, never authored.
 
-## §1 — Seed edit in Figma  ·  `sync:seeds` (upstream half)  ·  ✅ done
+## §1 — Seed edit in Figma  ·  `sync:seeds` (upstream half)  ·  ✅ executed (plum + candy, 2026-08-11)
 
 File: Foundations `9yNbolohxGitkMJKDjoyKG`, collection `product`
 (`VariableCollectionId:12220:4169`). Modes: Sunlight `12220:0`, Gaspar
@@ -47,7 +47,7 @@ Midnight mirrors Sunlight.
 `tokens.ts` seed objects, and writes the code side (or reports drift in
 `--check` mode). The pre-edit match above is the green state it asserts.
 
-## §2 — Code mirror  ·  `sync:seeds` (downstream half)  ·  ⏳ repo-Claude
+## §2 — Code mirror  ·  `sync:seeds` (downstream half)  ·  ✅ executed (candy run 2026-08-11, `bc50e0e`)
 
 `surfaceSeeds.gaspar.{dark,light}.anchor` in `packages/beam/src/theme/tokens.ts`
 → the two hexes above. Nothing else changes: every downstream colour derives at
@@ -56,7 +56,7 @@ runtime (ramp, mesh, rim, rail, glass all read the anchor through formulas).
 Build must pass with only tokens.ts touched; any other required change = an
 anchor leak, flagged not patched.
 
-## §3 — Visual verification  ·  (no lane — human gate)  ·  ⏳ Deyan
+## §3 — Visual verification  ·  (no lane — human gate)  ·  ✅ executed (candy visual pass 2026-08-11)
 
 Bench + Pages, Gaspar, both modes. Expected:
 - Surfaces, nav rail, glass, gradient borders: plum-shifted (all derive from
@@ -69,7 +69,7 @@ Bench + Pages, Gaspar, both modes. Expected:
 
 Gate: Deyan says "keep" (→ §4) or re-seeds the hue (→ back to §1).
 
-## §4 — Bake  ·  `bake:derived`  ·  ⏳ after §3
+## §4 — Bake  ·  `bake:derived`  ·  ✅ executed (candy run 2026-08-11)
 
 Compute the ramp hexes code will render — `oklch(from anchor l ± n·step c h)`
 for steps −1…3, both schemes, using `surface/{scheme}/step` (dark 0.085, light
@@ -80,7 +80,12 @@ connector; the script will do the same from `derivedColor` formulas + a
 headless render or a direct reimplementation — reimplementation preferred,
 one formula source imported from the package.)
 
-## §5 — Audit  ·  `audit:contrast`  ·  ⏳ after §4
+**Candy-run note:** the plum run (run #1) reached §3 and was superseded before its §4 bake
+ran separately — candy's anchors landed on top, so candy's bake is the one that executed.
+The plum-bake debt is therefore **RETIRED, not outstanding** (baking an anchor that no
+longer ships would be baking a ghost). `_ramp/*` now mirrors candy.
+
+## §5 — Audit  ·  `audit:contrast`  ·  ✅ executed (candy run 2026-08-11)
 
 - Role tokens over ramp surfaces: WCAG AA text pairs per scheme.
 - `--beam-mark-l` vs new anchors: still in the contrast direction with margin
@@ -90,6 +95,13 @@ one formula source imported from the package.)
 **Script spec:** reads baked ramp + role aliases, computes contrast pairs,
 fails the run below threshold. This is the lane that once caught a real WCAG
 failure — it is the reason hardcoded colours are banned (BEAM.md §3).
+
+**Candy-run findings (2026-08-11):**
+- Dark ramp `-1` (sunken) clamps to `#000` at candy's near-black anchor (L 0.068 − 1·step
+  falls below 0). It is a RESERVED slot with no consumer — recorded, not a failure.
+- Light text/secondary land **4.14–4.40:1** on surfaces 0–2 — below AA for body text.
+  **OPEN item**, a palette-axis candidate fix (raise the text token, not the anchor).
+- Light primary text **4.52:1** — passes, but at the line.
 
 ## §6 — Officiating a combo (the lanes with a JSON front door)
 
@@ -113,6 +125,27 @@ half needs either the connector-assisted lane (today) or the
 planned combo-import plugin (Plugin API has no plan gate; REST
 variable writes are Enterprise-only — the plugin is the honest
 path). audit:contrast gates both.
+
+## Learned in run #2 (candy)
+
+*Run #2 moved L (not hue-only like run #1) and officiated brand + gradient + a derived
+override — so it exercised lanes the plum run never touched. What that surfaced:*
+
+- **a) The jurisdiction collection composes axes by NAME × MODE.** primary lives as
+  `{Product}/primary/*` with jurisdiction modes; a write targets the product's OWN family
+  only — never another product's.
+- **b) Alpha ride-along rule.** Officiating a primary main MUST rewrite the
+  `alpha/primary` 4 | 8 | 12 | 30 | 50% family (main's rgb at the preserved alphas) — Figma's
+  twin of the code-side channel triples (`--mui-palette-primary-mainChannel`). Skip it and the
+  hover/selected/focus states keep the old hue.
+- **c) A first-officiated derived override creates its Figma twins.** hue-c's Gaspar override
+  (`#66D2FF`/`#33809F`) gets real variables; the still-derived modes (Sunlight/Midnight) get a
+  **static approximation of their own derivation**, commented as such (the rotation isn't a
+  Figma-expressible formula).
+- **d) Variable decoding:** `primary -1` = darker, `primary 1` = lighter.
+- **e) Baselines are READ, never STATED.** A §2 prompt carried stale "from" values this run
+  (harmless — the targets were authoritative). **Script spec:** `sync:seeds` diffs against the
+  file's actual values; a prompt-stated baseline is decoration, not input.
 
 ## Open
 
