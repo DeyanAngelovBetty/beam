@@ -83,7 +83,7 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
  * in BeamDataTable's numeric cells) — the reason it beat a geometric face.
  */
 export const productFonts: Record<ProductName, { title: string; body: string; titleWeight: number }> = {
-  // titleWeight (Figma twin: `product/font/titleWeight`; Deyan syncs Figma separately) rides
+  // titleWeight (Figma twin: `font/title/fontWeight`; Deyan syncs Figma separately) rides
   // with the faces and wires to the whole heading scale h1–h6 in createBeamTheme — one seed,
   // same as the face. 600 for both to start; they diverge the day one looks wrong.
   sunlight: { title: 'Inter', body: 'Inter', titleWeight: 600 },
@@ -92,7 +92,8 @@ export const productFonts: Record<ProductName, { title: string; body: string; ti
 
 /**
  * TITLE TREATMENT — the gradient title recipe's per-product dials (BeamPageHeader, default
- * on). Figma twins: `product/title/{tint,underlineWeight,underlineFade}` (Deyan syncs Figma).
+ * on). Figma twins (real paths): `title/{dark,light}/tint`, `title/underlineWeight`,
+ * `title/underlineFade`, `title/underlineOffset`, `title/{dark,light}/halo` (Deyan syncs Figma).
  * Two gradients, deliberately different (see BeamPageHeader):
  *  - `tint`  — % of primary mixed into text-primary for the TEXT gradient's far end. Per MODE:
  *              a dark near-white text tolerates more tint than a light near-black one, where a
@@ -205,8 +206,11 @@ export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: Nav
     light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
   gaspar: {
-    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
-    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
+    // Anchor rotated teal → plum, HUE-ONLY (H → 345; L and C unchanged: L holds at
+    // 0.1693 dark / 0.9551 light). --beam-mark-l needs NO retune — its comment warns only
+    // about large L moves, and a hue-only rotation is exactly the move that doesn't touch L.
+    dark: { anchor: '#160B11', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
+    light: { anchor: '#F2EFF1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
 };
 
