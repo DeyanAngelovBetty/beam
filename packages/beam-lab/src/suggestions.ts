@@ -89,6 +89,18 @@ export function toChannels(color: string): { l: number; c: number; h: number } {
   return { l: o?.l ?? 0, c: o?.c ?? 0, h: o?.h ?? 0 };
 }
 
+/**
+ * Like toChannels, but returns null when culori CANNOT parse the input (empty string, a composite
+ * value like a gradient, an unresolved expression). Hydration uses this so a parse failure SKIPS
+ * the update (controls keep their last values) instead of snapping to black — and never throws
+ * during render. Guards every composite/derived target, present and future.
+ */
+export function safeChannels(color: string): { l: number; c: number; h: number } | null {
+  const o = toOklch(color);
+  if (!o) return null;
+  return { l: o.l ?? 0, c: o.c ?? 0, h: o.h ?? 0 };
+}
+
 /** oklch channels → hex, for applying + export. */
 export function channelsToHex(l: number, c: number, h: number): string {
   return formatHex({ mode: 'oklch', l, c, h });

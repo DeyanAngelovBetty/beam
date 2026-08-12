@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import {
   Box,
   Stack,
@@ -25,6 +25,7 @@ import {
   resolveColor,
   resolveForScheme,
   toChannels,
+  safeChannels,
   channelsToHex,
   channelTriple,
   parseColor,
@@ -85,12 +86,7 @@ const slug = (s: string) =>
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 const fmt = (v: number, step: number) => (step >= 1 ? String(Math.round(v)) : v.toFixed(3));
 
-export function ThemeLabDrawer({
-  open,
-  onClose,
-  product,
-  jurisdiction,
-}: {
+type LabProps = {
   open: boolean;
   onClose: () => void;
   /** The mounting app's product → export scope.product. Every colour read/write is live CSS
@@ -98,7 +94,22 @@ export function ThemeLabDrawer({
   product: 'gaspar' | 'sunlight';
   /** The app's current brand/jurisdiction (apps hold it as `brand`; pass it) → scope.jurisdiction. */
   jurisdiction: string;
-}) {
+};
+
+/**
+ * The exported drawer wraps its body in an error boundary — the Lab is an instrument bolted onto a
+ * live product, so a render error inside it must show an inline recovery card, NEVER white-screen
+ * the whole app. The body is a separate component so the boundary (its parent) can catch its throws.
+ */
+export function ThemeLabDrawer(props: LabProps) {
+  return (
+    <LabErrorBoundary open={props.open} onClose={props.onClose}>
+      <ThemeLabBody {...props} />
+    </LabErrorBoundary>
+  );
+}
+
+function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
   const { mode, setMode } = useColorScheme();
   const editing: Scheme = mode === 'light' ? 'light' : 'dark';
   const counterpart: Scheme = editing === 'dark' ? 'light' : 'dark';
@@ -187,8 +198,17 @@ export function ThemeLabDrawer({
   // Hydrate EVERY control for the selected target from its live computed value — colour
   // channels AND the geometry/intensity detail. Shared by the open/target/scheme effect and
   // Reset, so the drawer never lies about what the page actually wears.
+  // Parse a target's live colour into channels, or skip (keep last values) + dev-warn if culori
+  // can't — never throw during render. Composite/derived targets (logo before a stop is picked,
+  // a gradient value) return null here rather than snapping the sliders to black.
+  const hydrateChannels = (varName: string) => {
+    const parsed = safeChannels(resolveColor(readVar(varName)));
+    if (parsed) setCh(parsed);
+    else if (import.meta.env.DEV) console.warn(`[ThemeLab] unparseable colour for ${varName}; keeping last slider values`);
+  };
+
   const hydrateControls = () => {
-    setCh(toChannels(resolveColor(readVar(targetVar)))); // resolveColor handles the derived exprs (incl. logo stops)
+    hydrateChannels(targetVar); // resolveColor handles the derived exprs (incl. logo stops)
     if (GRADIENT_TARGETS.includes(selected)) setIntensity(parseFloat(readVar('--beam-gradient-intensity')) || 0);
     if (selected === 'star') {
       setIntensity(parseFloat(readVar('--beam-star-intensity')) || 0);
@@ -290,7 +310,7 @@ export function ThemeLabDrawer({
   // derivation expression. Generalised over the selected derivable target.
   const returnToDerived = () => {
     removeVar(editing, targetVar);
-    setCh(toChannels(resolveColor(readVar(targetVar))));
+    hydrateChannels(targetVar);
     bump();
   };
 
@@ -497,7 +517,12 @@ export function ThemeLabDrawer({
                             ? (TARGET_META[t].derivedNote ?? `Edit ${TARGET_META[t].label}`)
                             : `Edit ${TARGET_META[t].label}`
                     }
-                    onSelect={() => setSelected(t)}
+                    onSelect={() => {
+                      // logo is composite — default-select stop 1 so the shared L/C/H group is
+                      // always bound to a real stop, never the stopless composite (on re-entry too).
+                      if (t === 'logo') setLogoStop(1);
+                      setSelected(t);
+                    }}
                   />
                 );
               })}
@@ -597,13 +622,13 @@ export function ThemeLabDrawer({
             </ChannelRow>
             <ChannelRow label="C" value={ch.c} min={0} max={0.4} step={0.001} onChange={(v) => writeChannel('c', v)}>
               <LinkToggle
-                on={links[selected].c}
+                on={links[activeKey].c}
                 onToggle={() => toggleLink('c')}
                 tooltip={`Linked: chroma follows across dark/light at ×${ratioLabel}`}
               />
             </ChannelRow>
             <ChannelRow label="H" value={ch.h} min={0} max={360} step={1} onChange={(v) => writeChannel('h', v)}>
-              <LinkToggle on={links[selected].h} onToggle={() => toggleLink('h')} tooltip="Linked: hue follows across dark/light" />
+              <LinkToggle on={links[activeKey].h} onToggle={() => toggleLink('h')} tooltip="Linked: hue follows across dark/light" />
             </ChannelRow>
 
             {editing === 'light' && (
@@ -945,4 +970,76 @@ function ChannelRow({
       {children}
     </Stack>
   );
+}
+
+/** Inline recovery card shown when the Lab body throws — a compact fixed panel, NOT a full-screen
+ *  takeover, so the product behind stays visible and usable. */
+function LabFallbackCard({ onReset, onClose }: { onReset: () => void; onClose: () => void }) {
+  return (
+    <Box
+      role="alert"
+      sx={{
+        position: 'fixed',
+        top: 16,
+        right: 16,
+        width: 320,
+        zIndex: (t) => t.zIndex.drawer + 1,
+        p: 2,
+        borderRadius: 2,
+        backgroundColor: 'var(--mui-palette-background-paper)',
+        border: '1px solid',
+        borderColor: 'error.main',
+        boxShadow: 6,
+      }}
+    >
+      <Stack spacing={1.5}>
+        <Typography variant="subtitle2" color="error.main">
+          Theme Lab hit an error
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          The panel stopped rendering — your app is unaffected. Reset clears the draft overrides and
+          retries; Close dismisses the panel.
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <Button size="small" variant="contained" onClick={onReset}>
+            Reset
+          </Button>
+          <Button size="small" variant="outlined" onClick={onClose}>
+            Close
+          </Button>
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
+
+/**
+ * Containment: the Lab is bolted onto a live product, so a render error in its body must NEVER
+ * take the product down. This boundary catches the throw, keeps the page behind rendering, and
+ * shows the inline recovery card (only while open — a closed drawer shows nothing). Reset clears
+ * the sheet (a bad draft override is the likeliest cause) and retries; Close dismisses + clears.
+ */
+class LabErrorBoundary extends Component<
+  { open: boolean; onClose: () => void; children: ReactNode },
+  { error: Error | null }
+> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    if (import.meta.env.DEV) console.error('[ThemeLab] render error — contained by the drawer boundary:', error, info.componentStack);
+  }
+  handleReset = () => {
+    reset(); // drop all draft overrides, then retry the body
+    this.setState({ error: null });
+  };
+  handleClose = () => {
+    this.setState({ error: null }); // clear so a later reopen renders fresh
+    this.props.onClose();
+  };
+  render() {
+    if (this.state.error) return this.props.open ? <LabFallbackCard onReset={this.handleReset} onClose={this.handleClose} /> : null;
+    return this.props.children;
+  }
 }
