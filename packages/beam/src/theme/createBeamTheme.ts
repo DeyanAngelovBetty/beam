@@ -1,5 +1,12 @@
 import { createTheme, type Theme } from '@mui/material/styles';
 import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, type BrandName, type ProductName } from './tokens';
+
+// The Betty four-point sparkle as a MASK tile. Brand-constant SHAPE (never a seed, never
+// exported). viewBox 250 with the 100-unit star centred (translate 75) → it fills ~40% of
+// each tile, so `--beam-star-pitch` reads as spacing, not size. Concave sparkle path from the
+// product logos. fill is irrelevant (alpha mask) — %23000 is opaque black.
+const STAR_MASK =
+  "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 250'><path transform='translate(75 75)' d='M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z' fill='%23000'/></svg>\")";
 import { meta } from './textStyles';
 
 /**
@@ -150,10 +157,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
             // Mesh dot layer. Pitch/size are scheme-invariant; only opacity flips
             // (a dark dot on near-white reads louder, so light is held lower).
-            '--beam-dot-color': derived.dotColor,
-            '--beam-dot-pitch': `${g.dark.dotPitch}px`,
-            '--beam-dot-size': `${g.dark.dotSize}px`,
-            '--beam-dot-opacity': String(g.dark.dotOpacity),
+            // Betty STAR layer (body::after). Colour derived-by-default (`derived.starColor`)
+            // or the `starColor` override seed (mirrors hue-c); intensity per scheme; pitch per
+            // product, mode-invariant + REGISTERED (interpolates → the pitch-slider breathe).
+            '--beam-star-color': g.dark.starColor ?? derived.starColor,
+            '--beam-star-intensity': `${g.dark.starIntensity}%`,
+            '--beam-star-pitch': `${g.dark.starPitch}px`,
             // Gradient-border intensity (opt-in beamGradientBorder). Per-scheme
             // dial: light needs more than dark. :root default = dark.
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
@@ -266,7 +275,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // hue-c: the officiated override seed if present, else the derived rotation.
             '--beam-gradient-hue-c': g.light.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
-            '--beam-dot-opacity': String(g.light.dotOpacity),
+            '--beam-star-color': g.light.starColor ?? derived.starColor,
+            '--beam-star-intensity': `${g.light.starIntensity}%`,
             '--beam-border-intensity': `${borderIntensity.light.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.light.hover}%`,
             '--beam-mark-l': String(markLightness.light),
@@ -288,7 +298,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-hue-c': g.dark.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
-            '--beam-dot-opacity': String(g.dark.dotOpacity),
+            '--beam-star-color': g.dark.starColor ?? derived.starColor,
+            '--beam-star-intensity': `${g.dark.starIntensity}%`,
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
             '--beam-mark-l': String(markLightness.dark),
@@ -311,11 +322,35 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             pointerEvents: 'none',
             backgroundColor: 'var(--mui-palette-background-default)',
             backgroundImage: 'var(--beam-page-mesh)',
-            // 4 layers now (dot + 3 radials). Matching 4-value lists so the radials
-            // do NOT inherit the dot tile: the dot tiles at pitch, the radials fill
-            // (auto) and don't repeat. This is the coupling that would break the mesh.
-            backgroundSize: 'var(--beam-dot-pitch) var(--beam-dot-pitch), auto, auto, auto',
-            backgroundRepeat: 'repeat, no-repeat, no-repeat, no-repeat',
+            // 3 radial layers now (the dot tile was removed → the Betty star mask on
+            // body::after). No tiled layer remains, so size/repeat are single-valued and apply
+            // to all three: fill (auto), no repeat. (This is the 4-value coupling, retired.)
+            backgroundSize: 'auto',
+            backgroundRepeat: 'no-repeat',
+            '@media print': { display: 'none' },
+          },
+          // Betty STAR layer — brand geometry, ABOVE the mesh radials (::after paints after
+          // ::before) and BELOW content (z -1; opaque surfaces cover it). The four-point
+          // sparkle is an SVG MASK; the layer's background (star colour at its intensity, over
+          // transparent) shows ONLY through the mask, tiled at --beam-star-pitch. Pitch is a
+          // registered <length>, so a Lab drag BREATHES via the transition; reduced-motion
+          // zeroes the fade duration → instant re-density, no breathe. Decorative: inert + no
+          // print. SHAPE is brand-constant — never a seed, never exported.
+          'body::after': {
+            content: '""',
+            position: 'fixed',
+            inset: 0,
+            zIndex: -1,
+            pointerEvents: 'none',
+            backgroundColor: 'color-mix(in oklch, var(--beam-star-color) var(--beam-star-intensity), transparent)',
+            maskImage: STAR_MASK,
+            WebkitMaskImage: STAR_MASK,
+            maskRepeat: 'repeat',
+            WebkitMaskRepeat: 'repeat',
+            maskSize: 'var(--beam-star-pitch) var(--beam-star-pitch)',
+            WebkitMaskSize: 'var(--beam-star-pitch) var(--beam-star-pitch)',
+            transition: '--beam-star-pitch var(--beam-motion-fade)',
+            '@media print': { display: 'none' },
           },
 
           // Gradient-border angle (opt-in beamGradientBorder). Registered as an
@@ -349,6 +384,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           '@property --beam-ramp-1': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
           '@property --beam-ramp-2': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
           '@property --beam-ramp-3': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          // Star tile pitch — REGISTERED <length> so the mask-size transition INTERPOLATES
+          // (the pitch-slider breathe); unregistered it would snap. inherits so body::after
+          // reads the :root value. (Idiom: simeydotme's grid-paper — @property + a transitioned
+          // custom prop — the mechanism, not the pattern.)
+          '@property --beam-star-pitch': { syntax: "'<length>'", inherits: 'true', initialValue: '56px' },
           '@keyframes beam-border-spin': {
             to: { '--beam-border-angle': '495deg' },
           },

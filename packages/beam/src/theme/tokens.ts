@@ -237,24 +237,27 @@ type GradientSchemeSeed = {
   // seed is the OFFICIATED OVERRIDE — present = a product literal pins it, ABSENT = still
   // derived. First override officiated via the combo lanes (docs/sync-lanes-runbook.md §6).
   hueC?: string;
-  // Dot layer of the page mesh. pitch is tuned AGAINST THE BLUR (>= ~2x the
-  // frosted-rail blur radius), not taste — see docs/derived-color-tokens.md §2.
-  dotPitch: number;
-  dotSize: number;
-  dotOpacity: number;
+  // Betty STAR layer (brand geometry tiled in the mesh — the four-point sparkle, masked on
+  // body::after). SHAPE is brand-constant (never a seed/export); these tune it per product:
+  // `starPitch` = tile size in px (per product, mode-invariant — bigger = sparser/calmer);
+  // `starIntensity` = per-scheme visibility %; `starColor?` = officiated colour override
+  // (ABSENT = derived from `derived.starColor`, mirroring the hue-c override seam).
+  starPitch: number;
+  starIntensity: number;
+  starColor?: string;
 };
 export const gradientSeeds: Record<
   ProductName,
   { dark: GradientSchemeSeed; light: GradientSchemeSeed }
 > = {
   sunlight: {
-    dark: { hueB: '#75EBDE', intensity: 10, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
-    light: { hueB: '#48DDE5', intensity: 6, dotPitch: 56, dotSize: 1.5, dotOpacity: 0.019 },
+    dark: { hueB: '#75EBDE', intensity: 10, starPitch: 72, starIntensity: 7 },
+    light: { hueB: '#48DDE5', intensity: 6, starPitch: 72, starIntensity: 5 },
   },
   gaspar: {
     // candy combo (§6 officiating run): hue-c pinned as the first officiated override.
-    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', dotPitch: 56, dotSize: 1.5, dotOpacity: 0.055 },
-    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', dotPitch: 56, dotSize: 1.5, dotOpacity: 0.019 },
+    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', starPitch: 56, starIntensity: 10 },
+    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', starPitch: 56, starIntensity: 6 },
   },
 };
 
@@ -326,10 +329,8 @@ export const derived = {
    * variable (gradients aren't a variable type); its Figma twin is a style.
    */
   pageMesh:
-    // DOT layer FIRST (first-on-top → above the three radials). Its tile size
-    // (pitch) + repeat live on body::before, alongside the radials' explicit
-    // sizes so they don't inherit the tile and repeat.
-    'radial-gradient(circle at center, oklch(from var(--beam-dot-color) l c h / var(--beam-dot-opacity)) var(--beam-dot-size), transparent var(--beam-dot-size)), ' +
+    // THREE radials (dot layer removed — it was the placeholder for the Betty star, now a
+    // MASK on its own fixed layer, body::after; see createBeamTheme). These fill (no tile).
     'radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
     'radial-gradient(110% 110% at 100% 0%, color-mix(in oklch, var(--beam-gradient-hue-b) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
     'radial-gradient(130% 130% at 50% 120%, color-mix(in oklch, var(--beam-gradient-hue-c) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%)',
@@ -343,13 +344,13 @@ export const derived = {
   gradientHueC: 'oklch(from var(--mui-palette-primary-main) l c calc(h + 45))',
 
   /**
-   * DOT colour for the mesh dot layer — a mesh tint (primary) mixed TOWARD the
-   * foreground (`text.primary`), so it flips per scheme: lighter dots on dark
-   * pages, darker on light. Never a white/black literal. Alpha is applied at use
-   * (`--beam-dot-opacity`); the 45/55 lean is the tunable knob, dotOpacity the
-   * visibility dial.
+   * STAR colour DEFAULT — inherited verbatim from the old dot layer's derivation: a mesh tint
+   * (primary) mixed TOWARD the foreground (`text.primary`), so it flips per scheme (lighter
+   * stars on dark pages, darker on light). Never a white/black literal. This is `--beam-star-
+   * color`'s derived-by-default value; an officiated `starColor` seed overrides it (mirrors
+   * hue-c). Intensity is applied at use (`--beam-star-intensity`); the 45/55 lean is the knob.
    */
-  dotColor: 'color-mix(in oklch, var(--mui-palette-primary-main) 45%, var(--mui-palette-text-primary))',
+  starColor: 'color-mix(in oklch, var(--mui-palette-primary-main) 45%, var(--mui-palette-text-primary))',
 
   /**
    * SURFACE RAMP — five elevation positions as oklch L-offsets from the ANCHOR seed

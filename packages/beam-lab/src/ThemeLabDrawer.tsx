@@ -42,19 +42,23 @@ import {
  * officiated through docs/sync-lanes-runbook.md — no Figma/repo writes.
  */
 
-type Target = 'anchor' | 'hueB' | 'hueC' | 'primary';
+type Target = 'anchor' | 'hueB' | 'hueC' | 'star' | 'primary';
 // primary's `var` is its MAIN; the family derives from it (writePrimaryFamily), BRAND-axis.
-// hueC is DERIVED by default (its var holds the rotation expression) with an override seam.
-const TARGET_META: Record<Target, { label: string; var: string; brand?: boolean; derivable?: boolean }> = {
+// hueC + star are DERIVED by default (their var holds a derivation expression) with an
+// override seam; `derivedNote` is the ƒ tooltip / return-to-derived label.
+const TARGET_META: Record<
+  Target,
+  { label: string; var: string; brand?: boolean; derivable?: boolean; derivedNote?: string }
+> = {
   anchor: { label: 'anchor', var: '--beam-surface-anchor' },
   hueB: { label: 'hue-b', var: '--beam-gradient-hue-b' },
-  hueC: { label: 'hue-c', var: '--beam-gradient-hue-c', derivable: true },
+  hueC: { label: 'hue-c', var: '--beam-gradient-hue-c', derivable: true, derivedNote: 'Following primary, rotated +45° — edit to override.' },
+  star: { label: 'star', var: '--beam-star-color', derivable: true, derivedNote: 'Following primary mixed toward text — edit to override.' },
   primary: { label: 'primary', var: '--mui-palette-primary-main', brand: true },
 };
-const GRADIENT_TARGETS: Target[] = ['hueB', 'hueC']; // share the suggestions + intensity section
+const GRADIENT_TARGETS: Target[] = ['hueB', 'hueC']; // share the mesh suggestions + intensity section
 const PRIMARY_TOOLTIP =
   'Brand-axis seed (jurisdiction). Drafts here; export routes it to the brand collection, not product.';
-const HUEC_DERIVED_TOOLTIP = 'Following primary, rotated +45° — edit to override.';
 const RAMP_VARS = ['--beam-ramp--1', '--beam-ramp-0', '--beam-ramp-1', '--beam-ramp-2', '--beam-ramp-3'];
 const RAMP_LABELS = ['−1', '0', '1', '2', '3'];
 const C_FALLBACK = 0.2; // estate constant: light C ≈ 0.2 × dark C
@@ -93,9 +97,12 @@ export function ThemeLabDrawer({
     anchor: { h: true, c: true },
     hueB: { h: true, c: true },
     hueC: { h: true, c: true },
+    star: { h: true, c: true },
     primary: { h: true, c: true },
   });
-  const [cRatio, setCRatio] = useState<Record<Target, number>>({ anchor: C_FALLBACK, hueB: C_FALLBACK, hueC: C_FALLBACK, primary: C_FALLBACK });
+  const [cRatio, setCRatio] = useState<Record<Target, number>>({ anchor: C_FALLBACK, hueB: C_FALLBACK, hueC: C_FALLBACK, star: C_FALLBACK, primary: C_FALLBACK });
+  // Star tile pitch (px) — mode-invariant (per product), so applyPitch writes BOTH schemes.
+  const [starPitch, setStarPitch] = useState(56);
   // primary family L-deltas (light.L − main.L, dark.L − main.L) captured per scheme on hydrate.
   const [familyDeltas, setFamilyDeltas] = useState<Record<Scheme, { light: number; dark: number }>>({
     dark: { light: 0, dark: 0 },
@@ -151,8 +158,12 @@ export function ThemeLabDrawer({
   // Hydrate the sliders from the selected target's live value on open / target / scheme change.
   useEffect(() => {
     if (!open) return;
-    setCh(toChannels(resolveColor(readVar(TARGET_META[selected].var)))); // resolveColor handles hue-c's expr
+    setCh(toChannels(resolveColor(readVar(TARGET_META[selected].var)))); // resolveColor handles the derived exprs
     if (GRADIENT_TARGETS.includes(selected)) setIntensity(parseFloat(readVar('--beam-gradient-intensity')) || 0);
+    if (selected === 'star') {
+      setIntensity(parseFloat(readVar('--beam-star-intensity')) || 0);
+      setStarPitch(parseFloat(readVar('--beam-star-pitch')) || 56);
+    }
     if (selected === 'primary') captureFamily();
     if (links[selected].c) captureRatio(selected);
     bump();
@@ -194,14 +205,24 @@ export function ThemeLabDrawer({
   };
   const applyIntensity = (val: number) => {
     setIntensity(val);
-    setVar(editing, '--beam-gradient-intensity', `${val}%`);
+    // Star has its own visibility var; the gradient targets share --beam-gradient-intensity.
+    setVar(editing, selected === 'star' ? '--beam-star-intensity' : '--beam-gradient-intensity', `${val}%`);
+    bump();
+  };
+  // Star tile pitch — mode-invariant, so write BOTH schemes. The registered <length> + the
+  // body::after transition make this drag BREATHE (reduced-motion zeroes it → instant snap).
+  const applyPitch = (val: number) => {
+    setStarPitch(val);
+    setVar('dark', '--beam-star-pitch', `${val}px`);
+    setVar('light', '--beam-star-pitch', `${val}px`);
     bump();
   };
   const suggestLight = () => applyColor(toHex(lightFromDark(resolveForScheme('dark', readVarForScheme('dark', targetVar)))));
-  // hue-c "return to derived": drop just this override → the var falls back to the rotation.
+  // "Return to derived" (hue-c / star): drop just this override → the var falls back to its
+  // derivation expression. Generalised over the selected derivable target.
   const returnToDerived = () => {
-    removeVar(editing, TARGET_META.hueC.var);
-    setCh(toChannels(resolveColor(readVar(TARGET_META.hueC.var))));
+    removeVar(editing, targetVar);
+    setCh(toChannels(resolveColor(readVar(targetVar))));
     bump();
   };
 
@@ -235,6 +256,13 @@ export function ThemeLabDrawer({
       light: toHex(readVarForScheme(s, '--mui-palette-primary-light')),
       dark: toHex(readVarForScheme(s, '--mui-palette-primary-dark')),
     });
+    // Star: intensity per scheme; colour ONLY when overridden (else derived — no Figma twin
+    // until officiated, mirroring hue-c). SHAPE is brand-constant and NEVER exported.
+    const starOf = (s: Scheme) => {
+      const st: { intensity: string; color?: string } = { intensity: readVarForScheme(s, '--beam-star-intensity') };
+      if (hasVar(s, '--beam-star-color')) st.color = toHex(readVarForScheme(s, '--beam-star-color'));
+      return st;
+    };
     const combo = {
       version: 3, // v3: combos know their scope (name / scope / createdAt)
       name: slug(comboName || 'untitled-combo'),
@@ -248,6 +276,8 @@ export function ThemeLabDrawer({
       brand: { primary: { dark: primaryOf('dark'), light: primaryOf('light') } },
       surface: { dark: { anchor: surfaceOf('dark') }, light: { anchor: surfaceOf('light') } },
       gradient: { dark: gradientOf('dark'), light: gradientOf('light') },
+      // pitch is per-product (mode-invariant) → one value; intensity/color are per scheme.
+      star: { pitch: readVar('--beam-star-pitch'), dark: starOf('dark'), light: starOf('light') },
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -257,7 +287,7 @@ export function ThemeLabDrawer({
   void tick;
   const ramp = RAMP_VARS.map(readVar);
   const ratioLabel = cRatio[selected].toFixed(2);
-  const hueCOverridden = hasVar(editing, TARGET_META.hueC.var);
+  const isOverridden = Boolean(TARGET_META[selected].derivable) && hasVar(editing, targetVar);
 
   // Suggestions come from the SELECTED gradient target's resolved colour.
   const accents = GRADIENT_TARGETS.includes(selected)
@@ -275,15 +305,19 @@ export function ThemeLabDrawer({
   // subtle-hue flag (≤30° of the canvas hue). Instrumentation — the mix-toward-canvas is doctrine.
   const canvas = readVar('--mui-palette-background-default');
   const intensityNow = readVar('--beam-gradient-intensity');
+  const starIntensityNow = readVar('--beam-star-intensity');
   const canvasCh = toChannels(canvas);
   const painted = (
     [
-      { label: 'primary', src: readVar('--mui-palette-primary-main') },
-      { label: 'hue-b', src: readVar('--beam-gradient-hue-b') },
-      { label: 'hue-c', src: readVar('--beam-gradient-hue-c') },
+      { label: 'primary', src: readVar('--mui-palette-primary-main'), intensity: intensityNow },
+      { label: 'hue-b', src: readVar('--beam-gradient-hue-b'), intensity: intensityNow },
+      { label: 'hue-c', src: readVar('--beam-gradient-hue-c'), intensity: intensityNow },
+      // star mixes toward TRANSPARENT over the canvas — same mix-to-transparent as body::after,
+      // but flattened onto canvas here so the swatch is opaque. Uses the star's own intensity.
+      { label: 'star', src: readVar('--beam-star-color'), intensity: starIntensityNow },
     ] as const
-  ).map(({ label, src }) => {
-    const color = resolveColor(`color-mix(in oklch, ${src} ${intensityNow}, ${canvas})`);
+  ).map(({ label, src, intensity }) => {
+    const color = resolveColor(`color-mix(in oklch, ${src} ${intensity}, ${canvas})`);
     const subtle = canvasCh.c > 0.005 && hueDistance(toChannels(color).h, canvasCh.h) <= SUBTLE_HUE_DEG;
     return { label, color, subtle };
   });
@@ -347,20 +381,20 @@ export function ThemeLabDrawer({
           {/* Target chips + hex readout of the selected target. */}
           <Stack spacing={1}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
-              {(['anchor', 'hueB', 'hueC', 'primary'] as const).map((t) => {
+              {(['anchor', 'hueB', 'hueC', 'star', 'primary'] as const).map((t) => {
                 const isDerived = Boolean(TARGET_META[t].derivable) && !hasVar(editing, TARGET_META[t].var);
                 return (
                   <TargetChip
                     key={t}
                     label={TARGET_META[t].label}
-                    color={resolveColor(readVar(TARGET_META[t].var))} // resolveColor handles hue-c's expr
+                    color={resolveColor(readVar(TARGET_META[t].var))} // resolveColor handles the derived exprs
                     selected={selected === t}
                     badge={TARGET_META[t].brand ? 'BRAND' : isDerived ? 'ƒ' : undefined}
                     tooltip={
                       TARGET_META[t].brand
                         ? PRIMARY_TOOLTIP
                         : isDerived
-                          ? HUEC_DERIVED_TOOLTIP
+                          ? (TARGET_META[t].derivedNote ?? `Edit ${TARGET_META[t].label}`)
                           : `Edit ${TARGET_META[t].label}`
                     }
                     onSelect={() => setSelected(t)}
@@ -434,14 +468,14 @@ export function ThemeLabDrawer({
                 as-is (no auto-flip in v1).
               </Typography>
             )}
-            {selected === 'hueC' &&
-              (hueCOverridden ? (
+            {TARGET_META[selected].derivable &&
+              (isOverridden ? (
                 <Button size="small" variant="text" startIcon={<RestartAltIcon />} onClick={returnToDerived} sx={{ alignSelf: 'flex-start' }}>
                   Return to derived
                 </Button>
               ) : (
                 <Typography variant="caption" color="text.secondary">
-                  ƒ Following primary, rotated +45° — edit to override.
+                  ƒ {TARGET_META[selected].derivedNote}
                 </Typography>
               ))}
           </Stack>
@@ -465,6 +499,23 @@ export function ThemeLabDrawer({
                 ))}
               </Stack>
               <ChannelRow label="Int %" value={intensity} min={0} max={100} step={1} onChange={applyIntensity} />
+            </Stack>
+          )}
+
+          {/* Star tile — Pitch (registered <length>; the drag BREATHES) + visibility. The star
+              COLOUR rides the shared L/C/H group above (derived-by-default, override seam). SHAPE
+              is brand-constant, never tunable here. */}
+          {selected === 'star' && (
+            <Stack spacing={1.5}>
+              <Typography variant="overline" color="text.secondary">
+                Star tile
+              </Typography>
+              <ChannelRow label="Pitch" value={starPitch} min={24} max={120} step={1} onChange={applyPitch} />
+              <ChannelRow label="Int %" value={intensity} min={0} max={100} step={1} onChange={applyIntensity} />
+              <Typography variant="caption" color="text.secondary">
+                Pitch = tile spacing (px); wider reads calmer. It breathes on drag — unless
+                reduced-motion is on.
+              </Typography>
             </Stack>
           )}
 

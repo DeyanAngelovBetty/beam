@@ -8,11 +8,12 @@ import { ThemeLabDrawer } from './ThemeLabDrawer';
  * Paper (surface 1), a raised surface (2), the nav rail, and a gradient title. The override
  * sheet targets THIS iframe's document, so the mechanism is real.
  *
- * Target-chip model: pick a chip ([anchor] [hue-b] [hue-c ƒ] [primary BRAND]) → the shared
- * L/C/H group hydrates from it → drag re-derives live (anchor → the ramp strip + surfaces;
- * hue-b/hue-c → the mesh; primary → the whole family incl. alpha states). H/C link toggles
- * carry edits across dark/light; the painted strip shows what the canvas actually wears.
- * Copy combo exports a scoped v3 JSON.
+ * Target-chip model: pick a chip ([anchor] [hue-b] [hue-c ƒ] [star ƒ] [primary BRAND]) → the
+ * shared L/C/H group hydrates from it → drag re-derives live (anchor → the ramp strip + surfaces;
+ * hue-b/hue-c → the mesh; star → the tiled Betty sparkle on body::after, with a Pitch slider that
+ * BREATHES the lattice; primary → the whole family incl. alpha states). H/C link toggles carry
+ * edits across dark/light; the painted strip shows what the canvas actually wears (star included).
+ * Copy combo exports a scoped v3 JSON (star block: pitch + per-scheme intensity; shape is constant).
  *
  * Graduated from apps/gaspar to @betty/beam-lab on the second consumer (Sunlight) — BEAM.md §2.
  * NOTE: the override sheet is shared module state for the session — Reset (or refresh) clears it.
@@ -26,8 +27,11 @@ export default meta;
 type Story = StoryObj<typeof ThemeLabDrawer>;
 
 function SurfacesBoard() {
+  // TRANSPARENT, not background.default: the page canvas + mesh + the tiled Betty star are
+  // painted by the body::before/::after fixed layers (CssBaseline). An opaque board would cover
+  // them; transparent lets the real page show through — the honest preview.
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', display: 'flex' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'transparent', display: 'flex' }}>
       {/* Nav rail — derives from the anchor (nav surface/edge). */}
       <Box sx={{ width: 200, background: 'var(--beam-nav-surface)', borderRight: '1px solid', borderColor: 'divider', p: 2 }}>
         <Stack spacing={1}>

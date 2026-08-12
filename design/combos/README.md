@@ -6,6 +6,12 @@ Lab as a schema-versioned JSON.
 
 - **One JSON per combo.** Filename = `slug(name).json` (lowercase, hyphens) — the same slug
   the Lab shows next to *Copy Combo*.
+- **The star block carries tuning, never geometry.** A combo's `star` key holds `pitch`
+  (per-product tile spacing), per-scheme `intensity`, and `color` *only* when overridden (else
+  it stays derived, mirroring hue-c). The Betty sparkle SHAPE is **brand-constant** — it is not
+  a seed, has no Figma variable, and is **never exported**; it lives once, in code
+  (`createBeamTheme`'s `STAR_MASK`). Officiating a star tune routes `pitch`/`intensity` to the
+  product collection and an overridden `color` through the same seam as hue-c.
 - **Committing a combo = submitting it.** A combo file landing here (by branch + PR) is the
   proposal.
 - **Provenance: the record is the submitted artifact, never a reconstruction of it.** A combo
