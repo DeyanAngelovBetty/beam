@@ -41,8 +41,10 @@ const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, ou
 export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
   sunlight: {
     ontario: {
-      light: { primaryDown1: '#3832A0', primary0: '#5048E5', primaryUp1: '#828DF8', contrastText: '#FFFFFF' },
-      dark: { primaryDown1: '#515BA4', primary0: '#7582EB', primaryUp1: '#909BEF', contrastText: '#111827' },
+      // Modern Wisdom combo (§6 run): Sunlight/primary @ Ontario → tangerine family. contrastText
+      // UNTOUCHED (white on light, near-black on dark) — reported at officiation, not retuned.
+      light: { primaryDown1: '#8D1100', primary0: '#B33F00', primaryUp1: '#EB7500', contrastText: '#FFFFFF' },
+      dark: { primaryDown1: '#C47000', primary0: '#F59E1E', primaryUp1: '#FFB33F', contrastText: '#111827' },
       states: STATES,
     },
     alberta: {
@@ -203,7 +205,7 @@ type NavSchemeSeed = {
 };
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
-    dark: { anchor: '#0B0F19', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
+    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
     light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
   gaspar: {
@@ -254,8 +256,10 @@ export const gradientSeeds: Record<
   { dark: GradientSchemeSeed; light: GradientSchemeSeed }
 > = {
   sunlight: {
-    dark: { hueB: '#75EBDE', intensity: 10, starPitch: 72, starSizeRatio: 0.4, starIntensity: 7 },
-    light: { hueB: '#48DDE5', intensity: 6, starPitch: 72, starSizeRatio: 0.4, starIntensity: 5 },
+    // Modern Wisdom combo (§6 run): hue-c pinned — Sunlight's FIRST officiated override, so it
+    // stops deriving its bottom glow (mirrors the gaspar candy hue-c pin).
+    dark: { hueB: '#FFF3C2', intensity: 10, hueC: '#D95F1A', starPitch: 59, starSizeRatio: 0.23, starIntensity: 5 },
+    light: { hueB: '#D3C68F', intensity: 6, hueC: '#F53400', starPitch: 59, starSizeRatio: 0.23, starIntensity: 5 },
   },
   gaspar: {
     // candy combo (§6 officiating run): hue-c pinned as the first officiated override.
