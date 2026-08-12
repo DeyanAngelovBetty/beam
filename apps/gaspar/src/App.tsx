@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
 import { GASPAR_NAV, type GasparView } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
@@ -20,14 +20,12 @@ import { DashboardPage } from './gaspar/DashboardPage';
 // is unchanged.
 const MARK_MASK = brandLogoMaskSx(brandLogos.gaspar, 20);
 
-// The same three tint points as the page mesh / gradient border, pinned to the
-// per-scheme mark lightness (--beam-mark-l) so the mark stays legible as the ramp
-// moves. Hues stay brand (no computed complement — Gaspar stays teal).
-const MARK_GRADIENT =
-  'linear-gradient(115deg, ' +
-  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c h), ' +
-  'oklch(from var(--beam-gradient-hue-b) var(--beam-mark-l) c h), ' +
-  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c calc(h + 45)))';
+// The logo gradient is now FOUR registered, Theme-Lab-overridable stop slots (@betty/beam
+// `logoGradient()` + `derived.logoStops`). Defaults are today's three tint points — primary /
+// hue-b / primary+45°, each pinned to --beam-mark-l for legibility — mapped collinearly onto the
+// four slots, so this renders BYTE-IDENTICAL until a slot is overridden. Angle (115deg) is
+// app-owned and unchanged this pass.
+const MARK_GRADIENT = logoGradient();
 
 // Ghost = a DESATURATED watermark (chroma 0 → grey), not a dim logo — it reads as
 // absence and doesn't compete with the live mark. Same silhouette + weight.

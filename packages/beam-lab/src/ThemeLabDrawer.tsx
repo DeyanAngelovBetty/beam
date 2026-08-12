@@ -12,6 +12,7 @@ import {
   Snackbar,
   useColorScheme,
   starMaskUri,
+  logoGradient,
 } from '@betty/beam';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
@@ -44,10 +45,12 @@ import {
  * officiated through docs/sync-lanes-runbook.md — no Figma/repo writes.
  */
 
-type Target = 'anchor' | 'hueB' | 'hueC' | 'star' | 'primary';
+type Target = 'anchor' | 'hueB' | 'hueC' | 'star' | 'logo' | 'primary';
 // primary's `var` is its MAIN; the family derives from it (writePrimaryFamily), BRAND-axis.
 // hueC + star are DERIVED by default (their var holds a derivation expression) with an
-// override seam; `derivedNote` is the ƒ tooltip / return-to-derived label.
+// override seam; `derivedNote` is the ƒ tooltip / return-to-derived label. `logo` is SPECIAL —
+// it's four nested stop slots (--beam-logo-stop-1..4); its var/derivedNote are computed live
+// from the selected stop, so its TARGET_META entry is nominal (the chip shows the gradient).
 const TARGET_META: Record<
   Target,
   { label: string; var: string; brand?: boolean; derivable?: boolean; derivedNote?: string }
@@ -56,9 +59,14 @@ const TARGET_META: Record<
   hueB: { label: 'hue-b', var: '--beam-gradient-hue-b' },
   hueC: { label: 'hue-c', var: '--beam-gradient-hue-c', derivable: true, derivedNote: 'Following primary, rotated +45° — edit to override.' },
   star: { label: 'star', var: '--beam-star-color', derivable: true, derivedNote: 'Following primary mixed toward text — edit to override.' },
+  logo: { label: 'logo', var: '--beam-logo-stop-1', derivable: true },
   primary: { label: 'primary', var: '--mui-palette-primary-main', brand: true },
 };
 const GRADIENT_TARGETS: Target[] = ['hueB', 'hueC']; // share the mesh suggestions + intensity section
+const LOGO_STOPS = [1, 2, 3, 4] as const; // the four logo gradient stop slots
+const logoStopVar = (n: number) => `--beam-logo-stop-${n}`;
+const LOGO_GRADIENT_CSS = logoGradient(); // the live 4-stop gradient (chip swatch + note)
+const LOGO_STOP_DERIVED_NOTE = 'Following the logo recipe — edit this stop to override.';
 const PRIMARY_TOOLTIP =
   'Brand-axis seed (jurisdiction). Drafts here; export routes it to the brand collection, not product.';
 const RAMP_VARS = ['--beam-ramp--1', '--beam-ramp-0', '--beam-ramp-1', '--beam-ramp-2', '--beam-ramp-3'];
@@ -96,16 +104,27 @@ export function ThemeLabDrawer({
   const counterpart: Scheme = editing === 'dark' ? 'light' : 'dark';
 
   const [selected, setSelected] = useState<Target>('anchor');
+  // Which logo stop (1–4) the shared L/C/H group edits when selected === 'logo'.
+  const [logoStop, setLogoStop] = useState(1);
   const [ch, setCh] = useState({ l: 0, c: 0, h: 0 });
   const [intensity, setIntensity] = useState(0);
-  const [links, setLinks] = useState<Record<Target, { h: boolean; c: boolean }>>({
+  // Link/ratio state is keyed by ACTIVE KEY (target, or `logo1`..`logo4` per stop) — the logo
+  // stops each carry their own cross-scheme link state, like any target.
+  const [links, setLinks] = useState<Record<string, { h: boolean; c: boolean }>>({
     anchor: { h: true, c: true },
     hueB: { h: true, c: true },
     hueC: { h: true, c: true },
     star: { h: true, c: true },
     primary: { h: true, c: true },
+    logo1: { h: true, c: true },
+    logo2: { h: true, c: true },
+    logo3: { h: true, c: true },
+    logo4: { h: true, c: true },
   });
-  const [cRatio, setCRatio] = useState<Record<Target, number>>({ anchor: C_FALLBACK, hueB: C_FALLBACK, hueC: C_FALLBACK, star: C_FALLBACK, primary: C_FALLBACK });
+  const [cRatio, setCRatio] = useState<Record<string, number>>({
+    anchor: C_FALLBACK, hueB: C_FALLBACK, hueC: C_FALLBACK, star: C_FALLBACK, primary: C_FALLBACK,
+    logo1: C_FALLBACK, logo2: C_FALLBACK, logo3: C_FALLBACK, logo4: C_FALLBACK,
+  });
   // Star tile pitch (px) + glyph size ratio — both mode-invariant (per product), so their
   // writers touch BOTH schemes. Pitch = spacing (breathes); size = glyph/tile fraction (re-tiles).
   const [starPitch, setStarPitch] = useState(56);
@@ -120,14 +139,17 @@ export function ThemeLabDrawer({
   const [comboName, setComboName] = useState('');
   const bump = () => setTick((t) => t + 1);
 
-  const targetVar = TARGET_META[selected].var;
+  // The active editing var + its keyed slot. For `logo`, both track the selected stop; for every
+  // other target they're the target's own var / name. Everything downstream (writeChannel,
+  // commitHex, links, ratio, return-to-derived, hydrate) routes through these — no special-casing.
+  const targetVar = selected === 'logo' ? logoStopVar(logoStop) : TARGET_META[selected].var;
+  const activeKey = selected === 'logo' ? `logo${logoStop}` : selected;
 
   // Capture C ratio as light/dark (direction-independent), guarding a ~0 dark chroma.
-  const captureRatio = (target: Target) => {
-    const v = TARGET_META[target].var;
-    const darkC = toChannels(resolveForScheme('dark', readVarForScheme('dark', v))).c;
-    const lightC = toChannels(resolveForScheme('light', readVarForScheme('light', v))).c;
-    setCRatio((r) => ({ ...r, [target]: darkC < 1e-4 ? C_FALLBACK : lightC / darkC }));
+  const captureRatio = (key: string, varName: string) => {
+    const darkC = toChannels(resolveForScheme('dark', readVarForScheme('dark', varName))).c;
+    const lightC = toChannels(resolveForScheme('light', readVarForScheme('light', varName))).c;
+    setCRatio((r) => ({ ...r, [key]: darkC < 1e-4 ? C_FALLBACK : lightC / darkC }));
   };
 
   // Capture the primary family's L-relationships (light/dark relative to main) for BOTH
@@ -166,7 +188,7 @@ export function ThemeLabDrawer({
   // channels AND the geometry/intensity detail. Shared by the open/target/scheme effect and
   // Reset, so the drawer never lies about what the page actually wears.
   const hydrateControls = () => {
-    setCh(toChannels(resolveColor(readVar(TARGET_META[selected].var)))); // resolveColor handles the derived exprs
+    setCh(toChannels(resolveColor(readVar(targetVar)))); // resolveColor handles the derived exprs (incl. logo stops)
     if (GRADIENT_TARGETS.includes(selected)) setIntensity(parseFloat(readVar('--beam-gradient-intensity')) || 0);
     if (selected === 'star') {
       setIntensity(parseFloat(readVar('--beam-star-intensity')) || 0);
@@ -174,16 +196,17 @@ export function ThemeLabDrawer({
       setStarSize(parseFloat(readVar('--beam-star-size-ratio')) || 0.4);
     }
     if (selected === 'primary') captureFamily();
-    if (links[selected].c) captureRatio(selected);
+    if (links[activeKey].c) captureRatio(activeKey, targetVar);
   };
 
-  // Re-hydrate on open / target / scheme change.
+  // Re-hydrate on open / target / scheme / stop change (logoStop → the L/C/H group follows the
+  // newly-selected stop; the stop swatches re-probe live via `tick`).
   useEffect(() => {
     if (!open) return;
     hydrateControls();
     bump();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selected, editing]);
+  }, [open, selected, editing, logoStop]);
 
   // Escape closes (non-modal — no focus trap, so listen at the window).
   useEffect(() => {
@@ -199,13 +222,13 @@ export function ThemeLabDrawer({
     writeTarget(editing, next);
     // Cross-scheme links (H = identity, C = ratio). Reconstruct the counterpart's full colour
     // from its current main so only the linked channel changes (primary re-derives its family).
-    if (channel === 'h' && links[selected].h) {
+    if (channel === 'h' && links[activeKey].h) {
       const cp = toChannels(resolveForScheme(counterpart, readVarForScheme(counterpart, targetVar)));
       writeTarget(counterpart, { l: cp.l, c: cp.c, h: value });
     }
-    if (channel === 'c' && links[selected].c) {
+    if (channel === 'c' && links[activeKey].c) {
       const cp = toChannels(resolveForScheme(counterpart, readVarForScheme(counterpart, targetVar)));
-      const r = cRatio[selected];
+      const r = cRatio[activeKey];
       const cpC = editing === 'dark' ? value * r : value / r; // maintain light/dark = r
       writeTarget(counterpart, { l: cp.l, c: cpC, h: cp.h });
     }
@@ -226,12 +249,12 @@ export function ThemeLabDrawer({
     const c = toChannels(hex);
     setCh(c);
     writeTarget(editing, c);
-    if (links[selected].h || links[selected].c) {
+    if (links[activeKey].h || links[activeKey].c) {
       const cp = toChannels(resolveForScheme(counterpart, readVarForScheme(counterpart, targetVar)));
       writeTarget(counterpart, {
         l: cp.l,
-        c: links[selected].c ? (editing === 'dark' ? c.c * cRatio[selected] : c.c / cRatio[selected]) : cp.c,
-        h: links[selected].h ? c.h : cp.h,
+        c: links[activeKey].c ? (editing === 'dark' ? c.c * cRatio[activeKey] : c.c / cRatio[activeKey]) : cp.c,
+        h: links[activeKey].h ? c.h : cp.h,
       });
     }
     bump();
@@ -273,9 +296,9 @@ export function ThemeLabDrawer({
 
   const toggleLink = (channel: 'h' | 'c') =>
     setLinks((prev) => {
-      const on = !prev[selected][channel];
-      if (channel === 'c' && on) captureRatio(selected);
-      return { ...prev, [selected]: { ...prev[selected], [channel]: on } };
+      const on = !prev[activeKey][channel];
+      if (channel === 'c' && on) captureRatio(activeKey, targetVar);
+      return { ...prev, [activeKey]: { ...prev[activeKey], [channel]: on } };
     });
 
   const resetAll = () => {
@@ -308,6 +331,19 @@ export function ThemeLabDrawer({
       if (hasVar(s, '--beam-star-color')) st.color = toHex(readVarForScheme(s, '--beam-star-color'));
       return st;
     };
+    // Logo: SPARSE — only overridden stop slots, per scheme; absent = derived (declarative
+    // absence, no Figma twin until officiated). SHAPE of the recipe (angle/positions) is not a
+    // seed and is never exported — only the overridden stop COLOURS are.
+    const logoOf = (s: Scheme) => {
+      const out: Record<string, string> = {};
+      for (const n of LOGO_STOPS) if (hasVar(s, logoStopVar(n))) out[n] = toHex(readVarForScheme(s, logoStopVar(n)));
+      return out;
+    };
+    const logoDark = logoOf('dark');
+    const logoLight = logoOf('light');
+    const logo: { dark?: Record<string, string>; light?: Record<string, string> } = {};
+    if (Object.keys(logoDark).length) logo.dark = logoDark;
+    if (Object.keys(logoLight).length) logo.light = logoLight;
     const combo = {
       version: 3, // v3: combos know their scope (name / scope / createdAt)
       name: slug(comboName || 'untitled-combo'),
@@ -329,6 +365,8 @@ export function ThemeLabDrawer({
         dark: starOf('dark'),
         light: starOf('light'),
       },
+      // logo present ONLY when a stop is overridden (sparse); absent = fully derived.
+      ...(logo.dark || logo.light ? { logo } : {}),
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -337,8 +375,14 @@ export function ThemeLabDrawer({
   // Derived reads — re-run each render; `tick` forces it after a write.
   void tick;
   const ramp = RAMP_VARS.map(readVar);
-  const ratioLabel = cRatio[selected].toFixed(2);
-  const isOverridden = Boolean(TARGET_META[selected].derivable) && hasVar(editing, targetVar);
+  const ratioLabel = cRatio[activeKey].toFixed(2);
+  // logo stops are all derivable; the derived note is per-stop generic.
+  const isDerivable = selected === 'logo' || Boolean(TARGET_META[selected].derivable);
+  const isOverridden = isDerivable && hasVar(editing, targetVar);
+  const derivedNote = selected === 'logo' ? LOGO_STOP_DERIVED_NOTE : TARGET_META[selected].derivedNote;
+  // Live probe of the four logo stops (resolved colours) — re-read each render so un-overridden
+  // stops visibly FOLLOW primary/hue-b edits (the demo beat).
+  const logoStopColors = LOGO_STOPS.map((n) => resolveColor(readVar(logoStopVar(n))));
 
   // Suggestions come from the SELECTED gradient target's resolved colour.
   const accents = GRADIENT_TARGETS.includes(selected)
@@ -432,22 +476,26 @@ export function ThemeLabDrawer({
           {/* Target chips + hex readout of the selected target. */}
           <Stack spacing={1}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
-              {(['anchor', 'hueB', 'hueC', 'star', 'primary'] as const).map((t) => {
-                const isDerived = Boolean(TARGET_META[t].derivable) && !hasVar(editing, TARGET_META[t].var);
+              {(['anchor', 'hueB', 'hueC', 'star', 'logo', 'primary'] as const).map((t) => {
+                // logo is an aggregate of four stops — no single ƒ; its swatch IS the gradient.
+                const isDerived = t !== 'logo' && Boolean(TARGET_META[t].derivable) && !hasVar(editing, TARGET_META[t].var);
                 return (
                   <TargetChip
                     key={t}
                     label={TARGET_META[t].label}
                     color={resolveColor(readVar(TARGET_META[t].var))} // resolveColor handles the derived exprs
                     maskUri={t === 'star' ? CHIP_STAR_URI : undefined} // the star chip IS the sparkle
+                    gradient={t === 'logo' ? LOGO_GRADIENT_CSS : undefined} // the logo chip IS the gradient
                     selected={selected === t}
                     badge={TARGET_META[t].brand ? 'BRAND' : isDerived ? 'ƒ' : undefined}
                     tooltip={
-                      TARGET_META[t].brand
-                        ? PRIMARY_TOOLTIP
-                        : isDerived
-                          ? (TARGET_META[t].derivedNote ?? `Edit ${TARGET_META[t].label}`)
-                          : `Edit ${TARGET_META[t].label}`
+                      t === 'logo'
+                        ? 'Edit logo gradient — four stop slots'
+                        : TARGET_META[t].brand
+                          ? PRIMARY_TOOLTIP
+                          : isDerived
+                            ? (TARGET_META[t].derivedNote ?? `Edit ${TARGET_META[t].label}`)
+                            : `Edit ${TARGET_META[t].label}`
                     }
                     onSelect={() => setSelected(t)}
                   />
@@ -458,7 +506,7 @@ export function ThemeLabDrawer({
                 scheme). Commit routes through commitHex — the slider channel-write path. */}
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Typography variant="caption" color="text.secondary" sx={{ minWidth: 52 }}>
-                {TARGET_META[selected].label}
+                {selected === 'logo' ? `stop ${logoStop}` : TARGET_META[selected].label}
               </Typography>
               <HexInput value={channelsToHex(ch.l, ch.c, ch.h)} onCommit={commitHex} />
             </Stack>
@@ -492,7 +540,51 @@ export function ThemeLabDrawer({
             </Stack>
           </Stack>
 
-          {/* The one shared L/C/H group, bound to the selected target. */}
+          {/* Logo stop selector — four probe-read swatches (live), each a stop slot. Pick one →
+              the shared L/C/H group + hex input below edit THAT stop for the active scheme. ƒ badge
+              on a stop while it's still derived. Un-overridden stops re-probe every render, so they
+              visibly follow primary/hue-b/hue-c edits. */}
+          {selected === 'logo' && (
+            <Stack spacing={0.75}>
+              <Typography variant="overline" color="text.secondary">
+                Stops
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                {LOGO_STOPS.map((n) => {
+                  const stopDerived = !hasVar(editing, logoStopVar(n));
+                  return (
+                    <Stack key={n} spacing={0.25} sx={{ alignItems: 'center', position: 'relative' }}>
+                      {stopDerived && (
+                        <Box aria-hidden sx={{ position: 'absolute', top: -6, zIndex: 1, px: 0.4, borderRadius: 0.5, fontSize: 9, lineHeight: '13px', backgroundColor: 'var(--mui-palette-primary-main)', color: 'var(--mui-palette-primary-contrastText)' }}>
+                          ƒ
+                        </Box>
+                      )}
+                      <Box
+                        component="button"
+                        aria-pressed={logoStop === n}
+                        aria-label={`Edit logo stop ${n}`}
+                        onClick={() => setLogoStop(n)}
+                        sx={{
+                          width: 44,
+                          height: 28,
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          border: 'none',
+                          backgroundColor: logoStopColors[n - 1],
+                          boxShadow: logoStop === n ? '0 0 0 2px var(--mui-palette-primary-main)' : 'inset 0 0 0 1px var(--mui-palette-divider)',
+                        }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {n}
+                      </Typography>
+                    </Stack>
+                  );
+                })}
+              </Stack>
+            </Stack>
+          )}
+
+          {/* The one shared L/C/H group, bound to the selected target (or the selected logo stop). */}
           <Stack spacing={1.5}>
             <ChannelRow label="L" value={ch.l} min={0} max={1} step={0.001} onChange={(v) => writeChannel('l', v)}>
               <Tooltip title="L has no cross-scheme link — light L is an estate constant, dark L is the darkness choice.">
@@ -525,14 +617,14 @@ export function ThemeLabDrawer({
                 as-is (no auto-flip in v1).
               </Typography>
             )}
-            {TARGET_META[selected].derivable &&
+            {isDerivable &&
               (isOverridden ? (
                 <Button size="small" variant="text" startIcon={<RestartAltIcon />} onClick={returnToDerived} sx={{ alignSelf: 'flex-start' }}>
                   Return to derived
                 </Button>
               ) : (
                 <Typography variant="caption" color="text.secondary">
-                  ƒ {TARGET_META[selected].derivedNote}
+                  ƒ {derivedNote}
                 </Typography>
               ))}
           </Stack>
@@ -741,6 +833,7 @@ function TargetChip({
   label,
   color,
   maskUri,
+  gradient,
   selected,
   badge,
   tooltip,
@@ -749,6 +842,7 @@ function TargetChip({
   label: string;
   color: string;
   maskUri?: string; // when set, the swatch is `color` seen THROUGH this mask (the star sparkle)
+  gradient?: string; // when set, the swatch IS this gradient (the logo chip)
   selected: boolean;
   badge?: string; // 'BRAND' (axis boundary) or 'ƒ' (derived / following) — no lock, both editable
   tooltip: string;
@@ -788,8 +882,9 @@ function TargetChip({
             borderRadius: 1.5,
             cursor: 'pointer',
             // Masked chips paint the sparkle in an INNER span, so the ring/focus box-shadow (drawn
-            // on this button) stays a full ring — never clipped by the glyph mask.
-            backgroundColor: maskUri ? 'transparent' : color,
+            // on this button) stays a full ring — never clipped by the glyph mask. The logo chip
+            // paints the live 4-stop gradient directly.
+            ...(gradient ? { background: gradient } : { backgroundColor: maskUri ? 'transparent' : color }),
             border: 'none',
             boxShadow: selected
               ? '0 0 0 2px var(--mui-palette-primary-main)'

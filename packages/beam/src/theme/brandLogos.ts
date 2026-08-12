@@ -32,6 +32,18 @@ export const LOGO_WORDMARK_FRACTION = 120 / 264;
  * and the star bleed + safe area ride along inside the box (the shell header centres it, never
  * clips). Spread into a Box; the consumer adds `background: <gradient>`.
  */
+/**
+ * The masked logo's paint: today's mark recipe restructured into FOUR registered stop slots
+ * (tokens.ts `derived.logoStops`; Theme-Lab overridable per-slot). Positions 0/25/50/100 place
+ * the three real stops at their original 0/50/100 with the collinear filler at 25%, so the
+ * gradient is BYTE-IDENTICAL to the old 3-stop recipe before any override. The interpolation
+ * space is left default (sRGB in Chrome) to match the old recipe + the filler's sRGB midpoint.
+ * `angle` stays app-owned (per-product); default 115deg matches today's recipe.
+ */
+export function logoGradient(angle = '115deg'): string {
+  return `linear-gradient(${angle}, var(--beam-logo-stop-1) 0%, var(--beam-logo-stop-2) 25%, var(--beam-logo-stop-3) 50%, var(--beam-logo-stop-4) 100%)`;
+}
+
 export function brandLogoMaskSx(logo: string, wordmarkPx: number) {
   return {
     height: wordmarkPx / LOGO_WORDMARK_FRACTION,

@@ -250,6 +250,10 @@ type GradientSchemeSeed = {
   starSizeRatio: number;
   starIntensity: number;
   starColor?: string;
+  // LOGO gradient stop overrides — SPARSE: only officiated slots get a literal, absent = derived
+  // (`derived.logoStops`), mirroring the hueC/starColor seam. Keyed 1–4 (the four gradient stops).
+  // No Figma twin until a slot's first officiated override (derived-tokens doctrine).
+  logoStops?: Partial<Record<1 | 2 | 3 | 4, string>>;
 };
 export const gradientSeeds: Record<
   ProductName,
@@ -305,6 +309,13 @@ export const markLightness: Record<ThemeMode, number> = { dark: 0.82, light: 0.4
  * Safari 18, Firefox 128+) — fine for a Chrome-first BO, same posture as
  * corner-shape.
  */
+
+// Logo gradient — the three REAL stops of today's mark recipe (primary, hue-b, primary+45°, each
+// remapped to --beam-mark-l for legibility). See `derived.logoStops` for why these are split out.
+const LOGO_STOP_PRIMARY = 'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c h)';
+const LOGO_STOP_HUEB = 'oklch(from var(--beam-gradient-hue-b) var(--beam-mark-l) c h)';
+const LOGO_STOP_PRIMARY_45 = 'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c calc(h + 45))';
+
 export const derived = {
   /**
    * Brand-tinted table/surface border — a quiet derivative of primary, so
@@ -358,6 +369,30 @@ export const derived = {
    * hue-c). Intensity is applied at use (`--beam-star-intensity`); the 45/55 lean is the knob.
    */
   starColor: 'color-mix(in oklch, var(--mui-palette-primary-main) 45%, var(--mui-palette-text-primary))',
+
+  /**
+   * LOGO gradient stops — FOUR registered `<color>` slots the Theme Lab overrides per-slot (the
+   * hue-c override seam, ×4). The masked wordmark paints `linear-gradient(<angle>, stop-1 0%,
+   * stop-2 25%, stop-3 50%, stop-4 100%)`.
+   *
+   * DEFAULTS reproduce TODAY's 3-stop mark-l recipe mapped COLLINEARLY onto 4 slots, so the logo
+   * is BYTE-IDENTICAL before any Lab override: the three real stops keep their exact expressions
+   * at 0/50/100, and stop-2 is a collinear sRGB-midpoint FILLER at 25% — the colour the old
+   * gradient already renders there, so the fourth slot is a visual no-op (default gradient
+   * interpolation is sRGB in Chrome; the mix matches it). The canonical seed derivation
+   * (hue-b / mix / primary / hue-c, no mark-l) is a CANDIDATE default parked for the design
+   * alignment — flattens the lightness journey + breaks light-scheme contrast, see the byte-check
+   * report — to be applied later as a one-line swap here.
+   *
+   * Standalone exprs (no var()→registered-var refs) so each computes independently; a `logoStops`
+   * seed pins any slot per product/scheme (sparse — no Figma twin until first officiated override).
+   */
+  logoStops: {
+    1: LOGO_STOP_PRIMARY,
+    2: `color-mix(in srgb, ${LOGO_STOP_PRIMARY}, ${LOGO_STOP_HUEB})`,
+    3: LOGO_STOP_HUEB,
+    4: LOGO_STOP_PRIMARY_45,
+  } as Record<1 | 2 | 3 | 4, string>,
 
   /**
    * SURFACE RAMP — five elevation positions as oklch L-offsets from the ANCHOR seed

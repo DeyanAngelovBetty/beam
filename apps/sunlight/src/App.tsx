@@ -6,7 +6,7 @@ import {
   useNavigate,
   useLocation,
 } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import { buildSunlightNav } from './sunlight/navItems';
 import { ShellFooter } from './sunlight/ShellFooter';
@@ -52,11 +52,12 @@ const BrandContext = createContext<{ brand: BrandName; setBrand: (b: BrandName) 
 // unchanged.
 const MARK_MASK = brandLogoMaskSx(brandLogos.sunlight, 20);
 
-const MARK_GRADIENT =
-  'linear-gradient(115deg, ' +
-  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c h), ' +
-  'oklch(from var(--beam-gradient-hue-b) var(--beam-mark-l) c h), ' +
-  'oklch(from var(--mui-palette-primary-main) var(--beam-mark-l) c calc(h + 45)))';
+// The logo gradient is now FOUR registered, Theme-Lab-overridable stop slots (@betty/beam
+// `logoGradient()` + `derived.logoStops`). Defaults are today's three tint points — primary /
+// hue-b / primary+45°, each pinned to --beam-mark-l for legibility — mapped collinearly onto the
+// four slots, so this renders BYTE-IDENTICAL until a slot is overridden. Angle (115deg) is
+// app-owned and unchanged this pass.
+const MARK_GRADIENT = logoGradient();
 
 // Ghost = the same mask DESATURATED (chroma 0 → grey), a watermark that reads as
 // absence — not a dim logo competing with the live mark.

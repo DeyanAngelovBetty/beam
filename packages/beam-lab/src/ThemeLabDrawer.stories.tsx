@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Box, Stack, Typography, Paper, BeamPageHeader, BeamStatusBadge } from '@betty/beam';
+import { Box, Stack, Typography, Paper, BeamPageHeader, BeamStatusBadge, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import { ThemeLabDrawer } from './ThemeLabDrawer';
 
 /**
@@ -8,12 +8,13 @@ import { ThemeLabDrawer } from './ThemeLabDrawer';
  * Paper (surface 1), a raised surface (2), the nav rail, and a gradient title. The override
  * sheet targets THIS iframe's document, so the mechanism is real.
  *
- * Target-chip model: pick a chip ([anchor] [hue-b] [hue-c ƒ] [star ƒ] [primary BRAND]) → the
- * shared L/C/H group hydrates from it → drag re-derives live (anchor → the ramp strip + surfaces;
- * hue-b/hue-c → the mesh; star → the tiled Betty sparkle on body::after, with a Pitch slider that
- * BREATHES the lattice; primary → the whole family incl. alpha states). H/C link toggles carry
- * edits across dark/light; the painted strip shows what the canvas actually wears (star included).
- * Copy combo exports a scoped v3 JSON (star block: pitch + per-scheme intensity; shape is constant).
+ * Target-chip model: pick a chip ([anchor] [hue-b] [hue-c ƒ] [star ƒ] [logo] [primary BRAND]) →
+ * the shared L/C/H group hydrates from it → drag re-derives live (anchor → the ramp strip +
+ * surfaces; hue-b/hue-c → the mesh; star → the tiled Betty sparkle on body::after, Pitch slider
+ * BREATHES the lattice; logo → the rail-header wordmark's 4-stop gradient, with nested per-stop
+ * swatches — un-overridden stops follow primary/hue-b edits; primary → the whole family incl.
+ * alpha states). H/C link toggles carry edits across dark/light; the painted strip shows what the
+ * canvas wears. Copy combo exports a scoped v3 JSON (sparse star + logo blocks; shape is constant).
  *
  * Graduated from apps/gaspar to @betty/beam-lab on the second consumer (Sunlight) — BEAM.md §2.
  * NOTE: the override sheet is shared module state for the session — Reset (or refresh) clears it.
@@ -32,9 +33,11 @@ function SurfacesBoard() {
   // them; transparent lets the real page show through — the honest preview.
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'transparent', display: 'flex' }}>
-      {/* Nav rail — derives from the anchor (nav surface/edge). */}
+      {/* Nav rail — derives from the anchor (nav surface/edge). Rail header carries the masked
+          logo painted by the live 4-stop gradient, so the [logo] chip drives something real. */}
       <Box sx={{ width: 200, background: 'var(--beam-nav-surface)', borderRight: '1px solid', borderColor: 'divider', p: 2 }}>
-        <Stack spacing={1}>
+        <Stack spacing={1.5}>
+          <Box role="img" aria-label="Sunlight" sx={{ ...brandLogoMaskSx(brandLogos.sunlight, 20), background: logoGradient() }} />
           <Typography variant="overline" color="text.secondary">Nav rail</Typography>
           {['Dashboard', 'Transactions', 'Routing'].map((l) => (
             <Typography key={l} variant="body2">{l}</Typography>

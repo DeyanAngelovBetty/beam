@@ -3,6 +3,16 @@ import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, m
 import { starMaskUri } from './starGeometry';
 import { meta } from './textStyles';
 
+// Logo gradient stops — four registered <color> slots per scheme. A `logoStops` seed pins any
+// slot (officiated override, sparse); absent → the derived default (byte-identical to today's
+// 3-stop mark recipe mapped collinearly onto 4 slots). See tokens.ts `derived.logoStops`.
+const logoStopVars = (g: (typeof gradientSeeds)['gaspar']['dark']) => ({
+  '--beam-logo-stop-1': g.logoStops?.[1] ?? derived.logoStops[1],
+  '--beam-logo-stop-2': g.logoStops?.[2] ?? derived.logoStops[2],
+  '--beam-logo-stop-3': g.logoStops?.[3] ?? derived.logoStops[3],
+  '--beam-logo-stop-4': g.logoStops?.[4] ?? derived.logoStops[4],
+});
+
 /**
  * Beam theme factory.
  *
@@ -149,6 +159,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // rotation (Sunlight/Midnight — absent seed → byte-identical to before).
             '--beam-gradient-hue-c': g.dark.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
+            ...logoStopVars(g.dark),
             // Mesh dot layer. Pitch/size are scheme-invariant; only opacity flips
             // (a dark dot on near-white reads louder, so light is held lower).
             // Betty STAR layer (body::after). Colour derived-by-default (`derived.starColor`)
@@ -275,6 +286,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // hue-c: the officiated override seed if present, else the derived rotation.
             '--beam-gradient-hue-c': g.light.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.light.intensity}%`,
+            ...logoStopVars(g.light),
             '--beam-star-color': g.light.starColor ?? derived.starColor,
             '--beam-star-intensity': `${g.light.starIntensity}%`,
             '--beam-border-intensity': `${borderIntensity.light.calm}%`,
@@ -298,6 +310,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-gradient-hue-b': g.dark.hueB,
             '--beam-gradient-hue-c': g.dark.hueC ?? derived.gradientHueC,
             '--beam-gradient-intensity': `${g.dark.intensity}%`,
+            ...logoStopVars(g.dark),
             '--beam-star-color': g.dark.starColor ?? derived.starColor,
             '--beam-star-intensity': `${g.dark.starIntensity}%`,
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
@@ -389,6 +402,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // reads the :root value. (Idiom: simeydotme's grid-paper — @property + a transitioned
           // custom prop — the mechanism, not the pattern.)
           '@property --beam-star-pitch': { syntax: "'<length>'", inherits: 'true', initialValue: '56px' },
+          // Logo gradient stops — registered <color> so the Lab reads resolved values (and a future
+          // angle/transition pass can interpolate them). inherits so the masked mark reads :root.
+          '@property --beam-logo-stop-1': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          '@property --beam-logo-stop-2': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          '@property --beam-logo-stop-3': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
+          '@property --beam-logo-stop-4': { syntax: "'<color>'", inherits: 'true', initialValue: 'transparent' },
           '@keyframes beam-border-spin': {
             to: { '--beam-border-angle': '495deg' },
           },
