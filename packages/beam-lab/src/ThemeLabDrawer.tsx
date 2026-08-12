@@ -26,6 +26,7 @@ import {
   toChannels,
   channelsToHex,
   channelTriple,
+  parseColor,
   toHex,
   lightFromDark,
   accentCandidates,
@@ -215,6 +216,24 @@ export function ThemeLabDrawer({
     const c = toChannels(hex);
     setCh(c);
     writeTarget(editing, c);
+    bump();
+  };
+  // Commit a full colour (a pasted/typed hex) as ONE channel-write — same semantics as the
+  // sliders, just L/C/H at once: writeTarget handles the primary family + the hue-c/star ƒ-clear,
+  // and the cross-scheme H/C links propagate together (identity for H, ratio for C), exactly as
+  // writeChannel does per-channel. No special-casing anywhere downstream.
+  const commitHex = (hex: string) => {
+    const c = toChannels(hex);
+    setCh(c);
+    writeTarget(editing, c);
+    if (links[selected].h || links[selected].c) {
+      const cp = toChannels(resolveForScheme(counterpart, readVarForScheme(counterpart, targetVar)));
+      writeTarget(counterpart, {
+        l: cp.l,
+        c: links[selected].c ? (editing === 'dark' ? c.c * cRatio[selected] : c.c / cRatio[selected]) : cp.c,
+        h: links[selected].h ? c.h : cp.h,
+      });
+    }
     bump();
   };
   const applyIntensity = (val: number) => {
@@ -435,9 +454,14 @@ export function ThemeLabDrawer({
                 );
               })}
             </Stack>
-            <Typography variant="caption" color="text.secondary">
-              {TARGET_META[selected].label}: {channelsToHex(ch.l, ch.c, ch.h)}
-            </Typography>
+            {/* The readout IS an input: paste/type a colour for the selected target (active
+                scheme). Commit routes through commitHex — the slider channel-write path. */}
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ minWidth: 52 }}>
+                {TARGET_META[selected].label}
+              </Typography>
+              <HexInput value={channelsToHex(ch.l, ch.c, ch.h)} onCommit={commitHex} />
+            </Stack>
             {/* Painted-tint strip — what the three radials ACTUALLY paint (mix-toward-canvas).
                 Raw seeds in the chips above; painted reality here. */}
             <Stack spacing={0.5}>
@@ -649,6 +673,56 @@ function NumberInput({
       }}
       slotProps={{ htmlInput: { min, max, step, 'aria-label': `${label} value` } }}
       sx={{ width: 84 }}
+    />
+  );
+}
+
+/**
+ * Colour readout that doubles as an input. Not focused → shows the current hex exactly (`value`).
+ * Focused → holds local text (NumberInput precedent), so a half-typed/pasted string survives.
+ * Invalid input styles as an error and does NOT write; Enter/blur commits a valid parse (via
+ * onCommit → the channel-write path) or reverts to current. One commit = one clean write, so a
+ * paste over a slider draft lands atomically without flickering through intermediate states.
+ */
+function HexInput({ value, onCommit }: { value: string; onCommit: (hex: string) => void }) {
+  const [text, setText] = useState(value);
+  const [editing, setEditing] = useState(false);
+  const [invalid, setInvalid] = useState(false);
+  useEffect(() => {
+    if (!editing) setText(value); // re-hydrate from sliders/reset when not being edited
+  }, [value, editing]);
+  const commit = () => {
+    const hex = parseColor(text);
+    if (hex) onCommit(hex);
+    else setText(value); // revert — no write on garbage
+    setInvalid(false);
+    setEditing(false);
+  };
+  return (
+    <TextField
+      size="small"
+      value={editing ? text : value}
+      error={invalid}
+      onFocus={() => {
+        setEditing(true);
+        setText(value);
+      }}
+      onChange={(e) => {
+        setText(e.target.value);
+        setInvalid(e.target.value.trim() !== '' && parseColor(e.target.value) === null);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur(); // → onBlur commits
+        else if (e.key === 'Escape') {
+          setText(value);
+          setInvalid(false);
+          setEditing(false);
+          e.currentTarget.blur();
+        }
+      }}
+      slotProps={{ htmlInput: { 'aria-label': 'Selected target colour (hex, rgb, hsl, or oklch)', spellCheck: false } }}
+      sx={{ flex: 1 }}
     />
   );
 }

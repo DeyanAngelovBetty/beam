@@ -94,6 +94,20 @@ export function channelsToHex(l: number, c: number, h: number): string {
   return formatHex({ mode: 'oklch', l, c, h });
 }
 
+/**
+ * Parse LIBERAL colour input → hex, or null if unparseable. culori's converter already accepts
+ * #hex 3/6/8, rgb(), hsl(), oklch(), named colours; we add bare hex (no '#') and trim. Alpha in
+ * an 8-digit hex is dropped (formatHex → #rrggbb) — the Lab edits opaque L/C/H only. For the hex
+ * readout-turned-input; the commit still routes through the normal channel-write path.
+ */
+export function parseColor(input: string): string | null {
+  const s = input.trim();
+  if (!s) return null;
+  const normalized = /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$|^[0-9a-fA-F]{8}$/.test(s) ? `#${s}` : s;
+  const hex = toOklch(normalized) ? formatHex(normalized) : undefined;
+  return hex ?? null;
+}
+
 /** Normalize any resolved colour to hex (export + swatch labels). */
 export function toHex(color: string): string {
   return formatHex(color);
