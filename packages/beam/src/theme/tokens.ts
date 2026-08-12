@@ -259,8 +259,8 @@ export const gradientSeeds: Record<
   },
   gaspar: {
     // candy combo (§6 officiating run): hue-c pinned as the first officiated override.
-    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', starPitch: 56, starSizeRatio: 0.4, starIntensity: 10 },
-    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', starPitch: 56, starSizeRatio: 0.4, starIntensity: 6 },
+    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', starPitch: 40, starSizeRatio: 0.22, starIntensity: 4 },
+    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', starPitch: 40, starSizeRatio: 0.22, starIntensity: 6 },
   },
 };
 

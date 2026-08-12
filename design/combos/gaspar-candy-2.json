@@ -1,0 +1,16 @@
+{
+  "version": 3,
+  "name": "gaspar-candy-2",
+  "scope": { "product": "gaspar", "jurisdiction": "ontario" },
+  "createdAt": "2026-08-12T07:31:52.304Z",
+  "brand": { "primary": {
+    "dark":  { "main": "#d8afff", "light": "#d8afff", "dark": "#946cb8" },
+    "light": { "main": "#7c6296", "light": "#987eb3", "dark": "#5c4374" } } },
+  "surface": { "dark": { "anchor": "#000104" }, "light": { "anchor": "#eeeff2" } },
+  "gradient": {
+    "dark":  { "hueB": "#0077a6", "intensity": "34%", "hueC": "#66d2ff" },
+    "light": { "hueB": "#217a8e", "intensity": "14%", "hueC": "#33809f" }
+  },
+  "star": { "pitch": "40px", "sizeRatio": 0.22,
+    "dark": { "intensity": "4%" }, "light": { "intensity": "6%" } }
+}
