@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
-import GASPAR_MARK from './assets/GASPAR.svg';
 import { GASPAR_NAV, type GasparView } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
 import { ThemeLabDrawer } from '@betty/beam-lab';
@@ -13,19 +12,13 @@ import { DashboardPage } from './gaspar/DashboardPage';
 // rendered as a CSS-MASKED silhouette (the .svg stays the source of truth) filled
 // by a brand-hued gradient — so it follows the ramp instead of carrying its own
 // hardcoded colours. -webkit-mask-* alongside mask-* for Safari.
-const MARK_MASK = {
-  height: 20,
-  aspectRatio: '889 / 152', // the GASPAR wordmark's intrinsic ratio
-  display: 'block',
-  maskImage: `url(${GASPAR_MARK})`,
-  WebkitMaskImage: `url(${GASPAR_MARK})`,
-  maskSize: 'contain',
-  WebkitMaskSize: 'contain',
-  maskRepeat: 'no-repeat',
-  WebkitMaskRepeat: 'no-repeat',
-  maskPosition: 'left center',
-  WebkitMaskPosition: 'left center',
-} as const;
+//
+// The logo is now Vasco's ENVELOPE (1045×264, wordmark = 45.5% of height, star bleed inside the
+// 72/72 safe area). `brandLogoMaskSx` sizes the ENVELOPE from the WORDMARK height: passing the
+// old 20px keeps the rendered wordmark pixel-identical (box grows to 44px; the safe area is part
+// of the logo, as with any icon grid). Geometry lives in @betty/beam; the gradient recipe below
+// is unchanged.
+const MARK_MASK = brandLogoMaskSx(brandLogos.gaspar, 20);
 
 // The same three tint points as the page mesh / gradient border, pinned to the
 // per-scheme mark lightness (--beam-mark-l) so the mark stays legible as the ramp

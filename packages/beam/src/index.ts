@@ -20,6 +20,8 @@
 export { createBeamTheme } from './theme/createBeamTheme';
 // Betty sparkle geometry — ONE source (theme tiles it, the Lab chip renders through it).
 export { STAR_PATH, starMaskUri } from './theme/starGeometry';
+// Brand wordmark logos — envelope geometry + the mask-sizing helper (colour stays app-owned).
+export { brandLogos, brandLogoMaskSx, LOGO_ENVELOPE_ASPECT, LOGO_WORDMARK_FRACTION, type BrandLogoName } from './theme/brandLogos';
 export { beamGradientBorder } from './theme/gradientBorder';
 export { meta } from './theme/textStyles';
 export { products, derived, roleRamp, roleColor } from './theme/tokens';

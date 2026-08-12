@@ -6,9 +6,8 @@ import {
   useNavigate,
   useLocation,
 } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
-import SUNLIGHT_MARK from './assets/SUNLIGHT.svg';
 import { buildSunlightNav } from './sunlight/navItems';
 import { ShellFooter } from './sunlight/ShellFooter';
 import { ThemeLabDrawer } from '@betty/beam-lab';
@@ -46,19 +45,12 @@ const BrandContext = createContext<{ brand: BrandName; setBrand: (b: BrandName) 
 // pinned to --beam-mark-l, so it follows the ramp instead of carrying hardcoded
 // colours. Same treatment as Gaspar, reusing the global --beam-mark-l. -webkit-mask
 // for Safari.
-const MARK_MASK = {
-  height: 20,
-  aspectRatio: '207 / 36', // the SUNLIGHT wordmark's intrinsic ratio
-  display: 'block',
-  maskImage: `url(${SUNLIGHT_MARK})`,
-  WebkitMaskImage: `url(${SUNLIGHT_MARK})`,
-  maskSize: 'contain',
-  WebkitMaskSize: 'contain',
-  maskRepeat: 'no-repeat',
-  WebkitMaskRepeat: 'no-repeat',
-  maskPosition: 'left center',
-  WebkitMaskPosition: 'left center',
-} as const;
+// The logo is now Vasco's ENVELOPE (1045×264, wordmark = 45.5% of height, star bleed inside the
+// 72/72 safe area). `brandLogoMaskSx` sizes the ENVELOPE from the WORDMARK height: passing the
+// old 20px keeps the rendered wordmark pixel-identical (box grows to 44px; the safe area is part
+// of the logo, as with any icon grid). Geometry lives in @betty/beam; the gradient recipe is
+// unchanged.
+const MARK_MASK = brandLogoMaskSx(brandLogos.sunlight, 20);
 
 const MARK_GRADIENT =
   'linear-gradient(115deg, ' +
