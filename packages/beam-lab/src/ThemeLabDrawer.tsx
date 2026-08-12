@@ -161,9 +161,10 @@ export function ThemeLabDrawer({
     else setVar(scheme, targetVar, channelsToHex(c.l, c.c, c.h));
   };
 
-  // Hydrate the sliders from the selected target's live value on open / target / scheme change.
-  useEffect(() => {
-    if (!open) return;
+  // Hydrate EVERY control for the selected target from its live computed value — colour
+  // channels AND the geometry/intensity detail. Shared by the open/target/scheme effect and
+  // Reset, so the drawer never lies about what the page actually wears.
+  const hydrateControls = () => {
     setCh(toChannels(resolveColor(readVar(TARGET_META[selected].var)))); // resolveColor handles the derived exprs
     if (GRADIENT_TARGETS.includes(selected)) setIntensity(parseFloat(readVar('--beam-gradient-intensity')) || 0);
     if (selected === 'star') {
@@ -173,6 +174,12 @@ export function ThemeLabDrawer({
     }
     if (selected === 'primary') captureFamily();
     if (links[selected].c) captureRatio(selected);
+  };
+
+  // Re-hydrate on open / target / scheme change.
+  useEffect(() => {
+    if (!open) return;
+    hydrateControls();
     bump();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, selected, editing]);
@@ -253,8 +260,8 @@ export function ThemeLabDrawer({
     });
 
   const resetAll = () => {
-    reset();
-    setCh(toChannels(readVar(targetVar)));
+    reset(); // clears the sheet's draft blocks → getComputedStyle now returns the seeds
+    hydrateControls(); // re-read them so Pitch/Size/Int + channels snap back with the paint
     bump();
   };
 
