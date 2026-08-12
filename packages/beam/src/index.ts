@@ -18,6 +18,8 @@
 // Apps consume the theme through this entry, never by deep-importing
 // ./theme/* — same seam rule as atoms (BEAM.md §6.2).
 export { createBeamTheme } from './theme/createBeamTheme';
+// Betty sparkle geometry — ONE source (theme tiles it, the Lab chip renders through it).
+export { STAR_PATH, starMaskUri } from './theme/starGeometry';
 export { beamGradientBorder } from './theme/gradientBorder';
 export { meta } from './theme/textStyles';
 export { products, derived, roleRamp, roleColor } from './theme/tokens';

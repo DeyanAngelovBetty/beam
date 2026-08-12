@@ -239,10 +239,13 @@ type GradientSchemeSeed = {
   hueC?: string;
   // Betty STAR layer (brand geometry tiled in the mesh — the four-point sparkle, masked on
   // body::after). SHAPE is brand-constant (never a seed/export); these tune it per product:
-  // `starPitch` = tile size in px (per product, mode-invariant — bigger = sparser/calmer);
+  // `starPitch` = tile SPACING in px (per product, mode-invariant — bigger = sparser/calmer);
+  // `starSizeRatio` = glyph/tile fraction, DECOUPLED from pitch (a mask's repeat period equals
+  // its size, so the glyph size lives in the image — see starGeometry.ts), mode-invariant;
   // `starIntensity` = per-scheme visibility %; `starColor?` = officiated colour override
   // (ABSENT = derived from `derived.starColor`, mirroring the hue-c override seam).
   starPitch: number;
+  starSizeRatio: number;
   starIntensity: number;
   starColor?: string;
 };
@@ -251,13 +254,13 @@ export const gradientSeeds: Record<
   { dark: GradientSchemeSeed; light: GradientSchemeSeed }
 > = {
   sunlight: {
-    dark: { hueB: '#75EBDE', intensity: 10, starPitch: 72, starIntensity: 7 },
-    light: { hueB: '#48DDE5', intensity: 6, starPitch: 72, starIntensity: 5 },
+    dark: { hueB: '#75EBDE', intensity: 10, starPitch: 72, starSizeRatio: 0.4, starIntensity: 7 },
+    light: { hueB: '#48DDE5', intensity: 6, starPitch: 72, starSizeRatio: 0.4, starIntensity: 5 },
   },
   gaspar: {
     // candy combo (§6 officiating run): hue-c pinned as the first officiated override.
-    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', starPitch: 56, starIntensity: 10 },
-    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', starPitch: 56, starIntensity: 6 },
+    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', starPitch: 56, starSizeRatio: 0.4, starIntensity: 10 },
+    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', starPitch: 56, starSizeRatio: 0.4, starIntensity: 6 },
   },
 };
 

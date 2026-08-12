@@ -1,12 +1,6 @@
 import { createTheme, type Theme } from '@mui/material/styles';
 import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, type BrandName, type ProductName } from './tokens';
-
-// The Betty four-point sparkle as a MASK tile. Brand-constant SHAPE (never a seed, never
-// exported). viewBox 250 with the 100-unit star centred (translate 75) → it fills ~40% of
-// each tile, so `--beam-star-pitch` reads as spacing, not size. Concave sparkle path from the
-// product logos. fill is irrelevant (alpha mask) — %23000 is opaque black.
-const STAR_MASK =
-  "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 250'><path transform='translate(75 75)' d='M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z' fill='%23000'/></svg>\")";
+import { starMaskUri } from './starGeometry';
 import { meta } from './textStyles';
 
 /**
@@ -163,6 +157,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-star-color': g.dark.starColor ?? derived.starColor,
             '--beam-star-intensity': `${g.dark.starIntensity}%`,
             '--beam-star-pitch': `${g.dark.starPitch}px`,
+            // GLYPH size is decoupled from PITCH: a mask's repeat period === its size, so the
+            // glyph/tile ratio lives INSIDE the image. `--beam-star-mask` is the materialized
+            // sparkle at the product's ratio; `--beam-star-size-ratio` carries the raw seed
+            // (the Lab hydrates + exports it; CSS only consumes the mask). Both mode-invariant.
+            '--beam-star-mask': starMaskUri(g.dark.starSizeRatio),
+            '--beam-star-size-ratio': String(g.dark.starSizeRatio),
             // Gradient-border intensity (opt-in beamGradientBorder). Per-scheme
             // dial: light needs more than dark. :root default = dark.
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
@@ -343,8 +343,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             zIndex: -1,
             pointerEvents: 'none',
             backgroundColor: 'color-mix(in oklch, var(--beam-star-color) var(--beam-star-intensity), transparent)',
-            maskImage: STAR_MASK,
-            WebkitMaskImage: STAR_MASK,
+            maskImage: 'var(--beam-star-mask)',
+            WebkitMaskImage: 'var(--beam-star-mask)',
             maskRepeat: 'repeat',
             WebkitMaskRepeat: 'repeat',
             maskSize: 'var(--beam-star-pitch) var(--beam-star-pitch)',

@@ -11,6 +11,7 @@ import {
   Tooltip,
   Snackbar,
   useColorScheme,
+  starMaskUri,
 } from '@betty/beam';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
@@ -64,6 +65,9 @@ const RAMP_LABELS = ['−1', '0', '1', '2', '3'];
 const C_FALLBACK = 0.2; // estate constant: light C ≈ 0.2 × dark C
 const MIN_CONTRAST = 4.5; // WCAG AA for contrastText over primary main
 const SUBTLE_HUE_DEG = 30; // painted mesh tint within this of the canvas hue reads as subtle
+// The star chip's swatch IS the sparkle: a generous, size-INDEPENDENT thumbnail (the live tuned
+// ratio could be tiny — the chip should still read as a star). Same geometry source as the layer.
+const CHIP_STAR_URI = starMaskUri(0.8);
 
 /** Slug-safe combo name (lowercase, hyphens) — the eventual design/combos/<slug>.json name. */
 const slug = (s: string) =>
@@ -101,8 +105,10 @@ export function ThemeLabDrawer({
     primary: { h: true, c: true },
   });
   const [cRatio, setCRatio] = useState<Record<Target, number>>({ anchor: C_FALLBACK, hueB: C_FALLBACK, hueC: C_FALLBACK, star: C_FALLBACK, primary: C_FALLBACK });
-  // Star tile pitch (px) — mode-invariant (per product), so applyPitch writes BOTH schemes.
+  // Star tile pitch (px) + glyph size ratio — both mode-invariant (per product), so their
+  // writers touch BOTH schemes. Pitch = spacing (breathes); size = glyph/tile fraction (re-tiles).
   const [starPitch, setStarPitch] = useState(56);
+  const [starSize, setStarSize] = useState(0.4);
   // primary family L-deltas (light.L − main.L, dark.L − main.L) captured per scheme on hydrate.
   const [familyDeltas, setFamilyDeltas] = useState<Record<Scheme, { light: number; dark: number }>>({
     dark: { light: 0, dark: 0 },
@@ -163,6 +169,7 @@ export function ThemeLabDrawer({
     if (selected === 'star') {
       setIntensity(parseFloat(readVar('--beam-star-intensity')) || 0);
       setStarPitch(parseFloat(readVar('--beam-star-pitch')) || 56);
+      setStarSize(parseFloat(readVar('--beam-star-size-ratio')) || 0.4);
     }
     if (selected === 'primary') captureFamily();
     if (links[selected].c) captureRatio(selected);
@@ -215,6 +222,18 @@ export function ThemeLabDrawer({
     setStarPitch(val);
     setVar('dark', '--beam-star-pitch', `${val}px`);
     setVar('light', '--beam-star-pitch', `${val}px`);
+    bump();
+  };
+  // Star glyph size — mode-invariant, both schemes. Writes the ratio (data, for hydrate/export)
+  // AND the regenerated mask URI (paint). A URI swap re-tiles INSTANTLY (no transition rides it —
+  // only pitch is a registered <length>); that snap is expected, distinct from the pitch breathe.
+  const applySize = (val: number) => {
+    setStarSize(val);
+    const uri = starMaskUri(val);
+    (['dark', 'light'] as const).forEach((s) => {
+      setVar(s, '--beam-star-size-ratio', String(val));
+      setVar(s, '--beam-star-mask', uri);
+    });
     bump();
   };
   const suggestLight = () => applyColor(toHex(lightFromDark(resolveForScheme('dark', readVarForScheme('dark', targetVar)))));
@@ -276,8 +295,14 @@ export function ThemeLabDrawer({
       brand: { primary: { dark: primaryOf('dark'), light: primaryOf('light') } },
       surface: { dark: { anchor: surfaceOf('dark') }, light: { anchor: surfaceOf('light') } },
       gradient: { dark: gradientOf('dark'), light: gradientOf('light') },
-      // pitch is per-product (mode-invariant) → one value; intensity/color are per scheme.
-      star: { pitch: readVar('--beam-star-pitch'), dark: starOf('dark'), light: starOf('light') },
+      // pitch + sizeRatio are per-product (mode-invariant) → one value each; intensity/color per
+      // scheme. SHAPE stays brand-constant, never exported (only the ratio that scales it).
+      star: {
+        pitch: readVar('--beam-star-pitch'),
+        sizeRatio: parseFloat(readVar('--beam-star-size-ratio')),
+        dark: starOf('dark'),
+        light: starOf('light'),
+      },
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -388,6 +413,7 @@ export function ThemeLabDrawer({
                     key={t}
                     label={TARGET_META[t].label}
                     color={resolveColor(readVar(TARGET_META[t].var))} // resolveColor handles the derived exprs
+                    maskUri={t === 'star' ? CHIP_STAR_URI : undefined} // the star chip IS the sparkle
                     selected={selected === t}
                     badge={TARGET_META[t].brand ? 'BRAND' : isDerived ? 'ƒ' : undefined}
                     tooltip={
@@ -511,10 +537,11 @@ export function ThemeLabDrawer({
                 Star tile
               </Typography>
               <ChannelRow label="Pitch" value={starPitch} min={24} max={120} step={1} onChange={applyPitch} />
+              <ChannelRow label="Size" value={starSize} min={0.15} max={0.9} step={0.01} onChange={applySize} />
               <ChannelRow label="Int %" value={intensity} min={0} max={100} step={1} onChange={applyIntensity} />
               <Typography variant="caption" color="text.secondary">
-                Pitch = tile spacing (px); wider reads calmer. It breathes on drag — unless
-                reduced-motion is on.
+                Pitch = spacing (px), Size = glyph fraction — independent (big+sparse or
+                small+dense). Pitch breathes on drag (unless reduced-motion); Size re-tiles instantly.
               </Typography>
             </Stack>
           )}
@@ -632,6 +659,7 @@ function LinkToggle({ on, onToggle, tooltip }: { on: boolean; onToggle: () => vo
 function TargetChip({
   label,
   color,
+  maskUri,
   selected,
   badge,
   tooltip,
@@ -639,6 +667,7 @@ function TargetChip({
 }: {
   label: string;
   color: string;
+  maskUri?: string; // when set, the swatch is `color` seen THROUGH this mask (the star sparkle)
   selected: boolean;
   badge?: string; // 'BRAND' (axis boundary) or 'ƒ' (derived / following) — no lock, both editable
   tooltip: string;
@@ -672,17 +701,39 @@ function TargetChip({
           aria-label={`Edit ${label}`}
           onClick={onSelect}
           sx={{
+            position: 'relative',
             width: 44,
             height: 44,
             borderRadius: 1.5,
             cursor: 'pointer',
-            backgroundColor: color,
+            // Masked chips paint the sparkle in an INNER span, so the ring/focus box-shadow (drawn
+            // on this button) stays a full ring — never clipped by the glyph mask.
+            backgroundColor: maskUri ? 'transparent' : color,
             border: 'none',
             boxShadow: selected
               ? '0 0 0 2px var(--mui-palette-primary-main)'
               : 'inset 0 0 0 1px var(--mui-palette-divider)',
           }}
-        />
+        >
+          {maskUri && (
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: color,
+                maskImage: maskUri,
+                WebkitMaskImage: maskUri,
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+              }}
+            />
+          )}
+        </Box>
         <Typography variant="caption" color="text.secondary">
           {label}
         </Typography>
