@@ -1,7 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Typography,
   Stack,
+  Box,
+  Paper,
+  Button,
+  TextField,
+  Alert,
   BeamDataTable,
   GemIcon,
   BeamPageHeader,
@@ -9,33 +15,118 @@ import {
   BeamStatusBadge,
 } from '@betty/beam';
 import type { BeamColumn, BeamTabItem } from '@betty/beam';
-import { NextGemPanel } from './NextGemPanel';
+import FileDownloadIcon from '@mui/icons-material/FileDownloadRounded';
+import UploadFileIcon from '@mui/icons-material/UploadFileRounded';
 import { RouterIdentityLink } from './RouterIdentityLink';
-import { LOYALTY_STATUSES, type LoyaltyStatus, type StatusReward } from './loyaltyStatuses';
-import { getPendingFor } from './changeRequests';
-
-const rewardColumns: BeamColumn<StatusReward>[] = [
-  { key: 'points', header: 'points to next gem', render: (r) => r.pointsToClaim.toLocaleString(), getValue: (r) => r.pointsToClaim },
-  { key: 'type', header: 'Reward type', render: (r) => r.rewardType },
-  { key: 'amount', header: 'Reward amount', align: 'right', render: (r) => r.rewardAmount.toLocaleString(), getValue: (r) => r.rewardAmount },
-  { key: 'expiry', header: 'Expiry hours', align: 'right', render: (r) => r.expiryHours },
-];
+import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
+import { LOYALTY_STATUSES, type LoyaltyStatus } from './loyaltyStatuses';
+import { getPendingFor, submit } from './changeRequests';
+import { getCurrentUser } from './currentUser';
+import {
+  serializeStatus,
+  serializeList,
+  validateStatusImport,
+  validateListImport,
+  computeListDiff,
+  mergeOntoLive,
+  type ListDiff,
+} from './loyaltyImportExport';
 
 const TABS: BeamTabItem[] = [
   'Status', 'A Levels', 'B Levels', 'RTP Multipliers', 'Daily Gifts',
   'Wheel Settings', 'Status Perks', 'Onboarding Checklist', 'MetaGame Presets',
 ].map((label) => ({ id: label.toLowerCase().replace(/\s+/g, '-'), label }));
 
+/** Export helper — copy + download, the row/grid export gesture (a live entity, never a draft). */
+function exportJson(filename: string, json: string) {
+  void navigator.clipboard?.writeText(json);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+const slugify = (s: string) => s.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'loyalty-status';
+
+type ImportPanel = { kind: 'row'; status: LoyaltyStatus } | { kind: 'grid' };
+
 export function LoyaltyStatusPage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState(TABS[0].id);
+  const [, setTick] = useState(0);
+  const bump = () => setTick((t) => t + 1); // refresh the Pending badges after grid submit
+
+  // Import UI (Rule Builder import-panel precedent: validate before anything touches state).
+  const [panel, setPanel] = useState<ImportPanel | null>(null);
+  const [importText, setImportText] = useState('');
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [gridDiff, setGridDiff] = useState<ListDiff | null>(null);
+  const [gridResult, setGridResult] = useState<number | null>(null);
+
+  const openPanel = (p: ImportPanel) => {
+    setPanel(p);
+    setImportText('');
+    setImportErrors([]);
+    setGridDiff(null);
+    setGridResult(null);
+  };
+  const closePanel = () => setPanel(null);
+  const onFile = (file: File | undefined) => file?.text().then(setImportText);
+
+  // Row import → validate → open the editor route with the payload as a DRAFT (identity re-anchored
+  // to this row; import never writes the store — four-eyes runs through the editor's Submit).
+  const doRowImport = (status: LoyaltyStatus) => {
+    const res = validateStatusImport(importText);
+    if (!res.ok) return setImportErrors(res.errors);
+    navigate(`/loyalty-status/${status.id}`, { state: { importedDraft: mergeOntoLive(res.draft, status) } });
+  };
+
+  // Grid import → validate → diff (which statuses differ) → confirm → one CR per changed status.
+  const reviewGridImport = () => {
+    const res = validateListImport(importText);
+    if (!res.ok) {
+      setImportErrors(res.errors);
+      setGridDiff(null);
+      return;
+    }
+    setImportErrors([]);
+    setGridDiff(computeListDiff(res.items, LOYALTY_STATUSES));
+  };
+  const confirmGridImport = () => {
+    if (!gridDiff) return;
+    const byId = new Map(LOYALTY_STATUSES.map((s) => [String(s.id), s]));
+    const res = validateListImport(importText);
+    if (!res.ok) return; // guarded by the review step; belt-and-braces
+    let count = 0;
+    for (const item of res.items) {
+      const live = byId.get(String(item.id));
+      if (!live) continue;
+      const changed = gridDiff.changed.some((c) => c.id === String(item.id));
+      if (!changed) continue; // unchanged → no CR
+      submit({
+        entityType: 'loyaltyStatus',
+        entityId: String(live.id),
+        entityName: live.name,
+        baseVersion: live.version, // supersede handles any in-flight pending for this entity
+        draft: mergeOntoLive(item, live),
+        submittedBy: getCurrentUser().name,
+      });
+      count += 1;
+    }
+    setGridResult(count);
+    setGridDiff(null);
+    setImportText('');
+    bump(); // rows now wear the Pending badge
+  };
+
   const columns: BeamColumn<LoyaltyStatus>[] = [
     { key: 'id', header: 'ID', render: (r) => r.id, getValue: (r) => r.id, width: 64 },
     {
       key: 'status',
       header: 'Loyalty status',
       getValue: (r) => r.name,
-      // Identity cell → true link to the editor (the canonical page), list-grammar §2.
-      // Row click still expands (tier 1) — the two affordances coexist.
       isIdentity: true,
       getHref: (r) => `${import.meta.env.BASE_URL}loyalty-status/${r.id}`,
       render: (r) => (
@@ -50,8 +141,7 @@ export function LoyaltyStatusPage() {
     { key: 'keepGems', header: 'retain status after gem #', render: (r) => r.keepGems, align: 'right', width: '140px' },
     { key: 'multiplier', header: 'Multiplier on level up', render: (r) => r.multiplier, align: 'right', width: '140px' },
     {
-      // Approval state, visible on the object (BEAM §8): a pending change request shows
-      // Pending, otherwise empty. Calm by default; no "live" badge, no name mutation.
+      // Approval state, visible on the object (BEAM §8): a pending change request shows Pending.
       key: 'approval',
       header: 'Approval',
       width: '120px',
@@ -64,9 +154,117 @@ export function LoyaltyStatusPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader title="Loyalty Status" />
+      <BeamPageHeader
+        title="Loyalty Status"
+        // Grid-level export/import (list-grammar: whole-collection actions live in the page header,
+        // per-row ones in the kebab). Export = the live list; Import = a governed diff → CRs.
+        action={
+          <Stack direction="row" spacing={1}>
+            <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />} onClick={() => exportJson('loyalty-statuses.json', serializeList(LOYALTY_STATUSES))}>
+              Export all
+            </Button>
+            <Button size="small" variant="outlined" startIcon={<UploadFileIcon />} onClick={() => openPanel({ kind: 'grid' })}>
+              Import…
+            </Button>
+          </Stack>
+        }
+      />
 
       <BeamTabs items={TABS} value={tab} onChange={setTab} aria-label="Loyalty status sections" />
+
+      {gridResult !== null && (
+        <Alert
+          severity={gridResult > 0 ? 'success' : 'info'}
+          action={
+            gridResult > 0 ? (
+              <Button color="inherit" size="small" onClick={() => navigate('/pending-approvals')}>
+                Pending Approvals
+              </Button>
+            ) : undefined
+          }
+          onClose={() => setGridResult(null)}
+        >
+          {gridResult > 0
+            ? `${gridResult} change request${gridResult > 1 ? 's' : ''} submitted for approval.`
+            : 'No changes — nothing to submit.'}
+        </Alert>
+      )}
+
+      {panel && (
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={1.5}>
+            <Typography variant="subtitle2">
+              {panel.kind === 'row' ? `Import onto “${panel.status.name}” (single status JSON)` : 'Import loyalty statuses (list JSON)'}
+            </Typography>
+            <TextField
+              size="small"
+              multiline
+              minRows={4}
+              placeholder="Paste JSON…"
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              fullWidth
+            />
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Button size="small" component="label" variant="text">
+                Choose file…
+                <input hidden type="file" accept="application/json" onChange={(e) => onFile(e.target.files?.[0])} />
+              </Button>
+              <Box sx={{ flex: 1 }} />
+              <Button size="small" onClick={closePanel}>Cancel</Button>
+              {panel.kind === 'row' ? (
+                <Button size="small" variant="contained" disabled={!importText.trim()} onClick={() => doRowImport(panel.status)}>
+                  Import → edit
+                </Button>
+              ) : gridDiff ? (
+                <Button size="small" variant="contained" disabled={gridDiff.changed.length === 0} onClick={confirmGridImport}>
+                  Submit {gridDiff.changed.length} change request{gridDiff.changed.length === 1 ? '' : 's'}
+                </Button>
+              ) : (
+                <Button size="small" variant="contained" disabled={!importText.trim()} onClick={reviewGridImport}>
+                  Review changes
+                </Button>
+              )}
+            </Stack>
+
+            {importErrors.length > 0 && (
+              <Paper variant="outlined" sx={{ p: 1.5, borderColor: 'error.main' }}>
+                <Typography variant="caption" color="error.main" sx={{ fontWeight: 600 }}>
+                  {importErrors.length} problem{importErrors.length > 1 ? 's' : ''} — nothing was imported:
+                </Typography>
+                <Stack component="ul" sx={{ m: 0, pl: 2 }}>
+                  {importErrors.map((err, i) => (
+                    <Typography key={i} component="li" variant="caption" color="text.secondary">
+                      {err}
+                    </Typography>
+                  ))}
+                </Stack>
+              </Paper>
+            )}
+
+            {panel.kind === 'grid' && gridDiff && (
+              <Paper variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  {gridDiff.changed.length} changed · {gridDiff.unchanged} unchanged
+                  {gridDiff.unknown.length > 0 ? ` · ${gridDiff.unknown.length} unknown (skipped)` : ''}
+                </Typography>
+                <Stack component="ul" sx={{ m: 0, pl: 2 }}>
+                  {gridDiff.changed.map((c) => (
+                    <Typography key={c.id} component="li" variant="caption" color="text.secondary">
+                      {c.name} — {c.changedFields} field{c.changedFields > 1 ? 's' : ''} changed
+                    </Typography>
+                  ))}
+                </Stack>
+                {gridDiff.changed.length > 0 && (
+                  <Typography variant="caption" color="text.secondary">
+                    Submitting files one change request per changed status — unchanged statuses are left alone.
+                  </Typography>
+                )}
+              </Paper>
+            )}
+          </Stack>
+        </Paper>
+      )}
 
       <BeamDataTable
         columns={columns}
@@ -75,52 +273,16 @@ export function LoyaltyStatusPage() {
         LinkComponent={RouterIdentityLink}
         paginated
         renderExpanded={(r) => (
-          <ExpandedLoyaltyPanel
-            status={r}
-            next={LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === r.id) + 1]}
-          />
+          <ExpandedLoyaltyPanel status={r} next={LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === r.id) + 1]} />
         )}
+        // Kebab-only projection, matching PayoutConfigsPage/GameConfigsPage (screenshot-comparable
+        // consistency, list-grammar §3) — the expanded row stays the read-only rewards panel.
+        showExpandedActions={false}
+        rowActions={(r) => [
+          { id: 'export', label: 'Export', icon: <FileDownloadIcon fontSize="small" />, onSelect: () => exportJson(`${slugify(r.name)}.json`, serializeStatus(r)) },
+          { id: 'import', label: 'Import…', icon: <UploadFileIcon fontSize="small" />, onSelect: () => openPanel({ kind: 'row', status: r }) },
+        ]}
         aria-label="Loyalty statuses"
-      />
-    </Stack>
-  );
-}
-
-/**
- * Expanded row content: NextGemPanel + rewards table, hover-linked. Rewards now come from
- * the status's own `rewards` (owned by the entity store), not a separate REWARDS record.
- */
-function ExpandedLoyaltyPanel({ status, next }: { status: LoyaltyStatus; next?: LoyaltyStatus }) {
-  const [hoverId, setHoverId] = useState<string | null>(null);
-  const rewards = status.rewards;
-
-  return (
-    // Table-left / panel-right (both modes, one anatomy): the rewards table is the
-    // primary record and scanning starts left; the gem panel is a companion annex on the
-    // right. On xs the row stacks — table-first now. Hover linking (milestones ↔ rows)
-    // is unchanged.
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ alignItems: { md: 'flex-start' } }}>
-      <Stack spacing={1} sx={{ flex: 1, maxWidth: 720 }}>
-        <Typography variant="subtitle2" color="text.secondary">
-          {status.name} — claimable rewards
-        </Typography>
-        <BeamDataTable
-          columns={rewardColumns}
-          rows={rewards}
-          getRowId={(rw) => rw.id}
-          highlightRowId={hoverId}
-          onRowHover={setHoverId}
-          emptyMessage="No rewards configured for this status."
-          aria-label={`Rewards for ${status.name}`}
-        />
-      </Stack>
-      <NextGemPanel
-        currentGem={status.gem}
-        nextStatus={next ? { gem: next.gem, name: next.name, assignedOnly: next.gem === 'vip' } : undefined}
-        milestoneCost={rewards[0]?.pointsToClaim ?? 2000}
-        milestones={rewards.map((rw) => ({ id: rw.id }))}
-        highlightId={hoverId}
-        onMilestoneHover={setHoverId}
       />
     </Stack>
   );

@@ -114,9 +114,24 @@ decoration.
 
 ## 6. Editor grammar for entities under approval
 
+- **View-first.** A governed entity's detail route opens **read-only** — the same
+  anatomy (fields + rewards grid + companion), no editable affordance — and an
+  explicit **Edit** action enters the editor. Editing an entity whose changes need
+  a second pair of eyes is a deliberate act, never the landing state. A pending CR
+  shows in view as a **notice**, not a draft; it becomes the seeded draft only on
+  *entering* edit (pending-draft rule below). This is a **conditional** rule keyed on
+  "under approval", not a new universal one: direct-write editors (payout/game today)
+  stay always-edit — correct for their model — and inherit view-first the day they
+  onboard governance (§8). The condition decides, not the page, so the estate stays
+  coherent rather than split.
 - Anatomy = the `PayoutConfigEditor` precedent: `BeamPageHeader` + back link,
   **[Cancel] [Submit for approval]** in the header actions slot, dirty-gated,
   `useBlocker` discard guard. No commit bar (parked, §4 of detail grammar).
+- **Import → draft, never store.** A single-entity file import deep-links into edit
+  mode with the payload as a dirty draft (banner: "Imported — review and submit for
+  approval"); identity (id) is re-anchored to the target, never moved by file. A
+  collection import diffs against live and files **one CR per changed entity** (none
+  for unchanged). Four-eyes is not bypassable via file — import proposes, it never applies.
 - **Pending-draft rule: the editor seeds from the pending draft, not live.**
   If `getPendingFor()` returns a CR, the maker is continuing the current
   proposal, not restarting — banner states whose draft it is and that submitting
@@ -159,8 +174,11 @@ touching the CR store:
    labeling and the §6 pending-draft rule.
 4. The list gains the §5 approval column.
 5. Stories for any new surface import the entity store per the §4 contract.
+6. The detail route flips to **view-first** (§6): read-only by default, an explicit
+   Edit action enters the editor. That switch is what turns an always-edit
+   direct-write editor into a governed one — do it in the same change as steps 1–3.
 
-An entity onboarded without all five is half-governed; flag it, don't ship it.
+An entity onboarded without all six is half-governed; flag it, don't ship it.
 
 ## Open questions (deliberately unresolved)
 

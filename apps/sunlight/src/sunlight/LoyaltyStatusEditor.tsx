@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import {
   Stack,
   Button,
@@ -15,9 +15,11 @@ import {
   BeamEmptyState,
   GemIcon,
 } from '@betty/beam';
+import EditIcon from '@mui/icons-material/EditRounded';
 import { backTo } from './backTo';
 import { LoyaltyRewardsEditor } from './LoyaltyRewardsEditor';
 import { NextGemPanel } from './NextGemPanel';
+import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
 import { getLoyaltyStatus, LOYALTY_STATUSES, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
 import { submit, getPendingFor } from './changeRequests';
 import { getCurrentUser } from './currentUser';
@@ -31,20 +33,25 @@ import {
 } from './loyaltyStatusForm';
 
 /**
- * LoyaltyStatusEditor — the canonical page the list's identity link points to. Anatomy
- * mirrors PayoutConfigEditor (BeamPageHeader + back, Cancel/Submit in header actions,
- * empty-state on a missing id, useBlocker discard-guard). The maker-checker twist:
- * **Save is now "Submit for approval"** — it creates a pending change request; nothing
- * applies live (detail-grammar §4 save model, the button says what it does).
+ * LoyaltyStatusEditor — the detail page for a governed entity, so it opens VIEW-FIRST
+ * (approval-flow.md §6): read-only rendering of the same anatomy, and an explicit **Edit** action
+ * flips to the editor. "Edit is deliberate" — you don't land in an editable form for an entity
+ * whose changes need a second pair of eyes. Direct-write editors (payout/game) stay always-edit
+ * until they onboard governance via §8; this is a documented conditional rule, not a split.
  *
- * If a pending CR already exists for this status, the editor seeds from that DRAFT (not
- * live) so the maker continues the in-flight proposal, and dirty is measured against the
- * draft. baseVersion is re-read from LIVE at submit time so the stale check stays honest.
+ * Edit mode is the existing editor EXACTLY: Submit-for-approval (a pending CR; nothing applies
+ * live), dirty-gated, useBlocker discard guard, and the §6 pending-draft rule (seed from the
+ * pending draft on entering edit + banner). A row IMPORT deep-links straight into edit mode with
+ * the imported payload as a dirty draft.
  */
 export function LoyaltyStatusEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const existing = id ? getLoyaltyStatus(id) : undefined;
+  // A row import navigates here with the validated payload → open straight in edit mode.
+  const importedDraft = (location.state as { importedDraft?: LoyaltyStatusDraft } | null)?.importedDraft;
+  const [mode, setMode] = useState<'view' | 'edit'>(importedDraft ? 'edit' : 'view');
 
   if (!existing) {
     return (
@@ -55,32 +62,88 @@ export function LoyaltyStatusEditor() {
     );
   }
 
-  return <EditorForm key={existing.id} status={existing} />;
+  if (mode === 'view') return <ViewForm key={existing.id} status={existing} onEdit={() => setMode('edit')} />;
+  return <EditorForm key={existing.id} status={existing} imported={importedDraft} />;
 }
 
+// ── VIEW mode — read-only, no editable affordance leaks ────────────────────────────────────────
+function ViewForm({ status, onEdit }: { status: LoyaltyStatus; onEdit: () => void }) {
+  const navigate = useNavigate();
+  const pending = getPendingFor(String(status.id));
+  const nextTier = LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === status.id) + 1];
+
+  const readField = (label: string, value: string | number) => (
+    <Stack spacing={0.25} sx={{ minWidth: 160 }}>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="body2">{value}</Typography>
+    </Stack>
+  );
+
+  return (
+    <Stack spacing={3}>
+      <BeamPageHeader
+        title={status.name}
+        back={backTo(navigate, '/', 'Loyalty Status')}
+        status={<GemIcon gem={status.gem} size={20} />}
+        action={
+          <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
+            Edit
+          </Button>
+        }
+      />
+
+      {/* A pending CR is a NOTICE in view mode (not a draft to edit). It becomes a seeded draft
+          only on entering edit — §6. */}
+      {pending && (
+        <Alert severity="info">
+          A change request for this status is pending review — submitted by {pending.submittedBy} on{' '}
+          {pending.submittedAt.slice(0, 10)}. Approve or reject it in Pending Approvals.
+        </Alert>
+      )}
+
+      <Stack spacing={2}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Status fields
+        </Typography>
+        <Stack direction="row" spacing={4} sx={{ flexWrap: 'wrap', rowGap: 2 }}>
+          {readField('Name', status.name)}
+          {readField('Max days to complete', status.maxDays)}
+          {readField('Gems', status.boxes)}
+          {readField('Retain status after gem #', status.keepGems)}
+          {readField('Retain boxes after', status.keepBoxes)}
+          {readField('Multiplier on level up', status.multiplier)}
+        </Stack>
+      </Stack>
+
+      <ExpandedLoyaltyPanel status={status} next={nextTier} />
+    </Stack>
+  );
+}
+
+// ── EDIT mode — unchanged editor grammar, plus optional imported-draft seeding ──────────────────
 const FIELD_KEYS = ['name', 'maxDays', 'boxes', 'keepGems', 'keepBoxes', 'multiplier'] as const;
 type FieldKey = (typeof FIELD_KEYS)[number];
 
-function EditorForm({ status }: { status: LoyaltyStatus }) {
+function EditorForm({ status, imported }: { status: LoyaltyStatus; imported?: LoyaltyStatusDraft }) {
   const navigate = useNavigate();
   const pending = getPendingFor(String(status.id));
 
-  const initialModel = useMemo<EditorModel>(
-    () => toEditorModel(pending ? (pending.draft as LoyaltyStatusDraft) : status),
-    [pending, status],
-  );
+  // Seed the form: an IMPORT wins (dirty from the start), else the pending draft (§6), else live.
+  // The dirty BASELINE, though, is always the stored state (pending ?? live) — so an import reads
+  // as dirty immediately (imported ≠ stored) and Submit is live without a spurious keystroke.
+  const seedSource: LoyaltyStatusDraft = imported ?? (pending ? (pending.draft as LoyaltyStatusDraft) : status);
+  const baselineSource: LoyaltyStatusDraft = pending ? (pending.draft as LoyaltyStatusDraft) : status;
+  const initialModel = useMemo<EditorModel>(() => toEditorModel(seedSource), [seedSource]);
+  const originalSerialized = useMemo(() => serializeModel(toEditorModel(baselineSource)), [baselineSource]);
+
   const [model, setModel] = useState<EditorModel>(initialModel);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  // Milestone ↔ reward-row linking for the companion gem panel: hover + focus-within,
-  // FOCUS WINS (the editor is keyboard-first — §5 parity). Same shared-state pattern the
-  // view uses, extended with focus. The panel derives from the LIVE model, not the store.
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const activeId = focusId ?? hoverId;
   const nextTier = LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === status.id) + 1];
-  const originalSerialized = useMemo(() => serializeModel(initialModel), [initialModel]);
   const isDirty = serializeModel(model) !== originalSerialized;
   const submittingRef = useRef(false);
 
@@ -88,7 +151,6 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
   const mark = (key: string) => setTouched((t) => ({ ...t, [key]: true }));
   const showErr = (key: string) => submitAttempted || Boolean(touched[key]);
 
-  // Discard guard — same mechanism as PayoutConfigEditor / UserEdit.
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       isDirty && !submittingRef.current && currentLocation.pathname !== nextLocation.pathname,
@@ -96,7 +158,7 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
 
   const doSubmit = () => {
     if (!v.valid || !isDirty) return;
-    submittingRef.current = true; // stop the blocker before navigating
+    submittingRef.current = true;
     submit<LoyaltyStatusDraft>({
       entityType: 'loyaltyStatus',
       entityId: String(status.id),
@@ -105,7 +167,7 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
       draft: toDomainDraft(model, status),
       submittedBy: getCurrentUser().name,
     });
-    navigate('/'); // back to the list, where this row now wears the Pending badge
+    navigate('/');
   };
 
   const submitReason = !isDirty
@@ -132,7 +194,6 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
       <BeamPageHeader
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
-        // Gem is this tier's identity, under the title (§4) — not an action.
         status={<GemIcon gem={status.gem} size={20} />}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -158,12 +219,14 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
         }
       />
 
-      {pending && (
+      {imported ? (
+        <Alert severity="warning">Imported — review and submit for approval. Nothing is saved until a reviewer approves.</Alert>
+      ) : pending ? (
         <Alert severity="info">
-          Editing a pending change request submitted by {pending.submittedBy} on{' '}
-          {pending.submittedAt.slice(0, 10)}. Submitting replaces it.
+          Editing a pending change request submitted by {pending.submittedBy} on {pending.submittedAt.slice(0, 10)}.
+          Submitting replaces it.
         </Alert>
-      )}
+      ) : null}
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" color="text.secondary">
@@ -179,9 +242,6 @@ function EditorForm({ status }: { status: LoyaltyStatus }) {
         </Stack>
       </Stack>
 
-      {/* Table-left / panel-right — the same anatomy as the view (one anatomy, both
-          modes: the "same thing, now editable" bridge). The panel derives live from the
-          editor model, so adding a reward row grows the milestone ladder immediately. */}
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ alignItems: { md: 'flex-start' } }}>
         <LoyaltyRewardsEditor
           rows={model.rewards}
