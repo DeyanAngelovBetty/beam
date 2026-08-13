@@ -12,6 +12,7 @@ import {
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/EditRounded';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { GAME_TYPES, PAYOUT_STATUSES, statusBadge } from './payoutConfigs';
@@ -102,7 +103,9 @@ export function GameConfigsPage() {
     },
   ];
 
+  // Name (identity) opens VIEW; Edit LEADS the kebab (write intent, deep-link to edit mode).
   const rowActions = (config: GameConfig): BeamRowAction[] => [
+    { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/game-configs/${config.id}`, { state: { edit: true } }) },
     config.status === 'Enabled'
       ? {
           id: 'disable',

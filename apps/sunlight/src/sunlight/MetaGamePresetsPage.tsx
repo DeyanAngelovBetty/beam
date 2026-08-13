@@ -19,6 +19,7 @@ import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EditIcon from '@mui/icons-material/EditRounded';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { GAME_CONFIGS } from './gameConfigs';
 import {
@@ -134,6 +135,9 @@ export function MetaGamePresetsPage() {
   const rowActions = (preset: MetaGamePreset): BeamRowAction[] => {
     const statusAction = nextPresetStatusAction(preset.status);
     return [
+      // Edit LEADS (write intent, deep-link to edit mode); Enable/Disable; Delete stays last.
+      // Exactly §5's `Edit / … / Delete` shape. Name (identity) opens view.
+      { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/meta-game-presets/${preset.id}`, { state: { edit: true } }) },
       {
         id: statusAction.toLowerCase(),
         label: statusAction,

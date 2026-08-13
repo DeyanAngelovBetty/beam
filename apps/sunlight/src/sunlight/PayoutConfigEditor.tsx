@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import {
   Stack,
   Button,
@@ -15,8 +15,10 @@ import {
   BeamStatusBadge,
   BeamEmptyState,
 } from '@betty/beam';
+import EditIcon from '@mui/icons-material/EditRounded';
 import { backTo } from './backTo';
 import { PayoutRowsEditor } from './PayoutRowsEditor';
+import { PayoutRowsGrid } from './PayoutRowsGrid';
 import {
   GAME_TYPES,
   statusBadge,
@@ -37,21 +39,26 @@ import {
 } from './payoutConfigForm';
 
 /**
- * Payout Config Create / Edit page. NO view mode — a deliberate divergence from
- * the User view↔edit doctrine: MetaGame configs are always editable (brief §5.2
- * defines only Create/Edit; Enabled configs stay editable, brief §10). Recorded
- * in metagame-pages.md.
+ * Payout Config detail page. VIEW-FIRST like every detail route (approval-flow §6,
+ * ratified 2026-08-11): a `:id` opens read-only; **Edit** flips to the editor. `/new`
+ * has nothing to view, so it opens straight in create mode.
  *
- * DIVERGENCE flagged to product: Cancel + Create/Save live in the page-header
- * actions slot (detail-grammar §4 save model), not the bottom bar Georgi
- * sketched. Doctrine wins; a one-line move if overruled.
+ * The divergence from governed editors is now SAVE-MODEL ONLY, no longer posture: this
+ * is a DIRECT-WRITE editor — Save applies live ([Cancel] [Save]), no change request —
+ * because MetaGame configs edit directly (brief §5.2 / §10). It onboards the CR save
+ * model later via approval-flow §8; the view-first posture is already shared. (Cancel +
+ * Save stay in the header actions slot, detail-grammar §4 — not the bottom bar Georgi
+ * sketched; doctrine wins, a one-line move if overruled.)
  *
  * Scaffold plain — spacing / pigment is Deyan's bench pass.
  */
 export function PayoutConfigEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const existing = id ? getPayoutConfig(id) : undefined;
+  const editIntent = (location.state as { edit?: boolean } | null)?.edit;
+  const [mode, setMode] = useState<'view' | 'edit'>(editIntent ? 'edit' : 'view');
 
   if (id && !existing) {
     return (
@@ -62,7 +69,62 @@ export function PayoutConfigEditor() {
     );
   }
 
+  if (existing && mode === 'view') return <ViewForm key={existing.id} config={existing} onEdit={() => setMode('edit')} />;
   return <EditorForm key={id ?? 'new'} existing={existing} />;
+}
+
+/** Read-only view of a saved config — the row's record page. No editable affordance leaks. */
+function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void }) {
+  const navigate = useNavigate();
+  const badge = statusBadge(config.status);
+  // Probability total as a DISPLAY value — the editor shows it as a validation "Live Check"
+  // (BeamStat + severity); in a saved, read-only view there is nothing to validate, so it reads
+  // as a plain labelled total (severity would falsely imply live checking). Judgment call, reported.
+  const total = config.rows.reduce((sum, r) => sum + r.probability, 0) * 100;
+  const totalLabel = total.toLocaleString('en-US', { maximumFractionDigits: 4 });
+
+  return (
+    <Stack spacing={3}>
+      <BeamPageHeader
+        title={config.name}
+        back={backTo(navigate, '/payout-configs', 'Payout Configs')}
+        status={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
+        action={
+          <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
+            Edit
+          </Button>
+        }
+      />
+      <Stack spacing={2}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Basic Information
+        </Typography>
+        <ReadField label="Name" value={config.name} />
+        <ReadField label="Game Type" value={config.gameType} />
+      </Stack>
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
+          <Typography variant="subtitle2" color="text.secondary">
+            Payout rows
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Total probability: {totalLabel}%
+          </Typography>
+        </Stack>
+        <PayoutRowsGrid rows={config.rows} />
+      </Stack>
+    </Stack>
+  );
+}
+
+/** A labelled read-only value — the view-mode field renderer (caption over value). */
+function ReadField({ label, value }: { label: string; value: string | number }) {
+  return (
+    <Stack spacing={0.25} sx={{ minWidth: 160 }}>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="body2">{value}</Typography>
+    </Stack>
+  );
 }
 
 function EditorForm({ existing }: { existing?: PayoutConfig }) {

@@ -55,6 +55,14 @@ the **identity cell** is a link; **everything else** inspects at the declared ti
 Affordances: whole-row hover highlight + the link-styled name + the rail itself.
 (No row-end chevron — with the rail and the link, a third signal is noise.)
 
+*Amended 2026-08-13 — read intent vs write intent.* The full page an identity link
+opens is **view-first**: read-only, because inspecting is reading. Editing is a
+separate, deliberate act reached by the **Edit** row action (§3), which deep-links
+straight to edit mode. **Link = read intent; Edit = write intent.** This is the
+estate rule now — *every* detail route opens view-first, and Edit is the one gesture
+that flips it (approval-flow §6). The identity link and Edit are the two halves of the
+same pairing, one per intent.
+
 ## 3. Actions — never on the row surface
 
 📎 [Visual →](https://www.figma.com/design/9yNbolohxGitkMJKDjoyKG/Beam--MUI-v9-?node-id=12282-4214)
@@ -111,6 +119,16 @@ read as optional again:
 > definition as the kebab — **one source of truth, two projections; never two lists
 > to maintain.** `PendingApprovalsPage` never opted out and was the surviving
 > reference through the drift.
+
+*Amended 2026-08-13 — **Edit** is a standard row action.* Now that detail routes open
+view-first (§2, approval-flow §6), **Edit** joins the row's action set as the **write-intent**
+entry: it deep-links to the detail route in **edit mode** (the route carries the intent in
+navigation state — the same seam an imported draft rides). One `rowActions` definition, so
+Edit shows in both the kebab and the expanded bar automatically. **Placement: Edit leads the
+kebab** — it is the highest-frequency write action, so it anchors the top, ahead of
+state toggles (Enable/Disable) and non-edit actions (Export/Import…); destructive stays last.
+This matches §5's own example set (`Edit / Users in Role / Delete`). The identity link still
+opens **view** — Edit is the deliberate second gesture, never a duplicate of the link.
 
 *Amended 2026-07-31 — altitude determines alignment (detail-grammar §4).* Sub-page
 action strips (the batch strip, Add Row / Add Rule) render **LEFT, directly above

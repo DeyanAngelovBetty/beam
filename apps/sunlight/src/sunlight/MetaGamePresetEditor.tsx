@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { useBlocker, useNavigate, useParams } from 'react-router-dom';
+import { useBlocker, useNavigate, useParams, useLocation } from 'react-router-dom';
+import EditIcon from '@mui/icons-material/EditRounded';
 import {
   BeamEmptyState,
   BeamPageHeader,
@@ -46,10 +47,20 @@ import { PresetImagePreview } from './PresetImagePreview';
 
 type TouchedField = 'displayName' | 'gameConfigId' | 'gameType' | 'configCode' | 'expiryHours';
 
+/**
+ * MetaGame Preset detail page. VIEW-FIRST like every detail route (approval-flow §6,
+ * ratified 2026-08-11): a `:id` opens read-only, **Edit** flips to the editor; `/new`
+ * opens straight in create mode. The divergence is now SAVE-MODEL ONLY — a DIRECT-WRITE
+ * editor ([Cancel] [Save], applies live) that onboards the CR save model later via §8;
+ * the view-first posture is already shared.
+ */
 export function MetaGamePresetEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const existing = id ? getMetaGamePreset(id) : undefined;
+  const editIntent = (location.state as { edit?: boolean } | null)?.edit;
+  const [mode, setMode] = useState<'view' | 'edit'>(editIntent ? 'edit' : 'view');
 
   if (id && !existing) {
     return (
@@ -60,7 +71,56 @@ export function MetaGamePresetEditor() {
     );
   }
 
+  if (existing && mode === 'view') return <PresetView key={existing.id} preset={existing} onEdit={() => setMode('edit')} />;
   return <PresetForm key={id ?? 'new'} existing={existing} />;
+}
+
+/** Read-only view of a saved preset — fields as text + image preview. No editable affordance leaks.
+ *  Derives display values through the same `presetToEditorModel` seam the editor uses. */
+function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => void }) {
+  const navigate = useNavigate();
+  const model = presetToEditorModel(preset);
+  const badge = statusBadge(preset.status);
+  const gameConfig = gameConfigForId(GAME_CONFIGS, model.gameConfigId);
+  const readField = (label: string, value: string) => (
+    <Stack spacing={0.25} sx={{ minWidth: 200 }}>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="body2">{value || '—'}</Typography>
+    </Stack>
+  );
+
+  return (
+    <Stack spacing={3}>
+      <BeamPageHeader
+        title={preset.displayName}
+        back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')}
+        status={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
+        action={
+          <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
+            Edit
+          </Button>
+        }
+      />
+      <Stack spacing={2} sx={{ maxWidth: 720 }}>
+        <Typography variant="subtitle2" color="text.secondary">Configuration Source</Typography>
+        {readField('Source', model.source === 'Betty' ? 'Betty GameConfig' : 'Legacy Yoda')}
+      </Stack>
+      <Stack spacing={2} sx={{ maxWidth: 720 }}>
+        <Typography variant="subtitle2" color="text.secondary">Preset Details</Typography>
+        {readField('Display Name', model.displayName)}
+        {model.source === 'Betty'
+          ? readField('GameConfig', gameConfig ? `${gameConfig.code} — ${gameConfig.gameType} — ${gameConfig.status}` : model.gameConfigId)
+          : readField('Config Code', model.configCode)}
+        {readField('Game Type', model.gameType)}
+        {readField('Skin ID', model.skinId)}
+        {readField('Image URL', model.imageUrl)}
+        {isPreviewableImageUrl(model.imageUrl) && <PresetImagePreview imageUrl={model.imageUrl} alt="Preset preview" width={180} />}
+        {readField('Volatility', model.volatility || 'Not set')}
+        {readField('Use Cases', model.useCases.join(', '))}
+        {readField('Expiry Hours', model.expiryHours)}
+      </Stack>
+    </Stack>
+  );
 }
 
 function PresetForm({ existing }: { existing?: MetaGamePreset }) {

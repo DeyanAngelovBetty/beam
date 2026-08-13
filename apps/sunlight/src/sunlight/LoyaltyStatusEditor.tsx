@@ -56,9 +56,11 @@ export function LoyaltyStatusEditor() {
   const existing = id ? getLoyaltyStatus(id) : undefined;
   // A row import (from the list kebab) navigates here with the validated payload → open straight
   // in edit mode. An in-VIEW import is held in local state and flips to edit the same way.
-  const importedFromLocation = (location.state as { importedDraft?: LoyaltyStatusDraft } | null)?.importedDraft;
+  const navState = location.state as { importedDraft?: LoyaltyStatusDraft; edit?: boolean } | null;
+  const importedFromLocation = navState?.importedDraft;
   const [importedFromView, setImportedFromView] = useState<LoyaltyStatusDraft | undefined>(undefined);
-  const [mode, setMode] = useState<'view' | 'edit'>(importedFromLocation ? 'edit' : 'view');
+  // Edit intent (kebab Edit / imported draft) → open in edit; otherwise view-first.
+  const [mode, setMode] = useState<'view' | 'edit'>(importedFromLocation || navState?.edit ? 'edit' : 'view');
 
   if (!existing) {
     return (

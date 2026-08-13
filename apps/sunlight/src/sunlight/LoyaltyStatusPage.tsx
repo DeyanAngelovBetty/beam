@@ -15,6 +15,7 @@ import {
   BeamStatusBadge,
 } from '@betty/beam';
 import type { BeamColumn, BeamTabItem } from '@betty/beam';
+import EditIcon from '@mui/icons-material/EditRounded';
 import FileDownloadIcon from '@mui/icons-material/FileDownloadRounded';
 import UploadFileIcon from '@mui/icons-material/UploadFileRounded';
 import { RouterIdentityLink } from './RouterIdentityLink';
@@ -265,6 +266,9 @@ export function LoyaltyStatusPage() {
           <ExpandedLoyaltyPanel status={r} next={LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === r.id) + 1]} />
         )}
         rowActions={(r) => [
+          // Edit LEADS (list-page-grammar §3, 2026-08-13) — write intent, deep-links to edit mode
+          // via nav state (the seam imported drafts already ride). The identity link opens view.
+          { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/loyalty-status/${r.id}`, { state: { edit: true } }) },
           { id: 'export', label: 'Export', icon: <FileDownloadIcon fontSize="small" />, onSelect: () => downloadAndCopy(`${slugifyName(r.name)}.json`, serializeStatus(r)) },
           { id: 'import', label: 'Import…', icon: <UploadFileIcon fontSize="small" />, onSelect: () => openPanel({ kind: 'row', status: r }) },
         ]}

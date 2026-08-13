@@ -13,6 +13,7 @@ import {
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EditIcon from '@mui/icons-material/EditRounded';
 import BlockIcon from '@mui/icons-material/Block';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { PayoutRowsGrid } from './PayoutRowsGrid';
@@ -119,9 +120,11 @@ export function PayoutConfigsPage() {
     { key: 'rows', header: 'Rows', align: 'right', width: 80, getValue: (c) => c.rows.length, render: (c) => c.rows.length },
   ];
 
-  // Name is the Edit route. The rail menu carries only the state-dependent
-  // Enable/Disable action; expanded payout rows remain read-only.
+  // Name (identity link) opens VIEW; Edit LEADS the kebab as the write-intent action
+  // (list-page-grammar §3, 2026-08-13), deep-linking to edit mode via nav state. Then the
+  // state-dependent Enable/Disable. Expanded payout rows remain read-only.
   const rowActions = (c: PayoutConfig): BeamRowAction[] => [
+    { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/payout-configs/${c.id}`, { state: { edit: true } }) },
     c.status === 'Enabled'
       ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Disable') }
       : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Enable') },

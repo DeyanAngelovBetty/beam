@@ -114,16 +114,25 @@ decoration.
 
 ## 6. Editor grammar for entities under approval
 
-- **View-first.** A governed entity's detail route opens **read-only** — the same
-  anatomy (fields + rewards grid + companion), no editable affordance — and an
-  explicit **Edit** action enters the editor. Editing an entity whose changes need
-  a second pair of eyes is a deliberate act, never the landing state. A pending CR
-  shows in view as a **notice**, not a draft; it becomes the seeded draft only on
-  *entering* edit (pending-draft rule below). This is a **conditional** rule keyed on
-  "under approval", not a new universal one: direct-write editors (payout/game today)
-  stay always-edit — correct for their model — and inherit view-first the day they
-  onboard governance (§8). The condition decides, not the page, so the estate stays
-  coherent rather than split.
+- **View-first — the estate rule.** *Every* detail route opens **read-only** — the same
+  anatomy (fields as text, row tables read-only, companions/previews as display), no
+  editable affordance — and an explicit **Edit** action enters the editor. Inspecting is
+  reading; editing is a separate, deliberate act (list-page-grammar §2: link = read
+  intent, Edit = write intent). This holds for direct-write editors and governed ones
+  alike; what differs is only the **save model behind Edit**, not the view-first posture.
+
+  *Widened 2026-08-13 — ratified, recorded (late).* This started as a rule for entities
+  *under approval*, then got narrowly codified. It was agreed estate-wide the week of
+  2026-08-11 (**Deyan, Alex, Tzeno**): all detail pages open view-first; Edit is the
+  deliberate flip. That conversation **pre-dated** the narrow codification — the agreement
+  existed before the doc said "conditional." Per the drift lesson (§list-page-grammar's own
+  episode), agreements get written the day they're made; this one is being written **late**,
+  and this note is the repair. The **governed overlay is unchanged**: for an entity under
+  approval, Edit still enters the CR editor — Submit-for-approval, dirty gate, `useBlocker`,
+  the pending-draft rule below, a pending CR shown in view as a **notice** (not a draft).
+  Direct-write editors keep view-first + their own **[Cancel] [Save]**; they onboard the CR
+  save model later via the §8 recipe, a save-model change only — the view-first posture is
+  already theirs.
 - Anatomy = the `PayoutConfigEditor` precedent: `BeamPageHeader` + back link,
   **[Cancel] [Submit for approval]** in the header actions slot, dirty-gated,
   `useBlocker` discard guard. No commit bar (parked, §4 of detail grammar).

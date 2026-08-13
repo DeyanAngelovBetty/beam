@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import {
   Stack,
   Button,
@@ -15,8 +15,10 @@ import {
   BeamStatusBadge,
   BeamEmptyState,
 } from '@betty/beam';
+import EditIcon from '@mui/icons-material/EditRounded';
 import { backTo } from './backTo';
 import { TargetingRulesEditor } from './TargetingRulesEditor';
+import { TargetingRulesGrid } from './TargetingRulesGrid';
 import { GAME_TYPES, statusBadge, type GameType } from './payoutConfigs';
 import { getGameConfig, createGameConfig, updateGameConfig, type GameConfig } from './gameConfigs';
 import {
@@ -30,16 +32,24 @@ import {
 } from './gameConfigForm';
 
 /**
- * Game Config Create / Edit page (spec: docs/specs/game-config-editor-spec.md).
- * Create + Edit only — no view mode (MetaGame default). Cancel + Create/Save in
- * the header actions slot (grammar §4); status chip below the title (identity).
+ * Game Config detail page (spec: docs/specs/game-config-editor-spec.md). VIEW-FIRST
+ * like every detail route (approval-flow §6, ratified 2026-08-11): a `:id` opens
+ * read-only, **Edit** flips to the editor; `/new` opens straight in create mode.
+ *
+ * The divergence is now SAVE-MODEL ONLY: this is a DIRECT-WRITE editor ([Cancel] [Save],
+ * applies live, no change request) — the MetaGame default — that onboards the CR save
+ * model later via approval-flow §8. The view-first posture is already shared. Cancel +
+ * Save stay in the header actions slot (grammar §4); status chip below the title.
  *
  * Scaffold plain — spacing / pigment is Deyan's bench pass.
  */
 export function GameConfigEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const existing = id ? getGameConfig(id) : undefined;
+  const editIntent = (location.state as { edit?: boolean } | null)?.edit;
+  const [mode, setMode] = useState<'view' | 'edit'>(editIntent ? 'edit' : 'view');
 
   if (id && !existing) {
     return (
@@ -50,7 +60,50 @@ export function GameConfigEditor() {
     );
   }
 
+  if (existing && mode === 'view') return <ViewForm key={existing.id} config={existing} onEdit={() => setMode('edit')} />;
   return <EditorForm key={id ?? 'new'} existing={existing} />;
+}
+
+/** Read-only view of a saved game config — no editable affordance leaks. */
+function ViewForm({ config, onEdit }: { config: GameConfig; onEdit: () => void }) {
+  const navigate = useNavigate();
+  const badge = statusBadge(config.status);
+  return (
+    <Stack spacing={3}>
+      <BeamPageHeader
+        title={config.code}
+        back={backTo(navigate, '/game-configs', 'Game Configs')}
+        status={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
+        action={
+          <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
+            Edit
+          </Button>
+        }
+      />
+      <Stack spacing={2}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Basic Information
+        </Typography>
+        <ReadField label="Name" value={config.code} />
+        <ReadField label="Game Type" value={config.gameType} />
+      </Stack>
+      <Stack spacing={1}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Targeting rules
+        </Typography>
+        <TargetingRulesGrid rules={config.targetingRules} />
+      </Stack>
+    </Stack>
+  );
+}
+
+function ReadField({ label, value }: { label: string; value: string | number }) {
+  return (
+    <Stack spacing={0.25} sx={{ minWidth: 160 }}>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="body2">{value}</Typography>
+    </Stack>
+  );
 }
 
 function EditorForm({ existing }: { existing?: GameConfig }) {
