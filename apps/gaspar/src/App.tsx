@@ -1,11 +1,17 @@
-import { useMemo, useState } from 'react';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
-import { GASPAR_NAV, type GasparView } from './gaspar/navItems';
+import { GASPAR_NAV, type GasparView, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
 import { ThemeLabDrawer } from '@betty/beam-lab';
 import { TransactionsPage } from './gaspar/TransactionsPage';
 import { DashboardPage } from './gaspar/DashboardPage';
+
+// Rule Builder carries @xyflow/react (gaspar's first heavy shipped dep) — LAZY-loaded so the
+// canvas + d3/zustand only download when an operator opens the route (proposal Q5).
+const RuleBuilderPage = lazy(() =>
+  import('./gaspar/ruleBuilder/RuleBuilderPage').then((m) => ({ default: m.RuleBuilderPage })),
+);
 
 // Brand mark is app-owned (shell-grammar §3), but PAINTED from the token system.
 // An <img>-loaded SVG is a separate document page CSS can't reach, so the mark is
@@ -56,15 +62,18 @@ export function App() {
   const [labOpen, setLabOpen] = useState(false); // Theme Lab drawer (Gaspar only)
   const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
 
-  const navItems = useMemo<BeamNavItem[]>(
-    () =>
-      GASPAR_NAV.map(({ view: itemView, ...item }) =>
-        itemView
-          ? { ...item, selected: view === itemView, onClick: () => setView(itemView) }
-          : item,
-      ),
-    [view],
-  );
+  // Wire selected/onClick from the `view` tag at ANY depth (Rule Builder is nested under Routing).
+  const navItems = useMemo<BeamNavItem[]>(() => {
+    const wire = (item: GasparNavItem): BeamNavItem => {
+      const { view: itemView, children, ...rest } = item;
+      return {
+        ...rest,
+        ...(itemView ? { selected: view === itemView, onClick: () => setView(itemView) } : {}),
+        ...(children ? { children: children.map(wire) } : {}),
+      };
+    };
+    return GASPAR_NAV.map(wire);
+  }, [view]);
 
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
@@ -75,7 +84,13 @@ export function App() {
         persistKey="beam.shell.gaspar"
         footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
       >
-        {view === 'dashboard' ? <DashboardPage /> : <TransactionsPage />}
+        {view === 'dashboard' && <DashboardPage />}
+        {view === 'transactions' && <TransactionsPage />}
+        {view === 'ruleBuilder' && (
+          <Suspense fallback={<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>Loading Rule Builder…</Typography>}>
+            <RuleBuilderPage />
+          </Suspense>
+        )}
       </BeamAppShell>
       {/* Non-modal — the live app above IS the preview; it stays interactable. */}
       <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />
