@@ -95,6 +95,23 @@ Destructive reads error-tinted per surface (grouped-last menu item · error
 button); disabled stays visible with its reason. This killed a live drift:
 PayoutConfigs' kebab and expansion footer had shown different sets.
 
+*Amended 2026-08-13 — the opt-out is gone (again), and the projection is spelled
+out.* The rule above said **there is no opt-out**. One day later a
+`showExpandedActions` flag landed and quietly set PayoutConfigs, GameConfigs, and
+MetaGamePresets to `false` — no rationale in the commit, no note here —
+reintroducing the very opt-out this section forbids (loyalty inherited it later by
+copying the others). Repaired: the flag is **removed** from `BeamDataTable`, so the
+projection is unconditional once more. The exact contract, restated so it can't be
+read as optional again:
+
+> When a row has actions **and** expands, both are true — the actions live in the
+> **kebab** (rail placement), **and** they project into the expanded panel as the
+> **expanded bar**: rendered **below any panel content**, **left-aligned** (altitude
+> determines alignment — detail-grammar §4). The bar renders the *same* `rowActions`
+> definition as the kebab — **one source of truth, two projections; never two lists
+> to maintain.** `PendingApprovalsPage` never opted out and was the surviving
+> reference through the drift.
+
 *Amended 2026-07-31 — altitude determines alignment (detail-grammar §4).* Sub-page
 action strips (the batch strip, Add Row / Add Rule) render **LEFT, directly above
 the organism** they operate on; the page's right edge (the `BeamPageHeader`

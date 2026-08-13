@@ -169,7 +169,6 @@ export function BeamDataTable<Row>({
   paginated = false,
   defaultPageSize = 10,
   renderExpanded,
-  showExpandedActions = true,
   rowActions,
   onRowClick,
   LinkComponent,
@@ -539,9 +538,10 @@ export function BeamDataTable<Row>({
                       <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
                         <Box sx={{ py: 2, px: 1 }}>
                           {renderExpanded(row.original)}
-                          {/* Optional organism-appended action bar — when shown,
-                              it uses the same `actions` as the kebab. */}
-                          {showExpandedActions && actions.length > 0 && <RowActionBar actions={actions} />}
+                          {/* The expanded bar — UNCONDITIONAL when the row has actions (grammar §3,
+                              no opt-out). Below panel content, left-aligned, same `actions` as the
+                              kebab: one definition, two projections. */}
+                          {actions.length > 0 && <RowActionBar actions={actions} />}
                         </Box>
                       </Collapse>
                     </TableCell>

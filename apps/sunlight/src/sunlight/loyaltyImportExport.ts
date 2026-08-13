@@ -51,6 +51,20 @@ export function serializeList(statuses: LoyaltyStatus[]): string {
   return JSON.stringify(payload, null, 2);
 }
 
+/** The export gesture — copy to clipboard AND download. The one DOM touch in this module; shared
+ *  by the list page (row/grid export) and the detail page's view-mode Export, so both behave alike. */
+export function downloadAndCopy(filename: string, json: string): void {
+  void navigator.clipboard?.writeText(json);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+export const slugifyName = (s: string) => s.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'loyalty-status';
+
 // ── validation ───────────────────────────────────────────────────────────────────────────────
 type Ok<T> = { ok: true } & T;
 type Err = { ok: false; errors: string[] };

@@ -186,7 +186,6 @@ export function GameConfigsPage() {
         getRowId={(config) => config.id}
         rowActions={rowActions}
         renderExpanded={(config) => <TargetingRulesGrid rules={config.targetingRules} />}
-        showExpandedActions={false}
         onRowClick={(config) => navigate(`/game-configs/${config.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated

@@ -208,7 +208,6 @@ export function MetaGamePresetsPage() {
         getRowId={(preset) => preset.id}
         rowActions={rowActions}
         renderExpanded={(preset) => <PresetPreview preset={preset} />}
-        showExpandedActions={false}
         onRowClick={(preset) => navigate(`/meta-game-presets/${preset.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated

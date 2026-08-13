@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import {
   Stack,
+  Box,
+  Paper,
   Button,
   TextField,
   Tooltip,
@@ -16,6 +18,8 @@ import {
   GemIcon,
 } from '@betty/beam';
 import EditIcon from '@mui/icons-material/EditRounded';
+import FileDownloadIcon from '@mui/icons-material/FileDownloadRounded';
+import UploadFileIcon from '@mui/icons-material/UploadFileRounded';
 import { backTo } from './backTo';
 import { LoyaltyRewardsEditor } from './LoyaltyRewardsEditor';
 import { NextGemPanel } from './NextGemPanel';
@@ -23,6 +27,7 @@ import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
 import { getLoyaltyStatus, LOYALTY_STATUSES, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
 import { submit, getPendingFor } from './changeRequests';
 import { getCurrentUser } from './currentUser';
+import { serializeStatus, validateStatusImport, mergeOntoLive, downloadAndCopy, slugifyName } from './loyaltyImportExport';
 import {
   MAX_NAME,
   toEditorModel,
@@ -49,9 +54,11 @@ export function LoyaltyStatusEditor() {
   const navigate = useNavigate();
   const location = useLocation();
   const existing = id ? getLoyaltyStatus(id) : undefined;
-  // A row import navigates here with the validated payload → open straight in edit mode.
-  const importedDraft = (location.state as { importedDraft?: LoyaltyStatusDraft } | null)?.importedDraft;
-  const [mode, setMode] = useState<'view' | 'edit'>(importedDraft ? 'edit' : 'view');
+  // A row import (from the list kebab) navigates here with the validated payload → open straight
+  // in edit mode. An in-VIEW import is held in local state and flips to edit the same way.
+  const importedFromLocation = (location.state as { importedDraft?: LoyaltyStatusDraft } | null)?.importedDraft;
+  const [importedFromView, setImportedFromView] = useState<LoyaltyStatusDraft | undefined>(undefined);
+  const [mode, setMode] = useState<'view' | 'edit'>(importedFromLocation ? 'edit' : 'view');
 
   if (!existing) {
     return (
@@ -62,15 +69,37 @@ export function LoyaltyStatusEditor() {
     );
   }
 
-  if (mode === 'view') return <ViewForm key={existing.id} status={existing} onEdit={() => setMode('edit')} />;
-  return <EditorForm key={existing.id} status={existing} imported={importedDraft} />;
+  if (mode === 'view')
+    return (
+      <ViewForm
+        key={existing.id}
+        status={existing}
+        onEdit={() => setMode('edit')}
+        onImport={(draft) => {
+          setImportedFromView(draft);
+          setMode('edit');
+        }}
+      />
+    );
+  return <EditorForm key={existing.id} status={existing} imported={importedFromView ?? importedFromLocation} />;
 }
 
-// ── VIEW mode — read-only, no editable affordance leaks ────────────────────────────────────────
-function ViewForm({ status, onEdit }: { status: LoyaltyStatus; onEdit: () => void }) {
+// ── VIEW mode — the row's record page: read-only anatomy + the row's non-edit actions ───────────
+function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit: () => void; onImport: (draft: LoyaltyStatusDraft) => void }) {
   const navigate = useNavigate();
   const pending = getPendingFor(String(status.id));
   const nextTier = LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === status.id) + 1];
+
+  // In-view import panel — the same single-status flow as the list kebab's Import…, but in place:
+  // validate → hand the merged draft up, which flips to edit (dirty, "Imported" banner).
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const doImport = () => {
+    const res = validateStatusImport(importText);
+    if (!res.ok) return setImportErrors(res.errors);
+    onImport(mergeOntoLive(res.draft, status));
+  };
 
   const readField = (label: string, value: string | number) => (
     <Stack spacing={0.25} sx={{ minWidth: 160 }}>
@@ -85,10 +114,22 @@ function ViewForm({ status, onEdit }: { status: LoyaltyStatus; onEdit: () => voi
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
         status={<GemIcon gem={status.gem} size={20} />}
+        // The view is the row's record page → it carries the row's NON-EDIT actions (§6):
+        // [Export] [Import…] [Edit], Edit primary + last. In edit mode these hide — the editor's
+        // pair stays exactly [Cancel] [Submit for approval] (importing over a live draft is a
+        // collision we don't invite; the row/view paths cover import).
         action={
-          <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
-            Edit
-          </Button>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={() => downloadAndCopy(`${slugifyName(status.name)}.json`, serializeStatus(status))}>
+              Export
+            </Button>
+            <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setImportOpen((o) => !o)}>
+              Import…
+            </Button>
+            <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
+              Edit
+            </Button>
+          </Stack>
         }
       />
 
@@ -99,6 +140,48 @@ function ViewForm({ status, onEdit }: { status: LoyaltyStatus; onEdit: () => voi
           A change request for this status is pending review — submitted by {pending.submittedBy} on{' '}
           {pending.submittedAt.slice(0, 10)}. Approve or reject it in Pending Approvals.
         </Alert>
+      )}
+
+      {importOpen && (
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={1.5}>
+            <Typography variant="subtitle2">Import onto “{status.name}” (single status JSON)</Typography>
+            <TextField
+              size="small"
+              multiline
+              minRows={4}
+              placeholder="Paste JSON…"
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              fullWidth
+            />
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Button size="small" component="label" variant="text">
+                Choose file…
+                <input hidden type="file" accept="application/json" onChange={(e) => e.target.files?.[0]?.text().then(setImportText)} />
+              </Button>
+              <Box sx={{ flex: 1 }} />
+              <Button size="small" onClick={() => { setImportOpen(false); setImportErrors([]); }}>Cancel</Button>
+              <Button size="small" variant="contained" disabled={!importText.trim()} onClick={doImport}>
+                Import → edit
+              </Button>
+            </Stack>
+            {importErrors.length > 0 && (
+              <Paper variant="outlined" sx={{ p: 1.5, borderColor: 'error.main' }}>
+                <Typography variant="caption" color="error.main" sx={{ fontWeight: 600 }}>
+                  {importErrors.length} problem{importErrors.length > 1 ? 's' : ''} — nothing was imported:
+                </Typography>
+                <Stack component="ul" sx={{ m: 0, pl: 2 }}>
+                  {importErrors.map((err, i) => (
+                    <Typography key={i} component="li" variant="caption" color="text.secondary">
+                      {err}
+                    </Typography>
+                  ))}
+                </Stack>
+              </Paper>
+            )}
+          </Stack>
+        </Paper>
       )}
 
       <Stack spacing={2}>

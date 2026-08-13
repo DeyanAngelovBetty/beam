@@ -132,6 +132,11 @@ decoration.
   approval"); identity (id) is re-anchored to the target, never moved by file. A
   collection import diffs against live and files **one CR per changed entity** (none
   for unchanged). Four-eyes is not bypassable via file — import proposes, it never applies.
+- **The view-mode header carries the entity's non-edit actions; edit mode carries only
+  the save model.** View is the record's page, so it offers the same per-item non-edit
+  actions the row does — **[Export] [Import…] [Edit]**, Edit primary and last. On Edit
+  those hide and the header becomes exactly **[Cancel] [Submit for approval]**: importing
+  over a live draft is a collision we don't invite (the row/view import paths cover it).
 - **Pending-draft rule: the editor seeds from the pending draft, not live.**
   If `getPendingFor()` returns a CR, the maker is continuing the current
   proposal, not restarting — banner states whose draft it is and that submitting

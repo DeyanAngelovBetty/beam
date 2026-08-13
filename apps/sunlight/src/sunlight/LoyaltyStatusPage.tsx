@@ -29,6 +29,8 @@ import {
   validateListImport,
   computeListDiff,
   mergeOntoLive,
+  downloadAndCopy,
+  slugifyName,
   type ListDiff,
 } from './loyaltyImportExport';
 
@@ -36,19 +38,6 @@ const TABS: BeamTabItem[] = [
   'Status', 'A Levels', 'B Levels', 'RTP Multipliers', 'Daily Gifts',
   'Wheel Settings', 'Status Perks', 'Onboarding Checklist', 'MetaGame Presets',
 ].map((label) => ({ id: label.toLowerCase().replace(/\s+/g, '-'), label }));
-
-/** Export helper — copy + download, the row/grid export gesture (a live entity, never a draft). */
-function exportJson(filename: string, json: string) {
-  void navigator.clipboard?.writeText(json);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-const slugify = (s: string) => s.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'loyalty-status';
 
 type ImportPanel = { kind: 'row'; status: LoyaltyStatus } | { kind: 'grid' };
 
@@ -160,7 +149,7 @@ export function LoyaltyStatusPage() {
         // per-row ones in the kebab). Export = the live list; Import = a governed diff → CRs.
         action={
           <Stack direction="row" spacing={1}>
-            <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />} onClick={() => exportJson('loyalty-statuses.json', serializeList(LOYALTY_STATUSES))}>
+            <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />} onClick={() => downloadAndCopy('loyalty-statuses.json', serializeList(LOYALTY_STATUSES))}>
               Export all
             </Button>
             <Button size="small" variant="outlined" startIcon={<UploadFileIcon />} onClick={() => openPanel({ kind: 'grid' })}>
@@ -275,11 +264,8 @@ export function LoyaltyStatusPage() {
         renderExpanded={(r) => (
           <ExpandedLoyaltyPanel status={r} next={LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === r.id) + 1]} />
         )}
-        // Kebab-only projection, matching PayoutConfigsPage/GameConfigsPage (screenshot-comparable
-        // consistency, list-grammar §3) — the expanded row stays the read-only rewards panel.
-        showExpandedActions={false}
         rowActions={(r) => [
-          { id: 'export', label: 'Export', icon: <FileDownloadIcon fontSize="small" />, onSelect: () => exportJson(`${slugify(r.name)}.json`, serializeStatus(r)) },
+          { id: 'export', label: 'Export', icon: <FileDownloadIcon fontSize="small" />, onSelect: () => downloadAndCopy(`${slugifyName(r.name)}.json`, serializeStatus(r)) },
           { id: 'import', label: 'Import…', icon: <UploadFileIcon fontSize="small" />, onSelect: () => openPanel({ kind: 'row', status: r }) },
         ]}
         aria-label="Loyalty statuses"

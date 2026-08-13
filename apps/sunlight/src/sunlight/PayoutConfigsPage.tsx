@@ -189,7 +189,6 @@ export function PayoutConfigsPage() {
         getRowId={(c) => c.id}
         rowActions={rowActions}
         renderExpanded={(c) => <PayoutRowsGrid rows={c.rows} />}
-        showExpandedActions={false}
         onRowClick={(c) => navigate(`/payout-configs/${c.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated
