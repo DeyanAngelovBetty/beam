@@ -61,7 +61,8 @@ export function GameConfigEditor() {
   }
 
   if (existing && mode === 'view') return <ViewForm key={existing.id} config={existing} onEdit={() => setMode('edit')} />;
-  return <EditorForm key={id ?? 'new'} existing={existing} />;
+  // Cancel exits EDIT → view of the same entity (never the list); /new has no view → the list.
+  return <EditorForm key={id ?? 'new'} existing={existing} onCancel={existing ? () => setMode('view') : () => navigate('/game-configs')} />;
 }
 
 /** Read-only view of a saved game config — no editable affordance leaks. */
@@ -106,9 +107,10 @@ function ReadField({ label, value }: { label: string; value: string | number }) 
   );
 }
 
-function EditorForm({ existing }: { existing?: GameConfig }) {
+function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: () => void }) {
   const navigate = useNavigate();
   const isEdit = Boolean(existing);
+  const [pendingCancel, setPendingCancel] = useState(false);
 
   const initialModel = useMemo<EditorModel>(
     () => (existing ? toEditorModel(existing) : emptyModel()),
@@ -144,6 +146,11 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
     navigate('/game-configs');
   };
 
+  // Cancel exits edit → view (onCancel), guarded by the SAME discard prompt as navigation.
+  const requestCancel = () => (isDirty ? setPendingCancel(true) : onCancel());
+  const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
+  const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
+
   const badge = existing ? statusBadge(existing.status) : null;
 
   return (
@@ -155,7 +162,7 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
         description={isEdit ? undefined : 'New configurations are created as Disabled.'}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Button variant="text" onClick={() => navigate('/game-configs')}>
+            <Button variant="text" onClick={requestCancel}>
               Cancel
             </Button>
             <Tooltip title={v.valid ? '' : submitAttempted ? saveReason : 'Complete the form to continue.'}>
@@ -228,14 +235,14 @@ function EditorForm({ existing }: { existing?: GameConfig }) {
 
       <TargetingRulesEditor value={model} onChange={setModel} showAllErrors={submitAttempted} />
 
-      <Dialog open={blocker.state === 'blocked'} onClose={() => blocker.reset?.()}>
+      <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>
         <DialogTitle>Discard changes?</DialogTitle>
         <DialogContent>
           <Typography>You have unsaved changes. Leaving this page will discard them.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => blocker.reset?.()}>Keep editing</Button>
-          <Button color="error" onClick={() => blocker.proceed?.()}>
+          <Button onClick={keepEditing}>Keep editing</Button>
+          <Button color="error" onClick={discard}>
             Discard
           </Button>
         </DialogActions>

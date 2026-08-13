@@ -150,10 +150,10 @@ export function LoyaltyStatusPage() {
         // per-row ones in the kebab). Export = the live list; Import = a governed diff → CRs.
         action={
           <Stack direction="row" spacing={1}>
-            <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />} onClick={() => downloadAndCopy('loyalty-statuses.json', serializeList(LOYALTY_STATUSES))}>
+            <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={() => downloadAndCopy('loyalty-statuses.json', serializeList(LOYALTY_STATUSES))}>
               Export all
             </Button>
-            <Button size="small" variant="outlined" startIcon={<UploadFileIcon />} onClick={() => openPanel({ kind: 'grid' })}>
+            <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => openPanel({ kind: 'grid' })}>
               Import…
             </Button>
           </Stack>

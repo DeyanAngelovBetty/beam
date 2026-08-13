@@ -72,7 +72,8 @@ export function MetaGamePresetEditor() {
   }
 
   if (existing && mode === 'view') return <PresetView key={existing.id} preset={existing} onEdit={() => setMode('edit')} />;
-  return <PresetForm key={id ?? 'new'} existing={existing} />;
+  // Cancel exits EDIT → view of the same entity (never the list); /new has no view → the list.
+  return <PresetForm key={id ?? 'new'} existing={existing} onCancel={existing ? () => setMode('view') : () => navigate('/meta-game-presets')} />;
 }
 
 /** Read-only view of a saved preset — fields as text + image preview. No editable affordance leaks.
@@ -123,9 +124,10 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
   );
 }
 
-function PresetForm({ existing }: { existing?: MetaGamePreset }) {
+function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCancel: () => void }) {
   const navigate = useNavigate();
   const isEdit = Boolean(existing);
+  const [pendingCancel, setPendingCancel] = useState(false);
   const initialModel = useMemo(
     () => (existing ? presetToEditorModel(existing) : emptyPresetModel()),
     [existing]
@@ -182,6 +184,11 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
     navigate('/meta-game-presets');
   };
 
+  // Cancel exits edit → view (onCancel), guarded by the SAME discard prompt as navigation.
+  const requestCancel = () => (isDirty ? setPendingCancel(true) : onCancel());
+  const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
+  const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
+
   const invalidReason =
     validation.displayName ??
     validation.gameConfigId ??
@@ -204,7 +211,7 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
         description={isEdit ? undefined : 'New presets are created as Disabled.'}
         action={
           <Stack direction="row" spacing={1}>
-            <Button variant="text" onClick={() => navigate('/meta-game-presets')}>Cancel</Button>
+            <Button variant="text" onClick={requestCancel}>Cancel</Button>
             <Tooltip title={validation.valid ? '' : submitAttempted ? invalidReason : 'Complete the form to continue.'}>
               <span>
                 <Button
@@ -363,12 +370,12 @@ function PresetForm({ existing }: { existing?: MetaGamePreset }) {
         />
       </Stack>
 
-      <Dialog open={blocker.state === 'blocked'} onClose={() => blocker.reset?.()}>
+      <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>
         <DialogTitle>Discard changes?</DialogTitle>
         <DialogContent><Typography>You have unsaved changes. Leaving this page will discard them.</Typography></DialogContent>
         <DialogActions>
-          <Button onClick={() => blocker.reset?.()}>Keep editing</Button>
-          <Button color="error" onClick={() => blocker.proceed?.()}>Discard</Button>
+          <Button onClick={keepEditing}>Keep editing</Button>
+          <Button color="error" onClick={discard}>Discard</Button>
         </DialogActions>
       </Dialog>
     </Stack>

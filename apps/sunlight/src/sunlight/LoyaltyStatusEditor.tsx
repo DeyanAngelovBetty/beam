@@ -57,10 +57,16 @@ export function LoyaltyStatusEditor() {
   // A row import (from the list kebab) navigates here with the validated payload → open straight
   // in edit mode. An in-VIEW import is held in local state and flips to edit the same way.
   const navState = location.state as { importedDraft?: LoyaltyStatusDraft; edit?: boolean } | null;
-  const importedFromLocation = navState?.importedDraft;
-  const [importedFromView, setImportedFromView] = useState<LoyaltyStatusDraft | undefined>(undefined);
+  // One imported-draft state (seeded from a row-import navigation, or set by an in-view import),
+  // so Cancel can CLEAR it → view of the live official, no draft residue.
+  const [importedDraft, setImportedDraft] = useState<LoyaltyStatusDraft | undefined>(navState?.importedDraft);
   // Edit intent (kebab Edit / imported draft) → open in edit; otherwise view-first.
-  const [mode, setMode] = useState<'view' | 'edit'>(importedFromLocation || navState?.edit ? 'edit' : 'view');
+  const [mode, setMode] = useState<'view' | 'edit'>(navState?.importedDraft || navState?.edit ? 'edit' : 'view');
+  // Cancel exits edit → view of the same entity, discarding any imported draft (never the list).
+  const exitToView = () => {
+    setImportedDraft(undefined);
+    setMode('view');
+  };
 
   if (!existing) {
     return (
@@ -78,12 +84,12 @@ export function LoyaltyStatusEditor() {
         status={existing}
         onEdit={() => setMode('edit')}
         onImport={(draft) => {
-          setImportedFromView(draft);
+          setImportedDraft(draft);
           setMode('edit');
         }}
       />
     );
-  return <EditorForm key={existing.id} status={existing} imported={importedFromView ?? importedFromLocation} />;
+  return <EditorForm key={existing.id} status={existing} imported={importedDraft} onCancel={exitToView} />;
 }
 
 // ── VIEW mode — the row's record page: read-only anatomy + the row's non-edit actions ───────────
@@ -209,9 +215,10 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
 const FIELD_KEYS = ['name', 'maxDays', 'boxes', 'keepGems', 'keepBoxes', 'multiplier'] as const;
 type FieldKey = (typeof FIELD_KEYS)[number];
 
-function EditorForm({ status, imported }: { status: LoyaltyStatus; imported?: LoyaltyStatusDraft }) {
+function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imported?: LoyaltyStatusDraft; onCancel: () => void }) {
   const navigate = useNavigate();
   const pending = getPendingFor(String(status.id));
+  const [pendingCancel, setPendingCancel] = useState(false);
 
   // Seed the form: an IMPORT wins (dirty from the start), else the pending draft (§6), else live.
   // The dirty BASELINE, though, is always the stored state (pending ?? live) — so an import reads
@@ -255,6 +262,12 @@ function EditorForm({ status, imported }: { status: LoyaltyStatus; imported?: Lo
     navigate('/');
   };
 
+  // Cancel exits edit → view (onCancel discards any imported draft), guarded by the SAME discard
+  // prompt as navigation — a dirty mode-flip counts as the discard useBlocker protects.
+  const requestCancel = () => (isDirty ? setPendingCancel(true) : onCancel());
+  const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
+  const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
+
   const submitReason = !isDirty
     ? 'Make a change to submit.'
     : (v.name ?? v.multiplier ?? v.boxes ?? v.maxDays ?? v.keepGems ?? v.keepBoxes ?? v.aggregate ?? 'Fix the highlighted fields.');
@@ -282,7 +295,7 @@ function EditorForm({ status, imported }: { status: LoyaltyStatus; imported?: Lo
         status={<GemIcon gem={status.gem} size={20} />}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Button variant="text" onClick={() => navigate('/')}>
+            <Button variant="text" onClick={requestCancel}>
               Cancel
             </Button>
             <Tooltip title={canSubmit ? '' : submitReason}>
@@ -347,14 +360,14 @@ function EditorForm({ status, imported }: { status: LoyaltyStatus; imported?: Lo
         />
       </Stack>
 
-      <Dialog open={blocker.state === 'blocked'} onClose={() => blocker.reset?.()}>
+      <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>
         <DialogTitle>Discard changes?</DialogTitle>
         <DialogContent>
           <Typography>You have unsaved changes. Leaving this page will discard them.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => blocker.reset?.()}>Keep editing</Button>
-          <Button color="error" onClick={() => blocker.proceed?.()}>
+          <Button onClick={keepEditing}>Keep editing</Button>
+          <Button color="error" onClick={discard}>
             Discard
           </Button>
         </DialogActions>

@@ -133,6 +133,12 @@ decoration.
   Direct-write editors keep view-first + their own **[Cancel] [Save]**; they onboard the CR
   save model later via the §8 recipe, a save-model change only — the view-first posture is
   already theirs.
+
+  **Cancel exits edit to view, not the page** (detail-grammar §4): the in-page flip returns to
+  the same entity's view; the back-link is the page exit. *Divergence, recorded:* the **User
+  page** does view↔edit as a **route split** (`/users/:id` vs `/users/:id/edit`), not an in-page
+  mode flip — so its `/edit` cancel navigates by its own route mechanism and is **out of scope**
+  for the flip rule. Left as-is; unify onto the in-page flip only if the split ever costs us.
 - Anatomy = the `PayoutConfigEditor` precedent: `BeamPageHeader` + back link,
   **[Cancel] [Submit for approval]** in the header actions slot, dirty-gated,
   `useBlocker` discard guard. No commit bar (parked, §4 of detail grammar).

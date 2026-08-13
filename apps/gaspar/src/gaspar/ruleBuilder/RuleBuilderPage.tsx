@@ -165,13 +165,13 @@ function RuleBuilderBody() {
         description="Author payment-routing rule sets — two lenses over one store."
         action={
           <Stack direction="row" spacing={1}>
-            <Button size="small" variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setImportOpen((o) => !o)}>
+            <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setImportOpen((o) => !o)}>
               Import
             </Button>
-            <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={onCopy}>
+            <Button variant="outlined" startIcon={<ContentCopyIcon />} onClick={onCopy}>
               Copy JSON
             </Button>
-            <Button size="small" variant="contained" startIcon={<FileDownloadIcon />} onClick={onDownload}>
+            <Button variant="contained" startIcon={<FileDownloadIcon />} onClick={onDownload}>
               Export
             </Button>
           </Stack>

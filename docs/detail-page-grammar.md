@@ -126,6 +126,19 @@ page-header
   (screen-state back) renders an accessible button.
 - **Save model: the page-header actions slot.** View mode: `[Edit]`. Edit mode:
   `[Cancel] [Save]`, with Save enabled by dirty state. Nothing applies live.
+- **Cancel exits edit to view; the back-link exits the page** *(2026-08-13):* in an
+  in-page view↔edit flip, **Cancel returns to the view of the same entity** — never
+  the list — regardless of how edit was entered (kebab-Edit deep-link included). The
+  **back-link** is the page exit (→ the list). The dirty guard is unchanged: a dirty
+  Cancel prompts the same "Discard changes?" — a mode-flip counts as the discard
+  `useBlocker` protects. Exception: `/new` (create) has no view to return to, so its
+  Cancel → the list. (Route-split editors like the User page keep their `/edit`
+  route's own cancel — recorded divergence, approval-flow §6.)
+- **Header actions are sized by the organism, never the page** *(2026-08-13):*
+  `BeamPageHeader` pins one size for its actions slot (`HEADER_ACTION_SIZE`, currently
+  **medium** — the size the estate mostly wore); call sites pass **no** `size`. Per-page
+  size props were the drift (Loyalty's list Export/Import, Rule Builder's header) — the
+  organism owns it now, the showExpandedActions lesson applied to size.
 - The separate dirty-state commit bar ("n changes · Save · Discard") is
   **deferred, not dead** — it lost the show-and-tell for now; it remains the
   candidate docking point for maker-checker if/when that lands. Revisit then.

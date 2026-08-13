@@ -3,8 +3,18 @@ import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { BeamPageHeaderProps, BeamBackLink } from './BeamPageHeader.types';
 import Box from '@mui/material/Box';
+
+/**
+ * Header actions are sized by the ORGANISM, never the page (the showExpandedActions lesson: one
+ * definition, no per-call-site drift). One constant, pinned as the default for the actions slot;
+ * call sites pass NO size. `medium` is the size the estate mostly wears (list "New" buttons +
+ * every detail editor's Cancel/Save/Edit). The nested theme reaches every button in the slot —
+ * even Stack-wrapped — and it's a shallow patch, so all Beam palette/cssVariable styling is kept.
+ */
+const HEADER_ACTION_SIZE = 'medium' as const;
 
 /**
  * The breadcrumb back link (§4 anatomy). Real anchor when `href` is given;
@@ -150,12 +160,24 @@ export function BeamPageHeader({
             </Typography>
           )}
         </Stack>
-        {/* Secondary actions sit to the left of the primary action. */}
+        {/* Secondary actions sit to the left of the primary action. The organism pins their size
+            (HEADER_ACTION_SIZE) via a shallow theme patch — call sites pass no size. */}
         {(action || secondaryActions) && (
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            {secondaryActions}
-            {action}
-          </Stack>
+          <ThemeProvider
+            theme={(outer) =>
+              createTheme(outer, {
+                components: {
+                  MuiButton: { defaultProps: { size: HEADER_ACTION_SIZE } },
+                  MuiIconButton: { defaultProps: { size: HEADER_ACTION_SIZE } },
+                },
+              })
+            }
+          >
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              {secondaryActions}
+              {action}
+            </Stack>
+          </ThemeProvider>
         )}
       </Stack>
 

@@ -70,7 +70,8 @@ export function PayoutConfigEditor() {
   }
 
   if (existing && mode === 'view') return <ViewForm key={existing.id} config={existing} onEdit={() => setMode('edit')} />;
-  return <EditorForm key={id ?? 'new'} existing={existing} />;
+  // Cancel exits EDIT → view of the same entity (never the list); /new has no view → the list.
+  return <EditorForm key={id ?? 'new'} existing={existing} onCancel={existing ? () => setMode('view') : () => navigate('/payout-configs')} />;
 }
 
 /** Read-only view of a saved config — the row's record page. No editable affordance leaks. */
@@ -127,9 +128,10 @@ function ReadField({ label, value }: { label: string; value: string | number }) 
   );
 }
 
-function EditorForm({ existing }: { existing?: PayoutConfig }) {
+function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel: () => void }) {
   const navigate = useNavigate();
   const isEdit = Boolean(existing);
+  const [pendingCancel, setPendingCancel] = useState(false);
 
   const initialModel = useMemo<EditorModel>(
     () => (existing ? toEditorModel(existing) : emptyModel()),
@@ -167,6 +169,12 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
     navigate('/payout-configs');
   };
 
+  // Cancel exits edit → view (onCancel), guarded by the SAME discard prompt as navigation: a dirty
+  // mode-flip counts as the discard useBlocker protects. Clean cancel flips straight through.
+  const requestCancel = () => (isDirty ? setPendingCancel(true) : onCancel());
+  const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
+  const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
+
   const badge = existing ? statusBadge(existing.status) : null;
 
   return (
@@ -180,7 +188,7 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
         description={isEdit ? undefined : 'New configurations are created as Disabled.'}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Button variant="text" onClick={() => navigate('/payout-configs')}>
+            <Button variant="text" onClick={requestCancel}>
               Cancel
             </Button>
             {/* Save gate: valid form AND total probability exactly 100%.
@@ -256,14 +264,14 @@ function EditorForm({ existing }: { existing?: PayoutConfig }) {
         showAllErrors={submitAttempted}
       />
 
-      <Dialog open={blocker.state === 'blocked'} onClose={() => blocker.reset?.()}>
+      <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>
         <DialogTitle>Discard changes?</DialogTitle>
         <DialogContent>
           <Typography>You have unsaved changes. Leaving this page will discard them.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => blocker.reset?.()}>Keep editing</Button>
-          <Button color="error" onClick={() => blocker.proceed?.()}>
+          <Button onClick={keepEditing}>Keep editing</Button>
+          <Button color="error" onClick={discard}>
             Discard
           </Button>
         </DialogActions>
