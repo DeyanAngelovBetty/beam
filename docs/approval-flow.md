@@ -207,6 +207,12 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   subscription is the noted future shape. Per-role routing, read state,
   push-vs-poll: the larger conversation Jamie flagged.
 - **Diff view** — the review round: live-vs-proposed comparison, Figma first.
+- **Maker-withdraw** (the reference UI's "Cancel") — semantics to align with the backend
+  team before building. It is a DIFFERENT act from a reviewer's Reject: the *submitter*
+  retracts their own pending request (an own-request action, no second pair of eyes). We
+  deliberately have not built it — our vocabulary stays Approve / Reject, identical on list
+  and detail. Confirm the semantics (and whether it archives as `superseded` or a new
+  `withdrawn` state) with Tzeno's team on Monday.
 - **`pendingApproval` vocabulary word** — the §6.4 extension; decide when the
   borrow starts to chafe (e.g. the day a settlement `pending` and an approval
   `pending` share a screen).

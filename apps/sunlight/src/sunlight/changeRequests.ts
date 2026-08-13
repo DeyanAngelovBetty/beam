@@ -139,6 +139,24 @@ export function listPending(): ChangeRequest[] {
 }
 
 /**
+ * ALL change requests, newest-first — the filterable read backing the approvals list + its
+ * ARCHIVE (approved/rejected/superseded are now browsable, not just the pending queue). A copy,
+ * so callers can't mutate the store array. Filtering (status/type/search/date) is the page's job.
+ */
+export function listAll(): ChangeRequest[] {
+  return [...requests].sort((a, b) => {
+    const ka = a.reviewedAt ?? a.submittedAt;
+    const kb = b.reviewedAt ?? b.submittedAt;
+    return ka < kb ? 1 : ka > kb ? -1 : 0; // newest first (reviewed, else submitted)
+  });
+}
+
+/** A single change request by id — the detail route + approve/reject from that page. */
+export function getChangeRequest(id: string): ChangeRequest | undefined {
+  return requests.find((r) => r.id === id);
+}
+
+/**
  * Approve: apply the draft onto the live entity and bump its version. Enforces
  * submitter ≠ reviewer, and a stale check against the entity's current version.
  * 'unregistered' is distinct from 'notFound' so a wiring gap never hides as a missing CR.

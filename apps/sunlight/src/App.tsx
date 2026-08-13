@@ -14,6 +14,7 @@ import { ThemeLabDrawer } from '@betty/beam-lab';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { LoyaltyStatusEditor } from './sunlight/LoyaltyStatusEditor';
 import { PendingApprovalsPage } from './sunlight/PendingApprovalsPage';
+import { PendingApprovalDetailPage } from './sunlight/PendingApprovalDetailPage';
 import { PlaceholderPage } from './sunlight/PlaceholderPage';
 import { UsersPage } from './sunlight/UsersPage';
 import { RolesPage } from './sunlight/RolesPage';
@@ -104,6 +105,7 @@ const router = createBrowserRouter(
         // existing status (no /new). Approvals is the reviewer's queue.
         { path: 'loyalty-status/:id', element: <LoyaltyStatusEditor /> },
         { path: 'pending-approvals', element: <PendingApprovalsPage /> },
+        { path: 'pending-approvals/:id', element: <PendingApprovalDetailPage /> },
         { path: 'perks', element: <PerksPage /> },
         { path: 'payout-configs', element: <PayoutConfigsPage /> },
         { path: 'payout-configs/new', element: <PayoutConfigEditor /> },
