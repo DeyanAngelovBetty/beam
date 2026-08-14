@@ -1,14 +1,5 @@
-import { Component, useCallback, useMemo, useState, type ErrorInfo, type ReactNode } from 'react';
-import {
-  ReactFlowProvider,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  type Edge,
-  type Connection,
-  type OnConnect,
-  type IsValidConnection,
-} from '@xyflow/react';
+import { Component, useMemo, useState, type ErrorInfo, type ReactNode } from 'react';
+import { ReactFlowProvider, type Edge } from '@xyflow/react';
 import {
   Stack,
   Box,
@@ -16,7 +7,6 @@ import {
   Button,
   Typography,
   TextField,
-  Divider,
   BeamPageHeader,
   BeamTabs,
   type BeamTabItem,
@@ -28,27 +18,29 @@ import { GraphLens } from './GraphLens';
 import { GridLens } from './GridLens';
 import { NodeInspector } from './NodeInspector';
 import type { RuleFlowNode } from './nodes/RuleNodeCard';
+import { layoutTree, type EdgeKind } from './io/layoutTree';
+import { importRuleTree } from './io/importRuleTree';
 import {
-  SEED_RULE_SET,
-  getRuleSet,
-  setRuleSet,
+  getRuleTree,
+  getRuleMeta,
+  setRuleTree,
+  resetToSeed,
   serialize,
-  validateRuleSet,
-  computeAdvisories,
-  canConnect,
-  newNode,
-  type NodeKind,
-  type RuleNode,
-  type RuleEdge,
-  type RuleSet,
-  type Advisory,
+  findNode,
+  updateNode,
+  removeNode,
+  isRemovable,
+  addSequenceChild,
+  setFalseBranch,
+  unknownFactAdvisories,
+  newCondition,
+  newAction,
+  newSequence,
+  type NodeConfig,
+  type ConditionConfig,
+  type ActionConfig,
+  type FactAdvisory,
 } from './ruleSetStore';
-
-// ── RF ⇄ domain converters (the only boundary between the canvas's state and the store model) ──
-const toFlowNode = (r: RuleNode): RuleFlowNode => ({ id: r.id, type: 'rule', position: r.position, data: { rule: r, advisories: [] } });
-const toFlowEdge = (e: RuleEdge): Edge => ({ id: e.id, source: e.source, target: e.target });
-const toDomainNode = (n: RuleFlowNode): RuleNode => ({ ...n.data.rule, position: n.position } as RuleNode);
-const toDomainEdge = (e: Edge): RuleEdge => ({ id: e.id, source: e.source, target: e.target });
 
 type Lens = 'graph' | 'grid';
 const LENS_TABS: BeamTabItem[] = [
@@ -56,8 +48,13 @@ const LENS_TABS: BeamTabItem[] = [
   { id: 'grid', label: 'Grid' },
 ];
 
-/** Exported page: the canvas provider + a containment boundary, so a render fault in the editor
- *  shows an inline card and the rest of the app keeps rendering (the Lab lesson, on the canvas). */
+// Edge stroke by branch kind — True (success) / False (error) / sequence step (muted).
+const EDGE_STROKE: Record<EdgeKind, string> = {
+  true: 'var(--mui-palette-success-main)',
+  false: 'var(--mui-palette-error-main)',
+  step: 'var(--mui-palette-text-disabled)',
+};
+
 export function RuleBuilderPage() {
   return (
     <RuleBuilderErrorBoundary>
@@ -69,100 +66,112 @@ export function RuleBuilderPage() {
 }
 
 function RuleBuilderBody() {
-  const initial = getRuleSet(); // seed (or the last import), read once
-  const [name, setName] = useState(initial.name);
-  const [nodes, setNodes, onNodesChange] = useNodesState<RuleFlowNode>(initial.nodes.map(toFlowNode));
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges.map(toFlowEdge));
+  const [root, setRootState] = useState<NodeConfig>(getRuleTree);
+  const [name, setName] = useState(getRuleMeta().name);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lens, setLens] = useState<Lens>('graph');
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState('');
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
 
-  // Advisories (render-time completeness) — recomputed from structure, injected into each node's
-  // data so the card can show its error-pigment badge. Derived, not stored → no setState loop.
-  const advByNode = useMemo(() => {
-    const grouped = new Map<string, Advisory[]>();
-    for (const a of computeAdvisories(nodes.map(toDomainNode), edges.map(toDomainEdge))) {
-      if (a.nodeId) grouped.set(a.nodeId, [...(grouped.get(a.nodeId) ?? []), a]);
-    }
-    return grouped;
-  }, [nodes, edges]);
-
-  const displayNodes = useMemo(
-    () => nodes.map((n) => ({ ...n, data: { ...n.data, advisories: advByNode.get(n.id) ?? [] } })),
-    [nodes, advByNode],
-  );
-
-  const selected = nodes.find((n) => n.selected) ?? null;
-  const selectedRule = selected ? toDomainNode(selected) : null;
-
-  // ── grammar-gated connect (structure prevents) ──
-  const isValidConnection: IsValidConnection = useCallback(
-    (c: Edge | Connection) => {
-      if (!c.source || !c.target || c.source === c.target) return false;
-      if (edges.some((e) => e.source === c.source && e.target === c.target)) return false; // no duplicate
-      const s = nodes.find((n) => n.id === c.source);
-      const t = nodes.find((n) => n.id === c.target);
-      return !!s && !!t && canConnect(s.data.rule.kind, t.data.rule.kind);
-    },
-    [nodes, edges],
-  );
-  const onConnect: OnConnect = useCallback((c) => setEdges((es) => addEdge(c, es)), [setEdges]);
-
-  // ── node mutations (the store is page state; both lenses read it) ──
-  const onAddNode = (kind: NodeKind) => {
-    const position = { x: 80 + (nodes.length % 6) * 36, y: 80 + (nodes.length % 6) * 36 };
-    setNodes((ns) => [...ns, toFlowNode(newNode(kind, position))]);
+  // Any mutation: update React state AND the store singleton (keeps it coherent for a re-mount / CR).
+  const commit = (next: NodeConfig) => {
+    setRootState(next);
+    setRuleTree(next);
   };
-  const onRename = (id: string, newName: string) =>
-    setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, data: { ...n.data, rule: { ...n.data.rule, name: newName } } } : n)));
-  const onParams = (id: string, params: RuleNode['params']) =>
-    setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, data: { ...n.data, rule: { ...n.data.rule, params } as RuleNode } } : n)));
+
+  // The canvas is a PROJECTION of the tree — derived on every change (io/layoutTree).
+  const advisories = useMemo(() => {
+    const byId = new Map<string, FactAdvisory[]>();
+    for (const a of unknownFactAdvisories(root)) byId.set(a.nodeId, [...(byId.get(a.nodeId) ?? []), a]);
+    return byId;
+  }, [root]);
+
+  const { nodes, edges } = useMemo(() => {
+    const laid = layoutTree(root);
+    const rf: RuleFlowNode[] = laid.nodes.map((n) => ({
+      id: n.id,
+      type: 'rule',
+      position: n.position,
+      data: { node: n.node, advisories: advisories.get(n.id) ?? [], selected: n.id === selectedId },
+    }));
+    const rfEdges: Edge[] = laid.edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      label: e.label || undefined,
+      type: 'smoothstep',
+      style: { stroke: EDGE_STROKE[e.kind] },
+      labelStyle: { fontSize: 11, fontWeight: 600, fill: 'var(--mui-palette-text-secondary)' },
+      labelBgStyle: { fill: 'var(--mui-palette-background-paper)' },
+    }));
+    return { nodes: rf, edges: rfEdges };
+  }, [root, advisories, selectedId]);
+
+  const selectedNode = selectedId ? findNode(root, selectedId) ?? null : null;
+  const removable = selectedId ? isRemovable(root, selectedId) : false;
+
+  // ── edit ops (mutate the tree by id) ──
+  const onUpdateCondition = (id: string, condition: ConditionConfig) =>
+    commit(updateNode(root, id, (n) => (n.type === 'condition' ? { ...n, condition } : n)));
+  const onUpdateActions = (id: string, actions: ActionConfig[]) =>
+    commit(updateNode(root, id, (n) => (n.type === 'action' ? { ...n, actions } : n)));
+  const onAddChild = (seqId: string, kind: 'condition' | 'action' | 'sequence') => {
+    const child = kind === 'condition' ? newCondition() : kind === 'action' ? newAction() : newSequence();
+    commit(addSequenceChild(root, seqId, child));
+    setSelectedId(child.id);
+  };
+  const onToggleFalse = (condId: string) => {
+    const node = findNode(root, condId);
+    if (node?.type !== 'condition') return;
+    commit(setFalseBranch(root, condId, node.falseNode ? undefined : newAction()));
+  };
   const onDelete = (id: string) => {
-    setNodes((ns) => ns.filter((n) => n.id !== id));
-    setEdges((es) => es.filter((e) => e.source !== id && e.target !== id));
+    commit(removeNode(root, id));
+    setSelectedId(null);
   };
   const onEditInGraph = (id: string) => {
-    setNodes((ns) => ns.map((n) => ({ ...n, selected: n.id === id })));
+    setSelectedId(id);
     setLens('graph');
   };
 
-  // ── import / export ──
-  const currentRuleSet = (): RuleSet => ({ version: initial.version, name, nodes: nodes.map(toDomainNode), edges: edges.map(toDomainEdge) });
-  const onCopy = () => void navigator.clipboard?.writeText(serialize(currentRuleSet()));
+  // ── import / export (native engine schema) ──
+  const onCopy = () => void navigator.clipboard?.writeText(serialize(root));
   const onDownload = () => {
-    const blob = new Blob([serialize(currentRuleSet())], { type: 'application/json' });
+    const blob = new Blob([serialize(root)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'rule-set'}.json`;
+    a.download = `${(root.id || name || 'rule-tree').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
   const applyImport = () => {
-    const res = validateRuleSet(importText);
+    const res = importRuleTree(importText);
     if (!res.ok) {
       setImportErrors(res.errors);
-      return; // error card, never a crash
+      setImportWarnings([]);
+      return; // panel shows errors; nothing imported
     }
-    setNodes(res.ruleSet.nodes.map(toFlowNode));
-    setEdges(res.ruleSet.edges.map(toFlowEdge));
-    setName(res.ruleSet.name);
-    setRuleSet(res.ruleSet); // keep the singleton coherent for a later re-mount / CR
+    commit(res.root);
+    setName(res.root.id);
+    setSelectedId(null);
     setImportErrors([]);
+    setImportWarnings(res.warnings);
     setImportText('');
-    setImportOpen(false);
+    if (res.warnings.length === 0) setImportOpen(false);
   };
   const onImportFile = (file: File | undefined) => {
     if (!file) return;
-    file.text().then(setImportText);
+    void file.text().then(setImportText);
   };
 
   return (
     <Stack spacing={3}>
       <BeamPageHeader
         title="Rule Builder"
-        description="Author payment-routing rule sets — two lenses over one store."
+        description="Author payment-routing rule trees — the engine's schema, two lenses over one tree."
         action={
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setImportOpen((o) => !o)}>
@@ -181,39 +190,37 @@ function RuleBuilderBody() {
       {importOpen && (
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Import rule set (JSON v1)</Typography>
-            <TextField
-              size="small"
-              multiline
-              minRows={4}
-              placeholder="Paste rule-set JSON…"
-              value={importText}
-              onChange={(e) => setImportText(e.target.value)}
-              fullWidth
-            />
+            <Typography variant="subtitle2">Import a rule tree (engine JSON, or a v1 rule set)</Typography>
+            <TextField size="small" multiline minRows={4} placeholder="Paste rule JSON…" value={importText} onChange={(e) => setImportText(e.target.value)} fullWidth />
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Button size="small" component="label" variant="text">
                 Choose file…
-                <input hidden type="file" accept="application/json" onChange={(e) => onImportFile(e.target.files?.[0])} />
+                <input hidden type="file" accept="application/json,.json" onChange={(e) => onImportFile(e.target.files?.[0])} />
               </Button>
               <Box sx={{ flex: 1 }} />
-              <Button size="small" onClick={() => { setImportOpen(false); setImportErrors([]); }}>
-                Cancel
-              </Button>
-              <Button size="small" variant="contained" onClick={applyImport} disabled={!importText.trim()}>
-                Import
-              </Button>
+              <Button size="small" onClick={() => { setImportOpen(false); setImportErrors([]); setImportWarnings([]); }}>Cancel</Button>
+              <Button size="small" variant="contained" onClick={applyImport} disabled={!importText.trim()}>Import</Button>
             </Stack>
             {importErrors.length > 0 && (
               <Paper variant="outlined" sx={{ p: 1.5, borderColor: 'error.main' }}>
                 <Typography variant="caption" color="error.main" sx={{ fontWeight: 600 }}>
-                  {importErrors.length} problem{importErrors.length > 1 ? 's' : ''} — nothing was imported:
+                  {importErrors.length} problem{importErrors.length > 1 ? 's' : ''} — nothing imported:
                 </Typography>
                 <Stack component="ul" sx={{ m: 0, pl: 2 }}>
                   {importErrors.map((err, i) => (
-                    <Typography key={i} component="li" variant="caption" color="text.secondary">
-                      {err}
-                    </Typography>
+                    <Typography key={i} component="li" variant="caption" color="text.secondary">{err}</Typography>
+                  ))}
+                </Stack>
+              </Paper>
+            )}
+            {importWarnings.length > 0 && (
+              <Paper variant="outlined" sx={{ p: 1.5, borderColor: 'warning.main' }}>
+                <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600 }}>
+                  Imported with {importWarnings.length} note{importWarnings.length > 1 ? 's' : ''} (v1 migration is best-effort):
+                </Typography>
+                <Stack component="ul" sx={{ m: 0, pl: 2 }}>
+                  {importWarnings.map((w, i) => (
+                    <Typography key={i} component="li" variant="caption" color="text.secondary">{w}</Typography>
                   ))}
                 </Stack>
               </Paper>
@@ -227,29 +234,29 @@ function RuleBuilderBody() {
       {lens === 'graph' ? (
         <Stack direction="row" spacing={2} sx={{ alignItems: 'stretch' }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <GraphLens
-              nodes={displayNodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              isValidConnection={isValidConnection}
-              onAddNode={onAddNode}
-            />
+            <GraphLens nodes={nodes} edges={edges} onSelectNode={setSelectedId} />
           </Box>
-          <Paper variant="outlined" sx={{ width: 300, flexShrink: 0, alignSelf: 'flex-start' }}>
-            <NodeInspector node={selectedRule} onRename={onRename} onParams={onParams} onDelete={onDelete} />
+          <Paper variant="outlined" sx={{ width: 320, flexShrink: 0, alignSelf: 'flex-start' }}>
+            <NodeInspector
+              node={selectedNode}
+              removable={removable}
+              onUpdateCondition={onUpdateCondition}
+              onUpdateActions={onUpdateActions}
+              onAddChild={onAddChild}
+              onToggleFalse={onToggleFalse}
+              onDelete={onDelete}
+            />
           </Paper>
         </Stack>
       ) : (
-        <GridLens nodes={nodes.map(toDomainNode)} edges={edges.map(toDomainEdge)} onEditInGraph={onEditInGraph} onDelete={onDelete} />
+        <GridLens root={root} onEditInGraph={onEditInGraph} onDelete={onDelete} />
       )}
     </Stack>
   );
 }
 
-/** App-local containment (mirrors the Lab's LabErrorBoundary): a render fault in the editor shows
- *  an inline recovery card — the product around it keeps rendering. Reset reseeds from the demo. */
+/** App-local containment (mirrors the Lab's boundary): a render fault shows an inline card; reset
+ *  reseeds from the demo. */
 class RuleBuilderErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
   static getDerivedStateFromError(error: Error) {
@@ -263,14 +270,11 @@ class RuleBuilderErrorBoundary extends Component<{ children: ReactNode }, { erro
       return (
         <Paper variant="outlined" role="alert" sx={{ p: 3, m: 2, borderColor: 'error.main', maxWidth: 520 }}>
           <Stack spacing={1.5}>
-            <Typography variant="subtitle2" color="error.main">
-              Rule Builder hit an error
-            </Typography>
+            <Typography variant="subtitle2" color="error.main">Rule Builder hit an error</Typography>
             <Typography variant="caption" color="text.secondary">
-              The editor stopped rendering — the rest of Gaspar is unaffected. Reload the page to start
-              again from the last saved rule set.
+              The editor stopped rendering — the rest of Gaspar is unaffected. Reset to start again from the demo.
             </Typography>
-            <Button size="small" variant="outlined" onClick={() => { setRuleSet(JSON.parse(JSON.stringify(SEED_RULE_SET))); this.setState({ error: null }); }} sx={{ alignSelf: 'flex-start' }}>
+            <Button size="small" variant="outlined" onClick={() => { resetToSeed(); this.setState({ error: null }); }} sx={{ alignSelf: 'flex-start' }}>
               Reset to demo
             </Button>
           </Stack>

@@ -2,61 +2,49 @@ import { BeamDataTable, type BeamColumn } from '@betty/beam';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineRounded';
 import { NodeKindChip } from './nodes/NodeKindChip';
-import { NODE_KIND_LABEL, summarizeParams, type RuleNode, type RuleEdge } from './ruleSetStore';
+import { NODE_KIND_LABEL, summarizeNode, isRemovable, type NodeConfig } from './ruleSetStore';
 
-type GridRow = { node: RuleNode; inCount: number; outCount: number };
+type GridRow = { node: NodeConfig; depth: number; removable: boolean };
+
+/** Depth-first flatten of the containment tree into scannable rows. */
+function flatten(root: NodeConfig): GridRow[] {
+  const rows: GridRow[] = [];
+  const walk = (n: NodeConfig, depth: number) => {
+    rows.push({ node: n, depth, removable: isRemovable(root, n.id) });
+    if (n.type === 'condition') {
+      walk(n.trueNode, depth + 1);
+      if (n.falseNode) walk(n.falseNode, depth + 1);
+    } else if (n.type === 'sequence') n.nodes.forEach((c) => walk(c, depth + 1));
+  };
+  walk(root, 0);
+  return rows;
+}
 
 /**
- * Grid lens — the SAME store, projected as a list (list-grammar). READ-ONLY in v1 (proposal Q4):
- * the graph is the editor; the grid is scan/overview. Rows carry the two edit affordances as
- * row-actions — "Edit in graph" (select + flip to the graph lens → inspector) and "Delete".
+ * Grid lens — the SAME tree, projected as a scannable list (list-grammar). Read-only overview; the
+ * graph + inspector are the editor. Rows carry "Edit in graph" (select + flip to the graph lens) and
+ * "Delete" (disabled where the tree forbids removal — the root and a condition's required True branch).
  */
 export function GridLens({
-  nodes,
-  edges,
+  root,
   onEditInGraph,
   onDelete,
 }: {
-  nodes: RuleNode[];
-  edges: RuleEdge[];
+  root: NodeConfig;
   onEditInGraph: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const inCounts = new Map<string, number>();
-  const outCounts = new Map<string, number>();
-  for (const e of edges) {
-    outCounts.set(e.source, (outCounts.get(e.source) ?? 0) + 1);
-    inCounts.set(e.target, (inCounts.get(e.target) ?? 0) + 1);
-  }
-  const rows: GridRow[] = nodes.map((node) => ({
-    node,
-    inCount: inCounts.get(node.id) ?? 0,
-    outCount: outCounts.get(node.id) ?? 0,
-  }));
+  const rows = flatten(root);
 
   const columns: BeamColumn<GridRow>[] = [
+    { key: 'kind', header: 'Kind', render: (r) => <NodeKindChip kind={r.node.type} />, getValue: (r) => NODE_KIND_LABEL[r.node.type], width: 130 },
     {
-      key: 'kind',
-      header: 'Kind',
-      render: (r) => <NodeKindChip kind={r.node.kind} />,
-      getValue: (r) => NODE_KIND_LABEL[r.node.kind],
-      width: 130,
+      key: 'id',
+      header: 'Node',
+      render: (r) => <span style={{ paddingLeft: r.depth * 14 }}>{r.node.id}</span>,
+      getValue: (r) => r.node.id,
     },
-    { key: 'name', header: 'Name', render: (r) => r.node.name, getValue: (r) => r.node.name },
-    {
-      key: 'params',
-      header: 'Parameters',
-      render: (r) => summarizeParams(r.node),
-      getValue: (r) => summarizeParams(r.node),
-    },
-    {
-      key: 'connections',
-      header: 'Connections',
-      align: 'right',
-      render: (r) => `${r.inCount} in · ${r.outCount} out`,
-      getValue: (r) => r.inCount + r.outCount,
-      width: 140,
-    },
+    { key: 'detail', header: 'Detail', render: (r) => summarizeNode(r.node), getValue: (r) => summarizeNode(r.node) },
   ];
 
   return (
@@ -65,11 +53,19 @@ export function GridLens({
       rows={rows}
       getRowId={(r) => r.node.id}
       searchable
-      aria-label="Rule nodes"
-      emptyMessage="No nodes yet — add one in the graph lens."
+      aria-label="Rule tree nodes"
+      emptyMessage="No nodes."
       rowActions={(r) => [
         { id: 'edit', label: 'Edit in graph', icon: <AccountTreeRoundedIcon fontSize="small" />, onSelect: () => onEditInGraph(r.node.id) },
-        { id: 'delete', label: 'Delete', icon: <DeleteOutlineIcon fontSize="small" />, destructive: true, onSelect: () => onDelete(r.node.id) },
+        {
+          id: 'delete',
+          label: 'Delete',
+          icon: <DeleteOutlineIcon fontSize="small" />,
+          destructive: true,
+          disabled: !r.removable,
+          disabledReason: r.removable ? undefined : 'The root and a condition’s True branch cannot be deleted.',
+          onSelect: () => onDelete(r.node.id),
+        },
       ]}
     />
   );
