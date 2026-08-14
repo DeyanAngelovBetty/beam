@@ -495,49 +495,45 @@ export function BeamAppShell({
       // Named for the ignition (grammar §4): morphs full-width ↔ right column on
       // lock/unlock. Present in both states, so its group genuinely reflows.
       style={{ viewTransitionName: VT_CONTENT }}
-      sx={{ minWidth: 0, minHeight: '100vh' }}
+      sx={{
+        // The SCROLL OWNER (chrome posture): the app scrolls INSIDE main, so the app-alert bar
+        // (root's first row) and the rail stay put while content scrolls. Fills appFrame; the
+        // gutter is the horizontal rhythm, CONTENT_VERTICAL the vertical.
+        minWidth: 0,
+        minHeight: 0,
+        height: '100%',
+        overflowY: 'auto',
+        px: contentGutter,
+        pb: CONTENT_VERTICAL,
+        pt: CONTENT_VERTICAL,
+        // Page mesh moved to a fixed body::before layer (createBeamTheme MuiCssBaseline) — off
+        // this tall scrolling element so it doesn't repaint on scroll, behind opaque surfaces.
+      }}
     >
-      {/* App-level alert slot — full-width (NO gutter), at the very top of the content column, so
-          it PUSHES the page down (in-flow). The app decides its content + visibility. */}
-      {appAlert}
-      <Box
-        sx={{
-          // minHeight pins old/new snapshot heights equal so the reflow morph is
-          // horizontal-only — otherwise short pages warp vertically mid-transition.
-          // Horizontal = the gutter (responsive); vertical is provisional rhythm.
-          px: contentGutter,
-          pb: CONTENT_VERTICAL,
-          pt: CONTENT_VERTICAL,
-          // Page mesh moved to a fixed body::before layer (createBeamTheme MuiCssBaseline) — off
-          // this tall scrolling element so it doesn't repaint on scroll, behind opaque surfaces.
-        }}
-      >
-        {children}
-      </Box>
+      {children}
     </Box>
   );
 
   // ---- LOCKED (wide): in-flow panel + content, as a grid so the column can
-  // later animate (grammar §4). ----
-  if (effectiveLocked) {
-    return (
-      <Box sx={{ display: 'grid', gridTemplateColumns: `${DRAWER_WIDTH}px 1fr`, minHeight: '100vh' }}>
-        <Box component="nav" sx={{ position: 'sticky', top: 0, height: '100vh' }}>
-          {panel('locked')}
-        </Box>
-        {main}
+  // later animate (grammar §4). Fills appFrame (height 100%); the rail is a plain
+  // full-height cell now (main owns the scroll, so no sticky needed). ----
+  const frameContent = effectiveLocked ? (
+    <Box sx={{ display: 'grid', gridTemplateColumns: `${DRAWER_WIDTH}px 1fr`, height: '100%' }}>
+      <Box component="nav" sx={{ height: '100%' }}>
+        {panel('locked')}
       </Box>
-    );
-  }
-
-  // ---- CLOSED (wide) or NARROW: brand strip + content; peek/drawer on demand. ----
-  return (
-    <Box sx={{ minHeight: '100vh', position: 'relative' }}>
+      {main}
+    </Box>
+  ) : (
+    // ---- CLOSED (wide) or NARROW: brand strip + content; peek/drawer on demand. The strip,
+    // hover zone, and peek are `absolute` within appFrame (NOT `fixed` to the viewport) — that
+    // is what puts them BELOW the app-alert bar, dissolving the strip-over-bar overlap. ----
+    <>
       {/* Brand strip (grammar §3): hamburger + color mark, top-left, no bar. */}
       <Stack
         direction="row"
         spacing={1}
-        sx={{ alignItems: 'center', position: 'fixed', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
+        sx={{ alignItems: 'center', position: 'absolute', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
       >
         {/* Hamburger, dual role (grammar §3, §6): wide = lock toggle (hover still
             peeks); narrow = open the modal drawer, no lock. */}
@@ -567,7 +563,7 @@ export function BeamAppShell({
       {isWide && !peekOpen && (
         <Box
           onMouseEnter={scheduleOpen}
-          sx={{ position: 'fixed', top: 0, left: 0, width: 8, height: '100vh', zIndex: theme.zIndex.appBar - 1 }}
+          sx={{ position: 'absolute', top: 0, left: 0, width: 8, height: '100%', zIndex: theme.zIndex.appBar - 1 }}
         />
       )}
 
@@ -576,14 +572,13 @@ export function BeamAppShell({
       {isWide ? (
         peekOpen && (
           // Peek = floating panel, non-modal (grammar §2, §6). Inset below the
-          // strip so the strip stays visible.
+          // strip so the strip stays visible; anchored to appFrame, not the viewport.
           <Box
             sx={{
-              position: 'fixed',
+              position: 'absolute',
               top: STRIP_HEIGHT,
               left: 0,
-              // height: `calc(100vh - ${STRIP_HEIGHT + 8}px)`,
-              height: `calc(100vh - ${STRIP_HEIGHT * 2}px)`,
+              height: `calc(100% - ${STRIP_HEIGHT * 2}px)`,
               zIndex: theme.zIndex.appBar - 1,
             }}
           >
@@ -602,6 +597,22 @@ export function BeamAppShell({
           {panel('peek', true)}
         </Drawer>
       )}
+    </>
+  );
+
+  // ---- The two-row shell frame. Row 1 = the app-alert slot (full VIEWPORT width, in-flow,
+  // auto height → absent slot is a zero-height row, byte-identical to no bar). Row 2 = appFrame,
+  // the positioning universe for everything else: rail (all three states), brand strip, main,
+  // gutters, view transitions. `position: relative` on appFrame means the `absolute` strip/rail/
+  // peek anchor to a universe that STARTS BELOW the bar — no more strip-over-bar overlap. The bar
+  // is OUTSIDE appFrame, so it is outside every view-transition group (chrome doesn't morph with
+  // pages). Root is a FIXED viewport height so the app scrolls inside main, not the document. ----
+  return (
+    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {appAlert}
+      {/* minHeight:0 = the flexbox footgun guard: without it a flex child refuses to shrink below
+          its content, main's internal scroll never engages, and the document scrolls instead. */}
+      <Box sx={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>{frameContent}</Box>
     </Box>
   );
 }

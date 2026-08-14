@@ -206,32 +206,37 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Locked — sidebar in-flow, flush, full-height; content reflows beside it. */
-/** The `appAlert` slot — a full-width bar at the top of the content column that pushes content
- *  down (in-flow), not a floating toast. Content is app-owned; here a demo review bar. */
+// A demo app-alert bar for the slot (the real bar lives in apps/sunlight; packages/beam can't
+// import it). Mirrors its look — full viewport width, severity tint, message + action.
+const demoAlert = (
+  <Box
+    sx={{
+      width: '100%',
+      backgroundColor: 'color-mix(in oklch, var(--mui-palette-info-main) 14%, var(--mui-palette-background-default))',
+      borderBottom: '1px solid',
+      borderColor: 'info.main',
+    }}
+  >
+    <Stack direction="row" spacing={2} sx={{ alignItems: 'center', px: { xs: 2, sm: 4, md: 7 }, py: 1 }}>
+      <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
+        2 change requests await your review
+      </Typography>
+      <Button size="small" variant="outlined">Review</Button>
+    </Stack>
+  </Box>
+);
+
+/** The `appAlert` slot — row 1 of the shell frame: full VIEWPORT width, above the rail AND content,
+ *  pushing everything down (in-flow), not a floating toast. Here over the locked rail. */
 export const WithAppAlert: Story = {
-  render: () => (
-    <ShellBench
-      defaultLocked
-      appAlert={
-        <Box
-          sx={{
-            width: '100%',
-            backgroundColor: 'color-mix(in oklch, var(--mui-palette-info-main) 14%, var(--mui-palette-background-default))',
-            borderBottom: '1px solid',
-            borderColor: 'info.main',
-          }}
-        >
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', px: { xs: 2, sm: 4, md: 7 }, py: 1 }}>
-            <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
-              2 change requests await your review
-            </Typography>
-            <Button size="small" variant="outlined">Review</Button>
-          </Stack>
-        </Box>
-      }
-    />
-  ),
+  render: () => <ShellBench defaultLocked appAlert={demoAlert} />,
+};
+
+/** Regression test for 46eff14's flagged overlap: the closed brand strip (hamburger + mark) now
+ *  sits BELOW the bar, not under it — because the strip is `absolute` within appFrame, which starts
+ *  below row 1. This is the previously-broken combination. */
+export const ClosedWithAlert: Story = {
+  render: () => <ShellBench defaultLocked={false} appAlert={demoAlert} />,
 };
 
 export const Locked: Story = {
