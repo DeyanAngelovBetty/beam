@@ -3,16 +3,18 @@ import { Box } from '@betty/beam';
 import { RuleBuilderPage } from './RuleBuilderPage';
 
 /**
- * Rule Builder — the ReactFlow canvas editor + grid lens, over the demo routing rule set.
+ * Rule Builder (RuleSet v2) — the engine's rule TREE, two lenses over one tree. Tree-as-truth: the
+ * canvas is a derived projection (deterministic layout, labeled True/False/step edges), so there is
+ * no free placement to drift. Select a node → the inspector edits it (data-driven fact picker keyed
+ * on the catalog's valueType/enumType, an operator picker, per-type action editors, add step / add
+ * else / delete under the tree guards). Flip to the grid lens for a scannable flatten. Import opens
+ * an engine rule file unmodified (or migrates a v1 rule set with a warnings panel); Export emits the
+ * engine schema natively.
  *
- * Honest-canvas demo (the Lab surfaces-board precedent): this renders the REAL page component with
- * the REAL seed store, inside a themed Storybook iframe — the override/edit machinery is live, not
- * mocked. Drag nodes, connect (the grammar refuses invalid drops), select → inspector, flip to the
- * grid lens, Import/Export. The seed is a plausible card-routing set (EU + provider-health →
- * Stripe/Adyen/Checkout) so it demos itself to a payments audience.
- *
- * @xyflow/react is themed purely through its --xy-* variables mapped to Beam tokens (GraphLens),
- * mirroring the dockview precedent — no colour literals, no stylesheet fork.
+ * Honest-canvas demo (the Lab surfaces-board precedent): the REAL page + REAL seed store (the
+ * sanitized `acme-main` routing policy, built on the demo facts catalog), live, not mocked.
+ * @xyflow/react is themed purely through its --xy-* variables mapped to Beam tokens — no colour
+ * literals, no stylesheet fork.
  */
 const meta: Meta<typeof RuleBuilderPage> = {
   title: 'Gaspar/Rule Builder',

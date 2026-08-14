@@ -138,3 +138,80 @@ Built as approved. What actually happened:
     toolbar), so screen-centre placement is a trivial follow-up alongside Tidy.
 - **Gates:** typecheck 0, build ×4 green, Storybook builds (`Gaspar/Rule Builder` story renders the
   real seeded canvas).
+
+---
+
+# RuleSet v2 — engine-schema alignment (2026-08-14)
+
+v1 was built against a plausible-demo model. The payment engine has a real one. v2 aligns our
+builder to it as the interchange contract, keeping our editor. **Headline acceptance: our builder
+opens the engine's rule files unmodified.**
+
+## Recon (concept level)
+
+The engine's rule is a **nested containment tree**, not a node+edge graph: a node's children live
+*inside* it, so a cycle/DAG is structurally inexpressible. Three node kinds — **sequence**
+(ordered, first-match, non-matching steps fall through), **condition** (a boolean expression + a
+required **True** branch and an optional **False** branch — branches are labeled by containment),
+and **action** (a list of actions). Conditions are a recursive **fact-path + operator + value**
+leaf plus **and / or / not** nesting; **8 operators**; **7 action types**. A separate **facts
+catalog** (path · description · valueType · isBuiltIn · enumType) is the registry the fact picker
+reads; lookup is case-insensitive; files ship as **JSONC** (comments) and, in practice, with a
+**BOM**. Rule files carry **no positions, no version, no name** — the editor derives layout
+deterministically and renders the graph as a projection of the tree.
+
+Compared to v1 (a free ReactFlow graph, closed 4-field condition enum, unlabeled edges, invented
+action words): the engine model is better everywhere that matters for the contract (facts, labeled
+branches, actions, operators); v1 was better only on version-stamping + the maker-checker socket,
+both *local* concerns the interchange format needn't carry.
+
+## Rulings (approved)
+
+1. **Tree-as-truth, graph-as-projection.** Editing mutates the tree; the canvas regenerates.
+   **Derive-only layout** — no stored positions, no position overlay, **no Tidy** (layout is always
+   tidy). Hand-placement, if ever missed, returns as its own later decision.
+2. **Local metadata.** `version` + the maker-checker socket stay **store-local**, never serialized
+   into the interchange format.
+3. **Export = the engine schema natively, only.** No annotated superset format.
+4. **Public-repo hygiene (hard).** The engine's real rule files + facts catalog are internal risk
+   policy and are **never committed here**. Acceptance runs against a **read-only sibling clone**,
+   reported in chat. Committed instead: **sanitized twins** — fixture rule files (invented
+   providers) covering the same structural ground, and a curated ~25-entry demo facts catalog (same
+   schema, JSONC, case-insensitivity, enumType entries), generic facts only.
+
+## Built
+
+- **Interchange types** (`ruleTree.ts`) — the engine schema adopted as our contract (tree kinds,
+  and/or/not conditions, 8 operators, 7 action types; `require` canonical with `addRequiredAction`
+  accepted as a legacy alias).
+- **Import** (`io/jsonc.ts` + `io/validateRuleTree.ts` + `io/importRuleTree.ts`) — comment- /
+  trailing-comma- / **BOM**-tolerant parse → recursive structural validation → accept the engine
+  tree as-is, or migrate a v1 graph. **v1→tree migration is a flagged best-effort bridge**: v1's
+  unlabeled edges make True/False an edge-order guess, and its field/action vocabulary maps lossily
+  — every guess surfaces as an import warning.
+- **Projection** (`io/layoutTree.ts` + `GraphLens`) — deterministic layout → select-only canvas
+  with labeled True/False/step edges; no free connect/drag/placement.
+- **Store** (`ruleSetStore.ts`) — the tree + store-local meta; pure id-addressed tree ops with the
+  tree guards (root + a condition's required True branch are non-removable); native export;
+  unknown-fact advisories (a fact leaf absent from the catalog — the real engine file had 6);
+  maker-checker socket kept, store-local.
+- **Inspector** — data-driven fact picker keyed on the catalog's valueType/enumType, operator
+  picker, per-type action editors, add step / add else / delete.
+- **Facts** — sanitized demo catalog + demo enums + a case-insensitive loader; **sanitized fixture
+  twins** covering else + fall-through, nested sequences, and/or/not, In/NotIn arrays, and every
+  action type incl. the alias.
+
+## Acceptance (verified locally vs the read-only sibling clone — nothing internal copied in)
+
+Both real engine files **open unmodified** through the shipped import: **0 validation errors**
+(nuvei-3ds 31 nodes; nuvei-main 165 nodes / 82 conditions / 82 actions). **Round-trip** (import →
+native export → re-import) is **structurally equal**; the only differences are formatting — stripped
+comments, BOM, whitespace, trailing commas. One real-world find: the engine's own main file
+references **6 facts not in its catalog**, so import must not reject unknown facts (it doesn't — they
+validate structurally and surface as advisories).
+
+## Out of scope — UX cherry-picks (a separate design round)
+
+Ghost add-step / add-else placeholder cards · in-place node **type morphing** · a collapsible
+**Tree view** as a third lens · a full **nested boolean (and/or/not) editor** (v2 shows nested
+conditions read-only) · True/False **edge-colour** styling passed through Beam tokens.
