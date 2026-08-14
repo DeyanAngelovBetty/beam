@@ -160,6 +160,11 @@ decoration.
 - **Post-submit → the list.** Landing where your own row now wears the badge is
   the feedback loop that teaches what Submit means. Makers are never routed into
   the approvals queue — that's the checker's room.
+- **The "Acting as" switcher is demo scaffolding, not architecture** *(2026-08-14):*
+  it fakes a second identity so four-eyes is demonstrable in one browser. The real
+  integration target is the **authenticated user + an approve-type permission**
+  (the app's auth + permission-check model) — nobody should mistake the switcher for
+  the mechanism.
 
 ## 7. The approvals surface
 
@@ -206,7 +211,21 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   shell chrome) as a derived `listPending()` selector; a `useSyncExternalStore`
   subscription is the noted future shape. Per-role routing, read state,
   push-vs-poll: the larger conversation Jamie flagged.
-- **Diff view** — the review round: live-vs-proposed comparison, Figma first.
+- **Our CR model is a PROPOSAL, pending the backend team's contract** *(2026-08-14):*
+  the parity target (Tzeno's "Configuration Approvals") is a SEPARATE system — its actual
+  contract is unavailable to us — so our change-request shape, columns, status vocabulary,
+  and the `baseSnapshot`/diff semantics are our own design against their screenshots. They
+  exist for design/a11y vetting regardless of eventual adoption; revisit when the real
+  contract lands (snapshot capture point, operation types create/update/delete, concurrency).
+- **Diff view** — **now built** (`ConfigDiffPanel`, on our `baseSnapshot`): frozen before-state
+  vs proposed, changed-only with non-colour markers, snapshot-absent fallback. Live-vs-proposed
+  comparison is real; the open part is only reconciling it with the eventual backend diff.
+- **Filter-API reconciliation** — the approvals list is built on the existing composition
+  `BeamFilterBar`; moving it to a field-schema filter API is a recorded later task, not owned here.
+- **Persistent, must-act messaging has no shared organism** — conflict / four-eyes messages
+  that a reviewer must read stay as inline notices + disabled-button tooltips for now (transient
+  outcome notices likewise stay inline). A dedicated persistent-alert organism is a future call;
+  we do not invent a toast system in the meantime.
 - **Maker-withdraw** (the reference UI's "Cancel") — semantics to align with the backend
   team before building. It is a DIFFERENT act from a reviewer's Reject: the *submitter*
   retracts their own pending request (an own-request action, no second pair of eyes). We

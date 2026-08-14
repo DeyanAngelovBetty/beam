@@ -17,7 +17,10 @@
  * (bump the suffix if the shape changes; that's the reset path).
  */
 
-const STORAGE_KEY = 'betty.sunlight.changeRequests.v1';
+// v2: the CR shape gained `baseSnapshot` (the before-state, for the review diff). Per the
+// runbook's own rule, a shape change bumps the suffix — so v1 data is DISCARDED on first load
+// (a demo store: acceptable, and pre-snapshot CRs would render the diff fallback anyway).
+const STORAGE_KEY = 'betty.sunlight.changeRequests.v2';
 
 /** CR-internal lifecycle. NOT BeamStatus — no design-vocabulary implications. */
 export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected' | 'superseded';
@@ -32,6 +35,11 @@ export interface ChangeRequest<T = unknown> {
   entityName: string; // denormalized so lists never join
   baseVersion: number; // the live version the draft was made against (stale check)
   draft: T; // full proposed domain payload (fields + rewards; no version)
+  // The BEFORE-state: the live entity captured at submit time, IMMUTABLE thereafter. This is what
+  // makes an archived CR's diff historically stable — it shows what changed THEN, even after the
+  // live entity moves on. Optional: pre-v2 / hand-built CRs may lack it → the diff renders its
+  // "snapshot unavailable" fallback. Supersede captures a FRESH snapshot for the new CR.
+  baseSnapshot?: T;
   status: ChangeRequestStatus;
   submittedBy: string;
   submittedAt: string;
@@ -46,6 +54,9 @@ export interface SubmitInput<T = unknown> {
   entityName: string;
   baseVersion: number;
   draft: T;
+  /** The live entity's current state, captured by the caller at submit time → the CR's frozen
+   *  before-state. Required: the caller holds the live entity, this module stays entity-agnostic. */
+  baseSnapshot: T;
   submittedBy: string;
   note?: string;
 }
@@ -118,6 +129,7 @@ export function submit<T>(input: SubmitInput<T>): ChangeRequest<T> {
     entityName: input.entityName,
     baseVersion: input.baseVersion,
     draft: input.draft,
+    baseSnapshot: input.baseSnapshot, // frozen at submit; supersede captures fresh per submission
     status: 'pending',
     submittedBy: input.submittedBy,
     submittedAt: now(),

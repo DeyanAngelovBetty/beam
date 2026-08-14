@@ -7,7 +7,7 @@ import { getCurrentUser } from './currentUser';
 import { ENTITY_LABEL, shortCrId, reasonMessage } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
 import { KeyValuePanel, type KeyValueItem } from './KeyValuePanel';
-import { ProposedConfigSummary } from './ProposedConfigSummary';
+import { ConfigDiffPanel } from './ConfigDiffPanel';
 
 type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
 
@@ -117,15 +117,12 @@ export function PendingApprovalDetailPage() {
       </Stack>
 
       <Stack spacing={1}>
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'baseline' }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Proposed configuration
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Proposed state; comparison view planned.
-          </Typography>
-        </Stack>
-        <ProposedConfigSummary cr={cr} />
+        <Typography variant="subtitle2" color="text.secondary">
+          Review changes
+        </Typography>
+        {/* The diff shows this CR's FROZEN before-state vs its proposal — historically stable for
+            archived records. No snapshot → the panel falls back to proposed-only with a notice. */}
+        <ConfigDiffPanel cr={cr} />
       </Stack>
     </Stack>
   );

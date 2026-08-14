@@ -24,7 +24,7 @@ import { backTo } from './backTo';
 import { LoyaltyRewardsEditor } from './LoyaltyRewardsEditor';
 import { NextGemPanel } from './NextGemPanel';
 import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
-import { getLoyaltyStatus, LOYALTY_STATUSES, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
+import { getLoyaltyStatus, LOYALTY_STATUSES, toDraft, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
 import { submit, getPendingFor } from './changeRequests';
 import { getCurrentUser } from './currentUser';
 import { serializeStatus, validateStatusImport, mergeOntoLive, downloadAndCopy, slugifyName } from './loyaltyImportExport';
@@ -256,6 +256,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
       entityId: String(status.id),
       entityName: status.name,
       baseVersion: status.version, // live version at submit time
+      baseSnapshot: toDraft(status), // frozen before-state for the review diff
       draft: toDomainDraft(model, status),
       submittedBy: getCurrentUser().name,
     });

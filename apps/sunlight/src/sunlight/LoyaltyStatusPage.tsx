@@ -20,7 +20,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownloadRounded';
 import UploadFileIcon from '@mui/icons-material/UploadFileRounded';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
-import { LOYALTY_STATUSES, type LoyaltyStatus } from './loyaltyStatuses';
+import { LOYALTY_STATUSES, toDraft, type LoyaltyStatus } from './loyaltyStatuses';
 import { getPendingFor, submit } from './changeRequests';
 import { getCurrentUser } from './currentUser';
 import {
@@ -100,6 +100,7 @@ export function LoyaltyStatusPage() {
         entityId: String(live.id),
         entityName: live.name,
         baseVersion: live.version, // supersede handles any in-flight pending for this entity
+        baseSnapshot: toDraft(live), // frozen before-state for the review diff
         draft: mergeOntoLive(item, live),
         submittedBy: getCurrentUser().name,
       });

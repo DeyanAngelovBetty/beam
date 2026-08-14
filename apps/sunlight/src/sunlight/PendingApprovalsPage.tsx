@@ -33,8 +33,15 @@ type Filters = {
 const EMPTY: Filters = { status: 'any', type: 'any', q: '', by: 'any', from: '', to: '' };
 
 /**
- * PendingApprovalsPage — the reviewer's surface (Administration nav). Grammar-complete: a
- * BeamFilterBar over the FULL change-request set (the archive is browsable now, not just the
+ * PendingApprovalsPage — the reviewer's surface (Administration nav).
+ *
+ * SPECULATIVE BY DESIGN: our CR model, these columns, and the Approve/Reject vocabulary are OUR
+ * PROPOSAL — the backend team's actual contract is unavailable, so this is designed on our own
+ * semantics with their screenshots as visual reference. Built on the existing BeamFilterBar as-is;
+ * moving it to a field-schema filter API is a recorded LATER task, not this one.
+ * (approval-flow.md Open questions carries the same caveat.)
+ *
+ * Grammar-complete: a BeamFilterBar over the FULL change-request set (the archive is browsable now, not just the
  * pending queue), Tzeno-parity columns, Approve/Reject as one row-action definition (kebab +
  * expanded bar, 08-13 repair; disabled on your own request — four-eyes). The row expands to the
  * read-only ProposedConfigSummary; the identity link opens the CR's view-first detail route.

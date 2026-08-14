@@ -25,7 +25,7 @@ const pendingId = getPendingFor('30')?.id ?? '';
 const archivedId = (() => {
   const opal = getLoyaltyStatus('50');
   if (!opal) return '';
-  const cr = submit({ entityType: 'loyaltyStatus', entityId: '50', entityName: opal.name, baseVersion: opal.version, draft: toDraft(opal), submittedBy: DEMO_MAKER.name });
+  const cr = submit({ entityType: 'loyaltyStatus', entityId: '50', entityName: opal.name, baseVersion: opal.version, baseSnapshot: toDraft(opal), draft: { ...toDraft(opal), multiplier: 2 }, submittedBy: DEMO_MAKER.name });
   reject(cr.id, DEMO_CHECKER.name, 'Demo archive fixture.');
   return cr.id;
 })();
