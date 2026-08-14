@@ -1,0 +1,53 @@
+{
+  // Sanitized fixture (invented provider) — a 3DS step-up pipeline. First-match sequence; a
+  // non-matching step falls through (no falseNode). Exercises: the require/addRequiredAction alias,
+  // In array values, and/or conditions, and case-insensitive fact paths.
+  "id": "acme-3ds-pipeline",
+  "type": "sequence",
+  "nodes": [
+    {
+      "id": "3ds-high-amount",
+      "type": "condition",
+      "condition": { "type": "field", "field": "request.amount", "operator": "Gte", "value": 1000 },
+      "trueNode": {
+        "id": "3ds-high-amount-act",
+        "type": "action",
+        "actions": [{ "type": "require", "action": "ThreeDS" }]
+      }
+    },
+    {
+      "id": "3ds-new-account-midsize",
+      "type": "condition",
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "field", "field": "request.amount", "operator": "Gte", "value": 250 },
+          { "type": "field", "field": "user.accountAgeDays", "operator": "Lt", "value": 14 }
+        ]
+      },
+      // Legacy alias on purpose — the importer accepts addRequiredAction and normalizes to require.
+      "trueNode": {
+        "id": "3ds-new-account-act",
+        "type": "action",
+        "actions": [{ "type": "addRequiredAction", "action": "ThreeDS" }]
+      }
+    },
+    {
+      "id": "3ds-watch-bins",
+      "type": "condition",
+      "condition": {
+        "type": "or",
+        "conditions": [
+          { "type": "field", "field": "request.paymentMethod.bin", "operator": "In", "value": ["453201", "517845", "492011"] },
+          // lower-case path on purpose — resolves case-insensitively to facts.cardInNegativeList
+          { "type": "field", "field": "facts.cardinnegativelist", "operator": "Eq", "value": true }
+        ]
+      },
+      "trueNode": {
+        "id": "3ds-watch-bins-act",
+        "type": "action",
+        "actions": [{ "type": "require", "action": "ThreeDS" }]
+      }
+    }
+  ]
+}

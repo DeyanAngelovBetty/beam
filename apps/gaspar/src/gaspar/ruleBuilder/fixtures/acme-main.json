@@ -1,0 +1,74 @@
+{
+  // Sanitized fixture (invented provider) — a main routing policy. Exercises: a falseNode (else
+  // branch), a nested sequence, a not condition, a NotIn array, and every remaining action type
+  // (block, setRiskLevel, addPsp, disablePsp, adjustPspScore, setFact).
+  "id": "acme-main-policy",
+  "type": "sequence",
+  "nodes": [
+    {
+      "id": "block-restricted-country",
+      "type": "condition",
+      "condition": { "type": "field", "field": "user.country", "operator": "In", "value": ["KP", "IR", "SY"] },
+      "trueNode": {
+        "id": "block-restricted-country-act",
+        "type": "action",
+        "actions": [{ "type": "block", "reason": "User country is on the restricted list" }]
+      }
+    },
+    {
+      "id": "kyc-gate",
+      "type": "condition",
+      "condition": { "type": "not", "inner": { "type": "field", "field": "user.kycStatus", "operator": "Eq", "value": "Verified" } },
+      "trueNode": {
+        "id": "kyc-gate-review",
+        "type": "action",
+        "actions": [
+          { "type": "setRiskLevel", "level": "High", "reason": "KYC not verified" },
+          { "type": "require", "action": "IdentityVerification" }
+        ]
+      },
+      "falseNode": {
+        "id": "verified-routing",
+        "type": "sequence",
+        "nodes": [
+          {
+            "id": "prepaid-high-value",
+            "type": "condition",
+            "condition": {
+              "type": "and",
+              "conditions": [
+                { "type": "field", "field": "request.paymentMethod.isPrepaid", "operator": "Eq", "value": true },
+                { "type": "field", "field": "request.amount", "operator": "Gt", "value": 500 }
+              ]
+            },
+            "trueNode": {
+              "id": "prepaid-high-value-act",
+              "type": "action",
+              "actions": [{ "type": "adjustPspScore", "pspId": "psp-alpha", "delta": -20 }]
+            }
+          },
+          {
+            "id": "non-eu-currency",
+            "type": "condition",
+            "condition": { "type": "field", "field": "request.currency", "operator": "NotIn", "value": ["EUR", "GBP"] },
+            "trueNode": {
+              "id": "non-eu-currency-act",
+              "type": "action",
+              "actions": [{ "type": "disablePsp", "pspId": "psp-beta", "reason": "Non-EU currency not supported on beta" }]
+            },
+            "falseNode": {
+              "id": "eu-currency-act",
+              "type": "action",
+              "actions": [{ "type": "addPsp", "pspId": "psp-gamma", "initialScore": 50 }]
+            }
+          },
+          {
+            "id": "tag-reviewed",
+            "type": "action",
+            "actions": [{ "type": "setFact", "key": "routingReviewed", "value": true }]
+          }
+        ]
+      }
+    }
+  ]
+}

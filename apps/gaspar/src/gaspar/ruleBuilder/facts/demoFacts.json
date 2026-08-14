@@ -1,0 +1,46 @@
+{
+  // Demo facts catalog — a SANITIZED twin of the engine's facts registry. Same schema
+  // (path · description · valueType · isBuiltIn · enumType?) and same conventions: JSONC comments,
+  // case-INSENSITIVE path lookup, Enum facts carry an enumType. Plausible generic payment facts
+  // only — no device-fingerprint or velocity-stat internals. ~25 entries for the demo + fixtures.
+  "facts": [
+
+    // ── User ──────────────────────────────────────────────────────────────
+    { "path": "user.id",              "description": "Player account identifier",                 "valueType": "String",   "isBuiltIn": true },
+    { "path": "user.country",         "description": "Player billing country (ISO 3166-1 alpha-2)","valueType": "String",  "isBuiltIn": true },
+    { "path": "user.currency",        "description": "Player account currency (ISO 4217)",         "valueType": "String",   "isBuiltIn": true },
+    { "path": "user.kycStatus",       "description": "KYC verification status",                    "valueType": "Enum",     "isBuiltIn": true, "enumType": "KycStatus" },
+    { "path": "user.accountTier",     "description": "Account tier",                               "valueType": "Enum",     "isBuiltIn": true, "enumType": "AccountTier" },
+    { "path": "user.accountAgeDays",  "description": "Account age in days since registration",      "valueType": "Numeric",  "isBuiltIn": true },
+    { "path": "user.currentBalance",  "description": "Wallet balance at the time of the request",   "valueType": "Numeric",  "isBuiltIn": true },
+
+    // ── Request ───────────────────────────────────────────────────────────
+    { "path": "request.transactionId",     "description": "Unique transaction identifier",          "valueType": "String",   "isBuiltIn": true },
+    { "path": "request.amount",            "description": "Transaction amount in the request currency","valueType": "Numeric", "isBuiltIn": true },
+    { "path": "request.currency",          "description": "Transaction currency (ISO 4217)",         "valueType": "String",   "isBuiltIn": true },
+    { "path": "request.type",              "description": "Transaction type: deposit or withdrawal", "valueType": "String",   "isBuiltIn": true },
+    { "path": "request.requestedAt",       "description": "Timestamp of the payment request (UTC)",  "valueType": "DateTime", "isBuiltIn": true },
+    { "path": "request.is3dsAuthenticated","description": "Whether the request already passed 3DS",  "valueType": "Bool",     "isBuiltIn": true },
+
+    // ── Payment method ────────────────────────────────────────────────────
+    { "path": "request.paymentMethod.type",           "description": "Payment method type",         "valueType": "Enum",     "isBuiltIn": true, "enumType": "PaymentMethodType" },
+    { "path": "request.paymentMethod.provider",       "description": "Payment provider name",        "valueType": "String",   "isBuiltIn": true },
+    { "path": "request.paymentMethod.bin",            "description": "Card BIN (first digits of the PAN)","valueType": "String","isBuiltIn": true },
+    { "path": "request.paymentMethod.countryOfIssue", "description": "Country of the issuing bank",   "valueType": "String",   "isBuiltIn": true },
+    { "path": "request.paymentMethod.isCredit",       "description": "Whether the card is a credit card","valueType": "Bool",  "isBuiltIn": true },
+    { "path": "request.paymentMethod.isPrepaid",      "description": "Whether the card is prepaid",   "valueType": "Bool",     "isBuiltIn": true },
+
+    // ── Geolocation ───────────────────────────────────────────────────────
+    { "path": "request.geolocation.country", "description": "Country resolved from the request IP",  "valueType": "String",   "isBuiltIn": true },
+
+    // ── Aggregate stats (generic) ─────────────────────────────────────────
+    { "path": "stats.user.totalDepositCount",  "description": "Lifetime deposit count for this account","valueType": "Numeric","isBuiltIn": true },
+    { "path": "stats.user.totalDepositVolume", "description": "Lifetime deposit volume for this account","valueType": "Numeric","isBuiltIn": true },
+
+    // ── Custom facts (pre-populated by an upstream step; isBuiltIn = false) ─
+    { "path": "facts.cardInNegativeList",  "description": "True if the card is on the merchant negative list", "valueType": "Bool",    "isBuiltIn": false },
+    { "path": "facts.emailInNegativeList", "description": "True if the email is on the merchant negative list","valueType": "Bool",    "isBuiltIn": false },
+    { "path": "facts.nameSimilarityScore", "description": "Similarity score (0–100) of card holder vs account name","valueType": "Numeric","isBuiltIn": false }
+
+  ]
+}
