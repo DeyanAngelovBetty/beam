@@ -110,6 +110,17 @@ page-header
 └────────────────────────────────────────────┘
 ```
 
+- **State lives in the header, once** *(2026-08-14):* entity state — status,
+  operation, lifecycle chips — renders in the page-header **identity zone** (the
+  `status` slot under the title), and **panels below never repeat what the header
+  declares.** The point is INVARIANCE: a reader finds state in the same place
+  regardless of a page's anatomy. *Rejected alternative:* header-yields-to-panel
+  (let a details panel own status when the page has one) — dropped, because it
+  makes state location depend on page anatomy, the opposite of invariance.
+  *Applied:* the CR detail page's Request-details panel drops its Status/Operation
+  rows (header keeps them); ConfigDiffPanel suppresses its per-entity operation
+  chip on single-entity diffs (it earns its place only in a multi-entity diff,
+  where it differentiates).
 - **Altitude determines alignment** *(2026-07-31):* the right edge belongs to
   the page. Page-level actions live in the `BeamPageHeader` actions slot, and
   **nothing below page altitude aligns right.** Section/organism-level actions

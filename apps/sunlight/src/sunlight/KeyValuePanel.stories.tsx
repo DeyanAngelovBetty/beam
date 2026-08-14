@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Box, Chip } from '@betty/beam';
+import { Box } from '@betty/beam';
 import { KeyValuePanel } from './KeyValuePanel';
 
 /**
- * KeyValuePanel — the reusable labelled key/value grid (meta-voice labels, responsive columns).
- * Values are ReactNodes, so chips/links drop in beside plain text. Its first consumer is the
- * Pending Approval detail page's Request-details panel; promotion to @betty/beam awaits a second.
+ * KeyValuePanel — the reusable labelled key/value grid. Each pair now renders as a BeamStat
+ * (meta label · value · vertical keyline) — the panel owns the responsive grid + paper; BeamStat is
+ * the atom. NEUTRAL facts only (no severity). State (status/operation chips) is NOT here — it lives
+ * once in the page header (detail-grammar), so these stories carry identity + timestamps only.
+ *
+ * DENSITY CHECK (bench): view WithManyRows in BOTH schemes. If the keylines at this density read as
+ * a picket fence rather than rhythm, that's a spacing/size dial call (Deyan) — flag, don't ship loud.
  */
 const meta: Meta<typeof KeyValuePanel> = {
   title: 'Lab/Sunlight/KeyValuePanel',
@@ -24,11 +28,31 @@ export const RequestDetails: Story = {
           { label: 'ID', value: 'a1b2c3' },
           { label: 'Entity', value: 'Topaz' },
           { label: 'Type', value: 'Loyalty status' },
-          { label: 'Operation', value: <Chip label="Update" size="small" variant="outlined" /> },
-          { label: 'Status', value: <Chip label="Pending" color="info" size="small" variant="outlined" /> },
           { label: 'Submitted by', value: 'Maja Novak' },
           { label: 'Submitted at', value: '2026-08-11' },
           { label: 'Reviewed by', value: '—' },
+        ]}
+      />
+    </Box>
+  ),
+};
+
+/** Density variant — the full CR-detail row set (incl. a withdrawn CR's "Withdrawn at"). The stress
+ *  case for the keyline rhythm in a grid of many; judge in both schemes. */
+export const WithManyRows: Story = {
+  render: () => (
+    <Box sx={{ maxWidth: 720 }}>
+      <KeyValuePanel
+        aria-label="Request details"
+        items={[
+          { label: 'ID', value: 'a1b2c3' },
+          { label: 'Entity', value: 'Topaz' },
+          { label: 'Type', value: 'Loyalty status' },
+          { label: 'Submitted by', value: 'Maja Novak' },
+          { label: 'Submitted at', value: '2026-08-11' },
+          { label: 'Reviewed by', value: '—' },
+          { label: 'Reviewed at', value: '—' },
+          { label: 'Withdrawn at', value: '2026-08-12' },
         ]}
       />
     </Box>

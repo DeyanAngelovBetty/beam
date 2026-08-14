@@ -1,14 +1,19 @@
 import type { ReactNode } from 'react';
-import { Paper, Box, Stack, Typography } from '@betty/beam';
+import { Paper, Box, BeamStat } from '@betty/beam';
 
-/** One key/value cell. `value` is a ReactNode, so a chip/badge/link renders as easily as text
- *  (that is the "optional custom render" — no separate render fn needed). */
+/** One key/value cell. `value` is a ReactNode → it flows straight through BeamStat's value slot
+ *  (a date, a "—", a name, or a node), no separate render fn. */
 export type KeyValueItem = { label: string; value: ReactNode };
 
 /**
- * KeyValuePanel — a labelled key/value grid in an outlined Paper: meta-voice labels (overline)
- * over values, responsive auto-fill columns. This is the little panel the "triple-build episode"
- * kept re-inventing per page; built ONCE here, properly, with a story.
+ * KeyValuePanel — a labelled key/value grid in an outlined Paper. The panel OWNS THE LAYOUT
+ * (responsive auto-fill columns, its own paper); each pair is a BeamStat (meta label · value · the
+ * vertical keyline — the KPI/Live-Check anatomy), so the estate's stat nugget is the atom and this
+ * never re-spells label/value typography. These are NEUTRAL facts — no severity (that is the Live
+ * Check's business); the default spine reads calm across a grid of seven.
+ *
+ * State (status/operation/lifecycle chips) is NOT a fact for this panel: it lives once in the page
+ * header's identity zone (detail-grammar). The panel carries identity + timestamps + attribution.
  *
  * Product-local for now (BEAM.md §2 — a pattern earns Beam on its SECOND real consumer).
  * PROMOTION SOCKET: gaspar's detail pages are the likely second consumer — graduate to
@@ -32,12 +37,7 @@ export function KeyValuePanel({
         sx={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${minColumnWidth}px, 1fr))`, gap: 2 }}
       >
         {items.map((item) => (
-          <Stack key={item.label} spacing={0.25}>
-            <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-              {item.label}
-            </Typography>
-            <Box sx={{ typography: 'body2' }}>{item.value}</Box>
-          </Stack>
+          <BeamStat key={item.label} label={item.label} value={item.value} />
         ))}
       </Box>
     </Paper>

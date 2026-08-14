@@ -1,4 +1,4 @@
-import { Paper, Box, Stack, Typography, Divider, Alert, Chip, Table, TableHead, TableBody, TableRow, TableCell } from '@betty/beam';
+import { Paper, Box, Stack, Typography, Divider, Alert, Table, TableHead, TableBody, TableRow, TableCell } from '@betty/beam';
 import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
 import type { ChangeRequest } from './changeRequests';
 import type { LoyaltyStatusDraft, StatusReward } from './loyaltyStatuses';
@@ -6,9 +6,9 @@ import { ProposedConfigSummary } from './ProposedConfigSummary';
 
 /**
  * ConfigDiffPanel — the review diff: side-by-side CURRENT (the CR's frozen `baseSnapshot`) vs
- * PROPOSED (`draft`). Changed rows shown + marked; unchanged hidden behind a count line; a
- * per-entity "Updated" chip. Because the snapshot is frozen at submit, an archived CR shows what
- * changed THEN — historically stable even after live moves on.
+ * PROPOSED (`draft`). Changed rows shown + marked; unchanged hidden behind a count line. No
+ * per-entity operation chip (single-entity diff — see the count-line comment). Because the snapshot
+ * is frozen at submit, an archived CR shows what changed THEN — stable even after live moves on.
  *
  * SPECULATIVE BY DESIGN: our CR model + this diff are OUR PROPOSAL (the backend team's contract is
  * unavailable). Designed on our semantics with their screenshot as visual reference; it exists for
@@ -98,14 +98,16 @@ export function ConfigDiffPanel({ cr }: { cr: ChangeRequest }) {
   return (
     <Paper component="section" variant="outlined" aria-label={`Configuration changes for ${cr.entityName}`} sx={{ p: 2 }}>
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-          <Chip label="Updated" size="small" color="info" variant="outlined" />
-          <Typography variant="body2" color="text.secondary">
-            {changedCount === 0
-              ? 'No changes.'
-              : `Showing ${changedCount} changed item${changedCount === 1 ? '' : 's'}${hiddenUnchanged ? ` · ${hiddenUnchanged} unchanged hidden` : ''}.`}
-          </Typography>
-        </Stack>
+        {/* No per-entity "Updated" operation chip here: this diff is SINGLE-ENTITY (one CR = one
+            entity), so the section header + this count line already carry the context. The chip
+            differentiates entities only in a MULTI-entity (grid-import) diff, where each entity's
+            operation must be named — a future panel, not this one (detail-grammar identity-zone rule:
+            state is declared once, not repeated). */}
+        <Typography variant="body2" color="text.secondary">
+          {changedCount === 0
+            ? 'No changes.'
+            : `Showing ${changedCount} changed item${changedCount === 1 ? '' : 's'}${hiddenUnchanged ? ` · ${hiddenUnchanged} unchanged hidden` : ''}.`}
+        </Typography>
 
         {fieldRows.length > 0 && (
           <Table size="small" aria-label={`Field changes for ${cr.entityName}`}>

@@ -61,12 +61,12 @@ export function PendingApprovalDetailPage() {
     setNotice({ severity: 'error', msg: 'This request can no longer be withdrawn.' });
   };
 
+  // Status + Operation are NOT repeated here — they live once in the header identity zone
+  // (detail-grammar). This panel carries identity, attribution, and timestamps only.
   const details: KeyValueItem[] = [
     { label: 'ID', value: shortCrId(cr.id) },
     { label: 'Entity', value: cr.entityName },
     { label: 'Type', value: ENTITY_LABEL[cr.entityType] },
-    { label: 'Operation', value: <OperationChip /> },
-    { label: 'Status', value: <CRStatusChip status={cr.status} /> },
     { label: 'Submitted by', value: cr.submittedBy },
     { label: 'Submitted at', value: cr.submittedAt.slice(0, 10) },
     { label: 'Reviewed by', value: cr.reviewedBy ?? '—' },
