@@ -130,6 +130,12 @@ state toggles (Enable/Disable) and non-edit actions (Export/Import…); destruct
 This matches §5's own example set (`Edit / Users in Role / Delete`). The identity link still
 opens **view** — Edit is the deliberate second gesture, never a duplicate of the link.
 
+*Clarified 2026-08-14 — no expansion → kebab only.* The both-projections rule is scoped to rows
+that **expand** ("has actions **and** expands"). A list whose rows do NOT expand has only the
+**kebab** — the expanded bar has nowhere to render — and that is conformant, not a regression.
+Configuration Approvals dropped row expansion (its view-first detail route is the review surface
+now), so its Approve/Reject live in the kebab alone.
+
 *Amended 2026-07-31 — altitude determines alignment (detail-grammar §4).* Sub-page
 action strips (the batch strip, Add Row / Add Rule) render **LEFT, directly above
 the organism** they operate on; the page's right edge (the `BeamPageHeader`

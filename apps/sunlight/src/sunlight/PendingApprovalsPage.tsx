@@ -1,23 +1,11 @@
 import { useState } from 'react';
-import {
-  Stack,
-  Alert,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  TextField,
-  BeamPageHeader,
-  BeamFilterBar,
-  BeamDataTable,
-} from '@betty/beam';
+import { Stack, Alert, MenuItem, TextField, BeamPageHeader, BeamFilterBar, BeamDataTable } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import { RouterIdentityLink } from './RouterIdentityLink';
-import { listAll, approve, reject, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
-import { DEMO_USERS, getCurrentUser, setCurrentUser } from './currentUser';
+import { listAll, approve, reject, useChangeRequests, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
+import { DEMO_USERS, useCurrentUser } from './currentUser';
 import { ENTITY_LABEL, shortCrId, reasonMessage } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
-import { ProposedConfigSummary } from './ProposedConfigSummary';
 
 type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
 
@@ -41,25 +29,26 @@ const EMPTY: Filters = { status: 'any', type: 'any', q: '', by: 'any', from: '',
  * moving it to a field-schema filter API is a recorded LATER task, not this one.
  * (approval-flow.md Open questions carries the same caveat.)
  *
- * Grammar-complete: a BeamFilterBar over the FULL change-request set (the archive is browsable now, not just the
- * pending queue), Tzeno-parity columns, Approve/Reject as one row-action definition (kebab +
- * expanded bar, 08-13 repair; disabled on your own request — four-eyes). The row expands to the
- * read-only ProposedConfigSummary; the identity link opens the CR's view-first detail route.
+ * A BeamFilterBar over the FULL change-request set (the archive is browsable now, not just the
+ * pending queue), reference-parity columns, Approve/Reject as one row-action definition.
  *
- * NOTE: filter state is LOCAL applied-state this pass; URL persistence (list-grammar §1, as the
- * config pages do) is the flagged follow-up. Live reads via listAll() + a local tick after actions;
- * a useSyncExternalStore subscription is the clean future shape (and the app-level indicator).
+ * NO ROW EXPANSION (2026-08-14): the view-first DETAIL route (/pending-approvals/:id, built 08-13)
+ * is now the review surface — the old expanded draft-summary was its predecessor. With no
+ * expansion, the kebab is the SINGLE row-action projection (list-grammar §3 scopes the
+ * both-projections rule to rows that expand — so kebab-only is conformant, not a bend). The
+ * identity link opens the detail route.
+ *
+ * Reactive: `useChangeRequests` re-renders on any CR mutation, `useCurrentUser` on an Acting-as
+ * switch (the switcher lives in the shell chrome now) — so approve/reject and actor changes update
+ * live, no local tick. Filter state stays LOCAL applied-state (URL persistence is the §1 follow-up).
  */
 export function PendingApprovalsPage() {
-  const [actorId, setActorId] = useState(getCurrentUser().id);
-  const [, setTick] = useState(0);
+  useChangeRequests(); // re-render on any CR mutation (approve/reject here, submit anywhere)
+  const me = useCurrentUser().name; // reactive: tracks the shell's Acting-as switch
   const [notice, setNotice] = useState<Notice>(null);
   const [draft, setDraft] = useState<Filters>(EMPTY);
   const [applied, setApplied] = useState<Filters>(EMPTY);
-  const refresh = () => setTick((t) => t + 1);
-  const me = getCurrentUser().name;
 
-  // Computed inline (not memoized) so it reflects the store after every approve/reject tick.
   const q = applied.q.trim().toLowerCase();
   const rows = listAll().filter((cr) => {
     if (applied.status !== 'any' && cr.status !== applied.status) return false;
@@ -73,46 +62,46 @@ export function PendingApprovalsPage() {
   });
 
   const onApprove = (cr: ChangeRequest) => {
-    const res = approve(cr.id, getCurrentUser().name);
+    const res = approve(cr.id, me); // emit → this page (and the app alert) re-render live
     setNotice(
       res.ok
         ? { severity: 'success', msg: `Approved — ${cr.entityName} updated to a new revision.` }
         : { severity: res.reason === 'conflict' ? 'warning' : 'error', msg: reasonMessage(res.reason, cr) },
     );
-    refresh();
   };
   const onReject = (cr: ChangeRequest) => {
-    const res = reject(cr.id, getCurrentUser().name);
+    const res = reject(cr.id, me);
     setNotice(
       res.ok
         ? { severity: 'info', msg: `Rejected — ${cr.entityName} left unchanged.` }
         : { severity: 'error', msg: reasonMessage(res.reason, cr) },
     );
-    refresh();
   };
 
+  // Columns per Tzeno reference (round 2): ID · Feature/Entity (identity) · Record ID · Operation ·
+  // Status · Created by/at · Last action. Speculative — our proposal pending his team's contract.
   const columns: BeamColumn<ChangeRequest>[] = [
-    { key: 'id', header: 'ID', getValue: (cr) => cr.id, render: (cr) => shortCrId(cr.id), width: 96 },
+    { key: 'id', header: 'ID', getValue: (cr) => cr.id, render: (cr) => shortCrId(cr.id), width: 88 },
     {
       key: 'entity',
-      header: 'Entity',
+      header: 'Feature / Entity',
       getValue: (cr) => cr.entityName,
       // Identity → the CR's own record page (view-first), NOT the entity — the row IS the request.
       isIdentity: true,
       getHref: (cr) => `${import.meta.env.BASE_URL}pending-approvals/${cr.id}`,
-      render: (cr) => cr.entityName,
+      render: (cr) => `${ENTITY_LABEL[cr.entityType]} · ${cr.entityName}`,
     },
-    { key: 'type', header: 'Type', getValue: (cr) => ENTITY_LABEL[cr.entityType], render: (cr) => ENTITY_LABEL[cr.entityType], width: 150 },
-    { key: 'op', header: 'Operation', render: () => <OperationChip />, width: 130 },
-    { key: 'status', header: 'Status', getValue: (cr) => cr.status, render: (cr) => <CRStatusChip status={cr.status} />, width: 130 },
-    { key: 'by', header: 'Submitted by', getValue: (cr) => cr.submittedBy, render: (cr) => cr.submittedBy, width: 160 },
-    { key: 'at', header: 'Submitted', getValue: (cr) => cr.submittedAt, render: (cr) => cr.submittedAt.slice(0, 10), align: 'right', width: 130 },
+    { key: 'record', header: 'Record ID', getValue: (cr) => cr.entityId, render: (cr) => cr.entityId, width: 110 },
+    { key: 'op', header: 'Operation', render: () => <OperationChip />, width: 120 },
+    { key: 'status', header: 'Status', getValue: (cr) => cr.status, render: (cr) => <CRStatusChip status={cr.status} />, width: 120 },
+    { key: 'by', header: 'Created by', getValue: (cr) => cr.submittedBy, render: (cr) => cr.submittedBy, width: 150 },
+    { key: 'at', header: 'Created', getValue: (cr) => cr.submittedAt, render: (cr) => cr.submittedAt.slice(0, 10), align: 'right', width: 120 },
     {
       key: 'action',
       header: 'Last action',
       getValue: (cr) => cr.reviewedAt ?? '',
       render: (cr) => (cr.reviewedBy ? `${cr.reviewedBy} · ${(cr.reviewedAt ?? '').slice(0, 10)}` : '—'),
-      width: 180,
+      width: 170,
     },
   ];
 
@@ -130,30 +119,10 @@ export function PendingApprovalsPage() {
 
   return (
     <Stack spacing={3}>
+      {/* Acting-as moved to the shell chrome (global) — see ShellFooter / ActingAsSwitcher. */}
       <BeamPageHeader
         title="Configuration Approvals"
         description="Change requests awaiting a second pair of eyes — and the decision history."
-        action={
-          <FormControl size="small" sx={{ minWidth: 220 }}>
-            <InputLabel id="acting-as">Acting as (demo)</InputLabel>
-            <Select
-              labelId="acting-as"
-              label="Acting as (demo)"
-              value={actorId}
-              onChange={(e) => {
-                setCurrentUser(e.target.value);
-                setActorId(e.target.value);
-                setNotice(null);
-              }}
-            >
-              {DEMO_USERS.map((u) => (
-                <MenuItem key={u.id} value={u.id}>
-                  {u.name} · {u.role}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        }
       />
 
       <BeamFilterBar
@@ -199,7 +168,6 @@ export function PendingApprovalsPage() {
         rows={rows}
         getRowId={(cr) => cr.id}
         LinkComponent={RouterIdentityLink}
-        renderExpanded={(cr) => <ProposedConfigSummary cr={cr} />}
         rowActions={rowActions}
         emptyMessage="No change requests match these filters."
         aria-label="Change requests"

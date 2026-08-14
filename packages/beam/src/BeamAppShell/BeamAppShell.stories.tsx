@@ -15,6 +15,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import { BeamAppShell } from './BeamAppShell';
 import type { BeamNavItem } from './BeamAppShell.types';
 import { products } from '../theme/tokens';
@@ -132,6 +133,7 @@ interface BenchArgs {
   motionQuick?: string;
   motionMove?: string;
   motionFade?: string;
+  appAlert?: ReactNode;
 }
 
 /** Wires the app-owned footer (jurisdiction + mode) to real state. */
@@ -205,6 +207,33 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Locked — sidebar in-flow, flush, full-height; content reflows beside it. */
+/** The `appAlert` slot — a full-width bar at the top of the content column that pushes content
+ *  down (in-flow), not a floating toast. Content is app-owned; here a demo review bar. */
+export const WithAppAlert: Story = {
+  render: () => (
+    <ShellBench
+      defaultLocked
+      appAlert={
+        <Box
+          sx={{
+            width: '100%',
+            backgroundColor: 'color-mix(in oklch, var(--mui-palette-info-main) 14%, var(--mui-palette-background-default))',
+            borderBottom: '1px solid',
+            borderColor: 'info.main',
+          }}
+        >
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', px: { xs: 2, sm: 4, md: 7 }, py: 1 }}>
+            <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
+              2 change requests await your review
+            </Typography>
+            <Button size="small" variant="outlined">Review</Button>
+          </Stack>
+        </Box>
+      }
+    />
+  ),
+};
+
 export const Locked: Story = {
   args: { defaultLocked: true },
 };

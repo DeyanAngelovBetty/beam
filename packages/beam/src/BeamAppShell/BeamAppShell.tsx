@@ -226,6 +226,7 @@ export function BeamAppShell({
   onLockedChange,
   persistKey = DEFAULT_PERSIST_KEY,
   footer,
+  appAlert,
   peekOpenDelayMs = PEEK_OPEN_DELAY_MS,
   peekCloseGraceMs = PEEK_CLOSE_GRACE_MS,
   contentGutter = DEFAULT_CONTENT_GUTTER,
@@ -494,24 +495,25 @@ export function BeamAppShell({
       // Named for the ignition (grammar §4): morphs full-width ↔ right column on
       // lock/unlock. Present in both states, so its group genuinely reflows.
       style={{ viewTransitionName: VT_CONTENT }}
-      sx={{
-        minWidth: 0,
-        // minHeight pins old/new snapshot heights equal so the reflow morph is
-        // horizontal-only — otherwise short pages warp vertically mid-transition.
-        minHeight: '100vh',
-        // Horizontal = the gutter (responsive). Vertical = provisional rhythm,
-        // off the gutter scale on purpose; unlocked top is strip clearance
-        // (structural overlay-compensation, not rhythm).
-        px: contentGutter,
-        pb: CONTENT_VERTICAL,
-        // pt: effectiveLocked ? CONTENT_VERTICAL : `${STRIP_HEIGHT}px`,
-        pt: CONTENT_VERTICAL,
-        // Page mesh moved to a fixed body::before layer (createBeamTheme
-        // MuiCssBaseline) — off this tall scrolling element so it doesn't repaint
-        // on scroll, and behind every opaque ramp surface.
-      }}
+      sx={{ minWidth: 0, minHeight: '100vh' }}
     >
-      {children}
+      {/* App-level alert slot — full-width (NO gutter), at the very top of the content column, so
+          it PUSHES the page down (in-flow). The app decides its content + visibility. */}
+      {appAlert}
+      <Box
+        sx={{
+          // minHeight pins old/new snapshot heights equal so the reflow morph is
+          // horizontal-only — otherwise short pages warp vertically mid-transition.
+          // Horizontal = the gutter (responsive); vertical is provisional rhythm.
+          px: contentGutter,
+          pb: CONTENT_VERTICAL,
+          pt: CONTENT_VERTICAL,
+          // Page mesh moved to a fixed body::before layer (createBeamTheme MuiCssBaseline) — off
+          // this tall scrolling element so it doesn't repaint on scroll, behind opaque surfaces.
+        }}
+      >
+        {children}
+      </Box>
     </Box>
   );
 

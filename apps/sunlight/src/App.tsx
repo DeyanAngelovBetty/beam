@@ -11,6 +11,7 @@ import type { BrandName } from '@betty/beam';
 import { buildSunlightNav } from './sunlight/navItems';
 import { ShellFooter } from './sunlight/ShellFooter';
 import { ThemeLabDrawer } from '@betty/beam-lab';
+import { PendingReviewAlert } from './sunlight/PendingReviewAlert';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { LoyaltyStatusEditor } from './sunlight/LoyaltyStatusEditor';
 import { PendingApprovalsPage } from './sunlight/PendingApprovalsPage';
@@ -84,6 +85,7 @@ function Layout() {
         navItems={nav}
         persistKey="beam.shell.sunlight"
         footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
+        appAlert={<PendingReviewAlert />}
       >
         <Outlet />
       </BeamAppShell>

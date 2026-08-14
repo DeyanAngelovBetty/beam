@@ -222,10 +222,13 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   comparison is real; the open part is only reconciling it with the eventual backend diff.
 - **Filter-API reconciliation** — the approvals list is built on the existing composition
   `BeamFilterBar`; moving it to a field-schema filter API is a recorded later task, not owned here.
-- **Persistent, must-act messaging has no shared organism** — conflict / four-eyes messages
-  that a reviewer must read stay as inline notices + disabled-button tooltips for now (transient
-  outcome notices likewise stay inline). A dedicated persistent-alert organism is a future call;
-  we do not invent a toast system in the meantime.
+- **App-level alert bar — built** *(2026-08-14, supersedes the earlier "later" deferral for §3
+  only).* A standing condition needs a standing surface: `AppAlertBar` is a full-width, in-flow
+  alert bar (pushes content down) filling the gap where our shared component set has only a
+  transient toast — a proposed organism, product-local for now. The Sunlight instance
+  (`PendingReviewAlert`) is DERIVED, never stored: shown iff pending CRs not by the current actor
+  > 0, live via the reactive stores, no dismissal (it clears when the queue empties). We do NOT
+  invent a toast system; transient outcome notices + conflict/own-request tooltips stay inline.
 - **Maker-withdraw** (the reference UI's "Cancel") — semantics to align with the backend
   team before building. It is a DIFFERENT act from a reviewer's Reject: the *submitter*
   retracts their own pending request (an own-request action, no second pair of eyes). We

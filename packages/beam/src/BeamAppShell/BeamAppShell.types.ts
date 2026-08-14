@@ -69,6 +69,14 @@ export interface BeamAppShellProps {
   footer?: ReactNode;
 
   /**
+   * App-level alert slot — a full-width bar at the TOP of the content region that PUSHES content
+   * down (in-flow, not a floating toast): the app-level alert posture for a standing condition.
+   * The shell owns the LAYOUT (placement + push); the app owns the alert's content + when it
+   * shows. Rendered edge-to-edge across the content column, above the gutter-padded page.
+   */
+  appAlert?: ReactNode;
+
+  /**
    * Hover-intent timing (ms). Default to the tuned constants in the component;
    * overridable so the bench can dial them via controls before a value is
    * committed to the constant.

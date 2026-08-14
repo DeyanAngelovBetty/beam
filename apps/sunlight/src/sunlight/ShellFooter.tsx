@@ -12,6 +12,7 @@ import type { BrandName } from '@betty/beam';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import { ActingAsSwitcher } from './ActingAsSwitcher';
 
 const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
@@ -44,7 +45,9 @@ export function ShellFooter({
 }) {
   const jurisdictions = Object.keys(products.sunlight) as BrandName[];
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', p: 1.5 }}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1, p: 1.5 }}>
+      {/* Demo actor switcher — chrome control, so it lives here with location + mode (global). */}
+      <ActingAsSwitcher />
       <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
         <InputLabel id="sunlight-location">Location</InputLabel>
         <Select

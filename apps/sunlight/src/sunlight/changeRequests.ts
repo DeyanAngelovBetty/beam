@@ -20,6 +20,8 @@
 // v2: the CR shape gained `baseSnapshot` (the before-state, for the review diff). Per the
 // runbook's own rule, a shape change bumps the suffix — so v1 data is DISCARDED on first load
 // (a demo store: acceptable, and pre-snapshot CRs would render the diff fallback anyway).
+import { useSyncExternalStore } from 'react';
+
 const STORAGE_KEY = 'betty.sunlight.changeRequests.v2';
 
 /** CR-internal lifecycle. NOT BeamStatus — no design-vocabulary implications. */
@@ -95,6 +97,29 @@ function save(): void {
 const requests: ChangeRequest[] = load();
 const applicators = new Map<ChangeRequestEntity, EntityApplicator>();
 
+// Reactivity (the noted useSyncExternalStore shape): a monotonic revision + a listener Set, so
+// derived views (the app-level review alert, the approvals list) re-render on any CR mutation —
+// the demo beat "submit → switch actor → the bar is just there" needs a live read, not a tick.
+const crListeners = new Set<() => void>();
+let crRevision = 0;
+function emitChange(): void {
+  crRevision += 1;
+  crListeners.forEach((l) => l());
+}
+/** Subscribe to change-request mutations (submit / approve / reject / supersede). */
+export function subscribeChangeRequests(onChange: () => void): () => void {
+  crListeners.add(onChange);
+  return () => crListeners.delete(onChange);
+}
+/** Reactive read — returns a revision that bumps on every mutation; consumers re-read live. */
+export function useChangeRequests(): number {
+  return useSyncExternalStore(
+    subscribeChangeRequests,
+    () => crRevision,
+    () => crRevision,
+  );
+}
+
 let idSeq = 0;
 function newCrId(): string {
   idSeq += 1;
@@ -137,6 +162,7 @@ export function submit<T>(input: SubmitInput<T>): ChangeRequest<T> {
   };
   requests.push(cr as ChangeRequest);
   save();
+  emitChange();
   return cr;
 }
 
@@ -186,6 +212,7 @@ export function approve(crId: string, reviewer: string): ApproveResult {
   cr.reviewedBy = reviewer;
   cr.reviewedAt = now();
   save();
+  emitChange();
   return { ok: true, cr };
 }
 
@@ -199,6 +226,7 @@ export function reject(crId: string, reviewer: string, note?: string): RejectRes
   cr.reviewedAt = now();
   cr.note = note;
   save();
+  emitChange();
   return { ok: true, cr };
 }
 
