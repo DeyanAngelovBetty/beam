@@ -161,8 +161,6 @@ export function LoyaltyStatusPage() {
         }
       />
 
-      <BeamTabs items={TABS} value={tab} onChange={setTab} aria-label="Loyalty status sections" />
-
       {gridResult !== null && (
         <Alert
           severity={gridResult > 0 ? 'success' : 'info'}
