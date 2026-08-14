@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { Stack, Alert, MenuItem, TextField, BeamPageHeader, BeamFilterBar, BeamDataTable } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import { RouterIdentityLink } from './RouterIdentityLink';
-import { listAll, approve, reject, useChangeRequests, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
+import { listAll, approve, reject, withdraw, useChangeRequests, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
 import { DEMO_USERS, useCurrentUser } from './currentUser';
-import { ENTITY_LABEL, shortCrId, reasonMessage } from './changeRequestShared';
+import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
+import { ConfirmDialog } from './ConfirmDialog';
 
 type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
 
-const CR_STATUSES: ChangeRequestStatus[] = ['pending', 'approved', 'rejected', 'superseded'];
+const CR_STATUSES: ChangeRequestStatus[] = ['pending', 'approved', 'rejected', 'superseded', 'withdrawn'];
 type Filters = {
   status: 'any' | ChangeRequestStatus;
   type: 'any' | ChangeRequest['entityType'];
@@ -46,6 +47,7 @@ export function PendingApprovalsPage() {
   useChangeRequests(); // re-render on any CR mutation (approve/reject here, submit anywhere)
   const me = useCurrentUser().name; // reactive: tracks the shell's Acting-as switch
   const [notice, setNotice] = useState<Notice>(null);
+  const [withdrawTarget, setWithdrawTarget] = useState<ChangeRequest | null>(null);
   const [draft, setDraft] = useState<Filters>(EMPTY);
   const [applied, setApplied] = useState<Filters>(EMPTY);
 
@@ -77,6 +79,16 @@ export function PendingApprovalsPage() {
         : { severity: 'error', msg: reasonMessage(res.reason, cr) },
     );
   };
+  const doWithdraw = () => {
+    if (!withdrawTarget) return;
+    const res = withdraw(withdrawTarget.id, me);
+    setNotice(
+      res.ok
+        ? { severity: 'info', msg: `Withdrawn — ${withdrawTarget.entityName} proposal archived.` }
+        : { severity: 'error', msg: 'This request can no longer be withdrawn.' },
+    );
+    setWithdrawTarget(null);
+  };
 
   // Columns per Tzeno reference (round 2): ID · Feature/Entity (identity) · Record ID · Operation ·
   // Status · Created by/at · Last action. Speculative — our proposal pending his team's contract.
@@ -99,21 +111,27 @@ export function PendingApprovalsPage() {
     {
       key: 'action',
       header: 'Last action',
-      getValue: (cr) => cr.reviewedAt ?? '',
-      render: (cr) => (cr.reviewedBy ? `${cr.reviewedBy} · ${(cr.reviewedAt ?? '').slice(0, 10)}` : '—'),
+      // Reviewer action, else a withdrawal (shaped "— · <date>": no reviewer, but a dated event).
+      getValue: (cr) => cr.reviewedAt ?? cr.withdrawnAt ?? '',
+      render: (cr) =>
+        cr.reviewedBy
+          ? `${cr.reviewedBy} · ${(cr.reviewedAt ?? '').slice(0, 10)}`
+          : cr.withdrawnAt
+            ? `— · ${cr.withdrawnAt.slice(0, 10)}`
+            : '—',
       width: 170,
     },
   ];
 
-  // Approve/Reject only exist for PENDING requests; archive rows carry no actions (browse-only).
-  const rowActions = (cr: ChangeRequest): BeamRowAction[] => {
-    if (cr.status !== 'pending') return [];
-    const own = cr.submittedBy === me;
-    return [
-      { id: 'approve', label: 'Approve', onSelect: () => onApprove(cr), disabled: own, disabledReason: own ? 'A different reviewer must approve your own change.' : undefined },
-      { id: 'reject', label: 'Reject', destructive: true, onSelect: () => onReject(cr), disabled: own, disabledReason: own ? 'A different reviewer must review your own change.' : undefined },
-    ];
-  };
+  // Actions follow the actor's RELATIONSHIP to the CR (crActionsFor — the vocabulary ruling): the
+  // requester's own-pending rows offer Withdraw; everyone else's pending rows offer Approve/Reject;
+  // archived rows carry none. No disabled Approve/Reject on your own request — it isn't offered.
+  const rowActions = (cr: ChangeRequest): BeamRowAction[] =>
+    crActionsFor(cr, me).map((kind) => {
+      if (kind === 'approve') return { id: 'approve', label: 'Approve', onSelect: () => onApprove(cr) };
+      if (kind === 'reject') return { id: 'reject', label: 'Reject', destructive: true, onSelect: () => onReject(cr) };
+      return { id: 'withdraw', label: 'Withdraw', onSelect: () => setWithdrawTarget(cr) };
+    });
 
   const isApplied = JSON.stringify(applied) !== JSON.stringify(EMPTY);
 
@@ -171,6 +189,15 @@ export function PendingApprovalsPage() {
         rowActions={rowActions}
         emptyMessage="No change requests match these filters."
         aria-label="Change requests"
+      />
+
+      <ConfirmDialog
+        open={withdrawTarget !== null}
+        title="Withdraw change request?"
+        body="Withdraw this change request? It will be archived."
+        confirmLabel="Withdraw"
+        onConfirm={doWithdraw}
+        onClose={() => setWithdrawTarget(null)}
       />
     </Stack>
   );

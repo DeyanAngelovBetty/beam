@@ -8,10 +8,11 @@ import { DEMO_MAKER, DEMO_CHECKER } from './currentUser';
 
 /**
  * Bench for the CR detail route (/pending-approvals/:id) — view-first, a change request as a
- * record. PENDING shows [Reject] [Approve] (checker is the default actor ≠ the seed's maker, so
- * they're live); an ARCHIVED (rejected) CR renders the same page read-only with no actions.
+ * record. Actions follow the actor's RELATIONSHIP: PENDING by someone else → [Reject] [Approve]
+ * (checker is the default actor ≠ the seed's maker); PENDING by you → [Withdraw] only (OwnPending,
+ * a CR authored by the default checker); an ARCHIVED CR renders read-only with no actions.
  * Needs a DATA router. NOTE: the module store is shared across stories — approving/rejecting here
- * mutates it (a live tracer); the archive fixture below is created once, on a separate entity.
+ * mutates it (a live tracer); the fixtures below are each created once, on separate entities.
  */
 const meta: Meta = { title: 'Lab/Sunlight/PendingApprovalDetail', parameters: { layout: 'fullscreen' } };
 export default meta;
@@ -45,8 +46,19 @@ function At({ id }: { id: string }) {
   return <RouterProvider router={router} />;
 }
 
-/** Pending record — both actions live (checker acting on the maker's request). */
+// An OWN-pending CR — submitted BY the default actor (checker), so viewing it own=true → [Withdraw].
+const ownPendingId = (() => {
+  const em = getLoyaltyStatus('60');
+  if (!em) return '';
+  const cr = submit({ entityType: 'loyaltyStatus', entityId: '60', entityName: em.name, baseVersion: em.version, baseSnapshot: toDraft(em), draft: { ...toDraft(em), multiplier: 3 }, submittedBy: DEMO_CHECKER.name });
+  return cr.id;
+})();
+
+/** Pending record, someone else's — both review actions live (checker acting on the maker's request). */
 export const Pending: Story = { render: () => <At id={pendingId} /> };
+
+/** Own pending record — the requester sees [Withdraw] ONLY (no greyed-out Approve/Reject). */
+export const OwnPending: Story = { render: () => <At id={ownPendingId} /> };
 
 /** Archived (rejected) record — read-only, no actions; the decision history is browsable. */
 export const ArchivedRejected: Story = { render: () => <At id={archivedId} /> };

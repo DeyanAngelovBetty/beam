@@ -58,12 +58,13 @@ interface ChangeRequest<T = unknown> {
 
 The generic store, `apps/sunlight/src/sunlight/changeRequests.ts` (product-local
 per BEAM.md §2 until a second product needs it). API:
-`submit / getPendingFor(entityId) / listPending / approve / reject / history(entityId)`.
+`submit / getPendingFor(entityId) / listPending / approve / reject / withdraw / history(entityId)`.
 
 1. **One pending CR per entity.** Resubmit supersedes: the replaced pending CR is
    marked `superseded` and **archived, not deleted**. Rationale: in an iGaming
    back office the audit trail is the product — "what was proposed and then
-   withdrawn" is a question compliance asks. `history()` includes superseded.
+   withdrawn" is a question compliance asks. `history()` includes superseded
+   AND `withdrawn` (a submitter's own retraction; see the Open-items ruling).
 2. **Stale check at approval.** `baseVersion !== getVersion(entityId)` →
    `{ ok: false, reason: 'conflict' }`, nothing applied. Surfaced to the
    reviewer in words ("the live entity changed since this request"), never
@@ -229,12 +230,21 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   (`PendingReviewAlert`) is DERIVED, never stored: shown iff pending CRs not by the current actor
   > 0, live via the reactive stores, no dismissal (it clears when the queue empties). We do NOT
   invent a toast system; transient outcome notices + conflict/own-request tooltips stay inline.
-- **Maker-withdraw** (the reference UI's "Cancel") — semantics to align with the backend
-  team before building. It is a DIFFERENT act from a reviewer's Reject: the *submitter*
-  retracts their own pending request (an own-request action, no second pair of eyes). We
-  deliberately have not built it — our vocabulary stays Approve / Reject, identical on list
-  and detail. Confirm the semantics (and whether it archives as `superseded` or a new
-  `withdrawn` state) with Tzeno's team on Monday.
+- **Maker-withdraw — BUILT as Withdraw** *(2026-08-14).* Actions now follow the actor's
+  RELATIONSHIP to the CR, not a fixed reviewer toolbar with buttons greyed out. A different act
+  from a reviewer's Reject: the *submitter* retracts their own pending request (an own-request
+  action, no second pair of eyes), archived as a new `withdrawn` status — not deleted, not
+  `superseded`. The maker's old disabled Approve/Reject is gone; they see [Withdraw] only.
+  ALIGNMENT AGENDA: the backend team's "Cancel" ↔ our "Withdraw" naming mapping (and their
+  archive semantics) still to confirm with Tzeno's team.
+
+  Actor → action-set (the vocabulary ruling, implemented):
+
+  | relationship to a **pending** CR | actions |
+  | --- | --- |
+  | requester (you submitted it) | **[Withdraw]** |
+  | approver (anyone else) | **[Reject] [Approve]** |
+  | any actor, **archived** CR | none (browse-only) |
 - **`pendingApproval` vocabulary word** — the §6.4 extension; decide when the
   borrow starts to chafe (e.g. the day a settlement `pending` and an approval
   `pending` share a screen).

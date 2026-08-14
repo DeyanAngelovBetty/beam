@@ -49,6 +49,7 @@ export {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Tabs,
   Tab,

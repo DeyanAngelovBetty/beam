@@ -24,8 +24,12 @@ import { useSyncExternalStore } from 'react';
 
 const STORAGE_KEY = 'betty.sunlight.changeRequests.v2';
 
-/** CR-internal lifecycle. NOT BeamStatus — no design-vocabulary implications. */
-export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected' | 'superseded';
+/**
+ * CR-internal lifecycle. NOT BeamStatus — no design-vocabulary implications (a neutral badge is
+ * all 'withdrawn' asks for). 'withdrawn' is the fifth word: the requester's own retraction, distinct
+ * from a reviewer's 'rejected'.
+ */
+export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected' | 'superseded' | 'withdrawn';
 
 /** The entity-type union. Grows as more entities adopt maker-checker. */
 export type ChangeRequestEntity = 'loyaltyStatus';
@@ -45,8 +49,11 @@ export interface ChangeRequest<T = unknown> {
   status: ChangeRequestStatus;
   submittedBy: string;
   submittedAt: string;
-  reviewedBy?: string; // set on approve/reject; left empty when superseded (no reviewer acted)
-  reviewedAt?: string; // set when the CR leaves 'pending' (approved/rejected/superseded)
+  reviewedBy?: string; // set on approve/reject; left empty when superseded/withdrawn (no reviewer acted)
+  reviewedAt?: string; // set when a REVIEWER acts (approved/rejected) or on supersede
+  /** Set on withdraw (by the submitter, while pending). A withdrawal is NOT a review, so
+   *  reviewedBy/At stay empty; this is its own timestamp (by = submittedBy, implicit). */
+  withdrawnAt?: string;
   note?: string;
 }
 
@@ -74,6 +81,8 @@ export type ApproveResult =
   | { ok: false; reason: 'notFound' | 'unregistered' | 'forbidden' | 'conflict' };
 
 export type RejectResult = { ok: true; cr: ChangeRequest } | { ok: false; reason: 'notFound' | 'forbidden' };
+
+export type WithdrawResult = { ok: true; cr: ChangeRequest } | { ok: false; reason: 'forbidden' | 'notPending' };
 
 // ── The one persistence seam ─────────────────────────────────────────────────────────
 function load(): ChangeRequest[] {
@@ -183,9 +192,9 @@ export function listPending(): ChangeRequest[] {
  */
 export function listAll(): ChangeRequest[] {
   return [...requests].sort((a, b) => {
-    const ka = a.reviewedAt ?? a.submittedAt;
-    const kb = b.reviewedAt ?? b.submittedAt;
-    return ka < kb ? 1 : ka > kb ? -1 : 0; // newest first (reviewed, else submitted)
+    const ka = a.reviewedAt ?? a.withdrawnAt ?? a.submittedAt;
+    const kb = b.reviewedAt ?? b.withdrawnAt ?? b.submittedAt;
+    return ka < kb ? 1 : ka > kb ? -1 : 0; // newest first (last action, else submitted)
   });
 }
 
@@ -230,13 +239,32 @@ export function reject(crId: string, reviewer: string, note?: string): RejectRes
   return { ok: true, cr };
 }
 
-/** The archive for an entity = its version history (approved + rejected + superseded), newest first. */
+/**
+ * Withdraw: the SUBMITTER retracts their own still-pending request. Archived, not deleted
+ * ("proposed then thought better of" is history compliance asks about). A withdrawal is NOT a
+ * review — reviewedBy/At stay empty; withdrawnAt records when (by = submittedBy, implicit).
+ * Refusals: 'forbidden' (not the submitter), 'notPending' (already archived / gone). Resubmitting
+ * afterward needs no special case — 'withdrawn' is non-pending, so it never blocks the
+ * one-pending-per-entity check in submit().
+ */
+export function withdraw(crId: string, actor: string): WithdrawResult {
+  const cr = requests.find((r) => r.id === crId);
+  if (!cr || cr.status !== 'pending') return { ok: false, reason: 'notPending' };
+  if (cr.submittedBy !== actor) return { ok: false, reason: 'forbidden' };
+  cr.status = 'withdrawn';
+  cr.withdrawnAt = now();
+  save();
+  emitChange();
+  return { ok: true, cr };
+}
+
+/** The archive for an entity = its version history (approved + rejected + superseded + withdrawn), newest first. */
 export function history(entityId: string): ChangeRequest[] {
   return requests
     .filter((r) => r.entityId === entityId && r.status !== 'pending')
     .sort((a, b) => {
-      const ka = a.reviewedAt ?? a.submittedAt;
-      const kb = b.reviewedAt ?? b.submittedAt;
+      const ka = a.reviewedAt ?? a.withdrawnAt ?? a.submittedAt;
+      const kb = b.reviewedAt ?? b.withdrawnAt ?? b.submittedAt;
       return ka < kb ? 1 : ka > kb ? -1 : 0; // newest first
     });
 }

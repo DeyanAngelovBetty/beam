@@ -11,12 +11,15 @@ const CR_STATUS_COLOR: Record<ChangeRequestStatus, 'info' | 'success' | 'error' 
   approved: 'success',
   rejected: 'error',
   superseded: 'default',
+  // Withdrawn is the requester's own retraction — neutral, NOT the reviewer's red 'rejected'.
+  withdrawn: 'default',
 };
 const CR_STATUS_LABEL: Record<ChangeRequestStatus, string> = {
   pending: 'Pending',
   approved: 'Approved',
   rejected: 'Rejected',
   superseded: 'Superseded',
+  withdrawn: 'Withdrawn',
 };
 
 export function CRStatusChip({ status, size = 'small' }: { status: ChangeRequestStatus; size?: 'small' | 'medium' }) {

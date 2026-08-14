@@ -1,31 +1,36 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Stack, Typography, Alert, Button, Tooltip, BeamPageHeader, BeamEmptyState } from '@betty/beam';
+import { Stack, Typography, Alert, Button, BeamPageHeader, BeamEmptyState } from '@betty/beam';
 import { backTo } from './backTo';
-import { getChangeRequest, approve, reject } from './changeRequests';
-import { getCurrentUser } from './currentUser';
-import { ENTITY_LABEL, shortCrId, reasonMessage } from './changeRequestShared';
+import { getChangeRequest, approve, reject, withdraw, useChangeRequests } from './changeRequests';
+import { useCurrentUser } from './currentUser';
+import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
 import { KeyValuePanel, type KeyValueItem } from './KeyValuePanel';
 import { ConfigDiffPanel } from './ConfigDiffPanel';
+import { ConfirmDialog } from './ConfirmDialog';
 
 type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
 
 /**
  * PendingApprovalDetailPage — /pending-approvals/:id. A change request is a RECORD, so the estate's
- * view-first rule applies: this is a read-only record page. PENDING CRs carry header actions
- * [Reject] [Approve] (approve primary; disabled on your own request; conflict surfaced inline,
- * matching the list's vocabulary exactly). Archived CRs (approved/rejected/superseded) render the
- * SAME page with no actions — the decision history is browsable.
+ * view-first rule applies: this is a read-only record page. Its actions follow the ACTOR'S
+ * RELATIONSHIP to the CR (crActionsFor — the vocabulary ruling), not a fixed reviewer toolbar:
+ * the requester viewing their own pending CR gets [Withdraw] (there is NO greyed-out Approve/Reject
+ * — the page offers what the actor can do); anyone else gets [Reject] [Approve]. Archived CRs
+ * (approved/rejected/superseded/withdrawn) render the same page read-only with no actions.
  *
- * Approve/Reject route through the same store calls as the list, so supersede/conflict behaviour is
- * identical wherever you act.
+ * Reactive on the actor (useCurrentUser) and the store (useChangeRequests), so switching Acting-as
+ * in the shell re-derives the action set live. Approve/Reject/Withdraw route through the same store
+ * calls as the list, so behaviour is identical wherever you act.
  */
 export function PendingApprovalDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [, setTick] = useState(0);
+  useChangeRequests(); // re-render on any CR mutation
+  const me = useCurrentUser().name; // reactive: tracks the shell's Acting-as switch
   const [notice, setNotice] = useState<Notice>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const cr = id ? getChangeRequest(id) : undefined;
 
   if (!cr) {
@@ -37,21 +42,23 @@ export function PendingApprovalDetailPage() {
     );
   }
 
-  const me = getCurrentUser().name;
-  const own = cr.submittedBy === me;
-  const isPending = cr.status === 'pending';
+  const actions = crActionsFor(cr, me);
 
   const onApprove = () => {
     const res = approve(cr.id, me);
     if (res.ok) return navigate('/pending-approvals');
     setNotice({ severity: res.reason === 'conflict' ? 'warning' : 'error', msg: reasonMessage(res.reason, cr) });
-    setTick((t) => t + 1);
   };
   const onReject = () => {
     const res = reject(cr.id, me);
     if (res.ok) return navigate('/pending-approvals');
     setNotice({ severity: 'error', msg: reasonMessage(res.reason, cr) });
-    setTick((t) => t + 1);
+  };
+  const doWithdraw = () => {
+    const res = withdraw(cr.id, me);
+    setConfirmOpen(false);
+    if (res.ok) return navigate('/pending-approvals');
+    setNotice({ severity: 'error', msg: 'This request can no longer be withdrawn.' });
   };
 
   const details: KeyValueItem[] = [
@@ -64,40 +71,35 @@ export function PendingApprovalDetailPage() {
     { label: 'Submitted at', value: cr.submittedAt.slice(0, 10) },
     { label: 'Reviewed by', value: cr.reviewedBy ?? '—' },
     { label: 'Reviewed at', value: cr.reviewedAt ? cr.reviewedAt.slice(0, 10) : '—' },
+    // A withdrawal isn't a review — its own row, shown only when it happened.
+    ...(cr.status === 'withdrawn' ? [{ label: 'Withdrawn at', value: (cr.withdrawnAt ?? '').slice(0, 10) }] : []),
   ];
-
-  const ownReason = 'A different reviewer must review your own change.';
 
   return (
     <Stack spacing={3}>
       <BeamPageHeader
         title={`${cr.entityName} approval #${shortCrId(cr.id)}`}
         back={backTo(navigate, '/pending-approvals', 'Configuration Approvals')}
-        // Status badge + operation chip under the title (reference parity).
         status={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <CRStatusChip status={cr.status} />
             <OperationChip />
           </Stack>
         }
-        // Actions only on a PENDING record; [Reject] [Approve] (approve primary), disabled-own.
+        // Actor-relative: requester → [Withdraw]; approver → [Reject] [Approve]; archived → none.
         action={
-          isPending ? (
+          actions.includes('withdraw') ? (
+            <Button variant="outlined" color="inherit" onClick={() => setConfirmOpen(true)}>
+              Withdraw
+            </Button>
+          ) : actions.includes('approve') ? (
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              <Tooltip title={own ? ownReason : ''}>
-                <span>
-                  <Button variant="outlined" color="error" aria-disabled={own || undefined} sx={own ? { opacity: 0.5 } : undefined} onClick={() => { if (!own) onReject(); }}>
-                    Reject
-                  </Button>
-                </span>
-              </Tooltip>
-              <Tooltip title={own ? ownReason : ''}>
-                <span>
-                  <Button variant="contained" aria-disabled={own || undefined} sx={own ? { opacity: 0.5 } : undefined} onClick={() => { if (!own) onApprove(); }}>
-                    Approve
-                  </Button>
-                </span>
-              </Tooltip>
+              <Button variant="outlined" color="error" onClick={onReject}>
+                Reject
+              </Button>
+              <Button variant="contained" onClick={onApprove}>
+                Approve
+              </Button>
             </Stack>
           ) : undefined
         }
@@ -124,6 +126,15 @@ export function PendingApprovalDetailPage() {
             archived records. No snapshot → the panel falls back to proposed-only with a notice. */}
         <ConfigDiffPanel cr={cr} />
       </Stack>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Withdraw change request?"
+        body="Withdraw this change request? It will be archived."
+        confirmLabel="Withdraw"
+        onConfirm={doWithdraw}
+        onClose={() => setConfirmOpen(false)}
+      />
     </Stack>
   );
 }
