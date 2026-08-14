@@ -52,3 +52,20 @@ export const TrackingGrid: Story = {
     </Box>
   ),
 };
+
+/** One distribution, three variants — the beacon is present in all: static shows it at the rest
+ *  angle (135°), spin sweeps it on hover, track leans it to the cursor. Confirms the redistribution
+ *  renders identically across the builder. Tune --beam-border-hotspot live in devtools here. */
+export const Variants: Story = {
+  render: () => (
+    <Box sx={{ display: 'flex', gap: 5, p: 6, flexWrap: 'wrap' }}>
+      <Paper variant="outlined" sx={{ width: 200, height: 120, display: 'grid', placeItems: 'center', ...(beamGradientBorder() as object) }}>
+        <Typography variant="overline" color="text.secondary">Static</Typography>
+      </Paper>
+      <Paper variant="outlined" sx={{ width: 200, height: 120, display: 'grid', placeItems: 'center', ...(beamGradientBorder({ interactive: true }) as object) }}>
+        <Typography variant="overline" color="text.secondary">Spin (hover)</Typography>
+      </Paper>
+      <TrackedCard label="Track (hover)" />
+    </Box>
+  ),
+};

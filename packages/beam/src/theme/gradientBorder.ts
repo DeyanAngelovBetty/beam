@@ -42,8 +42,12 @@ import type { SxProps, Theme } from '@mui/material/styles';
  * rest so it eases home, overridden to QUICK (shorter, magnetic) while `[data-beam-tracking]` is on
  * (the hook sets that attr on enter, removes on leave). Mutually exclusive with `interactive`.
  *
- * The `@property --beam-ring`, `--beam-border-angle`, `--beam-track-angle`, the keyframes, and the
- * intensity vars are registered once in `createBeamTheme` (MuiCssBaseline).
+ * STOPS: the conic is redistributed into a symmetric BEACON — primary at 0%/100% (centred on the
+ * seam/cursor), hue-b flanking at ±--beam-border-hotspot, hue-c calm at the far side (50%). Same
+ * three colours + intensity mixing as before; only positions changed, so the tracked hotspot reads.
+ *
+ * The `@property --beam-ring`, `--beam-border-angle`, `--beam-track-angle`, `--beam-border-hotspot`,
+ * the keyframes, and the intensity vars are registered once in `createBeamTheme` (MuiCssBaseline).
  */
 export function beamGradientBorder(opts?: {
   surface?: string;
@@ -59,11 +63,22 @@ export function beamGradientBorder(opts?: {
   const hoverGrow = interactive || track; // both lift intensity + grow the ring 1→2px on hover
   const radius = opts?.radius ?? 24; // must equal the element's border-radius (MuiPaper.rounded)
   const i = 'var(--beam-border-intensity)';
+  // Three colours, mixing UNCHANGED (each toward the surface by --beam-border-intensity): primary
+  // (hue-a) is the BEACON, hue-b flanks it, hue-c (primary +45°) is the calm far side.
+  const primary = `color-mix(in oklch, var(--mui-palette-primary-main) ${i}, ${surface})`;
+  const hueB = `color-mix(in oklch, var(--beam-gradient-hue-b) ${i}, ${surface})`;
+  const hueC = `color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) ${i}, ${surface})`;
+  // SYMMETRIC around the seam (= the cursor in track mode, the rest/spin angle otherwise): primary
+  // sits at 0% AND 100%, so the beacon is CENTRED on the seam (spanning ~2×hotspot), falling to
+  // hue-b at ±hotspot, with hue-c at the far side (50%). The old even 0/33/66 spacing smeared
+  // primary across a third of the ring, so the tracked hotspot never read — this makes it a beacon.
+  const hot = 'var(--beam-border-hotspot)';
   const stops = [
-    `color-mix(in oklch, var(--mui-palette-primary-main) ${i}, ${surface})`,
-    `color-mix(in oklch, var(--beam-gradient-hue-b) ${i}, ${surface})`,
-    `color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) ${i}, ${surface})`,
-    `color-mix(in oklch, var(--mui-palette-primary-main) ${i}, ${surface})`, // wrap back to hue-a
+    `${primary} 0%`,
+    `${hueB} ${hot}`,
+    `${hueC} 50%`,
+    `${hueB} calc(100% - ${hot})`,
+    `${primary} 100%`,
   ].join(', ');
 
   return {

@@ -411,6 +411,17 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inherits: 'true',
             initialValue: '135deg',
           },
+          // Gradient-rim beacon half-width (beamGradientBorder). The primary "beacon" spans ~2×
+          // this, centred on the seam (the tracked cursor / rest / spin angle); the rest of the ring
+          // falls to hue-b/hue-c. Registered <percentage> so a later pass could ANIMATE the spread,
+          // and so devtools can tune it live. Scheme-INDEPENDENT (geometry, not colour), so it lives
+          // as this @property default rather than a per-scheme :root emission. inherits so the
+          // element-or-root value reaches the rim pseudo.
+          '@property --beam-border-hotspot': {
+            syntax: "'<percentage>'",
+            inherits: 'true',
+            initialValue: '12%',
+          },
           // Gradient-border rim width (beamGradientBorder). The pseudo-rim's own width;
           // registered <length> so it INTERPOLATES — an unregistered custom prop would
           // snap, not transition (same trap as the angle). Calm 1px → hover 2px, grown
