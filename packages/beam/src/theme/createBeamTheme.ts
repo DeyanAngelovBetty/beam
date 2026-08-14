@@ -398,6 +398,19 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inherits: 'false',
             initialValue: '135deg',
           },
+          // Pointer-tracked rim angle (beamGradientBorder({ track })). SEPARATE from
+          // --beam-border-angle on purpose: that one is `inherits: false` (no leak into nested
+          // rims) AND owned by the spin keyframe ON THE PSEUDO — but JS can only write element
+          // inline styles, and inherits:false blocks the element→pseudo path. So the tracked angle
+          // is its OWN property, `inherits: true`, WRITTEN on the element by usePointerAngleTracking
+          // and READ by the track-mode pseudo's conic-gradient. Registered <angle> so it
+          // INTERPOLATES (the magnetic lean + ease-home are transitions, not snaps). Resting 135deg
+          // matches --beam-border-angle's rest, so a track rim and a spin rim look identical at rest.
+          '@property --beam-track-angle': {
+            syntax: "'<angle>'",
+            inherits: 'true',
+            initialValue: '135deg',
+          },
           // Gradient-border rim width (beamGradientBorder). The pseudo-rim's own width;
           // registered <length> so it INTERPOLATES — an unregistered custom prop would
           // snap, not transition (same trap as the angle). Calm 1px → hover 2px, grown

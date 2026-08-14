@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import {
   Box,
   Stack,
@@ -9,6 +9,7 @@ import {
   BeamDataTable,
   BeamFilterBar,
   beamGradientBorder,
+  usePointerAngleTracking,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
 import type { WidgetId } from '../dashboardConfig';
@@ -36,8 +37,14 @@ export function WidgetShell({
   children: ReactNode;
   gradientBorder?: boolean;
 }) {
+  // Pointer-tracked rim: the hook writes --beam-track-angle on this element; the ref is only
+  // attached on the gradient variant, so on the plain variant ref.current is null and the hook
+  // no-ops (no listeners on unrimmed widgets).
+  const shellRef = useRef<HTMLDivElement>(null);
+  usePointerAngleTracking(shellRef);
   return (
     <Paper
+      ref={gradientBorder ? shellRef : undefined}
       variant="outlined"
       sx={{
         height: '100%',
@@ -53,10 +60,11 @@ export function WidgetShell({
         // on the INNER content Box below — never restore overflow:hidden here or the rim
         // silently disappears.
         // Opt-in lit-edge treatment. surface = paper (= surface 1, correct for a widget
-        // shell); interactive so hover resumes the rotation and grows the rim 1px → 2px
-        // OUTWARD. It sets border:none and carries the whole rim on the pseudo (no
-        // reflow — the box never changes size); squircle is matched explicitly on the rim.
-        ...(gradientBorder ? (beamGradientBorder({ interactive: true }) as object) : {}),
+        // shell); `track` so the bright sector LEANS toward the pointer on hover (the
+        // usePointerAngleTracking above drives it) and the rim grows 1px → 2px OUTWARD. It sets
+        // border:none and carries the whole rim on the pseudo (no reflow — the box never changes
+        // size); squircle is matched explicitly on the rim.
+        ...(gradientBorder ? (beamGradientBorder({ track: true }) as object) : {}),
       }}
     >
       <Typography

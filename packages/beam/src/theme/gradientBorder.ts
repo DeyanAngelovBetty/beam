@@ -35,16 +35,28 @@ import type { SxProps, Theme } from '@mui/material/styles';
  * grows the ring to 2px. It stays paused under prefers-reduced-motion — static but lit.
  * The angle var (`inherits: false`) is animated ON the pseudo so it reaches the gradient.
  *
- * The `@property --beam-ring`, `@property --beam-border-angle`, the keyframes, and the
+ * TRACK (`track`): the pointer leads, the bright sector follows. Instead of the spin, the rim's
+ * `from` angle reads --beam-track-angle (an INHERITING var the element writes via
+ * usePointerAngleTracking), so the bright stop faces the cursor on hover. Keeps the 1→2px grow +
+ * intensity lift; drops the spin. The angle rides a transition so writes ease: MOVE (longer) at
+ * rest so it eases home, overridden to QUICK (shorter, magnetic) while `[data-beam-tracking]` is on
+ * (the hook sets that attr on enter, removes on leave). Mutually exclusive with `interactive`.
+ *
+ * The `@property --beam-ring`, `--beam-border-angle`, `--beam-track-angle`, the keyframes, and the
  * intensity vars are registered once in `createBeamTheme` (MuiCssBaseline).
  */
 export function beamGradientBorder(opts?: {
   surface?: string;
   interactive?: boolean;
+  /** Pointer-tracked bright sector (opt-in flourish; pair with usePointerAngleTracking on the same
+   *  element's ref). Supersedes `interactive`'s spin — keeps the hover grow, drops the rotation. */
+  track?: boolean;
   radius?: number;
 }): SxProps<Theme> {
   const surface = opts?.surface ?? 'var(--mui-palette-background-paper)';
-  const interactive = opts?.interactive ?? false;
+  const track = opts?.track ?? false;
+  const interactive = (opts?.interactive ?? false) && !track; // track supersedes the spin
+  const hoverGrow = interactive || track; // both lift intensity + grow the ring 1→2px on hover
   const radius = opts?.radius ?? 24; // must equal the element's border-radius (MuiPaper.rounded)
   const i = 'var(--beam-border-intensity)';
   const stops = [
@@ -68,33 +80,47 @@ export function beamGradientBorder(opts?: {
       borderRadius: `calc(${radius}px + var(--beam-ring))`,
       cornerShape: 'squircle', // corner-shape does NOT inherit — set explicitly to match the card
       border: 'var(--beam-ring) solid transparent',
-      background: `conic-gradient(from var(--beam-border-angle), ${stops}) border-box`,
+      // Spin mode reads --beam-border-angle (pseudo-animated); track mode reads --beam-track-angle
+      // (element-written, inherited here). Same first stop = the bright sector either way.
+      background: `conic-gradient(from ${track ? 'var(--beam-track-angle)' : 'var(--beam-border-angle)'}, ${stops}) border-box`,
       pointerEvents: 'none',
       // Behind the card's own bg: outward ring shows, center hidden → never over content.
       zIndex: -1,
-      // Registered <length> → interpolates; the motion token respects reduced-motion.
-      transition: '--beam-ring var(--beam-motion-quick)',
+      // Registered <length>/<angle> → interpolate; the motion tokens respect reduced-motion. In
+      // track mode the angle eases at the LONGER (move) rate at rest — that is the ease-home.
+      transition: track
+        ? '--beam-ring var(--beam-motion-quick), --beam-track-angle var(--beam-motion-move)'
+        : '--beam-ring var(--beam-motion-quick)',
       ...(interactive && {
         animation: 'beam-border-spin 6s linear infinite',
         animationPlayState: 'paused',
       }),
     },
-    ...(interactive && {
+    ...(hoverGrow && {
       '&:hover': {
         // Intensity is a plain (inheriting) var, so lifting it on the element reaches
         // the pseudo's stops.
         '--beam-border-intensity': 'var(--beam-border-intensity-hover)',
       },
       '&:hover::after': {
-        // `--beam-ring` is `inherits: false`, so grow it ON the pseudo, and resume the
+        // `--beam-ring` is `inherits: false`, so grow it ON the pseudo, and (spin only) resume the
         // rotation from where it paused (never restart).
         '--beam-ring': '2px',
-        animationPlayState: 'running',
+        ...(interactive && { animationPlayState: 'running' }),
       },
+    }),
+    ...(interactive && {
       // Reduced motion: never resume the spin. Still lit; the ring still grows (the
       // motion token's duration is zeroed, so it snaps rather than glides).
       '@media (prefers-reduced-motion: reduce)': {
         '&:hover::after': { animationPlayState: 'paused' },
+      },
+    }),
+    ...(track && {
+      // While the hook is actively tracking, the angle eases at the SHORT (quick) rate — a magnetic
+      // lean, not lag. Removing the attr (pointerleave) reverts to the move-rate ease-home above.
+      '&[data-beam-tracking="on"]::after': {
+        transition: '--beam-ring var(--beam-motion-quick), --beam-track-angle var(--beam-motion-quick)',
       },
     }),
   };
