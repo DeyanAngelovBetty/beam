@@ -67,17 +67,14 @@ export function beamGradientBorder(opts?: {
   // (hue-a) is the BEACON, hue-b flanks it, hue-c (primary +45°) is the calm far side.
   const primary = `color-mix(in oklch, var(--mui-palette-primary-main) ${i}, ${surface})`;
   const hueB = `color-mix(in oklch, var(--beam-gradient-hue-b) ${i}, ${surface})`;
-  const hueC = `color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) ${i}, ${surface})`;
-  // SYMMETRIC around the seam (= the cursor in track mode, the rest/spin angle otherwise): primary
-  // sits at 0% AND 100%, so the beacon is CENTRED on the seam (spanning ~2×hotspot), falling to
-  // hue-b at ±hotspot, with hue-c at the far side (50%). The old even 0/33/66 spacing smeared
-  // primary across a third of the ring, so the tracked hotspot never read — this makes it a beacon.
-  const hot = 'var(--beam-border-hotspot)';
+
   const stops = [
     `${primary} 0%`,
-    `${hueB} ${hot}`,
-    `${hueC} 50%`,
-    `${hueB} calc(100% - ${hot})`,
+    `${hueB} 20%`,
+    `${hueB}`,
+    `color-mix(in oklch, ${hueB} 35%, ${surface}) 50%`,
+    `${hueB}`,
+    `${hueB} 80%`,
     `${primary} 100%`,
   ].join(', ');
 
