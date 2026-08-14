@@ -73,8 +73,11 @@ export function AppAlertBar({
         color: `var(--mui-palette-${severity}-contrastText)`,
         // Betty glow — a lit-from-above radial derived from the fill itself (the estate's idiom).
         // The two dials are component-local (NOT seeds), so the bench can tune the lift; it must
-        // still read SOLID at a glance. Measured worst-case (glow peak) is in the contrast report.
-        '--beam-alert-glow-mix': '85%',
+        // still read SOLID at a glance. The mix default is 95% (a 5% white lift): the glow PEAK is
+        // the one place white text on the two forced-white fills (light error/success) could dip
+        // below AA — 95% keeps even the peak ≥ 4.5:1 while staying a whisper of light. The bench can
+        // push it louder knowing the peak is a text-free top edge (content sits centred, on base).
+        '--beam-alert-glow-mix': '95%',
         '--beam-alert-glow-extent': '60%',
         background: `radial-gradient(ellipse at 50% 0%, color-mix(in oklch, var(--mui-palette-${severity}-main) var(--beam-alert-glow-mix), white) 0%, transparent var(--beam-alert-glow-extent)), var(--mui-palette-${severity}-main)`,
       }}

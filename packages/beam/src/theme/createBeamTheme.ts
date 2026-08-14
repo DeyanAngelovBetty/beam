@@ -75,6 +75,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
     focusOpacity: t.states.focus,
   };
 
+  // Severity contrastText — the AA repair (closes 2d3f3ca's flag). Dark ink for fills where white
+  // text misses WCAG AA 4.5:1; matches MUI's own dark-scheme contrastText value.
+  const DARK_TEXT = 'rgba(0, 0, 0, 0.87)';
+
   return createTheme({
     cssVariables: {
       colorSchemeSelector: 'data-beam-mode',
@@ -90,6 +94,17 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             light: t.light.primaryUp1,
             contrastText: t.light.contrastText,
           },
+          // Severity contrastText — AA repair. MAINS ARE THE MUI DEFAULTS, UNCHANGED (the repair is
+          // text colour, not new fills); we only fix contrastText so each fill clears AA 4.5:1 at
+          // base. Light info/warning are mid-sat → white text fails, so they take dark ink;
+          // error/success pass with white and keep it (a uniform light-scheme ink would push
+          // error/success back below 4.5, so the scheme stays deliberately mixed — see audit).
+          // Figma twins PENDING (Deyan syncs the collection later): status/{info,warning,error,
+          // success}/{main,onMain}. Flagged so the sync-lane audit reads this as intent, not drift.
+          info: { main: '#0288d1', contrastText: DARK_TEXT },
+          warning: { main: '#ed6c02', contrastText: DARK_TEXT },
+          error: { main: '#d32f2f', contrastText: '#fff' },
+          success: { main: '#2e7d32', contrastText: '#fff' },
           action,
           background: {
             // Aliases to the REGISTERED ramp. The anchor hex now lives in --beam-surface-anchor
@@ -114,6 +129,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             light: t.dark.primaryUp1,
             contrastText: t.dark.contrastText,
           },
+          // Severity contrastText (see the light block for doctrine + Figma-twin note). Dark scheme:
+          // every fill takes dark ink — info/warning/success already did under MUI; error FLIPS from
+          // white to dark for AA (5.17:1). Mains are the MUI dark-scheme defaults, unchanged.
+          info: { main: '#29b6f6', contrastText: DARK_TEXT },
+          warning: { main: '#ffa726', contrastText: DARK_TEXT },
+          error: { main: '#f44336', contrastText: DARK_TEXT },
+          success: { main: '#66bb6a', contrastText: DARK_TEXT },
           action,
           background: {
             // Aliases to the registered ramp (see the light block). Anchor lives in
