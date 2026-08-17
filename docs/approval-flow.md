@@ -245,6 +245,14 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   | requester (you submitted it) | **[Withdraw]** |
   | approver (anyone else) | **[Reject] [Approve]** |
   | any actor, **archived** CR | none (browse-only) |
+
+  *(2026-08-17)* The page-level **pending-CR alert** is actor-relative too, not just the action set —
+  the requester sees a *pending-approval* line with **Withdraw** inline (an own-request action, no
+  second pair of eyes), the reviewer sees an *awaiting-review* line with **Review → the CR page**
+  (Approve/Reject stay on the CR page, where the diff is). First applied on LoyaltyStatusEditor's
+  view-mode alert. Componentizing it as a page-level `BeamAlert` (a sibling of `AppAlertBar` and the
+  toast) is a recorded next step, **not** done here — this pass is the copy/behaviour ruling the
+  later component will encode.
 - **`pendingApproval` vocabulary word** — the §6.4 extension; decide when the
   borrow starts to chafe (e.g. the day a settlement `pending` and an approval
   `pending` share a screen).

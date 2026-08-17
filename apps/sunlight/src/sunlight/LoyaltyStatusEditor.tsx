@@ -25,8 +25,9 @@ import { LoyaltyRewardsEditor } from './LoyaltyRewardsEditor';
 import { NextGemPanel } from './NextGemPanel';
 import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
 import { getLoyaltyStatus, LOYALTY_STATUSES, toDraft, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
-import { submit, getPendingFor } from './changeRequests';
-import { getCurrentUser } from './currentUser';
+import { submit, getPendingFor, withdraw, useChangeRequests } from './changeRequests';
+import { getCurrentUser, useCurrentUser } from './currentUser';
+import { ConfirmDialog } from './ConfirmDialog';
 import { serializeStatus, validateStatusImport, mergeOntoLive, downloadAndCopy, slugifyName } from './loyaltyImportExport';
 import {
   MAX_NAME,
@@ -36,6 +37,8 @@ import {
   validateModel,
   type EditorModel,
 } from './loyaltyStatusForm';
+
+type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
 
 /**
  * LoyaltyStatusEditor — the detail page for a governed entity, so it opens VIEW-FIRST
@@ -95,7 +98,23 @@ export function LoyaltyStatusEditor() {
 // ── VIEW mode — the row's record page: read-only anatomy + the row's non-edit actions ───────────
 function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit: () => void; onImport: (draft: LoyaltyStatusDraft) => void }) {
   const navigate = useNavigate();
+  const me = useCurrentUser(); // reactive: flip Acting-as → the alert voice flips
+  useChangeRequests(); // reactive: withdraw here (or approve/reject elsewhere) re-renders → alert clears
   const pending = getPendingFor(String(status.id));
+  const isRequester = !!pending && pending.submittedBy === me.name;
+  const [notice, setNotice] = useState<Notice>(null);
+  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const doWithdraw = () => {
+    if (!pending) return;
+    const res = withdraw(pending.id, me.name);
+    setConfirmWithdraw(false);
+    // Success: the pending alert simply disappears (pending → null on re-render); the notice confirms.
+    setNotice(
+      res.ok
+        ? { severity: 'success', msg: `Withdrawn — “${status.name}” proposal archived.` }
+        : { severity: 'error', msg: 'This request can no longer be withdrawn.' },
+    );
+  };
   const nextTier = LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === status.id) + 1];
 
   // In-view import panel — the same single-status flow as the list kebab's Import…, but in place:
@@ -141,14 +160,49 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
         }
       />
 
-      {/* A pending CR is a NOTICE in view mode (not a draft to edit). It becomes a seeded draft
-          only on entering edit — §6. */}
-      {pending && (
-        <Alert severity="info">
-          A change request for this status is pending review — submitted by {pending.submittedBy} on{' '}
-          {pending.submittedAt.slice(0, 10)}. Approve or reject it in Pending Approvals.
+      {notice && (
+        <Alert severity={notice.severity} onClose={() => setNotice(null)}>
+          {notice.msg}
         </Alert>
       )}
+
+      {/* A pending CR is a NOTICE in view mode (not a draft to edit; it becomes a seeded draft only
+          on entering edit — §6). Its voice + actions follow the ACTOR'S RELATIONSHIP to the CR
+          (approval-flow "Actor → action-set"): the REQUESTER gets a pending-approval line + Withdraw
+          (an own-request action, no second pair of eyes); everyone ELSE gets an awaiting-review line
+          + Review → the CR page, where the reviewer meets the diff (Approve/Reject deliberately not
+          inline). Derived-only, so flipping Acting-as flips the voice. */}
+      {pending &&
+        (isRequester ? (
+          <Alert
+            severity="info"
+            action={
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
+                  View request
+                </Button>
+                <Button size="small" variant="outlined" onClick={() => setConfirmWithdraw(true)}>
+                  Withdraw
+                </Button>
+              </Stack>
+            }
+          >
+            You submitted a change request for this status on {pending.submittedAt.slice(0, 10)} — it's pending
+            approval. To make further changes, withdraw it and submit a new one.
+          </Alert>
+        ) : (
+          <Alert
+            severity="info"
+            action={
+              <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
+                Review
+              </Button>
+            }
+          >
+            {pending.submittedBy} submitted a change request for this status on {pending.submittedAt.slice(0, 10)} —
+            it's awaiting review.
+          </Alert>
+        ))}
 
       {importOpen && (
         <Paper variant="outlined" sx={{ p: 2 }}>
@@ -207,6 +261,15 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
       </Stack>
 
       <ExpandedLoyaltyPanel status={status} next={nextTier} />
+
+      <ConfirmDialog
+        open={confirmWithdraw}
+        title="Withdraw change request?"
+        body="Withdraw this change request? It will be archived."
+        confirmLabel="Withdraw"
+        onConfirm={doWithdraw}
+        onClose={() => setConfirmWithdraw(false)}
+      />
     </Stack>
   );
 }
