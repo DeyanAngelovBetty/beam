@@ -28,6 +28,7 @@ import { getLoyaltyStatus, LOYALTY_STATUSES, toDraft, type LoyaltyStatus, type L
 import { submit, getPendingFor, withdraw, useChangeRequests } from './changeRequests';
 import { getCurrentUser, useCurrentUser } from './currentUser';
 import { ConfirmDialog } from './ConfirmDialog';
+import { pageAlertActionSx, PAGE_ALERT_ACTION_GAP } from './pageAlert';
 import { serializeStatus, validateStatusImport, mergeOntoLive, downloadAndCopy, slugifyName } from './loyaltyImportExport';
 import {
   MAX_NAME,
@@ -177,11 +178,12 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
           <Alert
             severity="info"
             action={
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              // Flat only, order = emphasis (Withdraw rightmost = primary); cluster never wraps.
+              <Stack direction="row" spacing={PAGE_ALERT_ACTION_GAP} sx={pageAlertActionSx}>
                 <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
                   View request
                 </Button>
-                <Button size="small" variant="outlined" onClick={() => setConfirmWithdraw(true)}>
+                <Button size="small" variant="text" onClick={() => setConfirmWithdraw(true)}>
                   Withdraw
                 </Button>
               </Stack>
@@ -194,9 +196,11 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
           <Alert
             severity="info"
             action={
-              <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
-                Review
-              </Button>
+              <Stack direction="row" spacing={PAGE_ALERT_ACTION_GAP} sx={pageAlertActionSx}>
+                <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
+                  Review
+                </Button>
+              </Stack>
             }
           >
             {pending.submittedBy} submitted a change request for this status on {pending.submittedAt.slice(0, 10)} —

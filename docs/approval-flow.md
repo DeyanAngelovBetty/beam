@@ -253,6 +253,15 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   view-mode alert. Componentizing it as a page-level `BeamAlert` (a sibling of `AppAlertBar` and the
   toast) is a recorded next step, **not** done here — this pass is the copy/behaviour ruling the
   later component will encode.
+
+  Two action rulings for that alert (and for BeamAlert to inherit): **(1) flat only** — page-level
+  alert actions are always `variant="text"`; the tinted surface already carries a border, so
+  emphasis between actions is by ORDER (primary rightmost), never by variant. (The app-level bar
+  keeps its outlined ghost CTA — a different surface, deliberately.) **(2) never wrap** — the action
+  cluster holds its size (`flexShrink:0`, `whiteSpace:nowrap`, `alignSelf:center`) while the message
+  column flexes/wraps; the two buttons get a real gap and the message keeps its right padding so
+  they don't kiss. **Max two actions** on a page-level alert. Seeded as a shared sx
+  (`sunlight/pageAlert.ts`) until BeamAlert lands.
 - **`pendingApproval` vocabulary word** — the §6.4 extension; decide when the
   borrow starts to chafe (e.g. the day a settlement `pending` and an approval
   `pending` share a screen).
