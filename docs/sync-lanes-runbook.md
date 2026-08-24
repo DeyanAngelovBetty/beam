@@ -147,6 +147,26 @@ override — so it exercised lanes the plum run never touched. What that surface
   (harmless — the targets were authoritative). **Script spec:** `sync:seeds` diffs against the
   file's actual values; a prompt-stated baseline is decoration, not input.
 
+## D-001 — primary interaction-state de-pinning (Figma decision, verified vs code)
+
+**2026-08-20 · Figma D-001 primary-state de-pinning verified against code. Outcome: IMMUNE — no
+code change.** The Figma bug hard-aliased `primary/_states/{hover,selected,focus,focusVisible,
+outlinedBorder}` to Sunlight's alpha rows, so Gaspar/VASI inherited Sunlight-tinted states. Code
+never had this bug: interaction-state tints are **runtime-derived from the live primary** — the
+state seeds are numeric OPACITIES (`STATES = {4,8,12,30,50}%`, tokens.ts) that MUI applies as
+`alpha(primary.main, opacity)` / CSS `--mui-palette-primary-mainChannel`, so the tint is always the
+current brand's primary at render. Grep confirmed: **zero baked alpha state-tint hexes** anywhere
+(theme, organisms, apps), zero Sunlight-amber alpha rows, no `action.hover/selected` pinned to a
+hex. The stale VASI derivatives (`#6051BD`/`#7568C9` → regenerated from `#9186D8`) have **no code
+counterpart** — VASI isn't a product in code yet (only `sunlight`/`gaspar`), and none of those hexes
+appear in the repo. So D-001 was **Figma catching up to code, not a code bug** — a clean advert for
+the CSS-first doctrine.
+
+**Doctrine takeaway:** stored derivatives rot. State tints are *functions of primary* and must be
+derived at render time in code (this is exactly the "alpha ride-along" note above, point b);
+Figma's `alpha/primary` rows are **baked outputs** — candidates for the `_derived` lane, not seeds
+to mirror. (See derived-color-tokens.md for the CSS-computed-token doctrine.)
+
 ## Open
 
 - `underlineOffset` variable carries `FONT_FAMILY` scope (mirrored from the
