@@ -109,7 +109,7 @@ function TwinsBlock() {
       </Measured>
 
       <Measured><BeamStat label="Description" value={DESCRIPTION} /></Measured>
-      <Measured><BeamField fullWidth multiline rows={3} label="Description" defaultValue={DESCRIPTION} /></Measured>
+      <Measured><BeamField fullWidth multiline minRows={3} label="Description" defaultValue={DESCRIPTION} /></Measured>
 
       <Measured><BeamStat label="Active" value={active} /></Measured>
       <Measured><BeamSwitchField name="twin-active" label="Active" checked={active} onChange={setActive} /></Measured>

@@ -619,34 +619,36 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // the label's TRUE rendered width and register to the label's left edge.
       MuiOutlinedInput: {
         styleOverrides: {
-          // The 44px FIELD FLOOR — the edit twin of BeamStat (§2, FIELD_GEOMETRY). A field has no
-          // internal label row (its label is the notch), so 1 line = border 2 + padY 12 + value 18
-          // + padY 12 = 44; a multiline field grows by 18/line (3-line = 80), pairing by line count.
-          // ⚠️ BLAST RADIUS: restyles EVERY small outlined field estate-wide — the intent (one field
-          // geometry) — verified on real pages, see the commit's eyeball list.
-          input: {
-            // SINGLE-LINE + SELECT small: padY 13 + value 18 + padY 13 = 44 (the border is an
-            // overlay, not in the box). Exclude the multiline textarea — its padding is on the root.
-            '&.MuiInputBase-inputSizeSmall:not(.MuiInputBase-inputMultiline)': {
-              paddingTop: FIELD_GEOMETRY.fieldPaddingY,
-              paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
-              lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
-            },
-            // MULTILINE textarea: no padding of its own (the root carries it); the line-height is
-            // what makes each row exactly 18 → 3-line = 13 + 3×18 + 13 = 80.
-            '&.MuiInputBase-inputMultiline': {
-              paddingTop: 0,
-              paddingBottom: 0,
-              lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
-            },
-          },
-          root: {
-            // Multiline small root carries the vertical padding (1 line = 13 + 18 + 13 = 44).
-            '&.MuiInputBase-multiline.MuiInputBase-sizeSmall': {
-              paddingTop: FIELD_GEOMETRY.fieldPaddingY,
-              paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
-            },
-          },
+          // The 44px FIELD FLOOR — the edit twin of BeamStat (§2, FIELD_GEOMETRY). The outlined
+          // border is an absolutely-positioned overlay (not in the input box), so 1 line = padY 13 +
+          // value 18 + padY 13 = 44; multiline grows 18/line (3-line = 80), pairing by line count.
+          // ⚠️ BLAST RADIUS: every small outlined field estate-wide (the intent: one field geometry).
+          //
+          // MUST use the ownerState FUNCTION form: MUI v9 does NOT put `inputSizeSmall` /
+          // `inputMultiline` classes on the input element (size/multiline are emotion `variants`
+          // keyed on ownerState), so a class-selector override silently matches nothing. LINE-HEIGHT
+          // on the input CLASS is also what reaches TextareaAutosize's hidden shadow sibling (it
+          // shares the visible textarea's className), so autosize measures rows at 18, not 23.
+          input: ({ ownerState }) => ({
+            // Single-line + Select: padY 13 + value 18 + padY 13 = 44. (14px inline padding is MUI's.)
+            ...(ownerState.size === 'small' && !ownerState.multiline
+              ? {
+                  paddingTop: FIELD_GEOMETRY.fieldPaddingY,
+                  paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
+                  lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
+                }
+              : {}),
+            // Multiline textarea: MUI already zeroes its padding (root carries it); the line-height
+            // makes each row exactly 18 → 3-line = 13 + 3×18 + 13 = 80. This is the class the
+            // autosize shadow shares, so the MEASUREMENT uses 18 too.
+            ...(ownerState.multiline ? { lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px` } : {}),
+          }),
+          root: ({ ownerState }) => ({
+            // Multiline small root carries the vertical padding (1 visual line = 13 + 18 + 13 = 44).
+            ...(ownerState.multiline && ownerState.size === 'small'
+              ? { paddingTop: FIELD_GEOMETRY.fieldPaddingY, paddingBottom: FIELD_GEOMETRY.fieldPaddingY }
+              : {}),
+          }),
           notchedOutline: {
             // FULL mirror — MUI mirrors only the label text at a font-size, not
             // meta's transform or tracking, so the legend under-predicts the
