@@ -58,7 +58,8 @@ export const Multiline: Story = {
   ),
 };
 
-const DESCRIPTION = 'Priority tier for high-volume players — three lines of copy so the multiline twin pairs at 80px by line count.';
+// Sized to render 3 lines at the cell width below — the twin pairs BY LINE COUNT, not a fixed px.
+const DESCRIPTION = 'Priority tier for high-volume players — the multiline field and its stat pair by line count.';
 const STATUSES = ['Active', 'Paused', 'Retired'];
 
 /** Wraps a cell and displays its measured field/stat height (the `.MuiInputBase-root`, else the
@@ -76,7 +77,7 @@ function Measured({ children }: { children: ReactNode }) {
   }, []);
   return (
     <Box>
-      <Box ref={ref} sx={{ maxWidth: 260 }}>
+      <Box ref={ref} sx={{ maxWidth: 300 }}>
         {children}
       </Box>
       <Typography variant="caption" color="primary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -92,7 +93,7 @@ function Measured({ children }: { children: ReactNode }) {
 function TwinsBlock() {
   const [active, setActive] = useState(true);
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 4, rowGap: 2.5, alignItems: 'start', maxWidth: 560 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 4, rowGap: 2.5, alignItems: 'start', maxWidth: 680 }}>
       <Typography variant="overline" color="text.secondary">View</Typography>
       <Typography variant="overline" color="text.secondary">Edit</Typography>
 

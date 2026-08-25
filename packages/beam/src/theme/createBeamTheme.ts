@@ -631,8 +631,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // shares the visible textarea's className), so autosize measures rows at 18, not 23.
           input: ({ ownerState }) => ({
             // Single-line + Select: padY 13 + value 18 + padY 13 = 44. (14px inline padding is MUI's.)
+            // `height` is load-bearing: MUI sets `height: 1.4375em` (23px) on the single-line input,
+            // which WINS over line-height on a content-box <input> (→ 23 + 2×13 = 49). Pin it to the
+            // value line-height so the box is 18, not 23. `minHeight` matches it because the SELECT
+            // path (SelectInput) sets `minHeight: 1.4375em`, which would otherwise floor it back to
+            // 23. (Multiline owns its height via autosize — untouched.)
             ...(ownerState.size === 'small' && !ownerState.multiline
               ? {
+                  height: `${FIELD_GEOMETRY.valueLineHeight}px`,
+                  minHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
                   paddingTop: FIELD_GEOMETRY.fieldPaddingY,
                   paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
                   lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
