@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { BeamStat } from './BeamStat';
+import { BeamSwitchField } from '../BeamSwitchField/BeamSwitchField';
 
 /**
  * BeamStat v2 — labelled value with the spine motif; the VIEW half of the 44px field twin. Key in
@@ -44,6 +49,46 @@ export const Multiline: Story = {
     <div style={{ maxWidth: 240 }}>
       <BeamStat {...args} />
     </div>
+  ),
+};
+
+const DESCRIPTION = 'Priority tier for high-volume players — three lines of copy so the multiline twin pairs at 80px by line count.';
+
+/** The demo row (NAME text · DESCRIPTION multiline · ACTIVE boolean) in BOTH modes, dark + light.
+ *  Same grammatical slot morphs in place: label persists, value ↔ input swaps, heights equal per row
+ *  (44 floor; the multiline pair by line count). Spine is view-only; the switch is the boolean twin. */
+function TwinsBlock() {
+  const [active, setActive] = useState(true);
+  const cell = { maxWidth: 260 } as const;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 4, rowGap: 3, alignItems: 'start', maxWidth: 560 }}>
+      <Typography variant="overline" color="text.secondary">View</Typography>
+      <Typography variant="overline" color="text.secondary">Edit</Typography>
+
+      <Box sx={cell}><BeamStat label="Name" value="Gold tier" /></Box>
+      <Box sx={cell}><TextField fullWidth size="small" label="Name" defaultValue="Gold tier" /></Box>
+
+      <Box sx={cell}><BeamStat label="Description" value={DESCRIPTION} /></Box>
+      <Box sx={cell}><TextField fullWidth size="small" multiline rows={3} label="Description" defaultValue={DESCRIPTION} /></Box>
+
+      <Box sx={cell}><BeamStat label="Active" value={active} /></Box>
+      <Box sx={cell}><BeamSwitchField name="twin-active" label="Active" checked={active} onChange={setActive} /></Box>
+    </Box>
+  );
+}
+
+export const ViewEditTwins: Story = {
+  args: { label: 'Name', value: 'Gold tier' },
+  parameters: { layout: 'fullscreen' },
+  render: () => (
+    <Stack direction={{ xs: 'column', md: 'row' }}>
+      {(['light', 'dark'] as const).map((scheme) => (
+        <Box key={scheme} data-beam-mode={scheme} sx={{ flex: 1, bgcolor: 'background.paper', color: 'text.primary', p: 4 }}>
+          <Typography variant="subtitle2" sx={{ mb: 2, textTransform: 'capitalize' }}>{scheme}</Typography>
+          <TwinsBlock />
+        </Box>
+      ))}
+    </Stack>
   ),
 };
 

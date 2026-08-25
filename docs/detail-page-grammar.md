@@ -65,16 +65,40 @@ editable."*
 
 - Division of labor: **border = the container's nature · spine = the field's
   state/severity.**
-- `BeamStat` gains `severity?: 'warning' | 'danger'`. Severity is **never
-  color-alone** — spine color always pairs with a second cue (icon or weight),
-  per WCAG 1.4.1.
+- `BeamStat` gains `severity?: 'warning' | 'error'` (`danger` retired 2026-08-25).
+  Severity is **never color-alone** — spine color always pairs with a second cue
+  (icon or weight), per WCAG 1.4.1.
 - **Spine gets its own semantic tokens** rather than borrowing:
   `spine/default` (today: aliases the table-border seed), `spine/warning`,
-  `spine/danger` (from the semantic seeds), living in the derived lane with
+  `spine/error` (from the semantic seeds), living in the derived lane with
   baked snapshots for Figma. Rationale: the day table borders get tuned, spines
   must not silently retune with them.
 - The role-colored tick in the roles rail and on permission rows (§5–6) is the
   spine motif at its smallest — same pigment system as provenance.
+
+*Amended 2026-08-25 — **field twins** (BeamStat v2, Figma-ratified).* The view↔edit skeleton is now
+an explicit, shared geometry, not an accident of typography:
+
+- **The 44px floor.** One datum (`FIELD_GEOMETRY`, tokens.ts) both twins consume, so they can't
+  drift: `height 44 = padY 6 + label 12 + gap 2 + value 18 + padY 6`. A multiline value grows by
+  18/line (3-line = 80). The **edit twin** (outlined field) has no internal label row — its label is
+  the notch — so 1 line = border 2 + padY 12 + value 18 + padY 12 = 44, the same floor.
+- **Morph in place.** The same grammatical slot morphs: **label persists** (voice + position),
+  **value ↔ input swaps**, **heights equal per row** (44 floor; multiline pairs by line count).
+  Caption pairs with helper text, or is omitted in morphing contexts.
+- **Spine is VIEW-ONLY.** In edit mode, severity maps to the field's **native error/warning
+  states**, not the spine — a field already has a state channel; the spine is the view's.
+- **Boolean convention + one fill principle.** A boolean value renders an icon pair (view:
+  CheckCircle filled / Cancel outlined; edit: `BeamSwitchField`). Across icon families, **fill marks
+  the family's notable state** — severity (WarningAmber outlined → Error filled), boolean (true
+  filled). `severity` (`'warning' | 'error'`; `danger` retired) stays the ONLY alarm channel — never
+  inferred from a boolean. (v2 also dropped `tone`: there is no positive/neutral tint channel.)
+
+*Convergence note.* Sunlight and Gaspar currently **diverge** on view↔edit treatment; this amendment
+is the estate ruling they converge to — converging existing pages is FOLLOW-UP, not the ratifying
+commit. Known divergence queue: Sunlight `LoyaltyStatusEditor` main edit fields are **medium**
+(≈56px), so they don't pair with the 44px view — switch them to `size="small"`. (Gaspar rule-builder
+inspector already uses small fields → auto-inherits the 44px twin.)
 
 ## 3. Meta text goes universal
 
