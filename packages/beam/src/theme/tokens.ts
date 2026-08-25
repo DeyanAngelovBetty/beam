@@ -43,12 +43,13 @@ const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, ou
  * typography). ONE source consumed by BOTH BeamStat (the view twin) and the outlined-field / switch
  * overrides (the edit twins) so they can never drift:
  *
- *   height 44 = paddingY 6 (top) + label 12 + gap 2 + value 18 + paddingY 6 (bottom)
+ *   BeamStat height 44 = paddingY 6 (top) + label 12 + gap 2 + value 18 + paddingY 6 (bottom)
  *
  * A multiline value grows by `valueLineHeight` per line (3-line = 44 + 2×18 = 80), matching the
- * multiline TextField twin. The edit twins have NO internal label row (their label is the notch),
- * so a field's 1-line height = border 2 + paddingY 12 + valueLineHeight 18 + paddingY 12 = 44 — the
- * same floor, reached from the same numbers.
+ * multiline field twin. The edit twins have NO internal label row (their label is the notch), and
+ * the outlined border is an absolutely-positioned OVERLAY (not in the input's box), so a field's
+ * 1-line height = `fieldPaddingY` 13 + value 18 + `fieldPaddingY` 13 = 44 — the same floor. Multiline
+ * puts that 13 on the field ROOT (textarea padding 0), so 3-line = 13 + 3×18 + 13 = 80.
  */
 export const FIELD_GEOMETRY = {
   height: 44, // the floor (single-line) — the twin datum
@@ -56,7 +57,20 @@ export const FIELD_GEOMETRY = {
   labelLineHeight: 12, // meta label row
   gap: 2, // label → value
   valueLineHeight: 18, // one value line; multiline grows by this
-  fieldPaddingY: 12, // edit-twin field vertical padding: 2 (border) + 12 + 18 + 12 = 44
+  fieldPaddingY: 13, // edit-twin field vertical padding: 13 + value 18 + 13 = 44 (border is an overlay)
+} as const;
+
+/**
+ * fieldGeometrySx — the field-height mixin for CUSTOM inputs OUTSIDE the TextField family (a bespoke
+ * bordered control that still wants to be a 44px field twin). Sugar over the same numbers, NOT the
+ * mechanism (small outlined TextField/Select/multiline get 44px from the theme default). Spread into
+ * an element's `sx`; it fills to the field floor and centres its content.
+ */
+export const fieldGeometrySx = {
+  boxSizing: 'border-box',
+  minHeight: `${FIELD_GEOMETRY.height}px`,
+  display: 'flex',
+  alignItems: 'center',
 } as const;
 
 export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {

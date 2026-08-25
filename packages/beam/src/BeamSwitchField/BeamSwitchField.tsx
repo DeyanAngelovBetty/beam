@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Switch from '@mui/material/Switch';
 import { meta } from '../theme/textStyles';
-import { FIELD_GEOMETRY } from '../theme/tokens';
+import { fieldGeometrySx } from '../theme/tokens';
 import type { BeamSwitchFieldProps } from './BeamSwitchField.types';
 
 /**
@@ -13,10 +13,10 @@ export function BeamSwitchField({ label, checked, onChange, name, disabled }: Be
   return (
     <Box
       sx={{
-        position: 'relative',
+        // The field-height mixin (dogfooding fieldGeometrySx) → this custom control is a 44px twin.
+        ...fieldGeometrySx,
         display: 'inline-flex',
-        alignItems: 'center',
-        height: `${FIELD_GEOMETRY.height}px`,
+        position: 'relative',
         minWidth: 132,
         pl: 1.5,
         pr: 0.5,

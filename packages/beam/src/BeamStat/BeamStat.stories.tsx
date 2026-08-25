@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef, useLayoutEffect, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import { BeamStat } from './BeamStat';
 import { BeamSwitchField } from '../BeamSwitchField/BeamSwitchField';
+import { BeamField } from '../BeamField/BeamField';
 
 /**
  * BeamStat v2 — labelled value with the spine motif; the VIEW half of the 44px field twin. Key in
@@ -39,6 +40,11 @@ export const Error: Story = {
 export const BooleanTrue: Story = { args: { label: 'Active', value: true } };
 export const BooleanFalse: Story = { args: { label: 'Active', value: false } };
 
+/** showCaption — orthogonal to `caption`: content is present in both; hidden keeps the 44px row
+ *  without losing the data (morph contexts). */
+export const CaptionShown: Story = { args: { label: 'Cash balance', value: '$20.00', caption: 'CAD', showCaption: true } };
+export const CaptionHidden: Story = { args: { label: 'Cash balance', value: '$20.00', caption: 'CAD', showCaption: false } };
+
 /** Multiline value — grows by one line-height (18px) per line; the spine stretches to match. */
 export const Multiline: Story = {
   args: {
@@ -53,26 +59,60 @@ export const Multiline: Story = {
 };
 
 const DESCRIPTION = 'Priority tier for high-volume players — three lines of copy so the multiline twin pairs at 80px by line count.';
+const STATUSES = ['Active', 'Paused', 'Retired'];
 
-/** The demo row (NAME text · DESCRIPTION multiline · ACTIVE boolean) in BOTH modes, dark + light.
- *  Same grammatical slot morphs in place: label persists, value ↔ input swaps, heights equal per row
- *  (44 floor; the multiline pair by line count). Spine is view-only; the switch is the boolean twin. */
+/** Wraps a cell and displays its measured field/stat height (the `.MuiInputBase-root`, else the
+ *  cell's own child) — the twins are proven at 44/44/44 (+80 multiline) from COMPUTED styles here,
+ *  not asserted. */
+function Measured({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [h, setH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const host = ref.current;
+    if (!host) return;
+    const field = host.querySelector('.MuiInputBase-root') as HTMLElement | null;
+    const target = field ?? (host.firstElementChild as HTMLElement | null);
+    setH(target?.offsetHeight ?? null);
+  }, []);
+  return (
+    <Box>
+      <Box ref={ref} sx={{ maxWidth: 260 }}>
+        {children}
+      </Box>
+      <Typography variant="caption" color="primary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+        {h != null ? `${h}px` : '—'}
+      </Typography>
+    </Box>
+  );
+}
+
+/** The demo row (NAME text · STATUS select · DESCRIPTION multiline · ACTIVE boolean) in BOTH modes,
+ *  dark + light. Same grammatical slot morphs in place: label persists, value ↔ input swaps, heights
+ *  equal per row (44 floor; multiline pairs by line count). Spine is view-only. */
 function TwinsBlock() {
   const [active, setActive] = useState(true);
-  const cell = { maxWidth: 260 } as const;
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 4, rowGap: 3, alignItems: 'start', maxWidth: 560 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 4, rowGap: 2.5, alignItems: 'start', maxWidth: 560 }}>
       <Typography variant="overline" color="text.secondary">View</Typography>
       <Typography variant="overline" color="text.secondary">Edit</Typography>
 
-      <Box sx={cell}><BeamStat label="Name" value="Gold tier" /></Box>
-      <Box sx={cell}><TextField fullWidth size="small" label="Name" defaultValue="Gold tier" /></Box>
+      <Measured><BeamStat label="Name" value="Gold tier" /></Measured>
+      <Measured><BeamField fullWidth label="Name" defaultValue="Gold tier" /></Measured>
 
-      <Box sx={cell}><BeamStat label="Description" value={DESCRIPTION} /></Box>
-      <Box sx={cell}><TextField fullWidth size="small" multiline rows={3} label="Description" defaultValue={DESCRIPTION} /></Box>
+      <Measured><BeamStat label="Status" value="Active" /></Measured>
+      <Measured>
+        <BeamField fullWidth select label="Status" defaultValue="Active">
+          {STATUSES.map((s) => (
+            <MenuItem key={s} value={s}>{s}</MenuItem>
+          ))}
+        </BeamField>
+      </Measured>
 
-      <Box sx={cell}><BeamStat label="Active" value={active} /></Box>
-      <Box sx={cell}><BeamSwitchField name="twin-active" label="Active" checked={active} onChange={setActive} /></Box>
+      <Measured><BeamStat label="Description" value={DESCRIPTION} /></Measured>
+      <Measured><BeamField fullWidth multiline rows={3} label="Description" defaultValue={DESCRIPTION} /></Measured>
+
+      <Measured><BeamStat label="Active" value={active} /></Measured>
+      <Measured><BeamSwitchField name="twin-active" label="Active" checked={active} onChange={setActive} /></Measured>
     </Box>
   );
 }
@@ -84,7 +124,7 @@ export const ViewEditTwins: Story = {
     <Stack direction={{ xs: 'column', md: 'row' }}>
       {(['light', 'dark'] as const).map((scheme) => (
         <Box key={scheme} data-beam-mode={scheme} sx={{ flex: 1, bgcolor: 'background.paper', color: 'text.primary', p: 4 }}>
-          <Typography variant="subtitle2" sx={{ mb: 2, textTransform: 'capitalize' }}>{scheme}</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 2, textTransform: 'capitalize' }}>{scheme} — measured heights in blue</Typography>
           <TwinsBlock />
         </Box>
       ))}

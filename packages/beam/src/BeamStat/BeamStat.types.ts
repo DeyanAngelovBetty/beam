@@ -23,6 +23,12 @@ export interface BeamStatProps {
   value: ReactNode;
   /** Secondary line under the value, e.g. a unit or qualifier. */
   caption?: ReactNode;
+  /**
+   * Whether the caption RENDERS. Orthogonal to `caption` — content can be present while hidden, so
+   * a morph context can hold the 44px row without losing caption data. Name matches the Figma
+   * component property exactly (Code Connect parity — do NOT rename).
+   */
+  showCaption?: boolean;
   /** The alarm channel (spine token + paired icon). Absent = no alarm. */
   severity?: BeamStatSeverity;
 }

@@ -29,7 +29,7 @@ export function BeamBool({ value }: { value: boolean }) {
   );
 }
 
-export function BeamStat({ label, value, caption, severity }: BeamStatProps) {
+export function BeamStat({ label, value, caption, showCaption = true, severity }: BeamStatProps) {
   const spine = spineVar[severity ?? 'default'];
   // A boolean value renders the icon pair; anything else flows through the text value slot.
   const isBool = typeof value === 'boolean';
@@ -56,7 +56,7 @@ export function BeamStat({ label, value, caption, severity }: BeamStatProps) {
             {value}
           </Typography>
         )}
-        {caption && (
+        {caption && showCaption && (
           <Typography variant="caption" color="text.secondary">
             {caption}
           </Typography>

@@ -597,9 +597,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           root: {
             ...meta,
             // RESTING label (empty field, not shrunk) — re-centre in the 44px field (§2 twin).
-            // MUI's sizeSmall default sits it high for a taller box. Y is a bench-tune value.
+            // Text centre = padY 13 + value 18/2 = 22; meta is 12 tall → Y = 22 − 6 = 16.
+            // Bench-tune value (Deyan). Select + multiline share the small resting label.
             '&.MuiInputLabel-sizeSmall:not(.MuiInputLabel-shrink)': {
-              transform: 'translate(14px, 15px) scale(1)',
+              transform: 'translate(14px, 16px) scale(1)',
             },
             // meta IS the final size — one caps voice everywhere — so the
             // in-the-notch (shrunk) label must render at exactly meta, NOT
@@ -624,18 +625,23 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // ⚠️ BLAST RADIUS: restyles EVERY small outlined field estate-wide — the intent (one field
           // geometry) — verified on real pages, see the commit's eyeball list.
           input: {
-            // Single-line small: 2 border + 12 + value 18 + 12 = 44. Multiline textarea line-height
-            // 18 so each row adds 18 (root carries the multiline padding, below).
-            '&.MuiInputBase-inputSizeSmall': {
+            // SINGLE-LINE + SELECT small: padY 13 + value 18 + padY 13 = 44 (the border is an
+            // overlay, not in the box). Exclude the multiline textarea — its padding is on the root.
+            '&.MuiInputBase-inputSizeSmall:not(.MuiInputBase-inputMultiline)': {
               paddingTop: FIELD_GEOMETRY.fieldPaddingY,
               paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
               lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
             },
+            // MULTILINE textarea: no padding of its own (the root carries it); the line-height is
+            // what makes each row exactly 18 → 3-line = 13 + 3×18 + 13 = 80.
             '&.MuiInputBase-inputMultiline': {
+              paddingTop: 0,
+              paddingBottom: 0,
               lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
             },
           },
           root: {
+            // Multiline small root carries the vertical padding (1 line = 13 + 18 + 13 = 44).
             '&.MuiInputBase-multiline.MuiInputBase-sizeSmall': {
               paddingTop: FIELD_GEOMETRY.fieldPaddingY,
               paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
