@@ -222,7 +222,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // formulas, so one :root block serves both modes.
             '--beam-spine-default': derived.spine.default,
             '--beam-spine-warning': derived.spine.warning,
-            '--beam-spine-danger': derived.spine.danger,
+            '--beam-spine-error': derived.spine.error,
             // Surface ramp (§9), now LOAD-BEARING and MATERIALIZED as a chain: the anchor
             // SEED (the ONE hex, per scheme) → the registered ramp (formula once per slot) →
             // aliases. The anchor + step :root defaults are this product's DARK values

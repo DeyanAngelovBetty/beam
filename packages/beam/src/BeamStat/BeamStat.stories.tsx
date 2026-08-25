@@ -4,9 +4,10 @@ import Paper from '@mui/material/Paper';
 import { BeamStat } from './BeamStat';
 
 /**
- * BeamStat — labelled value with the spine motif. Key in the `meta` voice;
- * `tone` tints the value; `severity` switches the spine token and pairs it
- * with an icon (never colour-alone, WCAG 1.4.1).
+ * BeamStat v2 — labelled value with the spine motif; the VIEW half of the 44px field twin. Key in
+ * the `meta` voice; `severity` (warning | error) is the only alarm channel — spine token + a paired
+ * icon (never colour-alone). ONE fill principle: fill marks a family's notable state — severity
+ * (WarningAmber outlined → Error filled), boolean (CheckCircle filled / Cancel outlined). No tone.
  */
 const meta = {
   title: 'Organisms/BeamStat',
@@ -21,20 +22,23 @@ export const Default: Story = {
   args: { label: 'Cash balance', value: '$20.00', caption: 'CAD' },
 };
 
+/** Severity axis — outlined WarningAmber (lower) escalates to the FILLED Error (highest). */
 export const Warning: Story = {
   args: { label: 'RG risk', value: 'Elevated', severity: 'warning' },
 };
-
-export const Danger: Story = {
-  args: { label: 'Account status', value: 'Suspended', severity: 'danger' },
+export const Error: Story = {
+  args: { label: 'Account status', value: 'Suspended', severity: 'error' },
 };
 
-/** Long values wrap; the spine stretches to match (variable heights are legal). */
-export const LongValue: Story = {
+/** Boolean values — the yes/no icon pair (fill = true). Pass a boolean straight into `value`. */
+export const BooleanTrue: Story = { args: { label: 'Active', value: true } };
+export const BooleanFalse: Story = { args: { label: 'Active', value: false } };
+
+/** Multiline value — grows by one line-height (18px) per line; the spine stretches to match. */
+export const Multiline: Story = {
   args: {
     label: 'Effective permission',
     value: 'Approve payouts, manage users, and edit loyalty configuration across all jurisdictions',
-    severity: 'warning',
   },
   render: (args) => (
     <div style={{ maxWidth: 240 }}>
@@ -43,17 +47,17 @@ export const LongValue: Story = {
   ),
 };
 
-/** A row of stats — the entity-summary use, mixing tone and severity. */
+/** A row of stats — the entity-summary use (plain values + the severity axis + a boolean). */
 export const Row: Story = {
   args: { label: 'Status', value: 'Approved' },
   render: () => (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
-        <BeamStat label="Status" value="Approved" tone="success" caption="Online" />
+        <BeamStat label="Status" value="Approved" caption="Online" />
         <BeamStat label="Cash balance" value="$20.00" caption="CAD" />
-        <BeamStat label="Betty coins" value="0" />
+        <BeamStat label="Active" value={true} />
         <BeamStat label="RG risk" value="Elevated" severity="warning" />
-        <BeamStat label="Account" value="Suspended" severity="danger" />
+        <BeamStat label="Account" value="Suspended" severity="error" />
       </Stack>
     </Paper>
   ),

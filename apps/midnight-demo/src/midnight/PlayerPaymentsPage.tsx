@@ -106,12 +106,12 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
         action={<Button variant="contained">Quick actions</Button>}
         summary={
           <>
-            <BeamStat label="Status" value="Approved" tone="success" caption="Online" />
+            <BeamStat label="Status" value="Approved" caption="Online" />
             <BeamStat label="Cash balance" value="$20.00" caption="CAD" />
             <BeamStat label="Betty coins" value="0" />
             <BeamStat label="Tokens balance" value="0" />
-            <BeamStat label="Profit segment" value="Toddler" tone="info" />
-            <BeamStat label="RG risk" value="No risk" tone="success" />
+            <BeamStat label="Profit segment" value="Toddler" />
+            <BeamStat label="RG risk" value="No risk" />
             <BeamStat label="Segment" value="Registered non-depositor" />
             <BeamStat label="Risk of churn" value="N/A" />
           </>
@@ -171,7 +171,7 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
             <BeamStat
               label="Fraud rules matched"
               value={t.fraudRules ?? 'None'}
-              tone={t.fraudRules ? 'warning' : 'default'}
+              severity={t.fraudRules ? 'warning' : undefined}
             />
           </Stack>
         )}

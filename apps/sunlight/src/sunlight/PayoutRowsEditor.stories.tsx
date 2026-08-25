@@ -58,7 +58,7 @@ export const InvalidUnder: Story = {
   ),
 };
 
-/** Totals over 100% — Live Check shows 'danger' (impossible). */
+/** Totals over 100% — Live Check shows 'error' (impossible). */
 export const InvalidOver: Story = {
   render: () => (
     <Harness

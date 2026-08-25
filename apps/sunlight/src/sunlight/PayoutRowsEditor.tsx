@@ -16,7 +16,7 @@ import {
   TableCell,
   BeamStat,
 } from '@betty/beam';
-import type { BeamStatSeverity, BeamStatTone } from '@betty/beam';
+import type { BeamStatSeverity } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
@@ -94,11 +94,9 @@ export function PayoutRowsEditor({
       rows.map((r) => (r._key === rowKey ? { ...r, rewards: r.rewards.filter((rw) => rw._key !== rKey) } : r))
     );
 
-  // Live Check severity (detail §2): exact = quiet · under = warning · over = danger.
+  // Live Check severity (detail §2): exact = quiet · under = warning · over = error.
   const severity: BeamStatSeverity | undefined =
-    v.status === 'exact' ? undefined : v.status === 'under' ? 'warning' : 'danger';
-  const remainingTone: BeamStatTone =
-    v.status === 'exact' ? 'default' : v.status === 'under' ? 'warning' : 'error';
+    v.status === 'exact' ? undefined : v.status === 'under' ? 'warning' : 'error';
 
   return (
     // One fit-content container so the strip's edges align with the grid's
@@ -120,7 +118,8 @@ export function PayoutRowsEditor({
           <Stack spacing={0.5}>
             <Stack direction="row" spacing={4} sx={{ alignItems: 'flex-start' }}>
               <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
-              <BeamStat label="Remaining" value={`${v.remaining}%`} tone={remainingTone} />
+              {/* Remaining echoes the same invariant → same severity (tone dropped in BeamStat v2). */}
+              <BeamStat label="Remaining" value={`${v.remaining}%`} severity={severity} />
             </Stack>
             {v.aggregate && showError('aggregate') && (
               <Typography variant="body2" color="error" role="alert">

@@ -38,6 +38,27 @@ export interface BrandTokens {
 
 const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, outlinedBorder: 0.5 };
 
+/**
+ * FIELD_GEOMETRY — the 44px view↔edit TWIN datum, encoded as explicit values (not accidents of
+ * typography). ONE source consumed by BOTH BeamStat (the view twin) and the outlined-field / switch
+ * overrides (the edit twins) so they can never drift:
+ *
+ *   height 44 = paddingY 6 (top) + label 12 + gap 2 + value 18 + paddingY 6 (bottom)
+ *
+ * A multiline value grows by `valueLineHeight` per line (3-line = 44 + 2×18 = 80), matching the
+ * multiline TextField twin. The edit twins have NO internal label row (their label is the notch),
+ * so a field's 1-line height = border 2 + paddingY 12 + valueLineHeight 18 + paddingY 12 = 44 — the
+ * same floor, reached from the same numbers.
+ */
+export const FIELD_GEOMETRY = {
+  height: 44, // the floor (single-line) — the twin datum
+  paddingY: 6, // BeamStat top/bottom padding
+  labelLineHeight: 12, // meta label row
+  gap: 2, // label → value
+  valueLineHeight: 18, // one value line; multiline grows by this
+  fieldPaddingY: 12, // edit-twin field vertical padding: 2 (border) + 12 + 18 + 12 = 44
+} as const;
+
 export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
   sunlight: {
     ontario: {
@@ -476,19 +497,20 @@ export const derived = {
    *   independent formula. It mixes the primary tint toward `text.primary`
    *   (which itself flips per scheme), so one formula serves both schemes with
    *   no per-scheme wiring — unlike `tableBorder`'s white/black split.
-   * - `warning` / `danger` derive from the semantic palette (there are no
-   *   dedicated warning/danger *seeds* in tokens yet — flagged 2026-07-24 —
+   * - `warning` / `error` derive from the semantic palette (there are no
+   *   dedicated warning/error *seeds* in tokens yet — flagged 2026-07-24 —
    *   so they bind to `palette.warning/error.main`, the same "bind to the
-   *   semantic layer" posture as tableBorder←primary).
+   *   semantic layer" posture as tableBorder←primary). (`danger` → `error`
+   *   2026-08-25, aligning the severity vocabulary with the palette + BeamStat v2.)
    *
    * Consumed as CSS custom properties emitted by the theme:
-   * `--beam-spine-default | -warning | -danger`.
+   * `--beam-spine-default | -warning | -error`.
    */
   spine: {
     default:
       'color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, var(--mui-palette-text-primary))',
     warning: 'var(--mui-palette-warning-main)',
-    danger: 'var(--mui-palette-error-main)',
+    error: 'var(--mui-palette-error-main)',
   },
 
   /**

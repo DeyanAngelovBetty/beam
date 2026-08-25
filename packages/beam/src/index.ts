@@ -106,8 +106,8 @@ export type { BeamRowMenuProps, BeamRowAction } from './BeamRowMenu/BeamRowMenu.
 export { GemIcon } from './GemIcon/GemIcon';
 export type { GemIconProps, GemName } from './GemIcon/GemIcon.types';
 export type { BeamDataTableProps, BeamColumn, BeamIdentityLinkProps } from './BeamDataTable/BeamDataTable.types';
-export { BeamStat } from './BeamStat/BeamStat';
-export type { BeamStatProps, BeamStatTone, BeamStatSeverity } from './BeamStat/BeamStat.types';
+export { BeamStat, BeamBool } from './BeamStat/BeamStat';
+export type { BeamStatProps, BeamStatSeverity } from './BeamStat/BeamStat.types';
 
 // ---- Organisms: PLACEHOLDERS (2026-07-20) ----
 // Shape-only, pending the Figma design pass. Screens can be built against a
