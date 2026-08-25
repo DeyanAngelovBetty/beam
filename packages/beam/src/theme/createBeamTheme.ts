@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, type BrandName, type ProductName } from './tokens';
 import { starMaskUri } from './starGeometry';
 import { meta } from './textStyles';
 
@@ -596,6 +596,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
         styleOverrides: {
           root: {
             ...meta,
+            // RESTING label (empty field, not shrunk) — re-centre in the 44px field (§2 twin).
+            // MUI's sizeSmall default sits it high for a taller box. Y is a bench-tune value.
+            '&.MuiInputLabel-sizeSmall:not(.MuiInputLabel-shrink)': {
+              transform: 'translate(14px, 15px) scale(1)',
+            },
             // meta IS the final size — one caps voice everywhere — so the
             // in-the-notch (shrunk) label must render at exactly meta, NOT
             // meta × 0.75. MUI's default shrink is
@@ -613,6 +618,29 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // the label's TRUE rendered width and register to the label's left edge.
       MuiOutlinedInput: {
         styleOverrides: {
+          // The 44px FIELD FLOOR — the edit twin of BeamStat (§2, FIELD_GEOMETRY). A field has no
+          // internal label row (its label is the notch), so 1 line = border 2 + padY 12 + value 18
+          // + padY 12 = 44; a multiline field grows by 18/line (3-line = 80), pairing by line count.
+          // ⚠️ BLAST RADIUS: restyles EVERY small outlined field estate-wide — the intent (one field
+          // geometry) — verified on real pages, see the commit's eyeball list.
+          input: {
+            // Single-line small: 2 border + 12 + value 18 + 12 = 44. Multiline textarea line-height
+            // 18 so each row adds 18 (root carries the multiline padding, below).
+            '&.MuiInputBase-inputSizeSmall': {
+              paddingTop: FIELD_GEOMETRY.fieldPaddingY,
+              paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
+              lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
+            },
+            '&.MuiInputBase-inputMultiline': {
+              lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`,
+            },
+          },
+          root: {
+            '&.MuiInputBase-multiline.MuiInputBase-sizeSmall': {
+              paddingTop: FIELD_GEOMETRY.fieldPaddingY,
+              paddingBottom: FIELD_GEOMETRY.fieldPaddingY,
+            },
+          },
           notchedOutline: {
             // FULL mirror — MUI mirrors only the label text at a font-size, not
             // meta's transform or tracking, so the legend under-predicts the
