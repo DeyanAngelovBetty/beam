@@ -115,6 +115,27 @@ commit. Known divergence queue: Sunlight `LoyaltyStatusEditor` main edit fields 
 (≈56px), so they don't pair with the 44px view — switch them to `size="small"`. (Gaspar rule-builder
 inspector already uses small fields → auto-inherits the 44px twin.)
 
+*Amended 2026-08-26 — **the details panel** (`DetailsPanel`, Figma-ratified node 12743:68281).*
+The **FIRST content region below the page header is an unlabeled boxed field panel**: a Paper of the
+field twins — **stats in view, form fields in edit, morphing in place** per the field-twins rule
+above. Geometry: 24px padding, 24px gutters, items top-aligned, rows sized by their tallest member,
+booleans inline as peers.
+
+- **It needs no title — the position IS the convention.** *One title per page:* the page title (in
+  `BeamPageHeader`) is the title; the details panel never adds a heading. (This retires the
+  "Status fields" / "Request details" sub-headings that led earlier panels.)
+- **No buttons in the panel.** Edit / Save / Cancel stay in the header actions slot (§4); the panel
+  owns layout, the page owns mode.
+- **Mixed content is normal.** A non-editable value **REMAINS a stat** while its neighbours morph to
+  fields — no mode-wide swap. *Open question (Deyan):* whether a non-editable stat sitting among
+  edit fields wants a visual cue (dimming/tint) — **no dimming for now.** A field that is editable
+  but currently locked renders as a **disabled field** in edit (not a stat).
+- **The region slots**, top to bottom: `[page header] · [page-level alert when present] · [details
+  panel] · [rest]`. The page-level alert (approval-flow) sits above the panel, below the header.
+- **Subsequent sections** (rules, rows, reward tables, …) are **unchanged this round** — whether
+  they keep their own titles once the details panel drops its own is an **OPEN question, noted, not
+  ruled**.
+
 ## 3. Meta text goes universal
 
 `tableMetaText` graduates from a table-local rule to the **meta** category rule —
