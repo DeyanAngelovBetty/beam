@@ -137,7 +137,6 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
       <BeamPageHeader
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
-        subtitle={<GemIcon gem={status.gem} size={20} />}
         // The view is the row's record page → it carries the row's NON-EDIT actions (§6):
         // [Export] [Import…] [Edit], Edit primary + last. In edit mode these hide — the editor's
         // pair stays exactly [Cancel] [Submit for approval] (importing over a live draft is a
@@ -354,7 +353,6 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
       <BeamPageHeader
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
-        subtitle={<GemIcon gem={status.gem} size={20} />}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button variant="text" onClick={requestCancel}>
