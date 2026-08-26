@@ -18,7 +18,10 @@ export function BeamSwitchField({ label, checked, onChange, name, disabled }: Be
         display: 'inline-flex',
         position: 'relative',
         minWidth: 132,
-        pl: 1.5,
+        // Track x-alignment (bench, Deyan): paddingLeft 4 + MUI Switch's 12px internal touch-target
+        // padding lands the track at ~the input's 14px text inset, so the switch left-aligns with
+        // where the twin TextField's text sits. (The Switch's own margin-left is removed at source.)
+        pl: 0.5,
         pr: 0.5,
         border: '1px solid',
         borderColor: 'divider',
@@ -41,7 +44,6 @@ export function BeamSwitchField({ label, checked, onChange, name, disabled }: Be
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange?.(e.target.checked)}
-        sx={{ ml: 'auto' }}
       />
     </Box>
   );
