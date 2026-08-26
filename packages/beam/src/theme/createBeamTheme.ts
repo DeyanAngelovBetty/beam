@@ -617,6 +617,16 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       },
       // Notch gap geometry. The legend sizes the border's gap; it must predict
       // the label's TRUE rendered width and register to the label's left edge.
+      // Select's height floor lives HERE, not on MuiOutlinedInput. SelectInput sets its own
+      // `min-height: 1.4375em` (23px) on `.MuiSelect-select`; the OutlinedInput-slot minHeight (v2.3)
+      // is EQUAL specificity but injects earlier, so it loses. The canonical `select` slot targets
+      // the winning class deterministically → the 44px twin holds for Selects too. (Height is left
+      // alone — the select div is height:auto and line-height 18 already gives 18px of content.)
+      MuiSelect: {
+        styleOverrides: {
+          select: { minHeight: FIELD_GEOMETRY.valueLineHeight },
+        },
+      },
       MuiOutlinedInput: {
         styleOverrides: {
           // The 44px FIELD FLOOR — the edit twin of BeamStat (§2, FIELD_GEOMETRY). The outlined

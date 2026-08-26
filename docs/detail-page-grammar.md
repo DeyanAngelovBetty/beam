@@ -82,7 +82,22 @@ an explicit, shared geometry, not an accident of typography:
 - **The 44px floor.** One datum (`FIELD_GEOMETRY`, tokens.ts) both twins consume, so they can't
   drift: `height 44 = padY 6 + label 12 + gap 2 + value 18 + padY 6`. A multiline value grows by
   18/line (3-line = 80). The **edit twin** (outlined field) has no internal label row — its label is
-  the notch — so 1 line = border 2 + padY 12 + value 18 + padY 12 = 44, the same floor.
+  the notch — and the outlined border is an **overlay** (not in the input box), so 1 line = padY 13
+  + value 18 + padY 13 = 44, the same floor.
+
+  *Implementation knobs (where the geometry lives — recorded so nobody re-fights it):*
+  - Single-line + Select height/padding/line-height: `MuiOutlinedInput.styleOverrides.input`, the
+    **ownerState function** branch (MUI v9 dropped the `inputSizeSmall`/`inputMultiline` element
+    classes — a class-selector override is a silent no-op).
+  - Single-line needs an explicit `height: 18` — MUI's `height: 1.4375em` (23px) on the `<input>`
+    otherwise wins over line-height on a content-box element.
+  - **Select's height floor lives in `MuiSelect.styleOverrides.select`, NOT MuiOutlinedInput.**
+    `SelectInput` sets its own `min-height: 1.4375em`; an OutlinedInput-slot `minHeight` is equal
+    specificity but injects earlier and LOSES. The `select` slot is the winning class — an
+    injection-order lesson, deterministic, no specificity games.
+  - Multiline line-height rides the `input` class so TextareaAutosize's hidden shadow (which shares
+    the visible textarea's className) measures rows at 18, not MUI's default 23.
+  - Resting/notch label Y offsets are bench-tune values (Deyan).
 - **Morph in place.** The same grammatical slot morphs: **label persists** (voice + position),
   **value ↔ input swaps**, **heights equal per row** (44 floor; multiline pairs by line count).
   Caption pairs with helper text, or is omitted in morphing contexts.
