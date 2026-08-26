@@ -118,18 +118,28 @@ inspector already uses small fields → auto-inherits the 44px twin.)
 *Amended 2026-08-26 — **the details panel** (`DetailsPanel`, Figma-ratified node 12743:68281).*
 The **FIRST content region below the page header is an unlabeled boxed field panel**: a Paper of the
 field twins — **stats in view, form fields in edit, morphing in place** per the field-twins rule
-above. Geometry: 24px padding, 24px gutters, items top-aligned, rows sized by their tallest member,
-booleans inline as peers.
+above. Geometry: **24px padding-block · 2-spacing padding-inline** (the spacing var literally, so it
+rides ThemeLab and lands the text column on the datagrid cell-text scan line), 24px gutters, items
+top-aligned, rows sized by their tallest member, booleans inline as peers.
 
 - **It needs no title — the position IS the convention.** *One title per page:* the page title (in
   `BeamPageHeader`) is the title; the details panel never adds a heading. (This retires the
   "Status fields" / "Request details" sub-headings that led earlier panels.)
+- **Container: elevated Paper, NO border** *(ratified 2026-08-27).* In edit the panel fills with
+  outlined inputs; an outlined *container* around them is strokes-inside-strokes (same rationale
+  family as flat page-level alert actions — the surface already carries the boundary).
+- **The slot is POSITIONAL, its filling depends on the page.** An **editable** object fills it with
+  `DetailsPanel` (the field twins). A **read-only** record page fills the same slot with its
+  **reading instrument** instead (e.g. the CR detail page's `KeyValuePanel`) — do not force a reading
+  panel into `DetailsPanel`. Position is the rule; the instrument follows the page's nature.
 - **No buttons in the panel.** Edit / Save / Cancel stay in the header actions slot (§4); the panel
   owns layout, the page owns mode.
 - **Mixed content is normal.** A non-editable value **REMAINS a stat** while its neighbours morph to
-  fields — no mode-wide swap. *Open question (Deyan):* whether a non-editable stat sitting among
-  edit fields wants a visual cue (dimming/tint) — **no dimming for now.** A field that is editable
-  but currently locked renders as a **disabled field** in edit (not a stat).
+  fields — no mode-wide swap. A field that is editable but currently locked renders as a **disabled
+  field** in edit (not a stat).
+- **No dimming for non-editable stats among fields** *(ratified 2026-08-27).* The twin geometry IS
+  the affordance — **boxed = type here, spined = read** — so a stat beside fields needs no dim/tint.
+  A LEAN UNDER TEST, not a shrug: revisit only on user evidence.
 - **The region slots**, top to bottom: `[page header] · [page-level alert when present] · [details
   panel] · [rest]`. The page-level alert (approval-flow) sits above the panel, below the header.
 - **Subsequent sections** (rules, rows, reward tables, …) are **unchanged this round** — whether
