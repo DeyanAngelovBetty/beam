@@ -14,6 +14,9 @@ import {
 } from '@betty/beam';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LaunchIcon from '@mui/icons-material/Launch';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import PublicIcon from '@mui/icons-material/Public';
+import type { ReactNode } from 'react';
 import { BEAM, APPS, type Surface } from './registry';
 
 /**
@@ -22,25 +25,47 @@ import { BEAM, APPS, type Surface } from './registry';
  * opts out of it.
  */
 
-function FigmaLink({ surface }: { surface: Surface }) {
-  if (surface.figma) {
-    return (
-      <Button
-        size="small"
-        variant="text"
-        endIcon={<OpenInNewIcon fontSize="small" />}
-        href={surface.figma.url}
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        {surface.figma.file}
-      </Button>
-    );
-  }
+/** One quiet footer link. Small text + icon, opens in a new tab. */
+function FooterLink({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <Typography variant="caption" color="text.secondary" sx={{ px: 1, py: 0.75 }}>
-      {surface.figmaPending}
-    </Typography>
+    <Button
+      size="small"
+      variant="text"
+      color="inherit"
+      startIcon={icon}
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      sx={{ minWidth: 0, color: 'text.secondary', fontWeight: 400 }}
+    >
+      {children}
+    </Button>
+  );
+}
+
+/** The consistent footer row: Docs · Figma · Open app · Official — each shown only if it exists. */
+function LinkRow({ surface }: { surface: Surface }) {
+  return (
+    <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+      {surface.docs && (
+        <FooterLink href={surface.docs} icon={<ArticleOutlinedIcon fontSize="small" />}>
+          Docs
+        </FooterLink>
+      )}
+      {surface.figma && (
+        <FooterLink href={surface.figma.url} icon={<OpenInNewIcon fontSize="small" />}>
+          Figma
+        </FooterLink>
+      )}
+      <FooterLink href={surface.href} icon={<LaunchIcon fontSize="small" />}>
+        {surface.openLabel ?? 'Open app'}
+      </FooterLink>
+      {surface.official && (
+        <FooterLink href={surface.official} icon={<PublicIcon fontSize="small" />}>
+          Official
+        </FooterLink>
+      )}
+    </Stack>
   );
 }
 
@@ -73,17 +98,7 @@ function SurfaceCard({ surface, primary = false }: { surface: Surface; primary?:
 
       <Divider />
 
-      <Stack spacing={1}>
-        <Button
-          variant={primary ? 'contained' : 'outlined'}
-          href={surface.href}
-          endIcon={<LaunchIcon fontSize="small" />}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          Open {surface.name}
-        </Button>
-        <FigmaLink surface={surface} />
-      </Stack>
+      <LinkRow surface={surface} />
     </Paper>
   );
 }
