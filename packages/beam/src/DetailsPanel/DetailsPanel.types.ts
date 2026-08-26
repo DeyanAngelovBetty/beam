@@ -9,10 +9,11 @@ import type { ReactNode } from 'react';
  * the title). It does NOT own mode (the page owns view/edit) and has NO buttons (Edit/Save/Cancel
  * stay in `BeamPageHeader`). It renders what it's given.
  *
- * Figma: Beam MUI v9 → node 12743:68281. Deyan's ratified panel: elevated Paper (no border), 24px
- * padding-block · 2-spacing padding-inline (the spacing var, so the text column lands on the datagrid
- * cell-text scan line and rides ThemeLab), 24px gutters, items TOP-aligned, rows sized by their
- * tallest member, booleans inline as peers.
+ * Figma: Beam MUI v9 → node 12743:68281. Deyan's ratified panel: elevated Paper — BORDERED WHEN IT
+ * CONTAINS FIELDS (borderless in view, quiet divider frame in edit; detected structurally, colour-
+ * only transition so no twin moves on the switch). 24px padding-block · 2-spacing padding-inline (the
+ * spacing var, so the text column lands on the datagrid cell-text scan line and rides ThemeLab), 24px
+ * gutters, items TOP-aligned, rows sized by their tallest member, booleans inline as peers.
  */
 export interface DetailsPanelProps {
   /** The field twins (view: BeamStat · edit: BeamField/BeamSwitchField). Mixed modes are normal. */

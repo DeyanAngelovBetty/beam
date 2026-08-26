@@ -125,9 +125,18 @@ top-aligned, rows sized by their tallest member, booleans inline as peers.
 - **It needs no title — the position IS the convention.** *One title per page:* the page title (in
   `BeamPageHeader`) is the title; the details panel never adds a heading. (This retires the
   "Status fields" / "Request details" sub-headings that led earlier panels.)
-- **Container: elevated Paper, NO border** *(ratified 2026-08-27).* In edit the panel fills with
-  outlined inputs; an outlined *container* around them is strokes-inside-strokes (same rationale
-  family as flat page-level alert actions — the surface already carries the boundary).
+- **Container: elevated Paper, MODE-SCOPED border** *(ratified 2026-08-27; supersedes the same-day
+  "no border" ruling below — the trail keeps both; fast supersession after a visual pass is the
+  process working, not churn).* **View = borderless** (the spines carry the read; a frame is noise).
+  **Edit = a quiet 1px divider frame** marking the active region. The strokes-inside-strokes concern
+  is resolved by WEIGHT HIERARCHY: the container divider is quiet, the input outlines strong. The
+  border is CONSTANT geometry — always 1px, transparent in view → `divider` in edit, colour-only
+  transition — so no twin moves a pixel on the switch. Mode is STRUCTURAL, not a prop: the panel is
+  *bordered when it contains fields* (`:has(.MuiInputBase-root)`). *(This restores the idea behind
+  UserPage's earlier `modeBorder`, now estate-wide.)*
+  - *Superseded 2026-08-27 — the original ratification:* elevated Paper, NO border in either mode,
+    on the strokes-inside-strokes argument. The visual pass on the five converged pages showed edit
+    wanted the active-region frame after all; weight hierarchy (not absence) is what keeps it calm.
 - **The slot is POSITIONAL, its filling depends on the page.** An **editable** object fills it with
   `DetailsPanel` (the field twins). A **read-only** record page fills the same slot with its
   **reading instrument** instead (e.g. the CR detail page's `KeyValuePanel`) — do not force a reading
