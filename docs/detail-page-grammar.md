@@ -201,6 +201,12 @@ page-header (fixed rows, constant geometry)
   are deprecated and removed once call sites migrate. The old `summary` strip (outlined Paper) is
   removed — it violated the details-panel container ruling (§2); record stats move to a `DetailsPanel`
   below the header.
+- **The title underline hugs, then dissolves** *(2026-08-26).* The decorative underline spans the
+  title box up to `--beam-title-underline-max` (`~18ch` bench default, per-product geometry, tunable
+  like the rest of the underline family). On a single-line title it hugs the text; on a **wrapping**
+  title it stops at the cap and **DISSOLVES** — the existing fade-to-background gradient far end is
+  what makes the cap read as an **accent, not a chop** (and never a ruler ruled across the whole
+  block). Anchor stays left, so the scaleX reveal is unaffected. *(Exhibit: the long-title story.)*
 
 - **State lives in the header, once** *(2026-08-14):* entity state — status,
   operation, lifecycle chips — renders in the page-header **identity zone** (the
