@@ -111,12 +111,10 @@ export function PendingApprovalDetailPage() {
         </Alert>
       )}
 
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Request details
-        </Typography>
-        <KeyValuePanel aria-label="Request details" items={details} />
-      </Stack>
+      {/* The details-panel SLOT (grammar §2), filled by this read-only page's reading instrument —
+          KeyValuePanel, not DetailsPanel: the slot is positional, its filling follows the page's
+          nature. No heading — position is the convention. */}
+      <KeyValuePanel aria-label="Request details" items={details} />
 
       <Stack spacing={1}>
         <Typography variant="subtitle2" color="text.secondary">

@@ -3,16 +3,16 @@ import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import {
   Stack,
   Box,
-  Paper,
   Typography,
   Button,
-  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   BeamPageHeader,
   BeamStat,
+  BeamField,
+  DetailsPanel,
   BeamEmptyState,
 } from '@betty/beam';
 import {
@@ -26,15 +26,8 @@ import {
 import { RolesRail } from './RolesRail';
 import { PageSection } from './PageSection';
 import { useLinking } from './useLinking';
-import { modeBorder } from './surfaceBorder';
 import { backTo } from './backTo';
 import type { BeamBackLink } from '@betty/beam';
-
-const STATS_GRID = {
-  display: 'grid',
-  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
-  gap: 2,
-} as const;
 
 interface Working {
   name: string;
@@ -106,15 +99,14 @@ function UserView({
         }
       />
 
-      {/* Stats block: raised + read-only → border present but transparent
-          (§1, constant-geometry clause), so view↔edit doesn't jump. */}
-      <Paper elevation={0} sx={{ p: 2, ...modeBorder(false) }}>
-        <Box sx={STATS_GRID}>
-          <BeamStat label="Name" value={detail.name} />
-          <BeamStat label="Email" value={detail.email} />
-          <BeamStat label="Description" value={detail.description} />
-        </Box>
-      </Paper>
+      {/* The details panel (grammar §2), view mode — field twins as stats. Supersedes the old
+          constant-geometry modeBorder: the elevated no-border Paper is the constant container, and
+          the twins (spined stat ↔ boxed field) carry the view↔edit change with no container jump. */}
+      <DetailsPanel aria-label="User details">
+        <BeamStat label="Name" value={detail.name} />
+        <BeamStat label="Email" value={detail.email} />
+        <BeamStat label="Description" value={detail.description} />
+      </DetailsPanel>
 
       <RolesPermissionsLayout
         rail={<RolesRail mode="view" assignedIds={detail.roleIds} linking={linking} />}
@@ -253,32 +245,26 @@ function UserEdit({
         }
       />
 
-      {/* Stats block in edit: holds form fields → border visible (§1.2). Same
-          geometry as view (constant border), so the skeleton reads as "same
-          thing, now editable" with zero jump — only the border color changes. */}
-      <Paper elevation={0} sx={{ p: 2, ...modeBorder(true) }}>
-        <Box sx={STATS_GRID}>
-          <TextField
-            label="Name"
-            size="small"
-            value={working.name}
-            onChange={(e) => setWorking((w) => ({ ...w, name: e.target.value }))}
-          />
-          <TextField
-            label="Email"
-            size="small"
-            value={working.email}
-            onChange={(e) => setWorking((w) => ({ ...w, email: e.target.value }))}
-          />
-          <TextField
-            label="Description"
-            size="small"
-            multiline
-            value={working.description}
-            onChange={(e) => setWorking((w) => ({ ...w, description: e.target.value }))}
-          />
-        </Box>
-      </Paper>
+      {/* The details panel (grammar §2), edit mode — the same slots as fields; morph in place, same
+          elevated container as view (no jump). */}
+      <DetailsPanel aria-label="User details">
+        <BeamField
+          label="Name"
+          value={working.name}
+          onChange={(e) => setWorking((w) => ({ ...w, name: e.target.value }))}
+        />
+        <BeamField
+          label="Email"
+          value={working.email}
+          onChange={(e) => setWorking((w) => ({ ...w, email: e.target.value }))}
+        />
+        <BeamField
+          label="Description"
+          multiline
+          value={working.description}
+          onChange={(e) => setWorking((w) => ({ ...w, description: e.target.value }))}
+        />
+      </DetailsPanel>
 
       <RolesPermissionsLayout
         rail={<RolesRail mode="edit" assignedIds={working.roleIds} onToggle={toggleRole} linking={linking} />}

@@ -3,7 +3,6 @@ import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-do
 import {
   Stack,
   Button,
-  TextField,
   MenuItem,
   Tooltip,
   Typography,
@@ -13,6 +12,9 @@ import {
   DialogActions,
   BeamPageHeader,
   BeamStatusBadge,
+  BeamStat,
+  BeamField,
+  DetailsPanel,
   BeamEmptyState,
 } from '@betty/beam';
 import EditIcon from '@mui/icons-material/EditRounded';
@@ -81,28 +83,17 @@ function ViewForm({ config, onEdit }: { config: GameConfig; onEdit: () => void }
           </Button>
         }
       />
-      <Stack spacing={2}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Basic Information
-        </Typography>
-        <ReadField label="Name" value={config.code} />
-        <ReadField label="Game Type" value={config.gameType} />
-      </Stack>
+      {/* The details panel (grammar §2), view mode — first field region, unlabeled. */}
+      <DetailsPanel aria-label="Basic information">
+        <BeamStat label="Name" value={config.code} />
+        <BeamStat label="Game Type" value={config.gameType} />
+      </DetailsPanel>
       <Stack spacing={1}>
         <Typography variant="subtitle2" color="text.secondary">
           Targeting rules
         </Typography>
         <TargetingRulesGrid rules={config.targetingRules} />
       </Stack>
-    </Stack>
-  );
-}
-
-function ReadField({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Stack spacing={0.25} sx={{ minWidth: 160 }}>
-      <Typography variant="caption" color="text.secondary">{label}</Typography>
-      <Typography variant="body2">{value}</Typography>
     </Stack>
   );
 }
@@ -184,12 +175,9 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
         }
       />
 
-      {/* Basic Information */}
-      <Stack spacing={2}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Basic Information
-        </Typography>
-        <TextField
+      {/* The details panel (grammar §2), edit mode — first field region, unlabeled. */}
+      <DetailsPanel aria-label="Basic information">
+        <BeamField
           label="Name"
           required
           value={model.code}
@@ -197,19 +185,17 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
           onBlur={() => setTouched((current) => ({ ...current, code: true }))}
           error={Boolean(v.code) && (touched.code || submitAttempted)}
           helperText={touched.code || submitAttempted ? v.code : undefined}
-          sx={{ maxWidth: 480 }}
           slotProps={{ htmlInput: { maxLength: MAX_GC_NAME } }}
         />
         {isEdit ? (
-          <TextField
+          <BeamField
             label="Game Type"
             value={model.gameType}
             disabled
-            sx={{ maxWidth: 480 }}
             helperText="Game type can't be changed after creation."
           />
         ) : (
-          <TextField
+          <BeamField
             select
             label="Game Type"
             required
@@ -222,16 +208,15 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
                 ? v.gameType
                 : 'Payout Config options filter by game type.'
             }
-            sx={{ maxWidth: 480 }}
           >
             {GAME_TYPES.map((g) => (
               <MenuItem key={g} value={g}>
                 {g}
               </MenuItem>
             ))}
-          </TextField>
+          </BeamField>
         )}
-      </Stack>
+      </DetailsPanel>
 
       <TargetingRulesEditor value={model} onChange={setModel} showAllErrors={submitAttempted} />
 

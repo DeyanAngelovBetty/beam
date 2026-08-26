@@ -5,6 +5,10 @@ import {
   BeamEmptyState,
   BeamPageHeader,
   BeamStatusBadge,
+  BeamStat,
+  BeamField,
+  DetailsPanel,
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -12,7 +16,6 @@ import {
   DialogTitle,
   MenuItem,
   Stack,
-  TextField,
   Tooltip,
   Typography,
 } from '@betty/beam';
@@ -83,12 +86,6 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
   const model = presetToEditorModel(preset);
   const badge = statusBadge(preset.status);
   const gameConfig = gameConfigForId(GAME_CONFIGS, model.gameConfigId);
-  const readField = (label: string, value: string) => (
-    <Stack spacing={0.25} sx={{ minWidth: 200 }}>
-      <Typography variant="caption" color="text.secondary">{label}</Typography>
-      <Typography variant="body2">{value || '—'}</Typography>
-    </Stack>
-  );
 
   return (
     <Stack spacing={3}>
@@ -102,24 +99,34 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
           </Button>
         }
       />
-      <Stack spacing={2} sx={{ maxWidth: 720 }}>
+      {/* Configuration Source stays a titled, distinct region — it's the mode selector that governs
+          the rest (an immutable-after-creation choice), not just another field. */}
+      <Stack spacing={2}>
         <Typography variant="subtitle2" color="text.secondary">Configuration Source</Typography>
-        {readField('Source', model.source === 'Betty' ? 'Betty GameConfig' : 'Legacy Yoda')}
+        <DetailsPanel aria-label="Configuration source">
+          <BeamStat label="Source" value={model.source === 'Betty' ? 'Betty GameConfig' : 'Legacy Yoda'} />
+        </DetailsPanel>
       </Stack>
-      <Stack spacing={2} sx={{ maxWidth: 720 }}>
-        <Typography variant="subtitle2" color="text.secondary">Preset Details</Typography>
-        {readField('Display Name', model.displayName)}
-        {model.source === 'Betty'
-          ? readField('GameConfig', gameConfig ? `${gameConfig.code} — ${gameConfig.gameType} — ${gameConfig.status}` : model.gameConfigId)
-          : readField('Config Code', model.configCode)}
-        {readField('Game Type', model.gameType)}
-        {readField('Skin ID', model.skinId)}
-        {readField('Image URL', model.imageUrl)}
-        {isPreviewableImageUrl(model.imageUrl) && <PresetImagePreview imageUrl={model.imageUrl} alt="Preset preview" width={180} />}
-        {readField('Volatility', model.volatility || 'Not set')}
-        {readField('Use Cases', model.useCases.join(', '))}
-        {readField('Expiry Hours', model.expiryHours)}
-      </Stack>
+      {/* The details panel (grammar §2), view mode — the preset's own fields, unlabeled. */}
+      <DetailsPanel aria-label="Preset details">
+        <BeamStat label="Display Name" value={model.displayName || '—'} />
+        {model.source === 'Betty' ? (
+          <BeamStat label="GameConfig" value={gameConfig ? `${gameConfig.code} — ${gameConfig.gameType} — ${gameConfig.status}` : model.gameConfigId || '—'} />
+        ) : (
+          <BeamStat label="Config Code" value={model.configCode || '—'} />
+        )}
+        <BeamStat label="Game Type" value={model.gameType || '—'} />
+        <BeamStat label="Skin ID" value={model.skinId || '—'} />
+        <BeamStat label="Image URL" value={model.imageUrl || '—'} />
+        <BeamStat label="Volatility" value={model.volatility || 'Not set'} />
+        <BeamStat label="Use Cases" value={model.useCases.join(', ') || '—'} />
+        <BeamStat label="Expiry Hours" value={model.expiryHours || '—'} />
+        {isPreviewableImageUrl(model.imageUrl) && (
+          <Box sx={{ gridColumn: '1 / -1' }}>
+            <PresetImagePreview imageUrl={model.imageUrl} alt="Preset preview" width={180} />
+          </Box>
+        )}
+      </DetailsPanel>
     </Stack>
   );
 }
@@ -263,9 +270,10 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
         )}
       </Stack>
 
-      <Stack spacing={2} sx={{ maxWidth: 720 }}>
-        <Typography variant="subtitle2" color="text.secondary">Preset Details</Typography>
-        <TextField
+      {/* The details panel (grammar §2), edit mode — the preset's fields, unlabeled. Non-field
+          auxiliaries (warnings, notes, image preview) span the full row. */}
+      <DetailsPanel aria-label="Preset details">
+        <BeamField
           label="Display Name"
           required
           value={model.displayName}
@@ -277,7 +285,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
 
         {model.source === 'Betty' ? (
           <>
-            <TextField
+            <BeamField
               select
               label="GameConfig"
               required
@@ -292,13 +300,13 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
                   {config.code} — {config.gameType} — {config.status}
                 </MenuItem>
               ))}
-            </TextField>
+            </BeamField>
             {disabledGameConfigWarning && (
-              <Typography variant="body2" color="warning.main" role="status">
+              <Typography variant="body2" color="warning.main" role="status" sx={{ gridColumn: '1 / -1' }}>
                 {disabledGameConfigWarning}
               </Typography>
             )}
-            <TextField
+            <BeamField
               label="Game Type"
               value={model.gameType}
               disabled
@@ -307,10 +315,10 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
           </>
         ) : (
           <>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ gridColumn: '1 / -1' }}>
               Legacy Yoda remains responsible for the gameplay configuration.
             </Typography>
-            <TextField
+            <BeamField
               select
               label="Game Type"
               required
@@ -321,8 +329,8 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
               helperText={showError('gameType') ? validation.gameType : undefined}
             >
               {GAME_TYPES.map((gameType) => <MenuItem key={gameType} value={gameType}>{gameType}</MenuItem>)}
-            </TextField>
-            <TextField
+            </BeamField>
+            <BeamField
               label="Config Code"
               required
               value={model.configCode}
@@ -334,16 +342,18 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
           </>
         )}
 
-        <TextField label="Skin ID" value={model.skinId} onChange={(event) => setModel((current) => ({ ...current, skinId: event.target.value }))} />
-        <TextField label="Image URL" value={model.imageUrl} onChange={(event) => setModel((current) => ({ ...current, imageUrl: event.target.value }))} />
+        <BeamField label="Skin ID" value={model.skinId} onChange={(event) => setModel((current) => ({ ...current, skinId: event.target.value }))} />
+        <BeamField label="Image URL" value={model.imageUrl} onChange={(event) => setModel((current) => ({ ...current, imageUrl: event.target.value }))} />
         {isPreviewableImageUrl(model.imageUrl) && (
-          <PresetImagePreview imageUrl={model.imageUrl} alt="Preset preview" width={180} />
+          <Box sx={{ gridColumn: '1 / -1' }}>
+            <PresetImagePreview imageUrl={model.imageUrl} alt="Preset preview" width={180} />
+          </Box>
         )}
-        <TextField select label="Volatility" value={model.volatility} onChange={(event) => setModel((current) => ({ ...current, volatility: event.target.value as PresetEditorModel['volatility'] }))}>
+        <BeamField select label="Volatility" value={model.volatility} onChange={(event) => setModel((current) => ({ ...current, volatility: event.target.value as PresetEditorModel['volatility'] }))}>
           <MenuItem value="">Not set</MenuItem>
           {PRESET_VOLATILITIES.map((volatility) => <MenuItem key={volatility} value={volatility}>{volatility}</MenuItem>)}
-        </TextField>
-        <TextField
+        </BeamField>
+        <BeamField
           select
           label="Use Cases"
           value={model.useCases}
@@ -357,8 +367,8 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
           slotProps={{ select: { multiple: true, renderValue: (selected) => (selected as PresetUseCase[]).join(', ') } }}
         >
           {PRESET_USE_CASES.map((useCase) => <MenuItem key={useCase} value={useCase}>{useCase}</MenuItem>)}
-        </TextField>
-        <TextField
+        </BeamField>
+        <BeamField
           label="Expiry Hours"
           type="number"
           value={model.expiryHours}
@@ -368,7 +378,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
           helperText={showError('expiryHours') ? validation.expiryHours : 'Optional positive whole number.'}
           slotProps={{ htmlInput: { min: 1, step: 1 } }}
         />
-      </Stack>
+      </DetailsPanel>
 
       <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>
         <DialogTitle>Discard changes?</DialogTitle>
