@@ -112,6 +112,8 @@ export { BeamSwitchField } from './BeamSwitchField/BeamSwitchField';
 export type { BeamSwitchFieldProps } from './BeamSwitchField/BeamSwitchField.types';
 export { BeamField } from './BeamField/BeamField';
 export type { BeamFieldProps } from './BeamField/BeamField';
+export { DetailsPanel } from './DetailsPanel/DetailsPanel';
+export type { DetailsPanelProps } from './DetailsPanel/DetailsPanel.types';
 export { FIELD_GEOMETRY, fieldGeometrySx } from './theme/tokens';
 
 // ---- Organisms: PLACEHOLDERS (2026-07-20) ----
