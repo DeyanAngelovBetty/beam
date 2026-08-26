@@ -1,16 +1,13 @@
 import type { ReactNode } from 'react';
 
 /**
- * BeamPageHeader — an optional back link (breadcrumb row), page title, optional
- * description, a right-aligned primary action (with optional secondary actions
- * to its left), and an optional entity-summary strip.
+ * BeamPageHeader — a breadcrumb back link, page title, one sub-title slot, and a right-aligned
+ * primary action (with optional secondary actions to its left).
  *
- * Promoted on usage, not prediction: Sunlight's Loyalty Status and Gaspar's
- * Transactions had already duplicated the same title-plus-tabs opening
- * (BEAM.md §2).
- *
- * ⚠️ Layout is PLACEHOLDER (2026-07-20) pending the Figma pass. The props
- * are the durable part; the arrangement is not.
+ * Layout is the ratified Figma pass (Beam MUI v9 → PageHeader, node 12745:68663): three fixed rows —
+ * breadcrumb 26px (ALWAYS reserved, back hidden when absent → constant title Y), title 41px (title |
+ * actions, actions pinned to the title line), sub-title 24px (rendered only when present). The title
+ * treatment (gradient / halo / underline) is ratified as-is.
  */
 
 /**
@@ -32,16 +29,19 @@ export interface BeamPageHeaderProps {
   /** Back link, rendered as the breadcrumb row above the title (§4). */
   back?: BeamBackLink;
   /**
-   * Record identity metadata under the title (e.g. a status badge) — §4
-   * anatomy. Identity, not an action: it sits below the title, above the
-   * description, never in the actions slot.
+   * The ONE sub-title slot (24px row, not reserved): text, a Chip, or a composed row. The row
+   * carries the description voice (body2/secondary), so text inherits it and chips render as-is.
    */
+  subtitle?: ReactNode;
+  /** @deprecated Use `subtitle`. Renders into the sub-title row (status then description, inline). */
   status?: ReactNode;
+  /** @deprecated Use `subtitle`. Renders into the sub-title row. */
   description?: ReactNode;
   /** The primary action, right-aligned — e.g. a contained "+ Add" button. */
   action?: ReactNode;
   /** Secondary actions, rendered to the left of the primary action. */
   secondaryActions?: ReactNode;
-  /** Entity summary, typically a row of BeamStat */
+  /** @deprecated The outlined-Paper strip violates the container ruling — move stats to a
+   *  `DetailsPanel` below the header. Kept working this release. */
   summary?: ReactNode;
 }

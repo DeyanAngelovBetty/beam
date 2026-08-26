@@ -180,14 +180,27 @@ one caps voice for keys everywhere:
 ## 4. Page header anatomy & the save model
 
 ```
-page-header
+page-header (fixed rows, constant geometry)
 ┌────────────────────────────────────────────┐
-│ [ breadcrumb ]                             │
-│ [ title ]                      [ actions ] │
-┼────────────────────────────────────────────┼
-│ [ subtitle ]                               │
+│ [ breadcrumb ] 26px — ALWAYS reserved      │
+│ [ title ] 41px                 [ actions ] │
+├────────────────────────────────────────────┤
+│ [ subtitle ] 24px — only when present      │
 └────────────────────────────────────────────┘
 ```
+
+- **Fixed rows / the reservation asymmetry** *(ratified 2026-08-27; Figma node 12745:68663).*
+  Breadcrumb **26px, ALWAYS present** (the back link is hidden when absent, the row is not) · title
+  **41px** · subtitle **24px, rendered only when present, NOT reserved**. The asymmetry is the rule:
+  **reserve for what TOGGLES across page-type transitions** (the breadcrumb — a list has none, its
+  detail does), **collapse what is stable per-page identity** (the subtitle). The payoff: the title
+  sits at the **same Y on every page**, so list↔detail navigation never jumps. Actions **pin to the
+  title line** (not centred against the whole text column); the subtitle flows full-width beneath.
+- **One sub-title slot** *(2026-08-27).* `BeamPageHeader` has a single `subtitle?: ReactNode` (text,
+  a Chip, or a composed row in the description voice). It **replaces** `status` + `description`, which
+  are deprecated and removed once call sites migrate. The old `summary` strip (outlined Paper) is
+  removed — it violated the details-panel container ruling (§2); record stats move to a `DetailsPanel`
+  below the header.
 
 - **State lives in the header, once** *(2026-08-14):* entity state — status,
   operation, lifecycle chips — renders in the page-header **identity zone** (the

@@ -54,30 +54,48 @@ function BackLink({ back }: { back: BeamBackLink }) {
     },
   }}
 >
-  <Box component="span" aria-hidden>&#60;-</Box>
+  <Box component="span" aria-hidden sx={{ fontSize: '1.1em', lineHeight: 1 }}>&#8592;</Box>
   <span className="BeamPageHeader-backLabel">{back.label}</span>
 </Link>
   );
 }
+
+// Fixed row heights (Figma PageHeader, node 12745:68663) — constant geometry. The breadcrumb row is
+// ALWAYS reserved (back link hidden when absent) so the title sits at the SAME Y on every page and
+// list↔detail navigation never jumps. The subtitle row is NOT reserved — it collapses when absent
+// (stable per-page identity, no cross-page-type toggle). Asymmetry rationale in detail-grammar §4.
+const ROW = { breadcrumb: 26, title: 41, subtitle: 24 } as const;
 
 export function BeamPageHeader({
   title,
   back,
   status,
   description,
+  subtitle,
   action,
   secondaryActions,
   summary,
 }: BeamPageHeaderProps) {
+  // The ONE sub-title slot. `subtitle` wins; else the DEPRECATED status + description render into the
+  // same row (status then description, inline, gap 1) so both keep working through the migration.
+  const subtitleContent =
+    subtitle ??
+    (status || description ? (
+      <>
+        {status}
+        {description}
+      </>
+    ) : null);
+
   return (
-    <Stack spacing={2}>
-      {back && <BackLink back={back} />}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
-        sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}
-      >
-        <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
+    <Stack spacing={0}>
+      {/* Breadcrumb row — always present (reserved); back link when given, else empty. */}
+      <Box sx={{ height: ROW.breadcrumb, display: 'flex', alignItems: 'center' }}>{back && <BackLink back={back} />}</Box>
+
+      {/* Title row — title | actions. Actions pin to THIS row (not centred against the text column);
+          the subtitle flows full-width beneath. */}
+      <Box sx={{ minHeight: ROW.title, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ minWidth: 0 }}>
           {/* The title renders TWICE inside one h1: a HALO clone underneath (impersonates
               the canvas to carve a skip-ink gap between glyph edges and the underline) and
               the GRADIENT fill on top (defines the box). text-shadow can't do this — with
@@ -152,14 +170,7 @@ export function BeamPageHeader({
             </span>
             <span className="BeamPageHeader-titleFill">{title}</span>
           </Typography>
-          {/* Status/identity slot — under the title, above the description (§4). */}
-          {status}
-          {description && (
-            <Typography variant="body2" color="text.secondary">
-              {description}
-            </Typography>
-          )}
-        </Stack>
+        </Box>
         {/* Secondary actions sit to the left of the primary action. The organism pins their size
             (HEADER_ACTION_SIZE) via a shallow theme patch — call sites pass no size. */}
         {(action || secondaryActions) && (
@@ -173,16 +184,26 @@ export function BeamPageHeader({
               })
             }
           >
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
               {secondaryActions}
               {action}
             </Stack>
           </ThemeProvider>
         )}
-      </Stack>
+      </Box>
 
+      {/* Sub-title row — the ONE subtitle slot, NOT reserved (collapses when absent). Provides the
+          description voice (body2/secondary) so text subtitles inherit it and chips render as-is. */}
+      {subtitleContent && (
+        <Box sx={{ minHeight: ROW.subtitle, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, typography: 'body2', color: 'text.secondary' }}>
+          {subtitleContent}
+        </Box>
+      )}
+
+      {/* DEPRECATED summary strip (2 sites migrating to DetailsPanel; outlined Paper violates the
+          container ruling). Kept working this release. */}
       {summary && (
-        <Paper variant="outlined" sx={{ p: 2 }}>
+        <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
           <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
             {summary}
           </Stack>
