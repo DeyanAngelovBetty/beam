@@ -11,6 +11,7 @@ import {
   Divider,
   BeamPageHeader,
   BeamStat,
+  DetailsPanel,
   beamGradientBorder,
   usePointerAngleTracking,
 } from '@betty/beam';
@@ -182,15 +183,15 @@ export function App() {
           <Stack spacing={5}>
             <BeamPageHeader
               title="Beam"
-              description="Betty's back-office design system, and the demo apps that share it. Every surface below is built from the same tokens, theme, and organisms — flip light/dark or jurisdiction inside any app to watch one system carry all of them."
-              summary={
-                <>
-                  <BeamStat label="Design system" value="1" caption="tokens · theme · organisms" />
-                  <BeamStat label="Demo apps" value={String(APPS.length)} caption="one shared Beam" />
-                  <BeamStat label="Theming axes" value="3" caption="product · jurisdiction · mode" />
-                </>
-              }
+              subtitle="Betty's back-office design system, and the demo apps that share it. Every surface below is built from the same tokens, theme, and organisms — flip light/dark or jurisdiction inside any app to watch one system carry all of them."
             />
+            {/* The header summary strip is gone (outlined Paper violated the container ruling) — the
+                at-a-glance stats live in a DetailsPanel below the header (grammar §4). */}
+            <DetailsPanel aria-label="Beam at a glance">
+              <BeamStat label="Design system" value="1" caption="tokens · theme · organisms" />
+              <BeamStat label="Demo apps" value={String(APPS.length)} caption="one shared Beam" />
+              <BeamStat label="Theming axes" value="3" caption="product · jurisdiction · mode" />
+            </DetailsPanel>
 
             <Stack spacing={2}>
               <Typography variant="overline" color="text.secondary">

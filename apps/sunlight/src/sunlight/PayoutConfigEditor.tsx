@@ -91,7 +91,7 @@ function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void
       <BeamPageHeader
         title={config.name}
         back={backTo(navigate, '/payout-configs', 'Payout Configs')}
-        status={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
+        subtitle={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
         action={
           <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
             Edit
@@ -172,10 +172,8 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
       <BeamPageHeader
         title={existing ? existing.name : 'Create Payout Config'}
         back={backTo(navigate, '/payout-configs', 'Payout Configs')}
-        // Status is identity, under the title (§4) — not an action. Create mode
-        // has no config yet; the "created as Disabled" subtitle carries it.
-        status={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : undefined}
-        description={isEdit ? undefined : 'New configurations are created as Disabled.'}
+        // Subtitle: the status badge in edit (identity), or the "created as Disabled" note in create.
+        subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New configurations are created as Disabled.'}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button variant="text" onClick={requestCancel}>

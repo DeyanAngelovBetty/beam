@@ -62,7 +62,7 @@ export function RolesPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Roles"
-        description="Permission sets assigned to operators."
+        subtitle="Permission sets assigned to operators."
         action={
           <Button variant="contained" startIcon={<AddIcon />}>
             Add role

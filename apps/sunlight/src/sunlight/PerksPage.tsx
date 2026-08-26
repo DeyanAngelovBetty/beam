@@ -168,7 +168,7 @@ export function PerksPage() {
   return (
     <Stack spacing={3}>
       {/* Read-only page — the actions slot is empty (grammar §4). */}
-      <BeamPageHeader title="Perks" description="What each loyalty status unlocks." />
+      <BeamPageHeader title="Perks" subtitle="What each loyalty status unlocks." />
 
       {/* Reference matrix: a compare-and-scan grid. Non-interactive, so §1.1
           would say borderless — but a matrix earns internal rules for legibility

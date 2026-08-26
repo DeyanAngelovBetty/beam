@@ -91,7 +91,7 @@ function UserView({
       <BeamPageHeader
         title={detail.name}
         back={back}
-        description={detail.email}
+        subtitle={detail.email}
         action={
           <Button variant="contained" onClick={() => navigate(editPath)}>
             Edit
@@ -232,7 +232,7 @@ function UserEdit({
       <BeamPageHeader
         title={working.name || 'User'}
         back={back}
-        description={working.email}
+        subtitle={working.email}
         secondaryActions={
           <Button variant="text" onClick={() => navigate(viewPath)}>
             Cancel

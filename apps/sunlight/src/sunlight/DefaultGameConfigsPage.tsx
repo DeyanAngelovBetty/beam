@@ -145,7 +145,7 @@ export function DefaultGameConfigsPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Default Game Configs"
-        description="Choose the GameConfig used for each game type when a game is awarded without a Preset."
+        subtitle="Choose the GameConfig used for each game type when a game is awarded without a Preset."
       />
       <BeamDataTable
         columns={columns}

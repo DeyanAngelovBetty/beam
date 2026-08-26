@@ -127,7 +127,7 @@ export function GameConfigsPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Game Configs"
-        description="Targeted payout configurations across MetaGame game types."
+        subtitle="Targeted payout configurations across MetaGame game types."
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/game-configs/new')}>
             New Config

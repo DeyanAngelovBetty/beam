@@ -115,7 +115,7 @@ export function UsersPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Users"
-        description="Operators with back-office access."
+        subtitle="Operators with back-office access."
         action={
           <Button variant="contained" startIcon={<AddIcon />}>
             Add user

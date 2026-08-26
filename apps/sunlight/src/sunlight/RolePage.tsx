@@ -17,7 +17,7 @@ export function RolePage() {
       <BeamPageHeader
         title={role ? role.name : `Role ${id}`}
         back={backTo(navigate, '/roles', 'Roles')}
-        description={role ? role.description : 'Unknown role'}
+        subtitle={role ? role.description : 'Unknown role'}
       />
     </Stack>
   );

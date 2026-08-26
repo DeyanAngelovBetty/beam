@@ -1,6 +1,5 @@
 import type { MouseEvent } from 'react';
 import Stack from '@mui/material/Stack';
-import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -66,27 +65,7 @@ function BackLink({ back }: { back: BeamBackLink }) {
 // (stable per-page identity, no cross-page-type toggle). Asymmetry rationale in detail-grammar §4.
 const ROW = { breadcrumb: 26, title: 41, subtitle: 24 } as const;
 
-export function BeamPageHeader({
-  title,
-  back,
-  status,
-  description,
-  subtitle,
-  action,
-  secondaryActions,
-  summary,
-}: BeamPageHeaderProps) {
-  // The ONE sub-title slot. `subtitle` wins; else the DEPRECATED status + description render into the
-  // same row (status then description, inline, gap 1) so both keep working through the migration.
-  const subtitleContent =
-    subtitle ??
-    (status || description ? (
-      <>
-        {status}
-        {description}
-      </>
-    ) : null);
-
+export function BeamPageHeader({ title, back, subtitle, action, secondaryActions }: BeamPageHeaderProps) {
   return (
     <Stack spacing={0}>
       {/* Breadcrumb row — always present (reserved); back link when given, else empty. */}
@@ -194,20 +173,10 @@ export function BeamPageHeader({
 
       {/* Sub-title row — the ONE subtitle slot, NOT reserved (collapses when absent). Provides the
           description voice (body2/secondary) so text subtitles inherit it and chips render as-is. */}
-      {subtitleContent && (
+      {subtitle && (
         <Box sx={{ minHeight: ROW.subtitle, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, typography: 'body2', color: 'text.secondary' }}>
-          {subtitleContent}
+          {subtitle}
         </Box>
-      )}
-
-      {/* DEPRECATED summary strip (2 sites migrating to DetailsPanel; outlined Paper violates the
-          container ruling). Kept working this release. */}
-      {summary && (
-        <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
-          <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
-            {summary}
-          </Stack>
-        </Paper>
       )}
     </Stack>
   );

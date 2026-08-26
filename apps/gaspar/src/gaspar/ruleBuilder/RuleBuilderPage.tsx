@@ -171,7 +171,7 @@ function RuleBuilderBody() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Rule Builder"
-        description="Author payment-routing rule trees — the engine's schema, two lenses over one tree."
+        subtitle="Author payment-routing rule trees — the engine's schema, two lenses over one tree."
         action={
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setImportOpen((o) => !o)}>

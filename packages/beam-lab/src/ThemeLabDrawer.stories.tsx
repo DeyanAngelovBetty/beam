@@ -47,7 +47,7 @@ function SurfacesBoard() {
 
       {/* Content — page bg + the ramp surfaces + a gradient title. */}
       <Stack spacing={3} sx={{ flex: 1, p: 4, pr: '400px' /* clear the fixed drawer */ }}>
-        <BeamPageHeader title="Theme Lab preview" description="Drag the anchor — every surface re-derives." />
+        <BeamPageHeader title="Theme Lab preview" subtitle="Drag the anchor — every surface re-derives." />
 
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={1.5}>

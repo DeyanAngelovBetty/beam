@@ -92,7 +92,7 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
       <BeamPageHeader
         title={preset.displayName}
         back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')}
-        status={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
+        subtitle={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
         action={
           <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
             Edit
@@ -214,8 +214,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
       <BeamPageHeader
         title={existing ? existing.displayName : 'Create MetaGame Preset'}
         back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')}
-        status={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : undefined}
-        description={isEdit ? undefined : 'New presets are created as Disabled.'}
+        subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New presets are created as Disabled.'}
         action={
           <Stack direction="row" spacing={1}>
             <Button variant="text" onClick={requestCancel}>Cancel</Button>

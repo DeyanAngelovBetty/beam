@@ -31,17 +31,12 @@ export interface BeamPageHeaderProps {
   /**
    * The ONE sub-title slot (24px row, not reserved): text, a Chip, or a composed row. The row
    * carries the description voice (body2/secondary), so text inherits it and chips render as-is.
+   * (Replaced the former `status` + `description` + `summary` props — the summary strip's stats
+   * belong in a `DetailsPanel` below the header, per the container ruling.)
    */
   subtitle?: ReactNode;
-  /** @deprecated Use `subtitle`. Renders into the sub-title row (status then description, inline). */
-  status?: ReactNode;
-  /** @deprecated Use `subtitle`. Renders into the sub-title row. */
-  description?: ReactNode;
   /** The primary action, right-aligned — e.g. a contained "+ Add" button. */
   action?: ReactNode;
   /** Secondary actions, rendered to the left of the primary action. */
   secondaryActions?: ReactNode;
-  /** @deprecated The outlined-Paper strip violates the container ruling — move stats to a
-   *  `DetailsPanel` below the header. Kept working this release. */
-  summary?: ReactNode;
 }

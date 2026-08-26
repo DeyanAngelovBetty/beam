@@ -62,7 +62,7 @@ export function PlayerSearchPage({ onOpenPlayer }: PlayerSearchPageProps) {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Player Search"
-        description="Find a player by identity or registration facts."
+        subtitle="Find a player by identity or registration facts."
       />
 
       <BeamFilterBar

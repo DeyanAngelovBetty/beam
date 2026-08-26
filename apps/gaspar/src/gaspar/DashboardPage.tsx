@@ -18,7 +18,7 @@ export function DashboardPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Dashboard"
-        description="Routing, settlement, and gateway health at a glance."
+        subtitle="Routing, settlement, and gateway health at a glance."
       />
       <BenchDashboardStatic gradientBorder />
     </Stack>

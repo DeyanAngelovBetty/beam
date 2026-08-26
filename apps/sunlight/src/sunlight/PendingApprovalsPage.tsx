@@ -140,7 +140,7 @@ export function PendingApprovalsPage() {
       {/* Acting-as moved to the shell chrome (global) — see ShellFooter / ActingAsSwitcher. */}
       <BeamPageHeader
         title="Configuration Approvals"
-        description="Change requests awaiting a second pair of eyes — and the decision history."
+        subtitle="Change requests awaiting a second pair of eyes — and the decision history."
       />
 
       <BeamFilterBar

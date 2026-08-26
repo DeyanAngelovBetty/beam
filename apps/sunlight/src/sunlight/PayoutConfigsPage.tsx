@@ -134,7 +134,7 @@ export function PayoutConfigsPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="Payout Configs"
-        description="Payout tables across every MetaGame game type."
+        subtitle="Payout tables across every MetaGame game type."
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/payout-configs/new')}>
             New config

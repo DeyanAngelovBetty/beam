@@ -76,7 +76,7 @@ function ViewForm({ config, onEdit }: { config: GameConfig; onEdit: () => void }
       <BeamPageHeader
         title={config.code}
         back={backTo(navigate, '/game-configs', 'Game Configs')}
-        status={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
+        subtitle={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
         action={
           <Button variant="contained" startIcon={<EditIcon />} onClick={onEdit}>
             Edit
@@ -149,8 +149,7 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
       <BeamPageHeader
         title={existing ? existing.code : 'Create Game Config'}
         back={backTo(navigate, '/game-configs', 'Game Configs')}
-        status={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : undefined}
-        description={isEdit ? undefined : 'New configurations are created as Disabled.'}
+        subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New configurations are created as Disabled.'}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button variant="text" onClick={requestCancel}>

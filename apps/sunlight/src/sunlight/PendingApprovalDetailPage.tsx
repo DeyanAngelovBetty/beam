@@ -80,7 +80,7 @@ export function PendingApprovalDetailPage() {
       <BeamPageHeader
         title={`${cr.entityName} approval #${shortCrId(cr.id)}`}
         back={backTo(navigate, '/pending-approvals', 'Configuration Approvals')}
-        status={
+        subtitle={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <CRStatusChip status={cr.status} />
             <OperationChip />

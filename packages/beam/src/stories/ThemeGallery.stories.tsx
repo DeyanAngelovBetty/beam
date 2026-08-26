@@ -25,7 +25,7 @@ function Gallery() {
     <Stack spacing={3} sx={{ maxWidth: 560 }}>
       {/* The gradient title treatment (seeded weight + text gradient + revealing
           underline) — flip product/mode in the toolbar to see the per-product dials. */}
-      <BeamPageHeader title="Loyalty Status" description="Gradient title — product dials, both modes." />
+      <BeamPageHeader title="Loyalty Status" subtitle="Gradient title — product dials, both modes." />
 
       <Stack direction="row" spacing={1}>
         <Button variant="contained">Primary</Button>

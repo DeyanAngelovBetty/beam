@@ -171,7 +171,7 @@ export function MetaGamePresetsPage() {
     <Stack spacing={3}>
       <BeamPageHeader
         title="MetaGame Presets"
-        description="Betty GameConfig and legacy Yoda presets used when awarding MetaGame experiences."
+        subtitle="Betty GameConfig and legacy Yoda presets used when awarding MetaGame experiences."
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/meta-game-presets/new')}>
             New Preset

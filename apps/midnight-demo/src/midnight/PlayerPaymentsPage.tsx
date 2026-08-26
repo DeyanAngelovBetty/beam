@@ -6,6 +6,7 @@ import {
   MenuItem,
   BeamPageHeader,
   BeamStat,
+  DetailsPanel,
   BeamTabs,
   BeamFilterBar,
   BeamDataTable,
@@ -102,21 +103,21 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
       <BeamPageHeader
         title={`${CURRENT_PLAYER.firstName} ${CURRENT_PLAYER.lastName}`}
         back={{ label: 'Search', onClick: onBack }}
-        description={`Player ID ${CURRENT_PLAYER.id}`}
+        subtitle={`Player ID ${CURRENT_PLAYER.id}`}
         action={<Button variant="contained">Quick actions</Button>}
-        summary={
-          <>
-            <BeamStat label="Status" value="Approved" caption="Online" />
-            <BeamStat label="Cash balance" value="$20.00" caption="CAD" />
-            <BeamStat label="Betty coins" value="0" />
-            <BeamStat label="Tokens balance" value="0" />
-            <BeamStat label="Profit segment" value="Toddler" />
-            <BeamStat label="RG risk" value="No risk" />
-            <BeamStat label="Segment" value="Registered non-depositor" />
-            <BeamStat label="Risk of churn" value="N/A" />
-          </>
-        }
       />
+      {/* Record summary — a DetailsPanel below the header (grammar §4; the outlined-Paper summary
+          strip is retired). Read-only stats: view-mode field twins. */}
+      <DetailsPanel aria-label="Player summary">
+        <BeamStat label="Status" value="Approved" caption="Online" />
+        <BeamStat label="Cash balance" value="$20.00" caption="CAD" />
+        <BeamStat label="Betty coins" value="0" />
+        <BeamStat label="Tokens balance" value="0" />
+        <BeamStat label="Profit segment" value="Toddler" />
+        <BeamStat label="RG risk" value="No risk" />
+        <BeamStat label="Segment" value="Registered non-depositor" />
+        <BeamStat label="Risk of churn" value="N/A" />
+      </DetailsPanel>
 
       {/* The one screen whose domain genuinely warrants nested tabs. */}
       <BeamTabs
