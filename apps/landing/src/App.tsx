@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, type ReactNode } from 'react';
 import {
   ThemeProvider,
   CssBaseline,
@@ -11,12 +11,15 @@ import {
   Divider,
   BeamPageHeader,
   BeamStat,
+  beamGradientBorder,
+  usePointerAngleTracking,
 } from '@betty/beam';
+import { ThemeLabDrawer } from '@betty/beam-lab';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LaunchIcon from '@mui/icons-material/Launch';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import PublicIcon from '@mui/icons-material/Public';
-import type { ReactNode } from 'react';
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import { BEAM, APPS, type Surface } from './registry';
 
 /**
@@ -24,6 +27,39 @@ import { BEAM, APPS, type Surface } from './registry';
  * argument is "one Beam, many products" should not be the one page that
  * opts out of it.
  */
+
+// The cards are laid on the page's default background (a transparent content column over the fixed
+// body mesh), so the rim mixes toward background.default; radius MUST equal MuiPaper.rounded (24).
+const CARD_SURFACE = 'var(--mui-palette-background-default)';
+const CARD_RADIUS = 24;
+
+/**
+ * TrackedPaper — a card whose rim is the pointer-tracked gradient border (the existing Beam
+ * capability; the landing is now its next consumer). `track` supersedes the spin — no interactive
+ * rotation anywhere. The card carries NO transform/filter/z-index, so it never makes its own
+ * stacking context and the rim's z-index:-1 tucks correctly behind it (recipe constraint).
+ * Reduced-motion no-op comes free from the hook.
+ */
+function TrackedPaper({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  usePointerAngleTracking(ref);
+  return (
+    <Paper
+      ref={ref}
+      variant="outlined"
+      sx={{
+        p: 3,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        ...(beamGradientBorder({ track: true, surface: CARD_SURFACE, radius: CARD_RADIUS }) as object),
+      }}
+    >
+      {children}
+    </Paper>
+  );
+}
 
 /** One quiet footer link. Small text + icon, opens in a new tab. */
 function FooterLink({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
@@ -69,20 +105,9 @@ function LinkRow({ surface }: { surface: Surface }) {
   );
 }
 
-function SurfaceCard({ surface, primary = false }: { surface: Surface; primary?: boolean }) {
+function SurfaceCard({ surface }: { surface: Surface }) {
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 3,
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        // The design system reads as the anchor of the set.
-        borderColor: primary ? 'primary.main' : 'divider',
-      }}
-    >
+    <TrackedPaper>
       <Stack spacing={0.5}>
         <Typography variant="overline" color="text.secondary">
           {surface.tagline}
@@ -97,14 +122,55 @@ function SurfaceCard({ surface, primary = false }: { surface: Surface; primary?:
       </Typography>
 
       <Divider />
-
       <LinkRow surface={surface} />
-    </Paper>
+    </TrackedPaper>
+  );
+}
+
+/**
+ * ThemeLabCard — a one-off (not a registry Surface): it opens the Theme Lab drawer ON THIS PAGE
+ * rather than navigating. The landing already renders in createBeamTheme, and the drawer's whole
+ * design is overlay-editing of the live page, so tuning it retunes the landing you're looking at.
+ */
+function ThemeLabCard({ onOpen }: { onOpen: () => void }) {
+  return (
+    <TrackedPaper>
+      <Stack spacing={0.5}>
+        <Typography variant="overline" color="text.secondary">
+          On this page
+        </Typography>
+        <Typography variant="h5" component="h2">
+          Theme Lab
+        </Typography>
+      </Stack>
+
+      <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+        Live theme editing on this very page — seeds, L/C/H, both schemes.
+      </Typography>
+
+      <Divider />
+      <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+        <Button
+          size="small"
+          variant="text"
+          color="inherit"
+          startIcon={<PaletteOutlinedIcon fontSize="small" />}
+          onClick={onOpen}
+          sx={{ minWidth: 0, color: 'text.secondary', fontWeight: 400 }}
+        >
+          Open Theme Lab
+        </Button>
+        <FooterLink href="storybook/?path=/story/beamlab-theme-lab--over-surfaces-board" icon={<LaunchIcon fontSize="small" />}>
+          Storybook
+        </FooterLink>
+      </Stack>
+    </TrackedPaper>
   );
 }
 
 export function App() {
   const theme = useMemo(() => createBeamTheme('ontario', 'sunlight'), []);
+  const [labOpen, setLabOpen] = useState(false);
 
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
@@ -130,7 +196,15 @@ export function App() {
               <Typography variant="overline" color="text.secondary">
                 The system
               </Typography>
-              <SurfaceCard surface={BEAM} primary />
+              {/* Beam + a narrower, subordinate Theme Lab card in one row (its own flex). */}
+              <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch' }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <SurfaceCard surface={BEAM} />
+                </Box>
+                <Box sx={{ width: { xs: '100%', md: 300 }, flexShrink: 0 }}>
+                  <ThemeLabCard onOpen={() => setLabOpen(true)} />
+                </Box>
+              </Box>
             </Stack>
 
             <Stack spacing={2}>
@@ -161,6 +235,9 @@ export function App() {
           </Stack>
         </Box>
       </Box>
+
+      {/* The lab drafts against the live page's CSS vars — editing here retunes THIS landing. */}
+      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="sunlight" jurisdiction="ontario" />
     </ThemeProvider>
   );
 }
