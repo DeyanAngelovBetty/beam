@@ -16,6 +16,9 @@ import {
   BeamPageHeader,
   BeamEmptyState,
   GemIcon,
+  DetailsPanel,
+  BeamField,
+  BeamStat,
 } from '@betty/beam';
 import EditIcon from '@mui/icons-material/EditRounded';
 import FileDownloadIcon from '@mui/icons-material/FileDownloadRounded';
@@ -128,13 +131,6 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
     if (!res.ok) return setImportErrors(res.errors);
     onImport(mergeOntoLive(res.draft, status));
   };
-
-  const readField = (label: string, value: string | number) => (
-    <Stack spacing={0.25} sx={{ minWidth: 160 }}>
-      <Typography variant="caption" color="text.secondary">{label}</Typography>
-      <Typography variant="body2">{value}</Typography>
-    </Stack>
-  );
 
   return (
     <Stack spacing={3}>
@@ -250,19 +246,16 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
         </Paper>
       )}
 
-      <Stack spacing={2}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Status fields
-        </Typography>
-        <Stack direction="row" spacing={4} sx={{ flexWrap: 'wrap', rowGap: 2 }}>
-          {readField('Name', status.name)}
-          {readField('Max days to complete', status.maxDays)}
-          {readField('Gems', status.boxes)}
-          {readField('Retain status after gem #', status.keepGems)}
-          {readField('Retain boxes after', status.keepBoxes)}
-          {readField('Multiplier on level up', status.multiplier)}
-        </Stack>
-      </Stack>
+      {/* The details panel — the first content region, unlabeled (position is the convention;
+          grammar §2). View mode renders the field twins as stats; edit mode swaps them for fields. */}
+      <DetailsPanel aria-label="Status fields">
+        <BeamStat label="Name" value={status.name} />
+        <BeamStat label="Max days to complete" value={status.maxDays} />
+        <BeamStat label="Gems" value={status.boxes} />
+        <BeamStat label="Retain status after gem #" value={status.keepGems} />
+        <BeamStat label="Retain boxes after" value={status.keepBoxes} />
+        <BeamStat label="Multiplier on level up" value={status.multiplier} />
+      </DetailsPanel>
 
       <ExpandedLoyaltyPanel status={status} next={nextTier} />
 
@@ -341,8 +334,10 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
     : (v.name ?? v.multiplier ?? v.boxes ?? v.maxDays ?? v.keepGems ?? v.keepBoxes ?? v.aggregate ?? 'Fix the highlighted fields.');
   const canSubmit = v.valid && isDirty;
 
-  const field = (key: FieldKey, label: string, opts?: { width?: number; required?: boolean; hint?: string }) => (
-    <TextField
+  // The field twins (BeamField = small outlined; the details-panel grid sizes them — no width here).
+  // This is where the queued medium→small convergence lands, as part of the details-panel pattern.
+  const field = (key: FieldKey, label: string, opts?: { required?: boolean; hint?: string }) => (
+    <BeamField
       label={label}
       required={opts?.required}
       value={model[key]}
@@ -350,7 +345,6 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
       onBlur={() => mark(key)}
       error={Boolean(v[key] && showErr(key))}
       helperText={showErr(key) && v[key] ? v[key] : opts?.hint}
-      sx={{ width: opts?.width ?? 200 }}
       slotProps={key === 'name' ? { htmlInput: { maxLength: MAX_NAME } } : undefined}
     />
   );
@@ -394,19 +388,16 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
         </Alert>
       ) : null}
 
-      <Stack spacing={2}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Status fields
-        </Typography>
-        {field('name', 'Name', { width: 480, required: true })}
-        <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
-          {field('maxDays', 'Max days to complete', { hint: `Whole number or ${'∞'}` })}
-          {field('boxes', 'Gems')}
-          {field('keepGems', 'Retain status after gem #', { hint: `Whole number or ${'∞'}` })}
-          {field('keepBoxes', 'Retain boxes after', { hint: `Whole number or ${'∞'}` })}
-          {field('multiplier', 'Multiplier on level up')}
-        </Stack>
-      </Stack>
+      {/* The details panel — same grammatical slots as the view's stats, now fields (morph in place;
+          grammar §2). Unlabeled: the page title is the title. */}
+      <DetailsPanel aria-label="Status fields">
+        {field('name', 'Name', { required: true })}
+        {field('maxDays', 'Max days to complete', { hint: `Whole number or ${'∞'}` })}
+        {field('boxes', 'Gems')}
+        {field('keepGems', 'Retain status after gem #', { hint: `Whole number or ${'∞'}` })}
+        {field('keepBoxes', 'Retain boxes after', { hint: `Whole number or ${'∞'}` })}
+        {field('multiplier', 'Multiplier on level up')}
+      </DetailsPanel>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={6} sx={{ alignItems: { md: 'flex-start' } }}>
         <LoyaltyRewardsEditor
