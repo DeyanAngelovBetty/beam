@@ -53,7 +53,7 @@ function BackLink({ back }: { back: BeamBackLink }) {
     },
   }}
 >
-  <Box component="span" aria-hidden sx={{ fontSize: '1.1em', lineHeight: 1 }}>&#8592;</Box>
+  <Box component="span" aria-hidden sx={{ fontSize: '1.1em', lineHeight: 1 }}>&lt;-</Box>
   <span className="BeamPageHeader-backLabel">{back.label}</span>
 </Link>
   );
