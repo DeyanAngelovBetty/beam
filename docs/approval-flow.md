@@ -1,5 +1,11 @@
 # Approval flow — maker-checker across the estate
 
+> **2026-08-27 — flow doctrine extracted to [approval-grammar.md](approval-grammar.md).**
+> The estate-wide rulings — statuses & lifecycle, parallelism, reasons, and every
+> surface that talks about a change request — now live in that grammar doc (ground
+> truth). **This file remains the implementation trail** (the save-model inversion,
+> the store recipe, dated build history).
+
 *The four-eyes (maker-checker) workstream, introduced 2026-08-10 (Jamie's brief,
 via Radi + Georgi): config-changing entities — loyalty statuses, payout configs,
 game configs, and whatever joins them — stop applying edits directly. This doc is
