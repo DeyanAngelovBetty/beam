@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GAME_CONFIGS } from './gameConfigs.ts';
-import { META_GAME_PRESETS } from './metaGamePresets.ts';
+import { LEGACY_YODA_GAME_TYPES, META_GAME_PRESETS } from './metaGamePresets.ts';
+import { GAME_TYPES } from './payoutConfigs.ts';
 import {
   canChangePresetSource,
   emptyPresetModel,
@@ -18,7 +19,7 @@ import {
   validatePresetModel,
 } from './metaGamePresetHelpers.ts';
 
-test('Preset demo contains exactly the final four Betty-owned records', () => {
+test('Preset demo contains exactly the final five Betty-owned records', () => {
   assert.deepEqual(
     META_GAME_PRESETS.map((preset) => ({
       id: preset.id,
@@ -76,7 +77,35 @@ test('Preset demo contains exactly the final four Betty-owned records', () => {
         expiryHours: 24,
         status: 'Enabled',
       },
+      {
+        id: 'preset-betty-wheel-of-wins',
+        gameConfigId: 'gc-betty-wheel-of-wins-default',
+        gameType: 'BettyWheelOfWins',
+        displayName: 'Betty Wheel of Wins',
+        configCode: null,
+        skinId: 'betty-wheel-of-wins-default',
+        useCases: ['All'],
+        expiryHours: 168,
+        status: 'Enabled',
+      },
     ]
+  );
+
+  assert.deepEqual(
+    META_GAME_PRESETS.find((preset) => preset.id === 'preset-betty-wheel-of-wins'),
+    {
+      id: 'preset-betty-wheel-of-wins',
+      gameConfigId: 'gc-betty-wheel-of-wins-default',
+      name: 'BettyWheelOfWins',
+      displayName: 'Betty Wheel of Wins',
+      configCode: null,
+      skinId: 'betty-wheel-of-wins-default',
+      imageUrl: null,
+      volatility: 'Medium',
+      useCases: ['All'],
+      expiryHours: 168,
+      status: 'Enabled',
+    }
   );
 });
 
@@ -85,7 +114,7 @@ test('every initial Preset resolves to a same-GameType Betty GameConfig', () => 
     assert.equal(presetSource(preset), 'Betty');
     assert.ok(preset.gameConfigId);
     assert.equal(preset.configCode, null);
-    assert.ok(['MysteryBox', 'Wheel', 'Scratcher'].includes(preset.name));
+    assert.ok(GAME_TYPES.includes(preset.name));
 
     const config = GAME_CONFIGS.find((candidate) => candidate.id === preset.gameConfigId);
     assert.ok(config, `${preset.id} references a missing GameConfig`);
@@ -103,6 +132,9 @@ test('the Disabled promotion Preset intentionally uses the Disabled promotion Ga
 });
 
 test('Yoda-compatible Create behavior remains available without initial Yoda records', () => {
+  assert.deepEqual(LEGACY_YODA_GAME_TYPES, ['MysteryBox', 'Wheel', 'Scratcher']);
+  assert.equal(LEGACY_YODA_GAME_TYPES.includes('BettyWheelOfWins'), false);
+
   const yoda = {
     ...emptyPresetModel(),
     source: 'Yoda',
@@ -123,6 +155,10 @@ test('Yoda-compatible Create behavior remains available without initial Yoda rec
 test('Betty GameType and Edit options derive from the selected GameConfig', () => {
   assert.equal(gameTypeFromGameConfig(GAME_CONFIGS, 'gc-mystery-box-default'), 'MysteryBox');
   assert.equal(gameTypeFromGameConfig(GAME_CONFIGS, 'gc-wheel-default'), 'Wheel');
+  assert.equal(
+    gameTypeFromGameConfig(GAME_CONFIGS, 'gc-betty-wheel-of-wins-default'),
+    'BettyWheelOfWins'
+  );
 
   const options = presetGameConfigOptions(
     GAME_CONFIGS,
@@ -131,6 +167,20 @@ test('Betty GameType and Edit options derive from the selected GameConfig', () =
   );
   assert.deepEqual(options.map((config) => config.code), ['MYSTERY_BOX_DEFAULT', 'MYSTERY_BOX_PROMOTION']);
   assert.ok(options.every((config) => config.gameType === 'MysteryBox'));
+
+  const createOptions = presetGameConfigOptions(
+    GAME_CONFIGS,
+    { source: 'Betty', gameType: '' },
+    false
+  );
+  assert.ok(createOptions.some((config) => config.id === 'gc-betty-wheel-of-wins-default'));
+
+  const wheelOfWinsOptions = presetGameConfigOptions(
+    GAME_CONFIGS,
+    { source: 'Betty', gameType: 'BettyWheelOfWins' },
+    true
+  );
+  assert.deepEqual(wheelOfWinsOptions.map((config) => config.id), ['gc-betty-wheel-of-wins-default']);
 });
 
 test('Configuration Source remains editable only on Create', () => {

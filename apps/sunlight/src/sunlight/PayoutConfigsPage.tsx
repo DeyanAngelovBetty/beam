@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Stack,
   Button,
+  Typography,
   TextField,
   MenuItem,
   BeamPageHeader,
@@ -17,13 +18,16 @@ import EditIcon from '@mui/icons-material/EditRounded';
 import BlockIcon from '@mui/icons-material/Block';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { PayoutRowsGrid } from './PayoutRowsGrid';
+import { MultiplierRowsGrid } from './MultiplierRowsGrid';
 import {
-  PAYOUT_CONFIGS,
   GAME_TYPES,
+  PAYOUT_CONFIGS,
   PAYOUT_STATUSES,
+  getPayoutRows,
+  gameTypeLabel,
   statusBadge,
-  type PayoutConfig,
   type GameType,
+  type PayoutConfig,
   type PayoutStatus,
 } from './payoutConfigs';
 
@@ -65,6 +69,26 @@ function confirmToggle(config: PayoutConfig, next: 'Enable' | 'Disable') {
   }
 }
 
+function ExpandedConfig({ config }: { config: PayoutConfig }) {
+  if (config.gameType !== 'BettyWheelOfWins') return <PayoutRowsGrid rows={config.rows} />;
+  return (
+    <Stack spacing={2}>
+      <Stack spacing={0.75}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Payout sectors
+        </Typography>
+        <PayoutRowsGrid rows={config.payoutRows} showSectorPositions />
+      </Stack>
+      <Stack spacing={0.75}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Multiplier sectors
+        </Typography>
+        <MultiplierRowsGrid rows={config.multiplierRows} />
+      </Stack>
+    </Stack>
+  );
+}
+
 export function PayoutConfigsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,7 +99,9 @@ export function PayoutConfigsPage() {
   const statusParam = searchParams.get('status');
   const applied: Applied = {
     q: searchParams.get('q') ?? '',
-    gameType: GAME_TYPES.includes(gameTypeParam as GameType) ? (gameTypeParam as GameType) : 'any',
+    gameType: GAME_TYPES.includes(gameTypeParam as GameType)
+      ? (gameTypeParam as GameType)
+      : 'any',
     status: PAYOUT_STATUSES.includes(statusParam as PayoutStatus) ? (statusParam as PayoutStatus) : 'any',
   };
   const [draft, setDraft] = useState<Applied>(applied);
@@ -103,7 +129,13 @@ export function PayoutConfigsPage() {
       isIdentity: true,
       getHref: (c) => `${import.meta.env.BASE_URL}payout-configs/${c.id}`,
     },
-    { key: 'gameType', header: 'Game type', render: (c) => c.gameType, getValue: (c) => c.gameType, width: 170 },
+    {
+      key: 'gameType',
+      header: 'Game type',
+      render: (c) => gameTypeLabel(c.gameType),
+      getValue: (c) => c.gameType,
+      width: 170,
+    },
     {
       key: 'status',
       header: 'Status',
@@ -117,7 +149,15 @@ export function PayoutConfigsPage() {
     // Columns per Georgi (Slack, 2026-07-30): Name | Game Type | Status |
     // Rows | Actions (the rail kebab). Avg Payout (our enhancement) was
     // vetoed; Updated dropped — see metagame-pages.md.
-    { key: 'rows', header: 'Rows', align: 'right', width: 80, getValue: (c) => c.rows.length, render: (c) => c.rows.length },
+    {
+      key: 'rows',
+      header: 'Rows',
+      align: 'right',
+      getValue: (c) => getPayoutRows(c).length + (c.gameType === 'BettyWheelOfWins' ? c.multiplierRows.length : 0),
+      render: (c) => c.gameType === 'BettyWheelOfWins'
+        ? `${c.payoutRows.length} payout · ${c.multiplierRows.length} multiplier`
+        : c.rows.length,
+    },
   ];
 
   // Name (identity link) opens VIEW; Edit LEADS the kebab as the write-intent action
@@ -165,7 +205,7 @@ export function PayoutConfigsPage() {
           <MenuItem value="any">Any</MenuItem>
           {GAME_TYPES.map((g) => (
             <MenuItem key={g} value={g}>
-              {g}
+              {gameTypeLabel(g)}
             </MenuItem>
           ))}
         </TextField>
@@ -191,7 +231,7 @@ export function PayoutConfigsPage() {
         rows={rows}
         getRowId={(c) => c.id}
         rowActions={rowActions}
-        renderExpanded={(c) => <PayoutRowsGrid rows={c.rows} />}
+        renderExpanded={(c) => <ExpandedConfig config={c} />}
         onRowClick={(c) => navigate(`/payout-configs/${c.id}`)}
         LinkComponent={RouterIdentityLink}
         paginated

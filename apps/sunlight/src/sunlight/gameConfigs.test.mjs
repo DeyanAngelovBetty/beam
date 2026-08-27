@@ -24,7 +24,7 @@ function assertCondition(condition) {
   }
 }
 
-test('GameConfig demo contains exactly the final four records', () => {
+test('GameConfig demo contains exactly the final five records and the connected Wheel of Wins fallback', () => {
   assert.deepEqual(
     GAME_CONFIGS.map(({ id, code, gameType, status }) => ({ id, code, gameType, status })),
     [
@@ -47,7 +47,31 @@ test('GameConfig demo contains exactly the final four records', () => {
         gameType: 'Scratcher',
         status: 'Enabled',
       },
+      {
+        id: 'gc-betty-wheel-of-wins-default',
+        code: 'BETTY_WHEEL_OF_WINS_DEFAULT',
+        gameType: 'BettyWheelOfWins',
+        status: 'Enabled',
+      },
     ]
+  );
+
+  assert.deepEqual(
+    GAME_CONFIGS.find((config) => config.id === 'gc-betty-wheel-of-wins-default'),
+    {
+      id: 'gc-betty-wheel-of-wins-default',
+      code: 'BETTY_WHEEL_OF_WINS_DEFAULT',
+      gameType: 'BettyWheelOfWins',
+      status: 'Enabled',
+      targetingRules: [
+        {
+          id: 'tr-betty-wheel-of-wins-fallback',
+          priority: 0,
+          status: 'Enabled',
+          payoutConfigId: 'pc-betty-wheel-of-wins-standard',
+        },
+      ],
+    }
   );
 });
 

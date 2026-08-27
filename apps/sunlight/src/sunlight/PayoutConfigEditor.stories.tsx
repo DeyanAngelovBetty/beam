@@ -13,7 +13,7 @@ const meta: Meta = { title: 'Lab/Sunlight/PayoutConfigEditor', parameters: { lay
 export default meta;
 type Story = StoryObj;
 
-function At({ entry }: { entry: string }) {
+function At({ entry, edit = false }: { entry: string; edit?: boolean }) {
   const router = useMemo(
     () =>
       createMemoryRouter(
@@ -22,9 +22,9 @@ function At({ entry }: { entry: string }) {
           { path: '/payout-configs/:id', element: <PayoutConfigEditor /> },
           { path: '/payout-configs', element: <div style={{ padding: 24 }}>Payout Configs list</div> },
         ],
-        { initialEntries: [entry] },
+        { initialEntries: [edit ? { pathname: entry, state: { edit: true } } : entry] },
       ),
-    [entry],
+    [edit, entry],
   );
   return <RouterProvider router={router} />;
 }
@@ -34,3 +34,13 @@ export const ViewMode: Story = { render: () => <At entry="/payout-configs/pc-mys
 
 /** Create has nothing to view → opens straight in the editor. */
 export const Create: Story = { render: () => <At entry="/payout-configs/new" /> };
+
+/** Wheel of Wins view shows independent payout and multiplier collections. */
+export const WheelOfWinsView: Story = {
+  render: () => <At entry="/payout-configs/pc-betty-wheel-of-wins-standard" />,
+};
+
+/** Integrated Wheel of Wins edit mode with ordered sector editors. */
+export const WheelOfWinsEdit: Story = {
+  render: () => <At entry="/payout-configs/pc-betty-wheel-of-wins-standard" edit />,
+};

@@ -1,7 +1,8 @@
 import type { BeamStatus } from '@betty/beam';
 
 /** GameTypes exposed by the Betty MetaGame visual demo. */
-export type GameType = 'MysteryBox' | 'Wheel' | 'Scratcher';
+export type GameType = 'MysteryBox' | 'Wheel' | 'Scratcher' | 'BettyWheelOfWins';
+export type StandardPayoutGameType = Exclude<GameType, 'BettyWheelOfWins'>;
 
 export type PayoutStatus = 'Enabled' | 'Disabled';
 
@@ -25,28 +26,58 @@ export interface PayoutRow {
   rewards: Reward[];
 }
 
-export interface PayoutConfig {
+export interface MultiplierRow {
+  /** Probability as a fraction from 0 to 1. */
+  probability: number;
+  multiplier: number;
+}
+
+interface PayoutConfigBase {
   id: string;
   name: string;
-  gameType: GameType;
   status: PayoutStatus;
-  rows: PayoutRow[];
   createdAt: string;
   updatedAt: string;
 }
 
+export interface StandardPayoutConfig extends PayoutConfigBase {
+  gameType: StandardPayoutGameType;
+  rows: PayoutRow[];
+}
+
+export interface BettyWheelOfWinsPayoutConfig extends PayoutConfigBase {
+  gameType: 'BettyWheelOfWins';
+  payoutRows: PayoutRow[];
+  multiplierRows: MultiplierRow[];
+}
+
+export type PayoutConfig = StandardPayoutConfig | BettyWheelOfWinsPayoutConfig;
+
+export function getPayoutRows(config: PayoutConfig): PayoutRow[] {
+  return config.gameType === 'BettyWheelOfWins' ? config.payoutRows : config.rows;
+}
+
 export function expectedAvgPayout(config: PayoutConfig): number {
-  return config.rows.reduce((sum, row) => sum + row.probability * row.prizeValue, 0);
+  const basePayout = getPayoutRows(config).reduce(
+    (sum, row) => sum + row.probability * row.prizeValue,
+    0,
+  );
+  if (config.gameType !== 'BettyWheelOfWins') return basePayout;
+  const expectedMultiplier = config.multiplierRows.reduce(
+    (sum, row) => sum + row.probability * row.multiplier,
+    0,
+  );
+  return basePayout * expectedMultiplier;
 }
 
 export function probabilityTotal(config: PayoutConfig): number {
-  return config.rows.reduce((sum, row) => sum + row.probability, 0);
+  return getPayoutRows(config).reduce((sum, row) => sum + row.probability, 0);
 }
 
 const coins = (amount: number): Reward => ({ rewardType: 'Coins', amount });
 const tokens = (amount: number): Reward => ({ rewardType: 'Tokens', amount });
 
-/** Coherent Betty-owned payout graph for the three-game visual demo. */
+/** Coherent Betty-owned payout graph for the four-game visual demo. */
 export const PAYOUT_CONFIGS: PayoutConfig[] = [
   {
     id: 'pc-mystery-box-standard',
@@ -134,10 +165,42 @@ export const PAYOUT_CONFIGS: PayoutConfig[] = [
       { probability: 0.05, winMessage: 'Scratch Jackpot', prizeValue: 250, rewards: [coins(250)] },
     ],
   },
+  {
+    id: 'pc-betty-wheel-of-wins-standard',
+    name: 'Betty Wheel of Wins Standard Payout',
+    gameType: 'BettyWheelOfWins',
+    status: 'Enabled',
+    createdAt: '2026-08-20',
+    updatedAt: '2026-08-26',
+    payoutRows: [
+      { probability: 0.6, winMessage: 'Small Win', prizeValue: 10, rewards: [coins(10)] },
+      {
+        probability: 0.3,
+        winMessage: 'Bonus Bundle',
+        prizeValue: 20,
+        rewards: [coins(20), tokens(2)],
+      },
+      {
+        probability: 0.1,
+        winMessage: 'Wheel Jackpot',
+        prizeValue: 100,
+        rewards: [coins(100), tokens(10)],
+      },
+    ],
+    multiplierRows: [
+      { probability: 0.6, multiplier: 1 },
+      { probability: 0.3, multiplier: 1.5 },
+      { probability: 0.1, multiplier: 3 },
+    ],
+  },
 ];
 
-export const GAME_TYPES: GameType[] = ['MysteryBox', 'Wheel', 'Scratcher'];
+export const GAME_TYPES: GameType[] = ['MysteryBox', 'Wheel', 'Scratcher', 'BettyWheelOfWins'];
 export const PAYOUT_STATUSES: PayoutStatus[] = ['Enabled', 'Disabled'];
+
+export function gameTypeLabel(gameType: GameType): string {
+  return gameType === 'BettyWheelOfWins' ? 'Betty Wheel of Wins' : gameType;
+}
 
 export function statusBadge(status: PayoutStatus): { status: BeamStatus; label: string } {
   return status === 'Enabled'
@@ -183,11 +246,22 @@ export function nameIsUnique(name: string, gameType: GameType, excludeId?: strin
   );
 }
 
-export interface PayoutConfigInput {
+interface PayoutConfigInputBase {
   name: string;
-  gameType: GameType;
+}
+
+export interface StandardPayoutConfigInput extends PayoutConfigInputBase {
+  gameType: StandardPayoutGameType;
   rows: PayoutRow[];
 }
+
+export interface BettyWheelOfWinsPayoutConfigInput extends PayoutConfigInputBase {
+  gameType: 'BettyWheelOfWins';
+  payoutRows: PayoutRow[];
+  multiplierRows: MultiplierRow[];
+}
+
+export type PayoutConfigInput = StandardPayoutConfigInput | BettyWheelOfWinsPayoutConfigInput;
 
 function stampRows(rows: PayoutRow[]): PayoutRow[] {
   return rows.map((row) => ({ ...row, id: row.id ?? newId('row') }));
@@ -196,15 +270,21 @@ function stampRows(rows: PayoutRow[]): PayoutRow[] {
 /** New PayoutConfigs always start Disabled. */
 export function createPayoutConfig(input: PayoutConfigInput): PayoutConfig {
   const today = new Date().toISOString().slice(0, 10);
-  const config: PayoutConfig = {
+  const common = {
     id: newId('pc'),
     name: input.name.trim(),
-    gameType: input.gameType,
-    status: 'Disabled',
-    rows: stampRows(input.rows),
+    status: 'Disabled' as const,
     createdAt: today,
     updatedAt: today,
   };
+  const config: PayoutConfig = input.gameType === 'BettyWheelOfWins'
+    ? {
+        ...common,
+        gameType: input.gameType,
+        payoutRows: stampRows(input.payoutRows),
+        multiplierRows: input.multiplierRows.map((row) => ({ ...row })),
+      }
+    : { ...common, gameType: input.gameType, rows: stampRows(input.rows) };
   PAYOUT_CONFIGS.push(config);
   return config;
 }
@@ -213,8 +293,15 @@ export function createPayoutConfig(input: PayoutConfigInput): PayoutConfig {
 export function updatePayoutConfig(id: string, input: PayoutConfigInput): PayoutConfig | undefined {
   const config = PAYOUT_CONFIGS.find((candidate) => candidate.id === id);
   if (!config) return undefined;
+  if (config.gameType === 'BettyWheelOfWins') {
+    if (input.gameType !== 'BettyWheelOfWins') return undefined;
+    config.payoutRows = stampRows(input.payoutRows);
+    config.multiplierRows = input.multiplierRows.map((row) => ({ ...row }));
+  } else {
+    if (input.gameType === 'BettyWheelOfWins') return undefined;
+    config.rows = stampRows(input.rows);
+  }
   config.name = input.name.trim();
-  config.rows = stampRows(input.rows);
   config.updatedAt = new Date().toISOString().slice(0, 10);
   return config;
 }

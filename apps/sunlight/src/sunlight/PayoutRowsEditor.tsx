@@ -18,6 +18,8 @@ import {
 } from '@betty/beam';
 import type { BeamStatSeverity } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { PRIZE_TYPE_LABEL, type RewardType } from './payoutConfigs';
@@ -48,12 +50,14 @@ export function PayoutRowsEditor({
   rows,
   onChange,
   showAllErrors = false,
+  orderedSectors = false,
 }: {
   rows: EditorRow[];
   onChange: (rows: EditorRow[]) => void;
   showAllErrors?: boolean;
+  orderedSectors?: boolean;
 }) {
-  const v = validateRows(rows);
+  const v = validateRows(rows, orderedSectors ? 'payout sector' : 'payout row');
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
   const markTouched = (key: string) =>
     setTouched((current) => {
@@ -81,6 +85,13 @@ export function PayoutRowsEditor({
     markTouched('aggregate');
     onChange(rows.filter((r) => r._key !== key)); // may empty → aggregate error
   };
+  const moveRow = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= rows.length) return;
+    const next = [...rows];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
   const addReward = (rowKey: string) =>
     onChange(
       rows.map((r) => {
@@ -104,7 +115,7 @@ export function PayoutRowsEditor({
     <Box sx={{ width: 'fit-content' }}>
       <Stack spacing={1.5}>
         <Typography variant="h6" component="h2">
-          Payout Rows
+          {orderedSectors ? 'Payout Sectors' : 'Payout Rows'}
         </Typography>
 
         {/* Chrome strip ABOVE the grid: Live Check (+ aggregate errors) left,
@@ -112,7 +123,7 @@ export function PayoutRowsEditor({
             (detail §2): exact = quiet · under = warning · over = danger. */}
         <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Button size="small" startIcon={<AddIcon />} onClick={addRow}>
-            Add Row
+            {orderedSectors ? 'Add Sector' : 'Add Row'}
           </Button>
 
           <Stack spacing={0.5}>
@@ -133,9 +144,14 @@ export function PayoutRowsEditor({
         {/* Editable → interactive surface, so bordered (detail-grammar §1.2).
             Fit-content, same skeleton as PayoutRowsGrid. */}
         <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
-          <Table size="small" sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}>
+          <Table
+            size="small"
+            aria-label={orderedSectors ? 'Payout sectors' : 'Payout rows'}
+            sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}
+          >
           <TableHead sx={{ '& th': { pb: 2.5 } }}>
             <TableRow>
+              {orderedSectors && <TableCell align="right">Sector</TableCell>}
               <TableCell>Win Message</TableCell>
               <TableCell align="right">Probability (%)</TableCell>
               <TableCell>Rewards</TableCell>
@@ -145,16 +161,18 @@ export function PayoutRowsEditor({
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} sx={{ py: 3, color: 'text.secondary' }}>
-                  No rows yet — add at least one.
+                <TableCell colSpan={orderedSectors ? 5 : 4} sx={{ py: 3, color: 'text.secondary' }}>
+                  {orderedSectors ? 'No sectors yet — add at least one.' : 'No rows yet — add at least one.'}
                 </TableCell>
               </TableRow>
             )}
             {rows.map((row, ri) => {
               const rowErr = v.rows[ri];
               const canAddReward = Boolean(firstUnusedType(row.rewards));
+              const positionLabel = orderedSectors ? 'sector' : 'row';
               return (
                 <TableRow key={row._key}>
+                  {orderedSectors && <TableCell align="right">{ri + 1}</TableCell>}
                   <TableCell>
                     <TextField
                       size="small"
@@ -166,7 +184,7 @@ export function PayoutRowsEditor({
                       onBlur={() => markTouched(`winMessage:${row._key}`)}
                       error={Boolean(rowErr?.winMessage && showError(`winMessage:${row._key}`))}
                       helperText={showError(`winMessage:${row._key}`) ? rowErr?.winMessage : undefined}
-                      slotProps={{ htmlInput: { 'aria-label': `Win message, row ${ri + 1}` } }}
+                      slotProps={{ htmlInput: { 'aria-label': `Win message, ${positionLabel} ${ri + 1}` } }}
                     />
                   </TableCell>
                   <TableCell align="right">
@@ -181,7 +199,7 @@ export function PayoutRowsEditor({
                       }}
                       error={Boolean(rowErr?.probability && showError(`probability:${row._key}`))}
                       helperText={showError(`probability:${row._key}`) ? rowErr?.probability : undefined}
-                      slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Probability percent, row ${ri + 1}` } }}
+                      slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Probability percent, ${positionLabel} ${ri + 1}` } }}
                     />
                   </TableCell>
                   <TableCell>
@@ -217,14 +235,14 @@ export function PayoutRowsEditor({
                               onBlur={() => markTouched(`amount:${row._key}:${rw._key}`)}
                               error={Boolean(amtErr && showError(`amount:${row._key}:${rw._key}`))}
                               helperText={showError(`amount:${row._key}:${rw._key}`) ? amtErr : undefined}
-                              slotProps={{ htmlInput: { inputMode: 'numeric', 'aria-label': `Amount, reward ${rwi + 1}, row ${ri + 1}` } }}
+                              slotProps={{ htmlInput: { inputMode: 'numeric', 'aria-label': `Amount, reward ${rwi + 1}, ${positionLabel} ${ri + 1}` } }}
                             />
                             {/* ≥1 reward per row is structural — Remove disabled at the last. */}
-                            <Tooltip title={lastReward ? 'A row needs at least one reward.' : 'Remove reward'}>
+                            <Tooltip title={lastReward ? `A ${positionLabel} needs at least one reward.` : 'Remove reward'}>
                               <span>
                                 <IconButton
                                   size="small"
-                                  aria-label={`Remove reward ${rwi + 1}, row ${ri + 1}`}
+                                  aria-label={`Remove reward ${rwi + 1}, ${positionLabel} ${ri + 1}`}
                                   disabled={lastReward}
                                   onClick={() => removeReward(row._key, rw._key)}
                                 >
@@ -252,12 +270,46 @@ export function PayoutRowsEditor({
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    {/* ≥1 row overall is a VALIDATION aggregate — delete allowed to empty. */}
-                    <Tooltip title="Delete row">
-                      <IconButton size="small" aria-label={`Delete row ${ri + 1}`} onClick={() => deleteRow(row._key)}>
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={0.5}>
+                      {orderedSectors && (
+                        <>
+                          <Tooltip title="Move up">
+                            <span>
+                              <IconButton
+                                size="small"
+                                aria-label={`Move payout sector ${ri + 1} up`}
+                                disabled={ri === 0}
+                                onClick={() => moveRow(ri, -1)}
+                              >
+                                <ArrowUpwardIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Move down">
+                            <span>
+                              <IconButton
+                                size="small"
+                                aria-label={`Move payout sector ${ri + 1} down`}
+                                disabled={ri === rows.length - 1}
+                                onClick={() => moveRow(ri, 1)}
+                              >
+                                <ArrowDownwardIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </>
+                      )}
+                      {/* ≥1 row overall is a VALIDATION aggregate — delete allowed to empty. */}
+                      <Tooltip title={orderedSectors ? 'Delete sector' : 'Delete row'}>
+                        <IconButton
+                          size="small"
+                          aria-label={orderedSectors ? `Delete payout sector ${ri + 1}` : `Delete row ${ri + 1}`}
+                          onClick={() => deleteRow(row._key)}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               );

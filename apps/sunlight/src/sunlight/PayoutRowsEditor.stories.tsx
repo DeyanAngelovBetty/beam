@@ -29,9 +29,9 @@ const row = (winMessage: string, pct: string, rewards: [RewardType, string][]): 
 });
 
 /** Controlled harness — real editing, so the bench can drive every control. */
-function Harness({ initial }: { initial: EditorRow[] }) {
+function Harness({ initial, orderedSectors = false }: { initial: EditorRow[]; orderedSectors?: boolean }) {
   const [rows, setRows] = useState<EditorRow[]>(initial);
-  return <PayoutRowsEditor rows={rows} onChange={setRows} />;
+  return <PayoutRowsEditor rows={rows} onChange={setRows} orderedSectors={orderedSectors} />;
 }
 
 /** A single blank row — the create default (Live Check reads 0%, warning). */
@@ -46,6 +46,20 @@ export const SingleReward: Story = {
 export const MultiReward: Story = {
   render: () => (
     <Harness initial={[row('Mega bonus', '100', [['Coins', '6'], ['Tokens', '2']])]} />
+  ),
+};
+
+/** Wheel of Wins payout sectors expose derived positions and arrow ordering. */
+export const OrderedSectors: Story = {
+  render: () => (
+    <Harness
+      orderedSectors
+      initial={[
+        row('Small win', '60', [['Coins', '10']]),
+        row('Bonus bundle', '30', [['Coins', '20'], ['Tokens', '2']]),
+        row('Wheel jackpot', '10', [['Coins', '100'], ['Tokens', '10']]),
+      ]}
+    />
   ),
 };
 

@@ -39,16 +39,23 @@ const rewardsLabel = (row: PayoutRow) =>
     ? formatRewards(row.rewards)
     : '—';
 
-export function PayoutRowsGrid({ rows }: { rows: PayoutRow[] }) {
+export function PayoutRowsGrid({
+  rows,
+  showSectorPositions = false,
+}: {
+  rows: PayoutRow[];
+  showSectorPositions?: boolean;
+}) {
   return (
     <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
       <Table
         size="small"
-        aria-label="Payout rows"
+        aria-label={showSectorPositions ? 'Payout sectors' : 'Payout rows'}
         sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}
       >
         <TableHead>
           <TableRow>
+            {showSectorPositions && <TableCell align="right">Sector</TableCell>}
             <TableCell>Win Message</TableCell>
             <TableCell align="right">Probability</TableCell>
             <TableCell>Rewards</TableCell>
@@ -59,7 +66,12 @@ export function PayoutRowsGrid({ rows }: { rows: PayoutRow[] }) {
             const dim = { opacity: row.probability === 0 ? DIMMED_OPACITY : 1 };
             const bottom = ri === rows.length - 1 ? NO_BORDER : BOUNDARY;
             return (
-              <TableRow key={ri}>
+              <TableRow key={row.id ?? ri}>
+                {showSectorPositions && (
+                  <TableCell align="right" sx={{ ...bottom, ...dim }}>
+                    {ri + 1}
+                  </TableCell>
+                )}
                 <TableCell sx={{ ...bottom, ...dim }}>{row.winMessage}</TableCell>
                 <TableCell align="right" sx={{ ...bottom, ...dim }}>
                   {formatPercent(row.probability)}

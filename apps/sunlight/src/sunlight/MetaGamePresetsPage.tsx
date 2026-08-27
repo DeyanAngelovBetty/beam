@@ -29,7 +29,7 @@ import {
   type MetaGamePreset,
 } from './metaGamePresets';
 import { nextPresetStatusAction, presetSource, type PresetSource } from './metaGamePresetHelpers';
-import { GAME_TYPES, PAYOUT_STATUSES, statusBadge, type GameType, type PayoutStatus } from './payoutConfigs';
+import { GAME_TYPES, PAYOUT_STATUSES, gameTypeLabel, statusBadge, type GameType, type PayoutStatus } from './payoutConfigs';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { PresetImagePreview } from './PresetImagePreview';
 
@@ -110,7 +110,7 @@ export function MetaGamePresetsPage() {
       isIdentity: true,
       getHref: (preset) => `${import.meta.env.BASE_URL}meta-game-presets/${preset.id}`,
     },
-    { key: 'gameType', header: 'Game Type', width: 150, render: (preset) => preset.name, getValue: (preset) => preset.name },
+    { key: 'gameType', header: 'Game Type', width: 150, render: (preset) => gameTypeLabel(preset.name), getValue: (preset) => preset.name },
     { key: 'source', header: 'Source', width: 100, render: presetSource, getValue: presetSource },
     { key: 'configuration', header: 'Configuration', width: 220, render: gameConfigName, getValue: gameConfigName },
     {
@@ -193,7 +193,7 @@ export function MetaGamePresetsPage() {
       >
         <TextField select fullWidth size="small" label="Game Type" value={draft.gameType} onChange={(event) => setDraft((current) => ({ ...current, gameType: event.target.value as AppliedFilters['gameType'] }))}>
           <MenuItem value="any">Any</MenuItem>
-          {GAME_TYPES.map((gameType) => <MenuItem key={gameType} value={gameType}>{gameType}</MenuItem>)}
+          {GAME_TYPES.map((gameType) => <MenuItem key={gameType} value={gameType}>{gameTypeLabel(gameType)}</MenuItem>)}
         </TextField>
         <TextField select fullWidth size="small" label="Configuration Source" value={draft.source} onChange={(event) => setDraft((current) => ({ ...current, source: event.target.value as AppliedFilters['source'] }))}>
           <MenuItem value="any">Any</MenuItem>

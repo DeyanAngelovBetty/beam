@@ -21,7 +21,7 @@ import EditIcon from '@mui/icons-material/EditRounded';
 import { backTo } from './backTo';
 import { TargetingRulesEditor } from './TargetingRulesEditor';
 import { TargetingRulesGrid } from './TargetingRulesGrid';
-import { GAME_TYPES, statusBadge, type GameType } from './payoutConfigs';
+import { GAME_TYPES, gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
 import { getGameConfig, createGameConfig, updateGameConfig, type GameConfig } from './gameConfigs';
 import {
   MAX_GC_NAME,
@@ -86,7 +86,7 @@ function ViewForm({ config, onEdit }: { config: GameConfig; onEdit: () => void }
       {/* The details panel (grammar §2), view mode — first field region, unlabeled. */}
       <DetailsPanel aria-label="Basic information">
         <BeamStat label="Name" value={config.code} />
-        <BeamStat label="Game Type" value={config.gameType} />
+        <BeamStat label="Game Type" value={gameTypeLabel(config.gameType)} />
       </DetailsPanel>
       <Stack spacing={1}>
         <Typography variant="subtitle2" color="text.secondary">
@@ -189,7 +189,7 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
         {isEdit ? (
           <BeamField
             label="Game Type"
-            value={model.gameType}
+            value={model.gameType ? gameTypeLabel(model.gameType) : ''}
             disabled
             helperText="Game type can't be changed after creation."
           />
@@ -210,7 +210,7 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
           >
             {GAME_TYPES.map((g) => (
               <MenuItem key={g} value={g}>
-                {g}
+                {gameTypeLabel(g)}
               </MenuItem>
             ))}
           </BeamField>

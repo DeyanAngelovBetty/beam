@@ -1,4 +1,4 @@
-import type { GameType, PayoutStatus } from './payoutConfigs';
+import type { GameType, PayoutStatus, StandardPayoutGameType } from './payoutConfigs';
 
 export type PresetVolatility = 'Low' | 'Medium' | 'High';
 export type PresetUseCase = 'All' | 'Store';
@@ -21,6 +21,7 @@ export type MetaGamePresetInput = Omit<MetaGamePreset, 'id' | 'status'>;
 
 export const PRESET_VOLATILITIES: PresetVolatility[] = ['Low', 'Medium', 'High'];
 export const PRESET_USE_CASES: PresetUseCase[] = ['All', 'Store'];
+export const LEGACY_YODA_GAME_TYPES: StandardPayoutGameType[] = ['MysteryBox', 'Wheel', 'Scratcher'];
 
 export const META_GAME_PRESETS: MetaGamePreset[] = [
   {
@@ -73,6 +74,19 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
     volatility: 'Low',
     useCases: ['All'],
     expiryHours: 24,
+    status: 'Enabled',
+  },
+  {
+    id: 'preset-betty-wheel-of-wins',
+    gameConfigId: 'gc-betty-wheel-of-wins-default',
+    name: 'BettyWheelOfWins',
+    displayName: 'Betty Wheel of Wins',
+    configCode: null,
+    skinId: 'betty-wheel-of-wins-default',
+    imageUrl: null,
+    volatility: 'Medium',
+    useCases: ['All'],
+    expiryHours: 168,
     status: 'Enabled',
   },
 ];

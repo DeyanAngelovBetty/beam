@@ -59,6 +59,11 @@ export const SingleRewardRow: Story = { args: { rows: [single] } };
 /** Multiple rewards — listed inline in the Rewards column, comma-joined. */
 export const MultiRewardRow: Story = { args: { rows: [multi] } };
 
+/** Wheel of Wins payout sectors derive their public position from array order. */
+export const NumberedSectors: Story = {
+  args: { rows: [single, multi, zero], showSectorPositions: true },
+};
+
 /** Zero-probability ("visual only") row — same grid, dimmed quiet. */
 export const ZeroProbabilityRow: Story = { args: { rows: [zero] } };
 

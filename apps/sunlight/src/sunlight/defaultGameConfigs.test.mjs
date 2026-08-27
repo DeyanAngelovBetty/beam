@@ -11,12 +11,13 @@ import {
   replaceDefaultGameConfig,
 } from './defaultGameConfigHelpers.ts';
 
-test('the demo exposes exactly three valid Enabled default mappings', () => {
-  assert.deepEqual(GAME_TYPES, ['MysteryBox', 'Wheel', 'Scratcher']);
+test('the demo exposes exactly four valid Enabled default mappings', () => {
+  assert.deepEqual(GAME_TYPES, ['MysteryBox', 'Wheel', 'Scratcher', 'BettyWheelOfWins']);
   assert.deepEqual(INITIAL_DEFAULT_GAME_CONFIGS, [
     { gameType: 'MysteryBox', gameConfigId: 'gc-mystery-box-default' },
     { gameType: 'Wheel', gameConfigId: 'gc-wheel-default' },
     { gameType: 'Scratcher', gameConfigId: 'gc-scratcher-default' },
+    { gameType: 'BettyWheelOfWins', gameConfigId: 'gc-betty-wheel-of-wins-default' },
   ]);
 
   for (const mapping of INITIAL_DEFAULT_GAME_CONFIGS) {
@@ -40,6 +41,10 @@ test('selectors offer only same-GameType GameConfigs', () => {
   assert.deepEqual(
     filterGameConfigsByGameType(GAME_CONFIGS, 'Scratcher').map((config) => config.code),
     ['SCRATCHER_DEFAULT']
+  );
+  assert.deepEqual(
+    filterGameConfigsByGameType(GAME_CONFIGS, 'BettyWheelOfWins').map((config) => config.code),
+    ['BETTY_WHEEL_OF_WINS_DEFAULT']
   );
 });
 

@@ -26,7 +26,7 @@ export interface GameConfig {
   targetingRules: TargetingRule[];
 }
 
-/** Betty-owned GameConfigs for the three-game visual demo. */
+/** Betty-owned GameConfigs for the four-game visual demo. */
 export const GAME_CONFIGS: GameConfig[] = [
   {
     id: 'gc-mystery-box-default',
@@ -101,6 +101,20 @@ export const GAME_CONFIGS: GameConfig[] = [
         priority: 0,
         status: 'Enabled',
         payoutConfigId: 'pc-scratcher-standard',
+      },
+    ],
+  },
+  {
+    id: 'gc-betty-wheel-of-wins-default',
+    code: 'BETTY_WHEEL_OF_WINS_DEFAULT',
+    gameType: 'BettyWheelOfWins',
+    status: 'Enabled',
+    targetingRules: [
+      {
+        id: 'tr-betty-wheel-of-wins-fallback',
+        priority: 0,
+        status: 'Enabled',
+        payoutConfigId: 'pc-betty-wheel-of-wins-standard',
       },
     ],
   },

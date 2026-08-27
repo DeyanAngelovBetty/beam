@@ -24,6 +24,7 @@ import { GAME_CONFIGS } from './gameConfigs';
 import {
   PRESET_USE_CASES,
   PRESET_VOLATILITIES,
+  LEGACY_YODA_GAME_TYPES,
   createMetaGamePreset,
   getMetaGamePreset,
   updateMetaGamePreset,
@@ -45,7 +46,7 @@ import {
   type PresetEditorModel,
   type PresetSource,
 } from './metaGamePresetHelpers';
-import { GAME_TYPES, statusBadge, type GameType } from './payoutConfigs';
+import { gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
 import { PresetImagePreview } from './PresetImagePreview';
 
 type TouchedField = 'displayName' | 'gameConfigId' | 'gameType' | 'configCode' | 'expiryHours';
@@ -111,11 +112,11 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
       <DetailsPanel aria-label="Preset details">
         <BeamStat label="Display Name" value={model.displayName || '—'} />
         {model.source === 'Betty' ? (
-          <BeamStat label="GameConfig" value={gameConfig ? `${gameConfig.code} — ${gameConfig.gameType} — ${gameConfig.status}` : model.gameConfigId || '—'} />
+          <BeamStat label="GameConfig" value={gameConfig ? `${gameConfig.code} — ${gameTypeLabel(gameConfig.gameType)} — ${gameConfig.status}` : model.gameConfigId || '—'} />
         ) : (
           <BeamStat label="Config Code" value={model.configCode || '—'} />
         )}
-        <BeamStat label="Game Type" value={model.gameType || '—'} />
+        <BeamStat label="Game Type" value={model.gameType ? gameTypeLabel(model.gameType) : '—'} />
         <BeamStat label="Skin ID" value={model.skinId || '—'} />
         <BeamStat label="Image URL" value={model.imageUrl || '—'} />
         <BeamStat label="Volatility" value={model.volatility || 'Not set'} />
@@ -296,7 +297,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
             >
               {gameConfigOptions.map((config) => (
                 <MenuItem key={config.id} value={config.id}>
-                  {config.code} — {config.gameType} — {config.status}
+                  {config.code} — {gameTypeLabel(config.gameType)} — {config.status}
                 </MenuItem>
               ))}
             </BeamField>
@@ -307,7 +308,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
             )}
             <BeamField
               label="Game Type"
-              value={model.gameType}
+              value={model.gameType ? gameTypeLabel(model.gameType) : ''}
               disabled
               helperText="Derived from the selected GameConfig."
             />
@@ -327,7 +328,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
               error={showError('gameType') && Boolean(validation.gameType)}
               helperText={showError('gameType') ? validation.gameType : undefined}
             >
-              {GAME_TYPES.map((gameType) => <MenuItem key={gameType} value={gameType}>{gameType}</MenuItem>)}
+              {LEGACY_YODA_GAME_TYPES.map((gameType) => <MenuItem key={gameType} value={gameType}>{gameTypeLabel(gameType)}</MenuItem>)}
             </BeamField>
             <BeamField
               label="Config Code"

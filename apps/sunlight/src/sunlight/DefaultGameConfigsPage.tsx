@@ -11,7 +11,7 @@ import {
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
 import { GAME_CONFIGS, type GameConfig } from './gameConfigs';
-import { GAME_TYPES, statusBadge, type GameType } from './payoutConfigs';
+import { GAME_TYPES, gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
 import {
   getDefaultGameConfigs,
   putDefaultGameConfig,
@@ -63,7 +63,7 @@ export function DefaultGameConfigsPage() {
       header: 'Game Type',
       width: 180,
       getValue: (row) => row.gameType,
-      render: (row) => row.gameType,
+      render: (row) => gameTypeLabel(row.gameType),
     },
     {
       key: 'gameConfig',
@@ -81,7 +81,7 @@ export function DefaultGameConfigsPage() {
               value={selections[row.gameType] ?? ''}
               onChange={(event) => selectConfig(row.gameType, event.target.value)}
               slotProps={{
-                htmlInput: { 'aria-label': `${row.gameType} Default Game Config` },
+                htmlInput: { 'aria-label': `${gameTypeLabel(row.gameType)} Default Game Config` },
                 select: {
                   displayEmpty: true,
                   renderValue: (selected) => {

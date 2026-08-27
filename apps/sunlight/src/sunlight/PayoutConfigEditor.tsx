@@ -21,8 +21,12 @@ import EditIcon from '@mui/icons-material/EditRounded';
 import { backTo } from './backTo';
 import { PayoutRowsEditor } from './PayoutRowsEditor';
 import { PayoutRowsGrid } from './PayoutRowsGrid';
+import { MultiplierRowsEditor } from './MultiplierRowsEditor';
+import { MultiplierRowsGrid } from './MultiplierRowsGrid';
 import {
   GAME_TYPES,
+  gameTypeLabel,
+  getPayoutRows,
   statusBadge,
   getPayoutConfig,
   createPayoutConfig,
@@ -37,6 +41,7 @@ import {
   toDomainInput,
   serializeModel,
   validateModel,
+  withGameType,
   type EditorModel,
 } from './payoutConfigForm';
 
@@ -83,8 +88,8 @@ function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void
   // Probability total as a DISPLAY value — the editor shows it as a validation "Live Check"
   // (BeamStat + severity); in a saved, read-only view there is nothing to validate, so it reads
   // as a plain labelled total (severity would falsely imply live checking). Judgment call, reported.
-  const total = config.rows.reduce((sum, r) => sum + r.probability, 0) * 100;
-  const totalLabel = total.toLocaleString('en-US', { maximumFractionDigits: 4 });
+  const payoutTotal = getPayoutRows(config).reduce((sum, row) => sum + row.probability, 0) * 100;
+  const payoutTotalLabel = payoutTotal.toLocaleString('en-US', { maximumFractionDigits: 4 });
 
   return (
     <Stack spacing={3}>
@@ -101,19 +106,50 @@ function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void
       {/* The details panel (grammar §2), view mode — first field region, unlabeled. */}
       <DetailsPanel aria-label="Basic information">
         <BeamStat label="Name" value={config.name} />
-        <BeamStat label="Game Type" value={config.gameType} />
+        <BeamStat label="Game Type" value={gameTypeLabel(config.gameType)} />
       </DetailsPanel>
-      <Stack spacing={1}>
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Payout rows
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Total probability: {totalLabel}%
-          </Typography>
+      {config.gameType === 'BettyWheelOfWins' ? (
+        <Stack spacing={3}>
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Payout sectors
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total probability: {payoutTotalLabel}%
+              </Typography>
+            </Stack>
+            <PayoutRowsGrid rows={config.payoutRows} showSectorPositions />
+          </Stack>
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Multiplier sectors
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total probability:{' '}
+                {(config.multiplierRows.reduce((sum, row) => sum + row.probability, 0) * 100).toLocaleString(
+                  'en-US',
+                  { maximumFractionDigits: 4 },
+                )}%
+              </Typography>
+            </Stack>
+            <MultiplierRowsGrid rows={config.multiplierRows} />
+          </Stack>
         </Stack>
-        <PayoutRowsGrid rows={config.rows} />
-      </Stack>
+      ) : (
+        <Stack spacing={1}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Payout rows
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Total probability: {payoutTotalLabel}%
+            </Typography>
+          </Stack>
+          <PayoutRowsGrid rows={config.rows} />
+        </Stack>
+      )}
     </Stack>
   );
 }
@@ -136,11 +172,19 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
 
   const v = validateModel(model, existing?.id);
   const saveLabel = isEdit ? 'Save' : 'Create';
+  const hasPayoutFieldError = v.rows.some(
+    (row) => row.winMessage || row.probability || row.rewards.some((reward) => reward.amount),
+  );
+  const hasMultiplierFieldError = v.multiplier?.rows.some(
+    (row) => row.probability || row.multiplier,
+  );
   const saveReason =
     v.name ??
     v.gameType ??
     v.aggregate ??
-    (v.rows.some((r) => r.winMessage || r.probability || r.rewards.some((x) => x.amount))
+    v.multiplier?.aggregate ??
+    v.multiplier?.multiplication ??
+    (hasPayoutFieldError || hasMultiplierFieldError
       ? 'Fix the highlighted fields.'
       : 'Complete the form.');
 
@@ -216,7 +260,7 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
         {isEdit ? (
           <BeamField
             label="Game Type"
-            value={model.gameType}
+            value={model.gameType ? gameTypeLabel(model.gameType) : ''}
             disabled
             helperText="Game type can't be changed after creation."
           />
@@ -226,14 +270,14 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
             label="Game Type"
             required
             value={model.gameType}
-            onChange={(e) => setModel((m) => ({ ...m, gameType: e.target.value as GameType }))}
+            onChange={(e) => setModel((current) => withGameType(current, e.target.value as GameType))}
             onBlur={() => setTouched((current) => ({ ...current, gameType: true }))}
             error={Boolean(v.gameType && (touched.gameType || submitAttempted))}
             helperText={touched.gameType || submitAttempted ? v.gameType : undefined}
           >
             {GAME_TYPES.map((g) => (
               <MenuItem key={g} value={g}>
-                {g}
+                {gameTypeLabel(g)}
               </MenuItem>
             ))}
           </BeamField>
@@ -241,10 +285,24 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
       </DetailsPanel>
 
       <PayoutRowsEditor
-        rows={model.rows}
-        onChange={(rows) => setModel((m) => ({ ...m, rows }))}
+        rows={model.payoutRows}
+        onChange={(payoutRows) => setModel((current) => ({ ...current, payoutRows }))}
         showAllErrors={submitAttempted}
+        orderedSectors={model.gameType === 'BettyWheelOfWins'}
       />
+
+      {model.gameType === 'BettyWheelOfWins' && (
+        <MultiplierRowsEditor
+          rows={model.multiplierRows}
+          payoutRows={model.payoutRows}
+          onChange={(multiplierRows) =>
+            setModel((current) =>
+              current.gameType === 'BettyWheelOfWins' ? { ...current, multiplierRows } : current,
+            )
+          }
+          showAllErrors={submitAttempted}
+        />
+      )}
 
       <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>
         <DialogTitle>Discard changes?</DialogTitle>

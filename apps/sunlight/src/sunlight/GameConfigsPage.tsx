@@ -15,7 +15,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditRounded';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { GAME_TYPES, PAYOUT_STATUSES, statusBadge } from './payoutConfigs';
+import { GAME_TYPES, PAYOUT_STATUSES, gameTypeLabel, statusBadge } from './payoutConfigs';
 import type { GameType, PayoutStatus } from './payoutConfigs';
 import { GAME_CONFIGS } from './gameConfigs';
 import type { GameConfig } from './gameConfigs';
@@ -79,7 +79,7 @@ export function GameConfigsPage() {
     {
       key: 'gameType',
       header: 'Game Type',
-      render: (config) => config.gameType,
+      render: (config) => gameTypeLabel(config.gameType),
       getValue: (config) => config.gameType,
       width: 170,
     },
@@ -160,7 +160,7 @@ export function GameConfigsPage() {
           <MenuItem value="any">Any</MenuItem>
           {GAME_TYPES.map((gameType) => (
             <MenuItem key={gameType} value={gameType}>
-              {gameType}
+              {gameTypeLabel(gameType)}
             </MenuItem>
           ))}
         </TextField>

@@ -9,6 +9,7 @@ export const INITIAL_DEFAULT_GAME_CONFIGS: DefaultGameConfigMapping[] = [
   { gameType: 'MysteryBox', gameConfigId: 'gc-mystery-box-default' },
   { gameType: 'Wheel', gameConfigId: 'gc-wheel-default' },
   { gameType: 'Scratcher', gameConfigId: 'gc-scratcher-default' },
+  { gameType: 'BettyWheelOfWins', gameConfigId: 'gc-betty-wheel-of-wins-default' },
 ];
 
 export function filterGameConfigsByGameType(configs: GameConfig[], gameType: GameType): GameConfig[] {
