@@ -12,8 +12,8 @@ import { DEMO_CHECKER } from './currentUser';
  * The editor uses useParams + useBlocker, so it needs a DATA router (createMemoryRouter).
  *
  * The view-mode pending alert is ACTOR-RELATIVE (approval-flow "Actor → action-set"):
- *  - Topaz (id 30) is the seed CR, submitted by the MAKER; the default actor is the checker → the
- *    REVIEWER voice ("… awaiting review", [Review] → CR page).
+ *  - Topaz (id 30) is the seeded CONTEST — TWO competing pendings (Maja's + Ivan's); the default
+ *    actor is the checker → the count-aware REVIEWER voice ("2 … awaiting review", [View requests]).
  *  - Emerald (id 40) below gets a CR submitted by the DEFAULT actor (checker), so viewing it reads
  *    as the REQUESTER voice ("You submitted …", [View request] · [Cancel]) without switching actor.
  * (LoyaltyStatusEditor value-imports the entity store, so registration + seed happen transitively.)
@@ -50,11 +50,9 @@ function At({ id }: { id: string }) {
 /** View-first: a status with no pending request (Opal, id 50) opens READ-ONLY; Edit flips to the editor. */
 export const ViewMode: Story = { render: () => <At id="50" /> };
 
-/** The seeded status (Topaz, id 30) — view shows the pending NOTICE; Edit loads the draft + banner. */
-export const WithPendingDraft: Story = { render: () => <At id="30" /> };
-
-/** Pending as REVIEWER (Topaz, id 30, submitted by the maker; default actor = checker): the alert
- *  reads "… awaiting review" with [Review] → the CR page. */
+/** Pending as REVIEWER, CONTESTED (Topaz, id 30, seeded with TWO competing pendings — Maja's and
+ *  Ivan's; default actor = checker): the count-aware alert reads "2 change requests are pending on
+ *  this record — awaiting review" with [View requests] → the record-filtered approvals list. */
 export const PendingAsReviewer: Story = { render: () => <At id="30" /> };
 
 /** Pending as REQUESTER (Emerald, id 40, submitted by the default checker): the alert reads

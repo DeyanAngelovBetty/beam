@@ -21,6 +21,48 @@ this is the workstream it was waiting for.*
 
 ---
 
+## Walkthrough — the three-actor script *(2026-08-27)*
+
+*One artifact, three jobs: the **acceptance test** (every step names its surface +
+expected state), the **demo script**, and the **onboarding doc**. Walk it end to end in
+Sunlight, flipping "Acting as" in the shell chrome. Three demo actors:
+**Maja Novak** (maker), **Ivan Horvat** (maker), **Ravi Patel** (checker). Ground truth:
+[approval-grammar.md](approval-grammar.md).*
+
+**Day-zero state (seeded, out of the box).** One record carries the contest: **Topaz**
+holds two competing pendings — Maja's (multiplier → 1.75) and Ivan's (→ 1.6), each with
+its own reason. Every other loyalty status is clean. The seeded `seenBy` marks make the
+day-zero bars honest: **Ravi** opens to "2 change requests await your review"; **Maja**
+and **Ivan** each open to nothing (each has already "seen" the other's proposal, and
+neither has an outcome yet).
+
+The script below reproduces the whole lifecycle **by hand on a clean record** (use e.g.
+**Amethyst**) so you watch each transition happen live. Counts in the app-level bar are
+global, so remember the seeded Topaz contest adds 2 to the checker's review count until
+it's resolved.
+
+| # | Act as | Do | Surface → expected state |
+|---|---|---|---|
+| 1 | **Maja** | Edit Amethyst, change the multiplier, fill the reason composer, **Submit for approval**. | Change-lifecycle strip shows the required reason composer; Submit disabled until it's filled. After submit: Amethyst's view shows the **requester** alert ("You submitted … pending approval", [View request] · [Cancel request]). |
+| 2 | **Ivan** | Edit Amethyst, a *different* multiplier + reason, Submit. | Allowed — parallel pendings by different makers (§3). Amethyst view (as Ivan) now shows the requester alert **+ "1 more request is pending on this record"**. Switch to Maja: her requester alert gains the same "+1 more" tail. |
+| 3 | **Maja** (guard) | Edit Amethyst again, try to Submit a second time. | The strip shows the **own-pending blocker** at entry — "You already have a pending request on this record — cancel it to submit a new change" + inline [Cancel request]; Submit stays disabled. (The store's `duplicatePending` guard is the safety net; the strip prevents reaching it.) |
+| 4 | **Ravi** | Open **Configuration Approvals**. | The list opens **pending-first**. Amethyst's two competing CRs sit on top (plus the seeded Topaz two). Each row shows its **Reason**. Open Ivan's CR → the detail shows the diff, the **submit reason** heading it, a **"1 other pending request on this record"** sibling line, and a **Decision note (optional)** field. |
+| 5 | **Ravi** | **Approve** Ivan's CR (optionally add a decision note). | Ivan's CR → **approved**, Amethyst takes multiplier 1.6 (a new revision). **Maja's CR auto-outdates** (§2): its detail shows the **outdated banner** + a historical, non-actionable diff; the list shows it as **outdated**; Amethyst's record page no longer shows Maja's pending. |
+| 6 | **Maja** | Look at the app-level bar. | The bar shows the **outcome voice**: "Your change request on Amethyst became outdated" — `info`, dismissible. (This surfaces even though Maja viewed her request while it was pending: "seen" is outcome-relative — §5.) |
+| 7 | **Maja** | Click **✕** (or open the CR). | Dismiss and view are the same transition — both mark it seen. The bar slides away. |
+| 8 | **Maja** | Trigger no new work; switch away and back. | **No re-nag** — the outcome stays seen; the bar reappears only for genuinely new unseen items. |
+| 9 | **Maja** | On a **fresh** clean record (e.g. Opal), submit a CR with a reason. | Requester alert on Opal; the CR joins the checker's queue. |
+| 10 | **Ravi** | Open Maja's Opal CR, **Reject** it with a reason in the decision note. | Opal CR → **rejected** (the decision note is recorded and shown on the CR). The live Opal is untouched. |
+| 11 | **Maja** | App-level bar. | Outcome voice: "Your change request on Opal was rejected" (`info`, dismissible). ✕ clears it; no re-nag. |
+
+**Every actor-relative derivation flips live on the "Acting as" switch** (verify by
+switching mid-step): the page-level alert **voice + counts**, the app-level **bar
+contents**, the editor's **own-pending strip mode**, the `duplicatePending` **guard**, and
+the CR-detail **action set** ([Cancel request] on your own · [Reject] [Approve] on
+another's · none on an archived one).
+
+---
+
 ## 1. The save model inversion
 
 **Save stops meaning apply. Save creates a change request.** For an entity under

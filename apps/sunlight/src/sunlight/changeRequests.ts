@@ -364,10 +364,10 @@ export function history(entityId: string): ChangeRequest[] {
 }
 
 /**
- * Seed a demo pending CR on a fresh store only (empty storage). Called by the entity store, which
- * owns the concrete draft shape — this module stays entity-agnostic. A duplicate-guard refusal on a
- * fresh store is impossible (nothing pending yet), so the result is ignored.
+ * Run a demo seed on a fresh store only (empty storage). The entity store owns the concrete draft
+ * shape + how many CRs to seed (this module stays entity-agnostic), so it passes a thunk that may
+ * submit several CRs and set seen marks. On a fresh store the duplicate guard can't fire.
  */
-export function seedPendingIfEmpty<T>(makeInput: () => SubmitInput<T>): void {
-  if (requests.length === 0) submit(makeInput());
+export function seedIfEmpty(seed: () => void): void {
+  if (requests.length === 0) seed();
 }

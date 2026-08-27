@@ -21,10 +21,14 @@ export interface DemoUser {
 
 export const DEMO_USERS: DemoUser[] = [
   { id: 'maja', name: 'Maja Novak', role: 'maker' },
+  { id: 'ivan', name: 'Ivan Horvat', role: 'maker' }, // second maker — parallel proposals (grammar §3)
   { id: 'ravi', name: 'Ravi Patel', role: 'checker' },
 ];
 
-export const DEMO_MAKER = DEMO_USERS.find((u) => u.role === 'maker')!;
+// Distinct initials (MN · IH · RP) so avatars/labels read apart. Two makers exercise the parallel
+// model: competing pendings on one record, the checker chooses, the loser outdates.
+export const DEMO_MAKER = DEMO_USERS.find((u) => u.id === 'maja')!; // maker1
+export const DEMO_MAKER2 = DEMO_USERS.find((u) => u.id === 'ivan')!; // maker2
 export const DEMO_CHECKER = DEMO_USERS.find((u) => u.role === 'checker')!;
 
 let current: DemoUser = DEMO_CHECKER; // default = checker (see file header)

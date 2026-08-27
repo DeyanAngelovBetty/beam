@@ -35,12 +35,13 @@ import { DEMO_MAKER, DEMO_CHECKER } from './currentUser';
 })();
 
 /**
- * Lab bench for PendingApprovalsPage — the reviewer surface. Out of the box the store seeds
- * one pending CR authored by the maker (Maja) and the switcher defaults to the checker
- * (Ravi), so Approve/Reject are live. Switch "Acting as" to Maja to watch four-eyes disable
- * them (you can't approve your own change). The block above adds one CR in each terminal status
- * so the status multi-select + pending-first sort are demonstrable. NOTE: the store is shared
- * module state, so approving here consumes the seed for the other stories too — a live tracer.
+ * Lab bench for PendingApprovalsPage — the reviewer surface. Out of the box the store seeds the
+ * CONTEST: two competing pendings on Topaz (Maja's 1.75 vs Ivan's 1.6), so the list opens with a
+ * real choice; the switcher defaults to the checker (Ravi), so Approve/Reject are live. Switch
+ * "Acting as" to a maker to watch four-eyes disable them on their own row. The block above adds one
+ * CR in each terminal status so the status multi-select + pending-first sort are demonstrable — so
+ * the Default story shows the contest (2 pending, top) plus approved/rejected/canceled/outdated
+ * history. NOTE: the store is shared module state — a live tracer; acting here mutates it.
  */
 const meta: Meta<typeof PendingApprovalsPage> = {
   title: 'Lab/Sunlight/PendingApprovalsPage',

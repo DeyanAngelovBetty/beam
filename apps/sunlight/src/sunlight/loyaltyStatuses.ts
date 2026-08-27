@@ -1,6 +1,6 @@
 import type { GemName } from '@betty/beam';
-import { registerEntity, seedPendingIfEmpty, type SubmitInput } from './changeRequests';
-import { DEMO_MAKER } from './currentUser';
+import { registerEntity, seedIfEmpty, submit, markSeen } from './changeRequests';
+import { DEMO_MAKER, DEMO_MAKER2 } from './currentUser';
 
 /**
  * loyaltyStatuses — the entity store, extracted from LoyaltyStatusPage (which held STATUSES
@@ -115,17 +115,34 @@ registerEntity<LoyaltyStatusDraft>('loyaltyStatus', {
   },
 });
 
-// Seed authored by the MAKER, so the default (checker) can act on it out of the box.
-seedPendingIfEmpty<LoyaltyStatusDraft>(() => {
+// Day-zero seed: ONE record (Topaz) carrying the CONTESTED state — two competing pendings, one per
+// maker, distinct values + reasons — so the checker's queue opens with a real choice (grammar §3).
+// All OTHER records stay clean for the by-hand walkthrough (approval-flow.md "Walkthrough").
+seedIfEmpty(() => {
   const topaz = getLoyaltyStatus(30)!;
-  return {
-    entityType: 'loyaltyStatus',
+  const base = {
+    entityType: 'loyaltyStatus' as const,
     entityId: String(topaz.id),
     entityName: topaz.name,
     baseVersion: topaz.version,
-    baseSnapshot: toDraft(topaz), // the live Topaz (multiplier 1.5) — the frozen before-state
-    draft: { ...toDraft(topaz), multiplier: 1.75 }, // proposed: Topaz level-up multiplier 1.5 → 1.75
+    baseSnapshot: toDraft(topaz), // live Topaz (multiplier 1.5) — the frozen before-state
+  };
+  const a = submit<LoyaltyStatusDraft>({
+    ...base,
+    draft: { ...toDraft(topaz), multiplier: 1.75 }, // Maja: raise level-up multiplier 1.5 → 1.75
     submittedBy: DEMO_MAKER.name,
     submitReason: 'Trial: raise Topaz level-up multiplier to 1.75.',
-  } satisfies SubmitInput<LoyaltyStatusDraft>;
+  });
+  const b = submit<LoyaltyStatusDraft>({
+    ...base,
+    draft: { ...toDraft(topaz), multiplier: 1.6 }, // Ivan: a gentler 1.6
+    submittedBy: DEMO_MAKER2.name,
+    submitReason: 'Counter-proposal: 1.6 is enough of a bump and keeps the payout within budget.',
+  });
+  // Day-zero seen (§5): each maker has already SEEN the OTHER's proposal (they're aware of the
+  // contest), the checker has seen NEITHER. So the checker opens to "2 awaiting review" while both
+  // makers open to nothing — and because each author's own CR stays unseen-by-them, an eventual
+  // outdate/reject still surfaces to its author (outcome-relative seen).
+  if (a.ok) markSeen([a.cr.id], DEMO_MAKER2.name); // Ivan has seen Maja's
+  if (b.ok) markSeen([b.cr.id], DEMO_MAKER.name); // Maja has seen Ivan's
 });
