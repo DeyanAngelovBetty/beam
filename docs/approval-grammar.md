@@ -59,7 +59,10 @@ contract).*
 - **Proposed, needs decision:** one pending CR per maker per record.
   Parallel across people is the feature; parallel within one person is
   version spam — their own Cancel-and-resubmit path is the edit mechanism.
-  **[open — Deyan to rule]**
+  **[resolved 2026-08-27 — yes; implemented.** submit() refuses a second
+  pending by the same actor on the same record; the editor's change-lifecycle
+  strip carries the own-pending mode (cancel-to-resubmit) so the dead end is
+  visible at entry, never a submit-time ambush.**]**
 
 ## 4. Reasons
 
@@ -112,6 +115,15 @@ existing ruling, now count-aware:
   *(Amends the AppAlertBar's original no-manual-dismissal ruling
   (2026-08-14) — superseded 2026-08-27; the derived-only principle survives,
   dismissal is just another way to mark seen.)*
+- **"Seen" is outcome-relative, not write-once.** A new outcome re-nags
+  exactly once, even if the CR was already viewed while pending: the seen
+  mark advances to now on each view, and the maker-outcome derivation counts
+  an item unseen when it was last seen BEFORE the outcome landed (rejected /
+  outdated). So a maker who opened their pending request still hears when it
+  is later rejected or outdated — and it clears the moment they see the
+  outcome itself. *(Bug found and fixed during the 2026-08-27 surfaces pass:
+  the first cut keyed on mere presence of a seen mark, which suppressed the
+  outcome forever once the pending had been viewed.)*
 
 **Approvals list page:**
 - Status is a **filter, not tabs** — one queue, not five pages; statuses are
@@ -139,7 +151,7 @@ existing ruling, now count-aware:
 
 ## 7. Open questions
 
-1. One pending CR per maker per record? **[Deyan — proposed yes]**
+1. ~~One pending CR per maker per record?~~ **[resolved 2026-08-27 — yes; implemented (§3).]**
 2. Enum spelling `canceled` vs `cancelled` — follow backend contract. **[Tzeno]**
 3. Does `outdated` fire on any record change, or only on sibling-CR
    approval? (Direct edits outside the flow shouldn't exist once approval
@@ -147,7 +159,10 @@ existing ruling, now count-aware:
 4. Reject-reason required — revisit on usage evidence (lean recorded in §4).
 
 *Resolved 2026-08-27: reject-on-outdated — no; outdated is fully terminal
-(Tzeno). Retention — history kept, cleanup deferred (Tzeno).*
+(Tzeno). Retention — history kept, cleanup deferred (Tzeno). One pending CR
+per maker per record — yes, implemented (§3, §7.1; guard + own-pending strip
+mode). Bar "seen" is outcome-relative — a new outcome re-nags once even if the
+CR was viewed while pending (§5; bug found + fixed in the surfaces pass).*
 
 ---
 
@@ -156,6 +171,8 @@ alerts, AppAlertBar, ConfigDiffPanel — 2026-08-14…17). New rulings dated
 2026-08-27: outdated status + parallel model (Tzeno), outdated fully
 terminal + retention deferred (Tzeno), reasons matrix + capture surfaces,
 filter-not-tabs + pending-first sort, Cancel rename, unseen-items bar model
-+ Clarity-style dismissal (supersedes the 08-14 no-dismissal ruling). Contributor credits: Alex — separate
++ Clarity-style dismissal (supersedes the 08-14 no-dismissal ruling),
+one-pending-per-maker resolved yes (§3/§7.1), outcome-relative seen (§5).
+Contributor credits: Alex — separate
 approval-grammar doc (proposed 2026-08-26), reason-on-reject (optional);
 Tzeno — outdated model, backend surfacing constraints.*

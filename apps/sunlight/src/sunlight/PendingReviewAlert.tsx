@@ -75,7 +75,9 @@ export function PendingReviewAlert() {
       message = `Your change requests: ${parts.join(' · ')}`;
     }
     voice = {
-      severity: 'warning',
+      // Outcomes are NEWS, not alarms — severity is the alarm channel, so info (not warning). Also
+      // sidesteps the flagged light-scheme warning-fill contrast gap until the palette-seed fix.
+      severity: 'info',
       message,
       ids: outcomes.map((cr) => cr.id),
       actionLabel: 'View',

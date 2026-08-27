@@ -42,22 +42,23 @@ export const NonDismissible: Story = {
 };
 
 /**
- * The two CR voices (approval-grammar §5), both dismissible. CHECKER: unseen pending to review
- * (info). MAKER: your own unseen terminal outcomes, aggregated (warning). The ✕ and the CTA both
- * mark the shown items seen — see PendingReviewAlert for the derivation.
+ * The two CR voices (approval-grammar §5), both dismissible and both `info` — outcomes are news, not
+ * alarms (severity is the alarm channel). CHECKER: unseen pending to review. MAKER: your own unseen
+ * terminal outcomes, aggregated. The ✕ and the CTA both mark the shown items seen — see
+ * PendingReviewAlert for the derivation.
  */
 export const CrVoices: Story = {
   render: () => (
     <Stack>
       <AppAlertBar severity="info" message="2 change requests await your review" action={review} onDismiss={() => {}} />
       <AppAlertBar
-        severity="warning"
+        severity="info"
         message="Your change requests: 2 rejected · 1 outdated"
         action={<Button size="small" variant="outlined">View</Button>}
         onDismiss={() => {}}
       />
       <AppAlertBar
-        severity="warning"
+        severity="info"
         message="Your change request on Topaz was rejected"
         action={<Button size="small" variant="outlined">View</Button>}
         onDismiss={() => {}}
