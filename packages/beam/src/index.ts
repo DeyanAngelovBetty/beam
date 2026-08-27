@@ -75,6 +75,7 @@ export {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Avatar,
   Collapse,
   FormControl,
   InputLabel,

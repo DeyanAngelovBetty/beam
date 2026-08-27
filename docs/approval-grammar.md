@@ -98,8 +98,15 @@ on the reason.*
   separate strip surface only fragmented the single edit surface — walkthrough
   evidence, Deyan+Alex. The strip keeps the page-level alert and the
   own-pending blocker; only the composer moved.)*
-- **Capture surface (checker):** inline on the CR detail page, where the
-  decision meets the diff.
+- **Capture surface (checker):** the **first row of the CR detail panel** — a
+  "Decision note" field-twin (full-width, `gridColumn: '1 / -1'`), mirroring the
+  maker's row: a **field while the CR is decidable by this actor, a stat once
+  decided** ("—" on your own CR, where you get no decision voice; the recorded
+  note joins Reviewed by / Reviewed at as the review record). Constant geometry —
+  the row is present in all three states, field⇄stat swapping in place.
+  *(Relocated 2026-08-27 from a standalone field at the bottom of the detail
+  page — same move as the maker's reason, and for the same reason: one panel,
+  the twins rule carrying the state.)*
 
 ## 5. Surfaces
 

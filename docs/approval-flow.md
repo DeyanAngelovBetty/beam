@@ -25,9 +25,10 @@ this is the workstream it was waiting for.*
 
 *One artifact, three jobs: the **acceptance test** (every step names its surface +
 expected state), the **demo script**, and the **onboarding doc**. Walk it end to end in
-Sunlight, flipping "Acting as" in the shell chrome. Four demo actors:
-**Maja Novak** (maker), **Ivan Horvat** (maker), **Ravi Patel** (checker),
-**Sofia Delgado** (checker). Ground truth: [approval-grammar.md](approval-grammar.md).*
+Sunlight — the **"Acting as" persona list** in the sidebar footer switches actor in one
+click (no dropdown). Four demo personas: **Maja Novak** (maker), **Ivan Horvat** (maker),
+**Ravi Patel** (checker), **Sofia Delgado** (checker). The "Act as" column below is a
+click on that persona. Ground truth: [approval-grammar.md](approval-grammar.md).*
 
 **Day-zero state (seeded, out of the box).** One record carries the contest: **Topaz**
 holds two competing pendings — Maja's (multiplier → 1.75) and Ivan's (→ 1.6), each with
@@ -46,7 +47,7 @@ it's resolved.
 | 1 | **Maja** | Edit Amethyst, change the multiplier, optionally fill the **Change description** (the DetailsPanel's first-row field), **Submit for approval**. | The "Change description" row is present from entry, **disabled until you change a field**, then enabled — it never gates Submit (reasons are optional, §4). After submit: Amethyst's view shows the **requester** alert ("You submitted … pending approval", [View request] · [Cancel request]). |
 | 2 | **Ivan** | Edit Amethyst, a *different* multiplier (± a description), Submit. | Allowed — parallel pendings by different makers (§3). Amethyst view (as Ivan) now shows the requester alert **+ "1 more request is pending on this record"**. Switch to Maja: her requester alert gains the same "+1 more" tail. |
 | 3 | **Maja** (guard) | Edit Amethyst again, try to Submit a second time. | The strip shows the **own-pending blocker** at entry — "You already have a pending request on this record — cancel it to submit a new change" + inline [Cancel request]; Submit stays disabled. (The store's `duplicatePending` guard is the safety net; the strip prevents reaching it.) |
-| 4 | **Ravi** | Open **Configuration Approvals**. | The list opens **pending-first**. Amethyst's two competing CRs sit on top (plus the seeded Topaz two). Each row shows its **Reason**. Open Ivan's CR → the detail shows the diff, the **submit reason** heading it, a **"1 other pending request on this record"** sibling line, and a **Decision note (optional)** field. |
+| 4 | **Ravi** | Open **Configuration Approvals**. | The list opens **pending-first**. Amethyst's two competing CRs sit on top (plus the seeded Topaz two). Each row shows its **Reason**. Open Ivan's CR → the detail shows the request panel (with the editable **Decision note** as its first row), a **"1 other pending request on this record"** sibling line, and the diff with the **submit reason** heading it. |
 | 5 | **Ravi** | **Approve** Ivan's CR (optionally add a decision note). | Ivan's CR → **approved**, Amethyst takes multiplier 1.6 (a new revision). **Maja's CR auto-outdates** (§2): its detail shows the **outdated banner** + a historical, non-actionable diff; the list shows it as **outdated**; Amethyst's record page no longer shows Maja's pending. |
 | 6 | **Maja** | Look at the app-level bar. | The bar shows the **outcome voice**: "Your change request on Amethyst became outdated" — `info`, dismissible. (This surfaces even though Maja viewed her request while it was pending: "seen" is outcome-relative — §5.) |
 | 7 | **Maja** | Click **✕** (or open the CR). | Dismiss and view are the same transition — both mark it seen. The bar slides away. |
