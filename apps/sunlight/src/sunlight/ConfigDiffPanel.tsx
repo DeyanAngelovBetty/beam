@@ -3,6 +3,7 @@ import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
 import type { ChangeRequest } from './changeRequests';
 import type { LoyaltyStatusDraft, StatusReward } from './loyaltyStatuses';
 import { ProposedConfigSummary } from './ProposedConfigSummary';
+import { REASON_PLACEHOLDER } from './changeRequestShared';
 
 /**
  * ConfigDiffPanel — the review diff: side-by-side CURRENT (the CR's frozen `baseSnapshot`) vs
@@ -99,10 +100,11 @@ export function ConfigDiffPanel({ cr }: { cr: ChangeRequest }) {
     <Paper component="section" variant="outlined" aria-label={`Configuration changes for ${cr.entityName}`} sx={{ p: 2 }}>
       <Stack spacing={2}>
         {/* The submit reason (grammar §4) heads the diff — captured once, displayed wherever the CR
-            appears; here it describes WHY this change, above WHAT changed. */}
-        {cr.submitReason && (
-          <Typography variant="body2">{cr.submitReason}</Typography>
-        )}
+            appears; here it describes WHY this change, above WHAT changed. Optional → a quiet
+            placeholder when absent, never blank layout. */}
+        <Typography variant="body2" color={cr.submitReason ? 'text.primary' : 'text.disabled'} sx={cr.submitReason ? undefined : { fontStyle: 'italic' }}>
+          {cr.submitReason || REASON_PLACEHOLDER}
+        </Typography>
         {/* No per-entity "Updated" operation chip here: this diff is SINGLE-ENTITY (one CR = one
             entity), so the section header + this count line already carry the context. The chip
             differentiates entities only in a MULTI-entity (grid-import) diff, where each entity's

@@ -17,6 +17,12 @@ contract).*
 
 - **Maker** submits change requests (CRs); **checker** approves or rejects
   them. Four eyes: nobody decides on their own request.
+- **The four-eyes invariant is submitter ≠ reviewer** — that is the whole of
+  the rule the flow enforces. *Who may review at all* (role/permission) is a
+  backend-owned layer ABOVE it, out of demo scope: in the demo any non-submitter
+  can be the second pair of eyes, so a checker who submits a CR sees the
+  own-request action set and a DIFFERENT checker approves it (the maker/checker
+  labels are demo personas, not enforced permissions).
 - A **change request** carries a **proposed target state** (a snapshot of
   what the record should become), not a patch. "Change 1 → 3" is stored as
   "make it 3." This is what keeps parallel requests mechanically coherent:
@@ -68,21 +74,30 @@ contract).*
 
 | act | reason | required? |
 |---|---|---|
-| submit | why this change (becomes the CR's description) | **required** |
+| submit | why this change (becomes the CR's description) | optional |
 | approve | reviewer note | optional |
 | reject | why declined | optional *(lean: usage may show this wants to be required — a reasonless reject is a door slammed on the maker; revisit on evidence — Alex's call as proposed, 2026-08-26)* |
+
+*Reasons are OPTIONAL across the board (revised 2026-08-27 — supersedes the
+original "submit required" ruling; see the note below). Submit is never gated
+on the reason.*
 
 - **Capture ≠ display.** The submit reason is captured once and displayed
   everywhere the CR appears: the approvals list row, the CR detail, the diff
   page. Transparency comes from display, not from where the field lived.
-- **Capture surface (maker):** the change-lifecycle strip — the ratified
-  region between page header and details panel (`[header] · [page-level
-  alert / change strip] · [details panel] · [rest]`). In edit mode, when the
-  form goes dirty, the strip presents the reason composer ("Describe this
-  change for review"); Submit stays disabled until filled. Not a dialog (no
-  ambush after the fact, requirement visible before submitting), and not a
-  DetailsPanel field (the reason is metadata about the change, not a field
-  of the record — it must not dress like one).
+- **Empty is a first-class state.** A CR with no description is normal, not an
+  error: every surface that shows the reason renders a quiet placeholder
+  ("No description") when it's absent — never a blank-looking layout.
+- **Capture surface (maker):** the **DetailsPanel**, as its full-width first
+  row (the `gridColumn: '1 / -1'` convention) — a "Change description" field
+  captured ALONGSIDE the change, in the one edit surface. It is **present from
+  edit-mode entry, disabled until the form goes dirty** (constant geometry, no
+  mid-edit layout jump). *(Revised 2026-08-27 — supersedes the original ruling
+  that put a REQUIRED composer in the change-lifecycle strip and gated Submit
+  on it. Once the reason went optional the composer lost its gate job, and a
+  separate strip surface only fragmented the single edit surface — walkthrough
+  evidence, Deyan+Alex. The strip keeps the page-level alert and the
+  own-pending blocker; only the composer moved.)*
 - **Capture surface (checker):** inline on the CR detail page, where the
   decision meets the diff.
 
@@ -173,6 +188,11 @@ terminal + retention deferred (Tzeno), reasons matrix + capture surfaces,
 filter-not-tabs + pending-first sort, Cancel rename, unseen-items bar model
 + Clarity-style dismissal (supersedes the 08-14 no-dismissal ruling),
 one-pending-per-maker resolved yes (§3/§7.1), outcome-relative seen (§5).
+Amended 2026-08-27 (Deyan+Alex walkthrough): reasons OPTIONAL across the board
+(supersedes "submit required", §4) + the maker capture surface moved from the
+change-lifecycle strip composer into the DetailsPanel first-row field
+(supersedes the strip-composer + submit-gate ruling); four-eyes invariant
+stated as submitter ≠ reviewer, role permissions backend-owned (§1).
 Contributor credits: Alex — separate
 approval-grammar doc (proposed 2026-08-26), reason-on-reject (optional);
 Tzeno — outdated model, backend surfacing constraints.*

@@ -59,8 +59,9 @@ export interface ChangeRequest<T = unknown> {
   status: ChangeRequestStatus;
   submittedBy: string;
   submittedAt: string;
-  /** Why the requester proposed this change (approval-grammar §4). REQUIRED — every CR carries one. */
-  submitReason: string;
+  /** Why the requester proposed this change (approval-grammar §4). OPTIONAL — never gates submit;
+   *  surfaces that show it render a quiet "No description" placeholder when it's absent. */
+  submitReason?: string;
   reviewedBy?: string; // set on approve/reject; empty for canceled/outdated (no reviewer acted)
   reviewedAt?: string; // set when a REVIEWER acts (approved/rejected)
   /** The reviewer's rationale, set on approve/reject when given (approval-grammar §4). Optional. */
@@ -85,8 +86,8 @@ export interface SubmitInput<T = unknown> {
    *  before-state. Required: the caller holds the live entity, this module stays entity-agnostic. */
   baseSnapshot: T;
   submittedBy: string;
-  /** Why the change is proposed (approval-grammar §4). REQUIRED. */
-  submitReason: string;
+  /** Why the change is proposed (approval-grammar §4). OPTIONAL — never gates submit. */
+  submitReason?: string;
 }
 
 /** How approve() writes a draft onto a concrete entity without this module importing it. */

@@ -22,6 +22,10 @@ export function crActionsFor(cr: ChangeRequest, me: string): CrActionKind[] {
 /** Short, human ID for display (the full `cr-<ts>-<seq>` is the key; this is the label). */
 export const shortCrId = (id: string) => id.slice(-6);
 
+/** submitReason is optional (grammar §4). Surfaces that show it render this quiet placeholder when
+ *  it's absent — never a blank-looking layout. */
+export const REASON_PLACEHOLDER = 'No description';
+
 /** Approve/reject failure → an operator-facing sentence. Shared by the list + detail surfaces. */
 export function reasonMessage(reason: string, cr: ChangeRequest): string {
   switch (reason) {

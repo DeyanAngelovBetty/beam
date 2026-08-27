@@ -21,7 +21,7 @@ import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { listAll, approve, reject, cancel, useChangeRequests, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
 import { DEMO_USERS, useCurrentUser } from './currentUser';
-import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor } from './changeRequestShared';
+import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor, REASON_PLACEHOLDER } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -147,11 +147,17 @@ export function PendingApprovalsPage() {
     {
       key: 'reason',
       header: 'Reason',
-      // Submit reason is captured once, displayed everywhere (grammar §4). Here, truncated.
-      getValue: (cr) => cr.submitReason,
+      // Submit reason is captured once, displayed everywhere (grammar §4). Optional → a quiet
+      // placeholder when absent (never a blank cell). Truncated with a title tooltip.
+      getValue: (cr) => cr.submitReason ?? '',
       render: (cr) => (
-        <Typography variant="body2" color="text.secondary" title={cr.submitReason} sx={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {cr.submitReason}
+        <Typography
+          variant="body2"
+          color={cr.submitReason ? 'text.secondary' : 'text.disabled'}
+          title={cr.submitReason ?? REASON_PLACEHOLDER}
+          sx={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...(cr.submitReason ? {} : { fontStyle: 'italic' }) }}
+        >
+          {cr.submitReason || REASON_PLACEHOLDER}
         </Typography>
       ),
       width: 220,

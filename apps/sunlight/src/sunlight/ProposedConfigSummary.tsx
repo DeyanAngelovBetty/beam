@@ -1,6 +1,7 @@
 import { Stack, Box, Typography, Divider } from '@betty/beam';
 import type { ChangeRequest } from './changeRequests';
 import type { LoyaltyStatusDraft, StatusReward } from './loyaltyStatuses';
+import { REASON_PLACEHOLDER } from './changeRequestShared';
 
 /**
  * ProposedConfigSummary — the READ-ONLY rendering of what a change request proposes. ONE anatomy,
@@ -21,11 +22,9 @@ export function ProposedConfigSummary({ cr }: { cr: ChangeRequest }) {
   ];
   return (
     <Stack spacing={2} sx={{ maxWidth: 720 }}>
-      {cr.submitReason && (
-        <Typography variant="body2" color="text.secondary">
-          {cr.submitReason}
-        </Typography>
-      )}
+      <Typography variant="body2" color={cr.submitReason ? 'text.secondary' : 'text.disabled'} sx={cr.submitReason ? undefined : { fontStyle: 'italic' }}>
+        {cr.submitReason || REASON_PLACEHOLDER}
+      </Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 3, rowGap: 0.5 }}>
         {fields.map(([label, value]) => (
           <Box key={label} sx={{ display: 'contents' }}>

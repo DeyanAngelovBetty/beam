@@ -325,7 +325,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
   );
 
   const doSubmit = () => {
-    if (!v.valid || !isDirty || !reason.trim() || myPending) return;
+    if (!v.valid || !isDirty || myPending) return;
     submittingRef.current = true;
     const res = submit<LoyaltyStatusDraft>({
       entityType: 'loyaltyStatus',
@@ -335,7 +335,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
       baseSnapshot: toDraft(status), // frozen before-state for the review diff
       draft: toDomainDraft(model, status),
       submittedBy: me,
-      submitReason: reason.trim(), // the composer's text (§4)
+      submitReason: reason.trim() || undefined, // OPTIONAL (§4) — the DetailsPanel "Change description"
     });
     // The §3 guard is the SAFETY NET now — the strip's own-pending mode prevents reaching a refusal
     // (Submit is disabled while myPending exists). If it somehow fires, don't lie about success.
@@ -359,17 +359,16 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
   const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
   const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
 
-  // The disabled-submit tooltip (why you can't submit yet) — distinct from the CR's submitReason.
+  // The disabled-submit tooltip (why you can't submit yet). The reason is OPTIONAL now (§4), so it
+  // never gates Submit — only own-pending, dirtiness, and validity do.
   const submitHint = myPending
     ? 'Cancel your pending request to submit a new change.'
     : !isDirty
       ? 'Make a change to submit.'
       : !v.valid
         ? (v.name ?? v.multiplier ?? v.boxes ?? v.maxDays ?? v.keepGems ?? v.keepBoxes ?? v.aggregate ?? 'Fix the highlighted fields.')
-        : !reason.trim()
-          ? 'Describe this change for review to submit.'
-          : '';
-  const canSubmit = v.valid && isDirty && Boolean(reason.trim()) && !myPending;
+        : '';
+  const canSubmit = v.valid && isDirty && !myPending;
 
   // The field twins (BeamField = small outlined; the details-panel grid sizes them — no width here).
   // This is where the queued medium→small convergence lands, as part of the details-panel pattern.
@@ -415,10 +414,12 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
         }
       />
 
-      {/* The change-lifecycle strip in EDIT mode (grammar §4). Own-pending mode (item 7) makes the
-          dead end visible AT ENTRY with the exit attached — editing is never blocked, but Submit is,
-          until you cancel your open request; then the strip flips to the reason composer. The
-          composer is change METADATA (not a DetailsPanel field), shown once the form goes dirty. */}
+      {/* The change-lifecycle strip in EDIT mode (grammar §4) keeps the own-pending blocker (item 7)
+          and the ambient pending notes — the reason COMPOSER moved into the DetailsPanel below
+          (2026-08-27: once reasons went optional the composer lost its gate job, so it belongs with
+          the other change fields, not as a separate strip surface). Own-pending makes the dead end
+          visible AT ENTRY with the exit attached — editing is never blocked, but Submit is, until you
+          cancel your open request. */}
       {myPending ? (
         <Alert
           severity="warning"
@@ -434,7 +435,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
       ) : (
         <>
           {imported && (
-            <Alert severity="info">Imported — review, describe the change, and submit for approval. Nothing is saved until a reviewer approves.</Alert>
+            <Alert severity="info">Imported — review, add a description if you like, and submit for approval. Nothing is saved until a reviewer approves.</Alert>
           )}
           {othersPending.length > 0 && (
             <Alert severity="info">
@@ -443,24 +444,26 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
               proposal; approving one marks the rest outdated.
             </Alert>
           )}
-          {isDirty && (
-            <BeamField
-              label="Describe this change for review"
-              placeholder="What are you changing, and why?"
-              multiline
-              minRows={2}
-              required
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              helperText="Recorded on the request and shown to the reviewer."
-            />
-          )}
         </>
       )}
 
       {/* The details panel — same grammatical slots as the view's stats, now fields (morph in place;
-          grammar §2). Unlabeled: the page title is the title. */}
+          grammar §2). Unlabeled: the page title is the title. First row (full-width, gridColumn
+          convention) is the OPTIONAL "Change description" — change metadata captured alongside the
+          change (§4). PRESENT from edit entry, DISABLED until dirty → constant geometry, no mid-edit
+          layout jump. Optional, so it never gates Submit. */}
       <DetailsPanel aria-label="Status fields">
+        <BeamField
+          sx={{ gridColumn: '1 / -1' }}
+          label="Change description"
+          placeholder="What changed and why — shown to the reviewer."
+          multiline
+          minRows={2}
+          disabled={!isDirty}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          helperText="Optional — recorded on the request and shown to the reviewer."
+        />
         {field('name', 'Name', { required: true })}
         {field('maxDays', 'Max days to complete', { hint: `Whole number or ${'∞'}` })}
         {field('boxes', 'Gems')}

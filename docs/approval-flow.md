@@ -21,13 +21,13 @@ this is the workstream it was waiting for.*
 
 ---
 
-## Walkthrough — the three-actor script *(2026-08-27)*
+## Walkthrough — the four-actor script *(2026-08-27)*
 
 *One artifact, three jobs: the **acceptance test** (every step names its surface +
 expected state), the **demo script**, and the **onboarding doc**. Walk it end to end in
-Sunlight, flipping "Acting as" in the shell chrome. Three demo actors:
-**Maja Novak** (maker), **Ivan Horvat** (maker), **Ravi Patel** (checker). Ground truth:
-[approval-grammar.md](approval-grammar.md).*
+Sunlight, flipping "Acting as" in the shell chrome. Four demo actors:
+**Maja Novak** (maker), **Ivan Horvat** (maker), **Ravi Patel** (checker),
+**Sofia Delgado** (checker). Ground truth: [approval-grammar.md](approval-grammar.md).*
 
 **Day-zero state (seeded, out of the box).** One record carries the contest: **Topaz**
 holds two competing pendings — Maja's (multiplier → 1.75) and Ivan's (→ 1.6), each with
@@ -43,8 +43,8 @@ it's resolved.
 
 | # | Act as | Do | Surface → expected state |
 |---|---|---|---|
-| 1 | **Maja** | Edit Amethyst, change the multiplier, fill the reason composer, **Submit for approval**. | Change-lifecycle strip shows the required reason composer; Submit disabled until it's filled. After submit: Amethyst's view shows the **requester** alert ("You submitted … pending approval", [View request] · [Cancel request]). |
-| 2 | **Ivan** | Edit Amethyst, a *different* multiplier + reason, Submit. | Allowed — parallel pendings by different makers (§3). Amethyst view (as Ivan) now shows the requester alert **+ "1 more request is pending on this record"**. Switch to Maja: her requester alert gains the same "+1 more" tail. |
+| 1 | **Maja** | Edit Amethyst, change the multiplier, optionally fill the **Change description** (the DetailsPanel's first-row field), **Submit for approval**. | The "Change description" row is present from entry, **disabled until you change a field**, then enabled — it never gates Submit (reasons are optional, §4). After submit: Amethyst's view shows the **requester** alert ("You submitted … pending approval", [View request] · [Cancel request]). |
+| 2 | **Ivan** | Edit Amethyst, a *different* multiplier (± a description), Submit. | Allowed — parallel pendings by different makers (§3). Amethyst view (as Ivan) now shows the requester alert **+ "1 more request is pending on this record"**. Switch to Maja: her requester alert gains the same "+1 more" tail. |
 | 3 | **Maja** (guard) | Edit Amethyst again, try to Submit a second time. | The strip shows the **own-pending blocker** at entry — "You already have a pending request on this record — cancel it to submit a new change" + inline [Cancel request]; Submit stays disabled. (The store's `duplicatePending` guard is the safety net; the strip prevents reaching it.) |
 | 4 | **Ravi** | Open **Configuration Approvals**. | The list opens **pending-first**. Amethyst's two competing CRs sit on top (plus the seeded Topaz two). Each row shows its **Reason**. Open Ivan's CR → the detail shows the diff, the **submit reason** heading it, a **"1 other pending request on this record"** sibling line, and a **Decision note (optional)** field. |
 | 5 | **Ravi** | **Approve** Ivan's CR (optionally add a decision note). | Ivan's CR → **approved**, Amethyst takes multiplier 1.6 (a new revision). **Maja's CR auto-outdates** (§2): its detail shows the **outdated banner** + a historical, non-actionable diff; the list shows it as **outdated**; Amethyst's record page no longer shows Maja's pending. |
@@ -54,12 +54,15 @@ it's resolved.
 | 9 | **Maja** | On a **fresh** clean record (e.g. Opal), submit a CR with a reason. | Requester alert on Opal; the CR joins the checker's queue. |
 | 10 | **Ravi** | Open Maja's Opal CR, **Reject** it with a reason in the decision note. | Opal CR → **rejected** (the decision note is recorded and shown on the CR). The live Opal is untouched. |
 | 11 | **Maja** | App-level bar. | Outcome voice: "Your change request on Opal was rejected" (`info`, dismissible). ✕ clears it; no re-nag. |
+| 12 | **Ravi** (checker-as-maker) | On a fresh clean record (e.g. Sapphire), edit + **Submit**. | A checker may submit — four-eyes is submitter ≠ reviewer, not role (§1). Sapphire's view shows Ravi the **requester** alert. |
+| 13 | **Ravi** | Open his own Sapphire CR — list **and** detail. | The **own-request action set**: [Cancel request] only, **no Approve/Reject** (you can't review your own request, even as a checker). The approvals-list kebab matches. |
+| 14 | **Sofia** (checker2) | Open the same CR, **Approve**. | A DIFFERENT checker is a valid second pair of eyes → Ravi's CR approves, Sapphire takes the new revision. This is the case the second checker exists to prove. |
 
 **Every actor-relative derivation flips live on the "Acting as" switch** (verify by
 switching mid-step): the page-level alert **voice + counts**, the app-level **bar
-contents**, the editor's **own-pending strip mode**, the `duplicatePending` **guard**, and
-the CR-detail **action set** ([Cancel request] on your own · [Reject] [Approve] on
-another's · none on an archived one).
+contents**, the editor's **own-pending blocker**, the `duplicatePending` **guard**, and
+the CR-detail **action set** ([Cancel request] on your own — *including a checker on their
+own CR* · [Reject] [Approve] on another's · none on an archived one).
 
 ---
 
@@ -318,6 +321,17 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   column flexes/wraps; the two buttons get a real gap and the message keeps its right padding so
   they don't kiss. **Max two actions** on a page-level alert. Seeded as a shared sx
   (`sunlight/pageAlert.ts`) until BeamAlert lands.
+- **Approval v2/v3 — BUILT** *(2026-08-27).* The grammar (statuses, parallelism, reasons, surfaces)
+  moved to [approval-grammar.md](approval-grammar.md); highlights landed in Sunlight: `withdrawn` →
+  `canceled` + new `outdated` (auto on approve, `superseded` retired); parallel pendings per record
+  with a `duplicatePending` guard (one open per maker per record) and the editor's own-pending
+  blocker; structured reasons; per-actor `seenBy` + the unseen-items app bar (dismissible, viewing =
+  seen, outcome-relative). **v3 amendments** *(Deyan+Alex walkthrough)*: reasons are OPTIONAL and the
+  maker's capture surface is the **DetailsPanel first-row "Change description"** (present-from-entry,
+  disabled-until-dirty), NOT a strip composer — the strip keeps only the alert + own-pending blocker;
+  a second checker (Sofia Delgado) proves the checker-as-maker case (four-eyes = submitter ≠ reviewer,
+  role permissions backend-owned). Demo roster: Maja · Ivan (makers) · Ravi · Sofia (checkers). Full
+  script in the Walkthrough above.
 - **`pendingApproval` vocabulary word** — the §6.4 extension; decide when the
   borrow starts to chafe (e.g. the day a settlement `pending` and an approval
   `pending` share a screen).
@@ -328,10 +342,10 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   (machinery exists); with it, per-role notification routing.
 - **Commit bar revival** — the parked dirty-state bar remains the candidate
   docking point if the header save model proves too quiet for approval flows.
-- **Rejected → resubmit UX** — how a maker learns of and acts on a rejection
-  (currently: the archived CR + note; no surface points at it). Related small
-  follow-up: the reject action captures no `note` in the UI yet (the store
-  field exists).
+- **Rejected → resubmit UX** — how a maker learns of and acts on a rejection.
+  *(Largely addressed 2026-08-27: the app-level bar's maker outcome voice points
+  at it, and Reject captures an optional decision note in the CR detail UI —
+  grammar §4/§5.)* Remaining: a one-click "resubmit from this rejected CR" path.
 - **`rewardType` affordance** — free-text in the tracer (matches the domain's
   string; no invented vocabulary). A select arrives when the domain confirms
   the closed set.

@@ -79,13 +79,14 @@ function AtEdit({ id }: { id: string }) {
   return <RouterProvider router={router} />;
 }
 
-/** EDIT mode, no pending (Opal, id 50): the change-lifecycle strip is clean; the reason composer
- *  ("Describe this change for review") appears once the form goes DIRTY, and Submit stays disabled
- *  until it's filled (item 1). Type in a field to see the composer. */
+/** EDIT mode, no pending (Opal, id 50): the OPTIONAL "Change description" is the DetailsPanel's
+ *  full-width FIRST ROW (gridColumn 1 / -1), PRESENT from entry, DISABLED until the form goes dirty —
+ *  constant geometry, no mid-edit jump (2026-08-27: reasons went optional, so the composer left the
+ *  strip and joined the change fields; it never gates Submit). Type in a field to watch it enable. */
 export const EditComposer: Story = { render: () => <AtEdit id="50" /> };
 
 /** EDIT mode with YOUR OWN pending (Emerald, id 40, submitted by the default checker): the strip
  *  shows the own-pending blocker — "You already have a pending request on this record — cancel it to
- *  submit a new change" — with an inline [Cancel request]. Submit is disabled until you cancel; then
- *  the strip flips to the composer (item 7). */
+ *  submit a new change" — with an inline [Cancel request]. Submit is disabled until you cancel. The
+ *  "Change description" row still sits in the DetailsPanel below (disabled until dirty). */
 export const EditOwnPendingBlocked: Story = { render: () => <AtEdit id="40" /> };

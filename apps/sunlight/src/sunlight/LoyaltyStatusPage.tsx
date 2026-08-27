@@ -116,7 +116,7 @@ export function LoyaltyStatusPage() {
         baseSnapshot: toDraft(live), // frozen before-state for the review diff
         draft: mergeOntoLive(item, live),
         submittedBy: getCurrentUser().name,
-        submitReason: gridReason.trim() || importReasonDefault(), // editable default (item 9)
+        submitReason: gridReason.trim() || undefined, // optional; prefilled default, may be cleared
       });
       // §3 guard: a row this actor already has open on the same record is skipped, not superseded
       // (the old model superseded in-flight pendings; now duplicates are refused). Count successes.
@@ -223,7 +223,7 @@ export function LoyaltyStatusPage() {
                   Import → edit
                 </Button>
               ) : gridDiff ? (
-                <Button size="small" variant="contained" disabled={gridDiff.changed.length === 0 || !gridReason.trim()} onClick={confirmGridImport}>
+                <Button size="small" variant="contained" disabled={gridDiff.changed.length === 0} onClick={confirmGridImport}>
                   Submit {gridDiff.changed.length} change request{gridDiff.changed.length === 1 ? '' : 's'}
                 </Button>
               ) : (
@@ -270,16 +270,15 @@ export function LoyaltyStatusPage() {
             )}
 
             {/* The submit reason (§4) for the whole batch — an editable auto-generated default (item 9).
-                Every CR the batch creates carries it; required, so it can't be blanked to nothing. */}
+                OPTIONAL (reasons never gate submit); prefilled so it's rarely empty, but may be cleared. */}
             {panel.kind === 'grid' && gridDiff && gridDiff.changed.length > 0 && (
               <TextField
                 size="small"
                 fullWidth
-                label="Describe this change for review"
+                label="Change description"
                 value={gridReason}
                 onChange={(e) => setGridReason(e.target.value)}
-                error={!gridReason.trim()}
-                helperText={gridReason.trim() ? 'Recorded on every request in this batch.' : 'A reason is required.'}
+                helperText="Optional — recorded on every request in this batch."
               />
             )}
           </Stack>
