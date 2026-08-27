@@ -28,7 +28,7 @@ import { LoyaltyRewardsEditor } from './LoyaltyRewardsEditor';
 import { NextGemPanel } from './NextGemPanel';
 import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
 import { getLoyaltyStatus, LOYALTY_STATUSES, toDraft, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
-import { submit, getPendingFor, withdraw, useChangeRequests } from './changeRequests';
+import { submit, getPendingFor, cancel, useChangeRequests } from './changeRequests';
 import { getCurrentUser, useCurrentUser } from './currentUser';
 import { ConfirmDialog } from './ConfirmDialog';
 import { pageAlertActionSx, PAGE_ALERT_ACTION_GAP } from './pageAlert';
@@ -103,20 +103,20 @@ export function LoyaltyStatusEditor() {
 function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit: () => void; onImport: (draft: LoyaltyStatusDraft) => void }) {
   const navigate = useNavigate();
   const me = useCurrentUser(); // reactive: flip Acting-as → the alert voice flips
-  useChangeRequests(); // reactive: withdraw here (or approve/reject elsewhere) re-renders → alert clears
+  useChangeRequests(); // reactive: cancel here (or approve/reject elsewhere) re-renders → alert clears
   const pending = getPendingFor(String(status.id));
   const isRequester = !!pending && pending.submittedBy === me.name;
   const [notice, setNotice] = useState<Notice>(null);
-  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
-  const doWithdraw = () => {
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const doCancel = () => {
     if (!pending) return;
-    const res = withdraw(pending.id, me.name);
-    setConfirmWithdraw(false);
+    const res = cancel(pending.id, me.name);
+    setConfirmCancel(false);
     // Success: the pending alert simply disappears (pending → null on re-render); the notice confirms.
     setNotice(
       res.ok
-        ? { severity: 'success', msg: `Withdrawn — “${status.name}” proposal archived.` }
-        : { severity: 'error', msg: 'This request can no longer be withdrawn.' },
+        ? { severity: 'success', msg: `Canceled — “${status.name}” proposal archived.` }
+        : { severity: 'error', msg: 'This request can no longer be canceled.' },
     );
   };
   const nextTier = LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === status.id) + 1];
@@ -164,7 +164,7 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
 
       {/* A pending CR is a NOTICE in view mode (not a draft to edit; it becomes a seeded draft only
           on entering edit — §6). Its voice + actions follow the ACTOR'S RELATIONSHIP to the CR
-          (approval-flow "Actor → action-set"): the REQUESTER gets a pending-approval line + Withdraw
+          (approval-flow "Actor → action-set"): the REQUESTER gets a pending-approval line + Cancel
           (an own-request action, no second pair of eyes); everyone ELSE gets an awaiting-review line
           + Review → the CR page, where the reviewer meets the diff (Approve/Reject deliberately not
           inline). Derived-only, so flipping Acting-as flips the voice. */}
@@ -173,19 +173,19 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
           <Alert
             severity="info"
             action={
-              // Flat only, order = emphasis (Withdraw rightmost = primary); cluster never wraps.
+              // Flat only, order = emphasis (Cancel rightmost = primary); cluster never wraps.
               <Stack direction="row" spacing={PAGE_ALERT_ACTION_GAP} sx={pageAlertActionSx}>
                 <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
                   View request
                 </Button>
-                <Button size="small" variant="text" onClick={() => setConfirmWithdraw(true)}>
-                  Withdraw
+                <Button size="small" variant="text" onClick={() => setConfirmCancel(true)}>
+                  Cancel request
                 </Button>
               </Stack>
             }
           >
             You submitted a change request for this status on {pending.submittedAt.slice(0, 10)} — it's pending
-            approval. To make further changes, withdraw it and submit a new one.
+            approval. To make further changes, cancel it and submit a new one.
           </Alert>
         ) : (
           <Alert
@@ -259,12 +259,12 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
       <ExpandedLoyaltyPanel status={status} next={nextTier} />
 
       <ConfirmDialog
-        open={confirmWithdraw}
-        title="Withdraw change request?"
-        body="Withdraw this change request? It will be archived."
-        confirmLabel="Withdraw"
-        onConfirm={doWithdraw}
-        onClose={() => setConfirmWithdraw(false)}
+        open={confirmCancel}
+        title="Cancel change request?"
+        body="Cancel this change request? It will be archived."
+        confirmLabel="Cancel request"
+        onConfirm={doCancel}
+        onClose={() => setConfirmCancel(false)}
       />
     </Stack>
   );
@@ -290,6 +290,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
   const [model, setModel] = useState<EditorModel>(initialModel);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null); // §3 duplicate-guard refusal
 
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -310,7 +311,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
   const doSubmit = () => {
     if (!v.valid || !isDirty) return;
     submittingRef.current = true;
-    submit<LoyaltyStatusDraft>({
+    const res = submit<LoyaltyStatusDraft>({
       entityType: 'loyaltyStatus',
       entityId: String(status.id),
       entityName: status.name,
@@ -318,7 +319,17 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
       baseSnapshot: toDraft(status), // frozen before-state for the review diff
       draft: toDomainDraft(model, status),
       submittedBy: getCurrentUser().name,
+      // No reason input in the editor yet (a surfaces-prompt addition) — a placeholder keeps the
+      // required model field honest without inventing UI here. See task report.
+      submitReason: `Proposed update to “${status.name}”.`,
     });
+    // The §3 guard: this actor already has an open proposal on this record. Don't lie about success —
+    // stay in the editor and steer to cancel-first (the same language the view-mode notice uses).
+    if (!res.ok) {
+      submittingRef.current = false;
+      setSubmitError('You already have a pending change request for this status — cancel it before submitting a new one.');
+      return;
+    }
     navigate('/');
   };
 
@@ -328,7 +339,8 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
   const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
   const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
 
-  const submitReason = !isDirty
+  // The disabled-submit tooltip (why you can't submit yet) — distinct from the CR's submitReason.
+  const submitHint = !isDirty
     ? 'Make a change to submit.'
     : (v.name ?? v.multiplier ?? v.boxes ?? v.maxDays ?? v.keepGems ?? v.keepBoxes ?? v.aggregate ?? 'Fix the highlighted fields.');
   const canSubmit = v.valid && isDirty;
@@ -358,7 +370,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
             <Button variant="text" onClick={requestCancel}>
               Cancel
             </Button>
-            <Tooltip title={canSubmit ? '' : submitReason}>
+            <Tooltip title={canSubmit ? '' : submitHint}>
               <span>
                 <Button
                   variant="contained"
@@ -377,12 +389,22 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
         }
       />
 
+      {submitError && (
+        <Alert severity="warning" onClose={() => setSubmitError(null)}>
+          {submitError}
+        </Alert>
+      )}
+
       {imported ? (
         <Alert severity="warning">Imported — review and submit for approval. Nothing is saved until a reviewer approves.</Alert>
       ) : pending ? (
+        // Model shift (approval-grammar §2/§3): submit no longer SUPERSEDES a pending CR. Your own
+        // open request blocks a new one (cancel first); someone else's coexists as a separate
+        // proposal, and approving one marks the rivals 'outdated'.
         <Alert severity="info">
-          Editing a pending change request submitted by {pending.submittedBy} on {pending.submittedAt.slice(0, 10)}.
-          Submitting replaces it.
+          {pending.submittedBy === getCurrentUser().name
+            ? `You have a pending change request for this status (submitted ${pending.submittedAt.slice(0, 10)}). Cancel it before submitting a new one.`
+            : `A pending change request from ${pending.submittedBy} is awaiting review (submitted ${pending.submittedAt.slice(0, 10)}). Submitting adds a separate proposal; approving one marks the others outdated.`}
         </Alert>
       ) : null}
 

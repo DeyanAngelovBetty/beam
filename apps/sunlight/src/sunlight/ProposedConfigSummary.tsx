@@ -21,9 +21,9 @@ export function ProposedConfigSummary({ cr }: { cr: ChangeRequest }) {
   ];
   return (
     <Stack spacing={2} sx={{ maxWidth: 720 }}>
-      {cr.note && (
+      {cr.submitReason && (
         <Typography variant="body2" color="text.secondary">
-          {cr.note}
+          {cr.submitReason}
         </Typography>
       )}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 3, rowGap: 0.5 }}>

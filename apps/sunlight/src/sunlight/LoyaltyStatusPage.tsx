@@ -95,16 +95,19 @@ export function LoyaltyStatusPage() {
       if (!live) continue;
       const changed = gridDiff.changed.some((c) => c.id === String(item.id));
       if (!changed) continue; // unchanged → no CR
-      submit({
+      const res = submit({
         entityType: 'loyaltyStatus',
         entityId: String(live.id),
         entityName: live.name,
-        baseVersion: live.version, // supersede handles any in-flight pending for this entity
+        baseVersion: live.version,
         baseSnapshot: toDraft(live), // frozen before-state for the review diff
         draft: mergeOntoLive(item, live),
         submittedBy: getCurrentUser().name,
+        submitReason: 'Bulk list import.', // placeholder — no per-row reason input yet (surfaces prompt)
       });
-      count += 1;
+      // §3 guard: a row this actor already has open on the same record is skipped, not superseded
+      // (the old model superseded in-flight pendings; now duplicates are refused). Count successes.
+      if (res.ok) count += 1;
     }
     setGridResult(count);
     setGridDiff(null);

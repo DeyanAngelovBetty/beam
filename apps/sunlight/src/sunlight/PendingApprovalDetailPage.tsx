@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Stack, Typography, Alert, Button, BeamPageHeader, BeamEmptyState } from '@betty/beam';
 import { backTo } from './backTo';
-import { getChangeRequest, approve, reject, withdraw, useChangeRequests } from './changeRequests';
+import { getChangeRequest, approve, reject, cancel, useChangeRequests } from './changeRequests';
 import { useCurrentUser } from './currentUser';
 import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
@@ -16,12 +16,12 @@ type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string 
  * PendingApprovalDetailPage — /pending-approvals/:id. A change request is a RECORD, so the estate's
  * view-first rule applies: this is a read-only record page. Its actions follow the ACTOR'S
  * RELATIONSHIP to the CR (crActionsFor — the vocabulary ruling), not a fixed reviewer toolbar:
- * the requester viewing their own pending CR gets [Withdraw] (there is NO greyed-out Approve/Reject
+ * the requester viewing their own pending CR gets [Cancel] (there is NO greyed-out Approve/Reject
  * — the page offers what the actor can do); anyone else gets [Reject] [Approve]. Archived CRs
- * (approved/rejected/superseded/withdrawn) render the same page read-only with no actions.
+ * (approved/rejected/canceled/outdated) render the same page read-only with no actions.
  *
  * Reactive on the actor (useCurrentUser) and the store (useChangeRequests), so switching Acting-as
- * in the shell re-derives the action set live. Approve/Reject/Withdraw route through the same store
+ * in the shell re-derives the action set live. Approve/Reject/Cancel route through the same store
  * calls as the list, so behaviour is identical wherever you act.
  */
 export function PendingApprovalDetailPage() {
@@ -54,11 +54,11 @@ export function PendingApprovalDetailPage() {
     if (res.ok) return navigate('/pending-approvals');
     setNotice({ severity: 'error', msg: reasonMessage(res.reason, cr) });
   };
-  const doWithdraw = () => {
-    const res = withdraw(cr.id, me);
+  const doCancel = () => {
+    const res = cancel(cr.id, me);
     setConfirmOpen(false);
     if (res.ok) return navigate('/pending-approvals');
-    setNotice({ severity: 'error', msg: 'This request can no longer be withdrawn.' });
+    setNotice({ severity: 'error', msg: 'This request can no longer be canceled.' });
   };
 
   // Status + Operation are NOT repeated here — they live once in the header identity zone
@@ -71,8 +71,9 @@ export function PendingApprovalDetailPage() {
     { label: 'Submitted at', value: cr.submittedAt.slice(0, 10) },
     { label: 'Reviewed by', value: cr.reviewedBy ?? '—' },
     { label: 'Reviewed at', value: cr.reviewedAt ? cr.reviewedAt.slice(0, 10) : '—' },
-    // A withdrawal isn't a review — its own row, shown only when it happened.
-    ...(cr.status === 'withdrawn' ? [{ label: 'Withdrawn at', value: (cr.withdrawnAt ?? '').slice(0, 10) }] : []),
+    // Cancellation / auto-outdate aren't reviews — their own rows, shown only when they happened.
+    ...(cr.status === 'canceled' ? [{ label: 'Canceled at', value: (cr.canceledAt ?? '').slice(0, 10) }] : []),
+    ...(cr.status === 'outdated' ? [{ label: 'Outdated at', value: (cr.outdatedAt ?? '').slice(0, 10) }] : []),
   ];
 
   return (
@@ -86,11 +87,11 @@ export function PendingApprovalDetailPage() {
             <OperationChip />
           </Stack>
         }
-        // Actor-relative: requester → [Withdraw]; approver → [Reject] [Approve]; archived → none.
+        // Actor-relative: requester → [Cancel]; approver → [Reject] [Approve]; archived → none.
         action={
-          actions.includes('withdraw') ? (
+          actions.includes('cancel') ? (
             <Button variant="outlined" color="inherit" onClick={() => setConfirmOpen(true)}>
-              Withdraw
+              Cancel request
             </Button>
           ) : actions.includes('approve') ? (
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -127,10 +128,10 @@ export function PendingApprovalDetailPage() {
 
       <ConfirmDialog
         open={confirmOpen}
-        title="Withdraw change request?"
-        body="Withdraw this change request? It will be archived."
-        confirmLabel="Withdraw"
-        onConfirm={doWithdraw}
+        title="Cancel change request?"
+        body="Cancel this change request? It will be archived."
+        confirmLabel="Cancel request"
+        onConfirm={doCancel}
         onClose={() => setConfirmOpen(false)}
       />
     </Stack>

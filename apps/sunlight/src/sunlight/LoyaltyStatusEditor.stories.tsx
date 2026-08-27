@@ -15,7 +15,7 @@ import { DEMO_CHECKER } from './currentUser';
  *  - Topaz (id 30) is the seed CR, submitted by the MAKER; the default actor is the checker → the
  *    REVIEWER voice ("… awaiting review", [Review] → CR page).
  *  - Emerald (id 40) below gets a CR submitted by the DEFAULT actor (checker), so viewing it reads
- *    as the REQUESTER voice ("You submitted …", [View request] · [Withdraw]) without switching actor.
+ *    as the REQUESTER voice ("You submitted …", [View request] · [Cancel]) without switching actor.
  * (LoyaltyStatusEditor value-imports the entity store, so registration + seed happen transitively.)
  */
 
@@ -23,7 +23,7 @@ import { DEMO_CHECKER } from './currentUser';
 (() => {
   if (getPendingFor('40')) return;
   const emerald = getLoyaltyStatus('40');
-  if (emerald) submit({ entityType: 'loyaltyStatus', entityId: '40', entityName: emerald.name, baseVersion: emerald.version, baseSnapshot: toDraft(emerald), draft: { ...toDraft(emerald), multiplier: 1.25 }, submittedBy: DEMO_CHECKER.name });
+  if (emerald) submit({ entityType: 'loyaltyStatus', entityId: '40', entityName: emerald.name, baseVersion: emerald.version, baseSnapshot: toDraft(emerald), draft: { ...toDraft(emerald), multiplier: 1.25 }, submittedBy: DEMO_CHECKER.name, submitReason: 'Requester-voice demo fixture.' });
 })();
 const meta: Meta = {
   title: 'Lab/Sunlight/LoyaltyStatusEditor',
@@ -58,7 +58,7 @@ export const WithPendingDraft: Story = { render: () => <At id="30" /> };
 export const PendingAsReviewer: Story = { render: () => <At id="30" /> };
 
 /** Pending as REQUESTER (Emerald, id 40, submitted by the default checker): the alert reads
- *  "You submitted …" with [View request] · [Withdraw] (the confirm travels with Withdraw). */
+ *  "You submitted …" with [View request] · [Cancel] (the confirm travels with Cancel). */
 export const PendingAsRequester: Story = { render: () => <At id="40" /> };
 
 /** An unknown id → the empty state. */

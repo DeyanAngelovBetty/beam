@@ -3,20 +3,20 @@ import type { ChangeRequest } from './changeRequests';
 /** Entity-type → human label. Grows with the ChangeRequestEntity union. */
 export const ENTITY_LABEL: Record<ChangeRequest['entityType'], string> = { loyaltyStatus: 'Loyalty status' };
 
-export type CrActionKind = 'approve' | 'reject' | 'withdraw';
+export type CrActionKind = 'approve' | 'reject' | 'cancel';
 
 /**
  * The actor-relative action set — the recorded vocabulary ruling in one derivation, used by BOTH
  * the detail page and the list kebab so they never diverge. Actions follow the actor's RELATIONSHIP
  * to the CR, not a fixed reviewer toolbar with some buttons greyed out:
- *   - archived (any non-pending)      → []            (browse-only)
- *   - own + pending    (requester)    → ['withdraw']  (retract your own proposal)
+ *   - archived (any non-pending)      → []           (browse-only)
+ *   - own + pending    (requester)    → ['cancel']   (retract your own proposal)
  *   - other + pending  (approver)     → ['approve', 'reject']
  * The maker never sees a disabled Approve/Reject — the page offers what the actor can actually do.
  */
 export function crActionsFor(cr: ChangeRequest, me: string): CrActionKind[] {
   if (cr.status !== 'pending') return [];
-  return cr.submittedBy === me ? ['withdraw'] : ['approve', 'reject'];
+  return cr.submittedBy === me ? ['cancel'] : ['approve', 'reject'];
 }
 
 /** Short, human ID for display (the full `cr-<ts>-<seq>` is the key; this is the label). */

@@ -126,6 +126,6 @@ seedPendingIfEmpty<LoyaltyStatusDraft>(() => {
     baseSnapshot: toDraft(topaz), // the live Topaz (multiplier 1.5) — the frozen before-state
     draft: { ...toDraft(topaz), multiplier: 1.75 }, // proposed: Topaz level-up multiplier 1.5 → 1.75
     submittedBy: DEMO_MAKER.name,
-    note: 'Trial: raise Topaz level-up multiplier to 1.75.',
+    submitReason: 'Trial: raise Topaz level-up multiplier to 1.75.',
   } satisfies SubmitInput<LoyaltyStatusDraft>;
 });

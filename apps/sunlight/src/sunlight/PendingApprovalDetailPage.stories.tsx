@@ -9,7 +9,7 @@ import { DEMO_MAKER, DEMO_CHECKER } from './currentUser';
 /**
  * Bench for the CR detail route (/pending-approvals/:id) — view-first, a change request as a
  * record. Actions follow the actor's RELATIONSHIP: PENDING by someone else → [Reject] [Approve]
- * (checker is the default actor ≠ the seed's maker); PENDING by you → [Withdraw] only (OwnPending,
+ * (checker is the default actor ≠ the seed's maker); PENDING by you → [Cancel] only (OwnPending,
  * a CR authored by the default checker); an ARCHIVED CR renders read-only with no actions.
  * Needs a DATA router. NOTE: the module store is shared across stories — approving/rejecting here
  * mutates it (a live tracer); the fixtures below are each created once, on separate entities.
@@ -26,9 +26,10 @@ const pendingId = getPendingFor('30')?.id ?? '';
 const archivedId = (() => {
   const opal = getLoyaltyStatus('50');
   if (!opal) return '';
-  const cr = submit({ entityType: 'loyaltyStatus', entityId: '50', entityName: opal.name, baseVersion: opal.version, baseSnapshot: toDraft(opal), draft: { ...toDraft(opal), multiplier: 2 }, submittedBy: DEMO_MAKER.name });
-  reject(cr.id, DEMO_CHECKER.name, 'Demo archive fixture.');
-  return cr.id;
+  const res = submit({ entityType: 'loyaltyStatus', entityId: '50', entityName: opal.name, baseVersion: opal.version, baseSnapshot: toDraft(opal), draft: { ...toDraft(opal), multiplier: 2 }, submittedBy: DEMO_MAKER.name, submitReason: 'Demo archive fixture.' });
+  if (!res.ok) return '';
+  reject(res.cr.id, DEMO_CHECKER.name, 'Demo archive fixture.');
+  return res.cr.id;
 })();
 
 function At({ id }: { id: string }) {
@@ -46,18 +47,18 @@ function At({ id }: { id: string }) {
   return <RouterProvider router={router} />;
 }
 
-// An OWN-pending CR — submitted BY the default actor (checker), so viewing it own=true → [Withdraw].
+// An OWN-pending CR — submitted BY the default actor (checker), so viewing it own=true → [Cancel].
 const ownPendingId = (() => {
   const em = getLoyaltyStatus('60');
   if (!em) return '';
-  const cr = submit({ entityType: 'loyaltyStatus', entityId: '60', entityName: em.name, baseVersion: em.version, baseSnapshot: toDraft(em), draft: { ...toDraft(em), multiplier: 3 }, submittedBy: DEMO_CHECKER.name });
-  return cr.id;
+  const res = submit({ entityType: 'loyaltyStatus', entityId: '60', entityName: em.name, baseVersion: em.version, baseSnapshot: toDraft(em), draft: { ...toDraft(em), multiplier: 3 }, submittedBy: DEMO_CHECKER.name, submitReason: 'Own-pending demo fixture.' });
+  return res.ok ? res.cr.id : '';
 })();
 
 /** Pending record, someone else's — both review actions live (checker acting on the maker's request). */
 export const Pending: Story = { render: () => <At id={pendingId} /> };
 
-/** Own pending record — the requester sees [Withdraw] ONLY (no greyed-out Approve/Reject). */
+/** Own pending record — the requester sees [Cancel] ONLY (no greyed-out Approve/Reject). */
 export const OwnPending: Story = { render: () => <At id={ownPendingId} /> };
 
 /** Archived (rejected) record — read-only, no actions; the decision history is browsable. */
