@@ -236,6 +236,14 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   (`PendingReviewAlert`) is DERIVED, never stored: shown iff pending CRs not by the current actor
   > 0, live via the reactive stores, no dismissal (it clears when the queue empties). We do NOT
   invent a toast system; transient outcome notices + conflict/own-request tooltips stay inline.
+
+  *(2026-08-27 — supersedes the no-dismissal ruling above; see [approval-grammar.md](approval-grammar.md) §5.)*
+  The bar is now the **unseen-items** model, two voices: a **checker** sees unseen pending CRs not
+  authored by them; a **maker** sees their own CRs with unseen terminal outcomes (rejected/outdated),
+  aggregated ("2 rejected · 1 outdated"). It is **dismissible** — a Clarity-style ✕ at the right end —
+  where **dismissal and viewing are the SAME transition**: both call `markSeen` on the shown items.
+  The derived-only principle survives intact: "seen" is the only flag, and the bar reappears solely
+  when genuinely new unseen items arrive, never re-nagging about seen ones.
 - **Maker-withdraw — BUILT as Withdraw** *(2026-08-14).* Actions now follow the actor's
   RELATIONSHIP to the CR, not a fixed reviewer toolbar with buttons greyed out. A different act
   from a reviewer's Reject: the *submitter* retracts their own pending request (an own-request

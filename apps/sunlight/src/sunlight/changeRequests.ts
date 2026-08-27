@@ -201,13 +201,6 @@ export function submit<T>(input: SubmitInput<T>): SubmitResult<T> {
   return { ok: true, cr };
 }
 
-/** The (first) pending CR for an entity — list badge + editor pending-draft load. NOTE: the model now
- *  permits concurrent pendings per record (different actors); this returns one. Multi-pending display
- *  is a surfaces concern (see task report). */
-export function getPendingFor(entityId: string): ChangeRequest | undefined {
-  return requests.find((r) => r.entityId === entityId && r.status === 'pending');
-}
-
 /** All pending CRs (approvals queue; app-level indicators are selectors over this). */
 export function listPending(): ChangeRequest[] {
   return requests.filter((r) => r.status === 'pending');
@@ -307,14 +300,20 @@ export function cancel(crId: string, actor: string): CancelResult {
  * Mark CRs as seen by an actor (approval-grammar §5). Used by the CR-detail view (a checker opening a
  * pending request; a requester opening a rejected/outdated outcome) AND by bar dismissal alike —
  * seen is the ONLY alert flag, so both paths write the same mark. Unknown ids are skipped.
+ *
+ * The mark ADVANCES to now on every call (it is not write-once). This is load-bearing for outcomes:
+ * a maker who viewed their request while it was PENDING has a seen-mark; when it later becomes
+ * rejected/outdated, that OUTCOME is newer than the mark, so `unseenOutcomesForRequester` compares
+ * timestamps (not mere presence) and still surfaces it — until the maker sees the outcome itself,
+ * which re-advances the mark past it. "A new outcome lands" thus re-nags exactly once.
  */
 export function markSeen(crIds: string[], actor: string): void {
   const ts = now();
   let touched = false;
   for (const id of crIds) {
     const cr = requests.find((r) => r.id === id);
-    if (cr && cr.seenBy[actor] === undefined) {
-      cr.seenBy[actor] = ts;
+    if (cr) {
+      cr.seenBy[actor] = ts; // advance the mark (see the outcome-time comparison below)
       touched = true;
     }
   }
@@ -339,16 +338,18 @@ export function unseenPendingForChecker(actor: string): ChangeRequest[] {
   );
 }
 
-/** For a REQUESTER: their OWN CRs that reached a negative outcome (rejected | outdated) and they
- *  haven't yet seen. Approved outcomes apply to the live entity and aren't alerted here; canceled is
- *  the requester's own act, so it's excluded. */
+/** For a REQUESTER: their OWN CRs whose negative OUTCOME (rejected | outdated) they haven't seen.
+ *  "Unseen" is outcome-relative, not mere absence: an item counts if never seen OR last seen BEFORE
+ *  the outcome landed (they saw the request while pending, but not its result). Approved outcomes
+ *  apply to the live entity and aren't alerted here; canceled is the requester's own act (excluded). */
 export function unseenOutcomesForRequester(actor: string): ChangeRequest[] {
-  return requests.filter(
-    (r) =>
-      r.submittedBy === actor &&
-      (r.status === 'rejected' || r.status === 'outdated') &&
-      r.seenBy[actor] === undefined,
-  );
+  return requests.filter((r) => {
+    if (r.submittedBy !== actor) return false;
+    if (r.status !== 'rejected' && r.status !== 'outdated') return false;
+    const outcomeAt = r.status === 'rejected' ? r.reviewedAt : r.outdatedAt;
+    const seen = r.seenBy[actor];
+    return seen === undefined || (outcomeAt !== undefined && seen < outcomeAt);
+  });
 }
 
 /** The archive for an entity = its version history (approved + rejected + canceled + outdated), newest first. */

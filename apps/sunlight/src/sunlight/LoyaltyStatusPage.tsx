@@ -21,7 +21,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFileRounded';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
 import { LOYALTY_STATUSES, toDraft, type LoyaltyStatus } from './loyaltyStatuses';
-import { getPendingFor, submit } from './changeRequests';
+import { pendingOnRecord, submit } from './changeRequests';
 import { getCurrentUser } from './currentUser';
 import {
   serializeStatus,
@@ -54,6 +54,11 @@ export function LoyaltyStatusPage() {
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [gridDiff, setGridDiff] = useState<ListDiff | null>(null);
   const [gridResult, setGridResult] = useState<number | null>(null);
+  // §4 requires a submit reason on every CR the grid import creates. Ruling (item 9): an
+  // auto-generated, EDITABLE default is acceptable for imports — "Bulk import from {file}", the
+  // maker may edit. `importFile` seeds the default; empty when JSON was pasted, not chosen.
+  const [importFile, setImportFile] = useState('');
+  const [gridReason, setGridReason] = useState('');
 
   const openPanel = (p: ImportPanel) => {
     setPanel(p);
@@ -61,9 +66,16 @@ export function LoyaltyStatusPage() {
     setImportErrors([]);
     setGridDiff(null);
     setGridResult(null);
+    setImportFile('');
+    setGridReason('');
   };
   const closePanel = () => setPanel(null);
-  const onFile = (file: File | undefined) => file?.text().then(setImportText);
+  const onFile = (file: File | undefined) => {
+    if (!file) return;
+    setImportFile(file.name);
+    file.text().then(setImportText);
+  };
+  const importReasonDefault = () => `Bulk import from ${importFile || 'pasted JSON'}`;
 
   // Row import → validate → open the editor route with the payload as a DRAFT (identity re-anchored
   // to this row; import never writes the store — four-eyes runs through the editor's Submit).
@@ -83,6 +95,7 @@ export function LoyaltyStatusPage() {
     }
     setImportErrors([]);
     setGridDiff(computeListDiff(res.items, LOYALTY_STATUSES));
+    setGridReason((prev) => prev || importReasonDefault()); // seed the editable default once
   };
   const confirmGridImport = () => {
     if (!gridDiff) return;
@@ -103,7 +116,7 @@ export function LoyaltyStatusPage() {
         baseSnapshot: toDraft(live), // frozen before-state for the review diff
         draft: mergeOntoLive(item, live),
         submittedBy: getCurrentUser().name,
-        submitReason: 'Bulk list import.', // placeholder — no per-row reason input yet (surfaces prompt)
+        submitReason: gridReason.trim() || importReasonDefault(), // editable default (item 9)
       });
       // §3 guard: a row this actor already has open on the same record is skipped, not superseded
       // (the old model superseded in-flight pendings; now duplicates are refused). Count successes.
@@ -140,8 +153,9 @@ export function LoyaltyStatusPage() {
       header: 'Approval',
       width: '120px',
       render: (r) => {
-        const pending = getPendingFor(String(r.id));
-        return pending ? <BeamStatusBadge status="pending" label="Pending" size="small" /> : null;
+        // Concurrency-aware: the badge means "this record has at least one pending request."
+        const hasPending = pendingOnRecord(String(r.id)).length > 0;
+        return hasPending ? <BeamStatusBadge status="pending" label="Pending" size="small" /> : null;
       },
     },
   ];
@@ -209,7 +223,7 @@ export function LoyaltyStatusPage() {
                   Import → edit
                 </Button>
               ) : gridDiff ? (
-                <Button size="small" variant="contained" disabled={gridDiff.changed.length === 0} onClick={confirmGridImport}>
+                <Button size="small" variant="contained" disabled={gridDiff.changed.length === 0 || !gridReason.trim()} onClick={confirmGridImport}>
                   Submit {gridDiff.changed.length} change request{gridDiff.changed.length === 1 ? '' : 's'}
                 </Button>
               ) : (
@@ -253,6 +267,20 @@ export function LoyaltyStatusPage() {
                   </Typography>
                 )}
               </Paper>
+            )}
+
+            {/* The submit reason (§4) for the whole batch — an editable auto-generated default (item 9).
+                Every CR the batch creates carries it; required, so it can't be blanked to nothing. */}
+            {panel.kind === 'grid' && gridDiff && gridDiff.changed.length > 0 && (
+              <TextField
+                size="small"
+                fullWidth
+                label="Describe this change for review"
+                value={gridReason}
+                onChange={(e) => setGridReason(e.target.value)}
+                error={!gridReason.trim()}
+                helperText={gridReason.trim() ? 'Recorded on every request in this batch.' : 'A reason is required.'}
+              />
             )}
           </Stack>
         </Paper>

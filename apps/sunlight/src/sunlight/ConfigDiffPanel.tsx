@@ -98,6 +98,11 @@ export function ConfigDiffPanel({ cr }: { cr: ChangeRequest }) {
   return (
     <Paper component="section" variant="outlined" aria-label={`Configuration changes for ${cr.entityName}`} sx={{ p: 2 }}>
       <Stack spacing={2}>
+        {/* The submit reason (grammar §4) heads the diff — captured once, displayed wherever the CR
+            appears; here it describes WHY this change, above WHAT changed. */}
+        {cr.submitReason && (
+          <Typography variant="body2">{cr.submitReason}</Typography>
+        )}
         {/* No per-entity "Updated" operation chip here: this diff is SINGLE-ENTITY (one CR = one
             entity), so the section header + this count line already carry the context. The chip
             differentiates entities only in a MULTI-entity (grid-import) diff, where each entity's

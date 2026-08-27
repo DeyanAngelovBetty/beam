@@ -36,9 +36,34 @@ export const WithDismiss: Story = {
   ),
 };
 
-/** Non-dismissible — no onDismiss → no X (the pending-review standing condition uses this). */
+/** Non-dismissible — no onDismiss → no X (component capability; the CR bar is now always dismissible). */
 export const NonDismissible: Story = {
   render: () => <AppAlertBar severity="info" message="2 change requests await your review" action={review} />,
+};
+
+/**
+ * The two CR voices (approval-grammar §5), both dismissible. CHECKER: unseen pending to review
+ * (info). MAKER: your own unseen terminal outcomes, aggregated (warning). The ✕ and the CTA both
+ * mark the shown items seen — see PendingReviewAlert for the derivation.
+ */
+export const CrVoices: Story = {
+  render: () => (
+    <Stack>
+      <AppAlertBar severity="info" message="2 change requests await your review" action={review} onDismiss={() => {}} />
+      <AppAlertBar
+        severity="warning"
+        message="Your change requests: 2 rejected · 1 outdated"
+        action={<Button size="small" variant="outlined">View</Button>}
+        onDismiss={() => {}}
+      />
+      <AppAlertBar
+        severity="warning"
+        message="Your change request on Topaz was rejected"
+        action={<Button size="small" variant="outlined">View</Button>}
+        onDismiss={() => {}}
+      />
+    </Stack>
+  ),
 };
 
 /** Long message — the cluster wraps and stays centred; the X stays pinned top-right. */

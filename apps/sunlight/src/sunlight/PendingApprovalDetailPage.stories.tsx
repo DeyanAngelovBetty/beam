@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { PendingApprovalDetailPage } from './PendingApprovalDetailPage';
-import { submit, reject, getPendingFor } from './changeRequests';
+import { submit, reject, approve, pendingOnRecord } from './changeRequests';
 import { getLoyaltyStatus, toDraft } from './loyaltyStatuses';
 import { DEMO_MAKER, DEMO_CHECKER } from './currentUser';
 
@@ -19,7 +19,7 @@ export default meta;
 type Story = StoryObj;
 
 // The seeded pending CR (Topaz, id 30) — authored by the maker.
-const pendingId = getPendingFor('30')?.id ?? '';
+const pendingId = pendingOnRecord('30')[0]?.id ?? '';
 
 // An archived (rejected) CR for the read-only variant — created once, on Opal (id 50) so it never
 // collides with the seed. Maker submits, checker rejects → a browsable decision-history record.
@@ -55,8 +55,24 @@ const ownPendingId = (() => {
   return res.ok ? res.cr.id : '';
 })();
 
+// An OUTDATED CR — the §2 auto-transition. Two makers propose on Ruby (id 70); approving one
+// outdates the other. We view the LOSER (submitted by the default checker, so it's browsable as an
+// own archived outcome). Created once on its own record.
+const outdatedId = (() => {
+  const ruby = getLoyaltyStatus('70');
+  if (!ruby) return '';
+  const winner = submit({ entityType: 'loyaltyStatus', entityId: '70', entityName: ruby.name, baseVersion: ruby.version, baseSnapshot: toDraft(ruby), draft: { ...toDraft(ruby), multiplier: 1.5 }, submittedBy: DEMO_MAKER.name, submitReason: 'The proposal that wins.' });
+  const loser = submit({ entityType: 'loyaltyStatus', entityId: '70', entityName: ruby.name, baseVersion: ruby.version, baseSnapshot: toDraft(ruby), draft: { ...toDraft(ruby), multiplier: 1.9 }, submittedBy: DEMO_CHECKER.name, submitReason: 'The rival proposal (will be outdated).' });
+  if (winner.ok) approve(winner.cr.id, DEMO_CHECKER.name); // approving the winner outdates the loser
+  return loser.ok ? loser.cr.id : '';
+})();
+
 /** Pending record, someone else's — both review actions live (checker acting on the maker's request). */
 export const Pending: Story = { render: () => <At id={pendingId} /> };
+
+/** Outdated record — a sibling CR was approved, so this one is terminal: an explicit outdated banner,
+ *  the diff shown as a historical (non-actionable) record, no approve/reject. */
+export const Outdated: Story = { render: () => <At id={outdatedId} /> };
 
 /** Own pending record — the requester sees [Cancel] ONLY (no greyed-out Approve/Reject). */
 export const OwnPending: Story = { render: () => <At id={ownPendingId} /> };
