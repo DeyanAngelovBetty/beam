@@ -3,7 +3,7 @@ import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, B
 
 /**
  * ConfirmDialog — a minimal are-you-sure gate for safe-but-final gestures (currently the maker's
- * Withdraw, on both the detail page and the list kebab, so the confirm travels with the action).
+ * Cancel-request, on both the detail page and the list kebab, so the confirm travels with the action).
  * Product-local; a promotion candidate if a second surface needs the same modal shape.
  */
 export function ConfirmDialog({

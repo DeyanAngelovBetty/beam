@@ -37,7 +37,7 @@ export const RequestDetails: Story = {
   ),
 };
 
-/** Density variant — the full CR-detail row set (incl. a withdrawn CR's "Withdrawn at"). The stress
+/** Density variant — the full CR-detail row set (incl. a canceled CR's "Canceled at"). The stress
  *  case for the keyline rhythm in a grid of many; judge in both schemes. */
 export const WithManyRows: Story = {
   render: () => (
@@ -52,7 +52,7 @@ export const WithManyRows: Story = {
           { label: 'Submitted at', value: '2026-08-11' },
           { label: 'Reviewed by', value: '—' },
           { label: 'Reviewed at', value: '—' },
-          { label: 'Withdrawn at', value: '2026-08-12' },
+          { label: 'Canceled at', value: '2026-08-12' },
         ]}
       />
     </Box>

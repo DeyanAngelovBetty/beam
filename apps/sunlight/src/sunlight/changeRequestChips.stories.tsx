@@ -5,8 +5,8 @@ import type { ChangeRequestStatus } from './changeRequests';
 
 /**
  * CR-status badge mapping — the page-local CR vocabulary (deliberately NOT BeamStatus). Five words
- * now: pending (info) · approved (success) · rejected (error) · superseded (neutral) · withdrawn
- * (neutral — a requester's own retraction, NOT the reviewer's red rejected).
+ * now: pending (info) · approved (success) · rejected (error) · canceled (neutral — a requester's own
+ * retraction) · outdated (neutral — a sibling CR was approved). Neither neutral is the reviewer's red.
  */
 const meta: Meta<typeof CRStatusChip> = {
   title: 'Lab/Sunlight/CRStatusChip',
@@ -15,7 +15,7 @@ const meta: Meta<typeof CRStatusChip> = {
 export default meta;
 type Story = StoryObj<typeof CRStatusChip>;
 
-const ALL: ChangeRequestStatus[] = ['pending', 'approved', 'rejected', 'superseded', 'withdrawn'];
+const ALL: ChangeRequestStatus[] = ['pending', 'approved', 'rejected', 'canceled', 'outdated'];
 
 export const AllStatuses: Story = {
   render: () => (

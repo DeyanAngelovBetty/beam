@@ -126,9 +126,12 @@ export const RecordWithDetailsPanel: Story = {
 };
 
 /**
- * Long title stress — verify the gradient spans the box sanely and the underline tracks the box as
- * ONE line. NOTE: a wrapping title exceeds the fixed 41px title row (reported): the row grows, so a
- * two-line title pushes its subtitle + actions down. Single-line titles are the design's assumption.
+ * Long title stress — the underline exhibit. The rule spans width:100% up to
+ * --beam-title-underline-max, so on this WRAPPING title it hugs the text then DISSOLVES (fade-to-
+ * background far end = accent, not a ruler across the whole block) rather than running the full
+ * multi-line width. Also confirms the gradient spans the box sanely. NOTE: a wrapping title exceeds
+ * the fixed 41px title row (reported): the row grows, so a two-line title pushes its subtitle +
+ * actions down. Single-line titles are the design's assumption.
  */
 export const LongWrappingTitle: Story = {
   args: {

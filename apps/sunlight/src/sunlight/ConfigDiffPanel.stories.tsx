@@ -43,6 +43,8 @@ const mkCr = (snapshot: LoyaltyStatusDraft | undefined, draft: LoyaltyStatusDraf
   status: 'pending',
   submittedBy: 'Maja Novak',
   submittedAt: '2026-08-11T10:00:00.000Z',
+  submitReason: 'Diff-panel demo fixture.',
+  seenBy: {},
 });
 
 const few = mkCr(base, {

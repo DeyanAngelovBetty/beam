@@ -1,25 +1,46 @@
-import { useState } from 'react';
-import { Stack, Alert, MenuItem, TextField, BeamPageHeader, BeamFilterBar, BeamDataTable } from '@betty/beam';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Stack,
+  Alert,
+  Box,
+  Button,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  FormControl,
+  InputLabel,
+  Select,
+  TextField,
+  Typography,
+  BeamPageHeader,
+  BeamFilterBar,
+  BeamDataTable,
+} from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import { RouterIdentityLink } from './RouterIdentityLink';
-import { listAll, approve, reject, withdraw, useChangeRequests, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
+import { listAll, approve, reject, cancel, useChangeRequests, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
 import { DEMO_USERS, useCurrentUser } from './currentUser';
-import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor } from './changeRequestShared';
+import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor, REASON_PLACEHOLDER } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
 import { ConfirmDialog } from './ConfirmDialog';
 
 type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
 
-const CR_STATUSES: ChangeRequestStatus[] = ['pending', 'approved', 'rejected', 'superseded', 'withdrawn'];
+const CR_STATUSES: ChangeRequestStatus[] = ['pending', 'approved', 'rejected', 'canceled', 'outdated'];
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Status is a FILTER dimension, not tabs (grammar §5) — a multi-select (empty = all). `record`/`by`
+// arrive as URL params (deep-links from the record page's alert + the app bar's maker voice).
 type Filters = {
-  status: 'any' | ChangeRequestStatus;
+  statuses: ChangeRequestStatus[];
   type: 'any' | ChangeRequest['entityType'];
   q: string;
   by: 'any' | string;
   from: string;
   to: string;
 };
-const EMPTY: Filters = { status: 'any', type: 'any', q: '', by: 'any', from: '', to: '' };
+const EMPTY: Filters = { statuses: [], type: 'any', q: '', by: 'any', from: '', to: '' };
 
 /**
  * PendingApprovalsPage — the reviewer's surface (Administration nav).
@@ -28,32 +49,45 @@ const EMPTY: Filters = { status: 'any', type: 'any', q: '', by: 'any', from: '',
  * PROPOSAL — the backend team's actual contract is unavailable, so this is designed on our own
  * semantics with their screenshots as visual reference. Built on the existing BeamFilterBar as-is;
  * moving it to a field-schema filter API is a recorded LATER task, not this one.
- * (approval-flow.md Open questions carries the same caveat.)
  *
  * A BeamFilterBar over the FULL change-request set (the archive is browsable now, not just the
- * pending queue), reference-parity columns, Approve/Reject as one row-action definition.
+ * pending queue). Status is a FILTER (multi-select), never tabs — one queue, not five pages
+ * (grammar §5). Sort: PENDING PINNED FIRST, then recency — the checker's default is "everything
+ * actionable, on top." The record page's alert deep-links here with `?record=<id>` (this record's
+ * requests); the app bar's maker voice with `?by=<name>` (your own).
  *
- * NO ROW EXPANSION (2026-08-14): the view-first DETAIL route (/pending-approvals/:id, built 08-13)
- * is now the review surface — the old expanded draft-summary was its predecessor. With no
- * expansion, the kebab is the SINGLE row-action projection (list-grammar §3 scopes the
- * both-projections rule to rows that expand — so kebab-only is conformant, not a bend). The
- * identity link opens the detail route.
+ * NO ROW EXPANSION (2026-08-14): the view-first DETAIL route (/pending-approvals/:id) is the review
+ * surface. The kebab is the SINGLE row-action projection (list-grammar §3). The identity link opens
+ * the detail route.
  *
  * Reactive: `useChangeRequests` re-renders on any CR mutation, `useCurrentUser` on an Acting-as
- * switch (the switcher lives in the shell chrome now) — so approve/reject and actor changes update
- * live, no local tick. Filter state stays LOCAL applied-state (URL persistence is the §1 follow-up).
+ * switch — approve/reject and actor changes update live. Filter state stays LOCAL applied-state.
  */
 export function PendingApprovalsPage() {
   useChangeRequests(); // re-render on any CR mutation (approve/reject here, submit anywhere)
   const me = useCurrentUser().name; // reactive: tracks the shell's Acting-as switch
+  const [searchParams, setSearchParams] = useSearchParams();
+  const recordParam = searchParams.get('record') ?? '';
+  const byParam = searchParams.get('by') ?? '';
+
   const [notice, setNotice] = useState<Notice>(null);
-  const [withdrawTarget, setWithdrawTarget] = useState<ChangeRequest | null>(null);
-  const [draft, setDraft] = useState<Filters>(EMPTY);
-  const [applied, setApplied] = useState<Filters>(EMPTY);
+  const [cancelTarget, setCancelTarget] = useState<ChangeRequest | null>(null);
+  const [draft, setDraft] = useState<Filters>({ ...EMPTY, by: byParam || 'any' });
+  const [applied, setApplied] = useState<Filters>({ ...EMPTY, by: byParam || 'any' });
+
+  // A `?by=` deep-link (the app bar's maker voice) seeds the submitter filter live, even when the
+  // page is already mounted (react-router keeps it, only the params change).
+  useEffect(() => {
+    if (byParam) {
+      setDraft((d) => ({ ...d, by: byParam }));
+      setApplied((a) => ({ ...a, by: byParam }));
+    }
+  }, [byParam]);
 
   const q = applied.q.trim().toLowerCase();
-  const rows = listAll().filter((cr) => {
-    if (applied.status !== 'any' && cr.status !== applied.status) return false;
+  const filtered = listAll().filter((cr) => {
+    if (recordParam && cr.entityId !== recordParam) return false; // URL-driven, layered on the bar filters
+    if (applied.statuses.length > 0 && !applied.statuses.includes(cr.status)) return false;
     if (applied.type !== 'any' && cr.entityType !== applied.type) return false;
     if (applied.by !== 'any' && cr.submittedBy !== applied.by) return false;
     if (q && !cr.entityName.toLowerCase().includes(q)) return false;
@@ -62,9 +96,13 @@ export function PendingApprovalsPage() {
     if (applied.to && day > applied.to) return false;
     return true;
   });
+  // Pending pinned first, then the rest by recency. listAll() is already recency-sorted and the
+  // filter preserves order, so a stable pending-first partition is all we need.
+  const rows = [...filtered.filter((cr) => cr.status === 'pending'), ...filtered.filter((cr) => cr.status !== 'pending')];
+  const recordName = recordParam ? listAll().find((cr) => cr.entityId === recordParam)?.entityName : undefined;
 
   const onApprove = (cr: ChangeRequest) => {
-    const res = approve(cr.id, me); // emit → this page (and the app alert) re-render live
+    const res = approve(cr.id, me); // emit → this page (and the app bar) re-render live
     setNotice(
       res.ok
         ? { severity: 'success', msg: `Approved — ${cr.entityName} updated to a new revision.` }
@@ -79,19 +117,19 @@ export function PendingApprovalsPage() {
         : { severity: 'error', msg: reasonMessage(res.reason, cr) },
     );
   };
-  const doWithdraw = () => {
-    if (!withdrawTarget) return;
-    const res = withdraw(withdrawTarget.id, me);
+  const doCancel = () => {
+    if (!cancelTarget) return;
+    const res = cancel(cancelTarget.id, me);
     setNotice(
       res.ok
-        ? { severity: 'info', msg: `Withdrawn — ${withdrawTarget.entityName} proposal archived.` }
-        : { severity: 'error', msg: 'This request can no longer be withdrawn.' },
+        ? { severity: 'info', msg: `Canceled — ${cancelTarget.entityName} proposal archived.` }
+        : { severity: 'error', msg: 'This request can no longer be canceled.' },
     );
-    setWithdrawTarget(null);
+    setCancelTarget(null);
   };
 
   // Columns per Tzeno reference (round 2): ID · Feature/Entity (identity) · Record ID · Operation ·
-  // Status · Created by/at · Last action. Speculative — our proposal pending his team's contract.
+  // Status · Reason · Created by/at · Last action. Speculative — our proposal pending his contract.
   const columns: BeamColumn<ChangeRequest>[] = [
     { key: 'id', header: 'ID', getValue: (cr) => cr.id, render: (cr) => shortCrId(cr.id), width: 88 },
     {
@@ -106,34 +144,72 @@ export function PendingApprovalsPage() {
     { key: 'record', header: 'Record ID', getValue: (cr) => cr.entityId, render: (cr) => cr.entityId, width: 110 },
     { key: 'op', header: 'Operation', render: () => <OperationChip />, width: 120 },
     { key: 'status', header: 'Status', getValue: (cr) => cr.status, render: (cr) => <CRStatusChip status={cr.status} />, width: 120 },
+    {
+      key: 'reason',
+      header: 'Reason',
+      // Submit reason is captured once, displayed everywhere (grammar §4). Optional → a quiet
+      // placeholder when absent (never a blank cell). Truncated with a title tooltip.
+      getValue: (cr) => cr.submitReason ?? '',
+      render: (cr) => (
+        <Typography
+          variant="body2"
+          color={cr.submitReason ? 'text.secondary' : 'text.disabled'}
+          title={cr.submitReason ?? REASON_PLACEHOLDER}
+          sx={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...(cr.submitReason ? {} : { fontStyle: 'italic' }) }}
+        >
+          {cr.submitReason || REASON_PLACEHOLDER}
+        </Typography>
+      ),
+      width: 220,
+    },
     { key: 'by', header: 'Created by', getValue: (cr) => cr.submittedBy, render: (cr) => cr.submittedBy, width: 150 },
     { key: 'at', header: 'Created', getValue: (cr) => cr.submittedAt, render: (cr) => cr.submittedAt.slice(0, 10), align: 'right', width: 120 },
     {
       key: 'action',
       header: 'Last action',
-      // Reviewer action, else a withdrawal (shaped "— · <date>": no reviewer, but a dated event).
-      getValue: (cr) => cr.reviewedAt ?? cr.withdrawnAt ?? '',
+      // Reviewer action, else a system/own event — cancel or auto-outdate (shaped "— · <date>": no
+      // reviewer, but a dated event).
+      getValue: (cr) => cr.reviewedAt ?? cr.canceledAt ?? cr.outdatedAt ?? '',
       render: (cr) =>
         cr.reviewedBy
           ? `${cr.reviewedBy} · ${(cr.reviewedAt ?? '').slice(0, 10)}`
-          : cr.withdrawnAt
-            ? `— · ${cr.withdrawnAt.slice(0, 10)}`
-            : '—',
+          : cr.canceledAt
+            ? `— · ${cr.canceledAt.slice(0, 10)}`
+            : cr.outdatedAt
+              ? `— · ${cr.outdatedAt.slice(0, 10)}`
+              : '—',
       width: 170,
     },
   ];
 
   // Actions follow the actor's RELATIONSHIP to the CR (crActionsFor — the vocabulary ruling): the
-  // requester's own-pending rows offer Withdraw; everyone else's pending rows offer Approve/Reject;
+  // requester's own-pending rows offer Cancel; everyone else's pending rows offer Approve/Reject;
   // archived rows carry none. No disabled Approve/Reject on your own request — it isn't offered.
   const rowActions = (cr: ChangeRequest): BeamRowAction[] =>
     crActionsFor(cr, me).map((kind) => {
       if (kind === 'approve') return { id: 'approve', label: 'Approve', onSelect: () => onApprove(cr) };
       if (kind === 'reject') return { id: 'reject', label: 'Reject', destructive: true, onSelect: () => onReject(cr) };
-      return { id: 'withdraw', label: 'Withdraw', onSelect: () => setWithdrawTarget(cr) };
+      return { id: 'cancel', label: 'Cancel request', onSelect: () => setCancelTarget(cr) };
     });
 
-  const isApplied = JSON.stringify(applied) !== JSON.stringify(EMPTY);
+  const isApplied =
+    applied.statuses.length > 0 ||
+    applied.type !== 'any' ||
+    applied.by !== 'any' ||
+    Boolean(applied.q) ||
+    Boolean(applied.from) ||
+    Boolean(applied.to);
+
+  const clearRecord = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('record');
+    setSearchParams(next, { replace: true });
+  };
+  const clearAll = () => {
+    setDraft({ ...EMPTY });
+    setApplied({ ...EMPTY });
+    setSearchParams(new URLSearchParams(), { replace: true }); // drop record + by
+  };
 
   return (
     <Stack spacing={3}>
@@ -143,6 +219,21 @@ export function PendingApprovalsPage() {
         subtitle="Change requests awaiting a second pair of eyes — and the decision history."
       />
 
+      {/* URL-driven record filter (deep-link from a record page) — layered above the bar filters,
+          with its own clear so it reads as a distinct scope, not a buried filter chip. */}
+      {recordParam && (
+        <Alert
+          severity="info"
+          action={
+            <Button size="small" variant="text" onClick={clearRecord}>
+              Clear
+            </Button>
+          }
+        >
+          Showing change requests for {recordName ?? `record ${recordParam}`}.
+        </Alert>
+      )}
+
       <BeamFilterBar
         aria-label="Change request filters"
         searchValue={draft.q}
@@ -150,17 +241,26 @@ export function PendingApprovalsPage() {
         searchPlaceholder="Search entity name"
         applied={isApplied}
         onFilter={() => setApplied(draft)}
-        onClearAll={() => {
-          setDraft(EMPTY);
-          setApplied(EMPTY);
-        }}
+        onClearAll={clearAll}
       >
-        <TextField select fullWidth size="small" label="Status" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as Filters['status'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          {CR_STATUSES.map((s) => (
-            <MenuItem key={s} value={s} sx={{ textTransform: 'capitalize' }}>{s}</MenuItem>
-          ))}
-        </TextField>
+        <FormControl size="small" fullWidth>
+          <InputLabel id="cr-status-filter-label">Status</InputLabel>
+          <Select
+            multiple
+            labelId="cr-status-filter-label"
+            label="Status"
+            value={draft.statuses}
+            onChange={(e) => setDraft((d) => ({ ...d, statuses: e.target.value as ChangeRequestStatus[] }))}
+            renderValue={(sel) => ((sel as string[]).length ? (sel as string[]).map(cap).join(', ') : 'Any')}
+          >
+            {CR_STATUSES.map((s) => (
+              <MenuItem key={s} value={s}>
+                <Checkbox size="small" checked={draft.statuses.includes(s)} />
+                <ListItemText primary={cap(s)} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <TextField select fullWidth size="small" label="Type" value={draft.type} onChange={(e) => setDraft((d) => ({ ...d, type: e.target.value as Filters['type'] }))}>
           <MenuItem value="any">Any</MenuItem>
           <MenuItem value="loyaltyStatus">Loyalty status</MenuItem>
@@ -181,23 +281,25 @@ export function PendingApprovalsPage() {
         </Alert>
       )}
 
-      <BeamDataTable
-        columns={columns}
-        rows={rows}
-        getRowId={(cr) => cr.id}
-        LinkComponent={RouterIdentityLink}
-        rowActions={rowActions}
-        emptyMessage="No change requests match these filters."
-        aria-label="Change requests"
-      />
+      <Box>
+        <BeamDataTable
+          columns={columns}
+          rows={rows}
+          getRowId={(cr) => cr.id}
+          LinkComponent={RouterIdentityLink}
+          rowActions={rowActions}
+          emptyMessage="No change requests match these filters."
+          aria-label="Change requests"
+        />
+      </Box>
 
       <ConfirmDialog
-        open={withdrawTarget !== null}
-        title="Withdraw change request?"
-        body="Withdraw this change request? It will be archived."
-        confirmLabel="Withdraw"
-        onConfirm={doWithdraw}
-        onClose={() => setWithdrawTarget(null)}
+        open={cancelTarget !== null}
+        title="Cancel change request?"
+        body="Cancel this change request? It will be archived."
+        confirmLabel="Cancel request"
+        onConfirm={doCancel}
+        onClose={() => setCancelTarget(null)}
       />
     </Stack>
   );

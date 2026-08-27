@@ -1,8 +1,8 @@
 /**
  * changeRequests — the maker-checker core. Save stops meaning "apply": submitting an
  * edit creates a pending ChangeRequest; the live entity is untouched until a DIFFERENT
- * user approves. Approved/rejected/superseded requests are never deleted — the archive
- * IS the version history (each approved CR = one revision, with author/reviewer/payload).
+ * user approves. Approved/rejected/canceled/outdated requests are never deleted — the
+ * archive IS the version history (each approved CR = one revision, with author/reviewer/payload).
  *
  * Generic over entity type. It never imports a concrete entity: entity types register an
  * APPLICATOR (getVersion + applyDraft) via `registerEntity`, so the union grows by
@@ -13,23 +13,33 @@
  * on purpose, per that contract).
  *
  * Persistence is localStorage behind the ONE load()/save() seam below — swap those two
- * for a backend table and nothing else changes. Storage key: betty.sunlight.changeRequests.v1
+ * for a backend table and nothing else changes. Storage key: betty.sunlight.changeRequests.v3
  * (bump the suffix if the shape changes; that's the reset path).
  */
 
-// v2: the CR shape gained `baseSnapshot` (the before-state, for the review diff). Per the
-// runbook's own rule, a shape change bumps the suffix — so v1 data is DISCARDED on first load
-// (a demo store: acceptable, and pre-snapshot CRs would render the diff fallback anyway).
+// v3 (approval-grammar v2): the CR model gained structured reasons (submitReason required,
+// decisionReason optional), per-actor seen marks (seenBy), and the 'outdated' status; the status
+// 'withdrawn' became 'canceled' and 'superseded' was retired (its "another proposal won" role is now
+// 'outdated', decided at approve-time, not submit-time). Per the runbook's shape-change rule the
+// suffix bumps — so v1/v2 data is DISCARDED on first load (a demo store: acceptable, and pre-v3 CRs
+// carry none of the new required fields).
 import { useSyncExternalStore } from 'react';
 
-const STORAGE_KEY = 'betty.sunlight.changeRequests.v2';
+const STORAGE_KEY = 'betty.sunlight.changeRequests.v3';
 
 /**
- * CR-internal lifecycle. NOT BeamStatus — no design-vocabulary implications (a neutral badge is
- * all 'withdrawn' asks for). 'withdrawn' is the fifth word: the requester's own retraction, distinct
- * from a reviewer's 'rejected'.
+ * CR-internal lifecycle. NOT BeamStatus — no design-vocabulary implications (a neutral badge is all
+ * the terminal words ask for). Five words (approval-grammar §2):
+ *   pending   — awaiting a second pair of eyes.
+ *   approved  — a reviewer applied it; the live entity bumped a revision.
+ *   rejected  — a reviewer declined it; the live entity untouched.
+ *   canceled  — the REQUESTER retracted their own still-pending request (their own act, not a review).
+ *   outdated  — another CR on the SAME record was approved, so this pending one is moot. A SYSTEM
+ *               transition (no actor), fully terminal — no transitions out.
+ * SPELLING: 'canceled' (one 'l', American). This is the canonical location; the backend contract may
+ * use a different term (grammar §7.2 alignment — see the task report).
  */
-export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected' | 'superseded' | 'withdrawn';
+export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected' | 'canceled' | 'outdated';
 
 /** The entity-type union. Grows as more entities adopt maker-checker. */
 export type ChangeRequestEntity = 'loyaltyStatus';
@@ -43,18 +53,27 @@ export interface ChangeRequest<T = unknown> {
   draft: T; // full proposed domain payload (fields + rewards; no version)
   // The BEFORE-state: the live entity captured at submit time, IMMUTABLE thereafter. This is what
   // makes an archived CR's diff historically stable — it shows what changed THEN, even after the
-  // live entity moves on. Optional: pre-v2 / hand-built CRs may lack it → the diff renders its
-  // "snapshot unavailable" fallback. Supersede captures a FRESH snapshot for the new CR.
+  // live entity moves on. Optional: pre-v3 / hand-built CRs may lack it → the diff renders its
+  // "snapshot unavailable" fallback.
   baseSnapshot?: T;
   status: ChangeRequestStatus;
   submittedBy: string;
   submittedAt: string;
-  reviewedBy?: string; // set on approve/reject; left empty when superseded/withdrawn (no reviewer acted)
-  reviewedAt?: string; // set when a REVIEWER acts (approved/rejected) or on supersede
-  /** Set on withdraw (by the submitter, while pending). A withdrawal is NOT a review, so
+  /** Why the requester proposed this change (approval-grammar §4). OPTIONAL — never gates submit;
+   *  surfaces that show it render a quiet "No description" placeholder when it's absent. */
+  submitReason?: string;
+  reviewedBy?: string; // set on approve/reject; empty for canceled/outdated (no reviewer acted)
+  reviewedAt?: string; // set when a REVIEWER acts (approved/rejected)
+  /** The reviewer's rationale, set on approve/reject when given (approval-grammar §4). Optional. */
+  decisionReason?: string;
+  /** Set on cancel (by the submitter, while pending). A cancellation is NOT a review, so
    *  reviewedBy/At stay empty; this is its own timestamp (by = submittedBy, implicit). */
-  withdrawnAt?: string;
-  note?: string;
+  canceledAt?: string;
+  /** Set when approve() of a SIBLING CR outdated this one. A system transition — no actor. */
+  outdatedAt?: string;
+  /** Per-actor seen marks (approval-grammar §5): actor → ISO timestamp of when they last saw this CR.
+   *  The ONLY alert flag in the model — no stored "unread" state; the selectors derive from this. */
+  seenBy: Record<string, string>;
 }
 
 export interface SubmitInput<T = unknown> {
@@ -67,7 +86,8 @@ export interface SubmitInput<T = unknown> {
    *  before-state. Required: the caller holds the live entity, this module stays entity-agnostic. */
   baseSnapshot: T;
   submittedBy: string;
-  note?: string;
+  /** Why the change is proposed (approval-grammar §4). OPTIONAL — never gates submit. */
+  submitReason?: string;
 }
 
 /** How approve() writes a draft onto a concrete entity without this module importing it. */
@@ -76,13 +96,19 @@ export interface EntityApplicator<T = unknown> {
   applyDraft(entityId: string, draft: T): void;
 }
 
+export type SubmitResult<T = unknown> =
+  | { ok: true; cr: ChangeRequest<T> }
+  // The §3 guard: the SAME actor already has a pending CR on this record. One open proposal per
+  // actor per record — cancel it before submitting a new one (a different actor may still submit).
+  | { ok: false; reason: 'duplicatePending' };
+
 export type ApproveResult =
   | { ok: true; cr: ChangeRequest }
   | { ok: false; reason: 'notFound' | 'unregistered' | 'forbidden' | 'conflict' };
 
 export type RejectResult = { ok: true; cr: ChangeRequest } | { ok: false; reason: 'notFound' | 'forbidden' };
 
-export type WithdrawResult = { ok: true; cr: ChangeRequest } | { ok: false; reason: 'forbidden' | 'notPending' };
+export type CancelResult = { ok: true; cr: ChangeRequest } | { ok: false; reason: 'forbidden' | 'notPending' };
 
 // ── The one persistence seam ─────────────────────────────────────────────────────────
 function load(): ChangeRequest[] {
@@ -115,7 +141,7 @@ function emitChange(): void {
   crRevision += 1;
   crListeners.forEach((l) => l());
 }
-/** Subscribe to change-request mutations (submit / approve / reject / supersede). */
+/** Subscribe to change-request mutations (submit / approve / reject / cancel / markSeen). */
 export function subscribeChangeRequests(onChange: () => void): () => void {
   crListeners.add(onChange);
   return () => crListeners.delete(onChange);
@@ -145,17 +171,17 @@ export function registerEntity<T>(entityType: ChangeRequestEntity, applicator: E
 }
 
 /**
- * Create a pending CR. One pending per entity: any existing pending for the same entity
- * is marked 'superseded' and ARCHIVED (not deleted) — "what was proposed then withdrawn"
- * is a question compliance asks.
+ * Create a pending CR. Concurrent pendings on the same record are ALLOWED (approval-grammar §2) —
+ * two checkers can each propose a change and approval resolves the contest (the approved one wins,
+ * the rest go 'outdated'). The ONE limit is the §3 guard: the SAME actor may not hold two open
+ * proposals on the same record — that returns { ok: false, reason: 'duplicatePending' } and creates
+ * nothing (cancel the open one first). No supersede-on-submit anymore — that was the old model.
  */
-export function submit<T>(input: SubmitInput<T>): ChangeRequest<T> {
-  const prior = requests.find((r) => r.entityId === input.entityId && r.status === 'pending');
-  if (prior) {
-    prior.status = 'superseded';
-    prior.reviewedAt = now();
-    prior.note = 'Superseded by a newer submission.';
-  }
+export function submit<T>(input: SubmitInput<T>): SubmitResult<T> {
+  const mineOpen = requests.find(
+    (r) => r.entityId === input.entityId && r.status === 'pending' && r.submittedBy === input.submittedBy,
+  );
+  if (mineOpen) return { ok: false, reason: 'duplicatePending' };
   const cr: ChangeRequest<T> = {
     id: newCrId(),
     entityType: input.entityType,
@@ -163,37 +189,39 @@ export function submit<T>(input: SubmitInput<T>): ChangeRequest<T> {
     entityName: input.entityName,
     baseVersion: input.baseVersion,
     draft: input.draft,
-    baseSnapshot: input.baseSnapshot, // frozen at submit; supersede captures fresh per submission
+    baseSnapshot: input.baseSnapshot, // frozen at submit
     status: 'pending',
     submittedBy: input.submittedBy,
     submittedAt: now(),
-    note: input.note,
+    submitReason: input.submitReason,
+    seenBy: {}, // no one has "seen" it yet — not even the author (keeps outcome alerts honest)
   };
   requests.push(cr as ChangeRequest);
   save();
   emitChange();
-  return cr;
+  return { ok: true, cr };
 }
 
-/** The single pending CR for an entity (list badge + editor pending-draft load). */
-export function getPendingFor(entityId: string): ChangeRequest | undefined {
-  return requests.find((r) => r.entityId === entityId && r.status === 'pending');
-}
-
-/** All pending CRs (approvals queue; future app-level indicator is a selector over this). */
+/** All pending CRs (approvals queue; app-level indicators are selectors over this). */
 export function listPending(): ChangeRequest[] {
   return requests.filter((r) => r.status === 'pending');
 }
 
+// The action/event timestamp a CR sorts by: the reviewer's action, else its terminal system/own
+// event, else submission. One helper so listAll() and history() never drift.
+function lastActionAt(r: ChangeRequest): string {
+  return r.reviewedAt ?? r.canceledAt ?? r.outdatedAt ?? r.submittedAt;
+}
+
 /**
- * ALL change requests, newest-first — the filterable read backing the approvals list + its
- * ARCHIVE (approved/rejected/superseded are now browsable, not just the pending queue). A copy,
- * so callers can't mutate the store array. Filtering (status/type/search/date) is the page's job.
+ * ALL change requests, newest-first — the filterable read backing the approvals list + its ARCHIVE
+ * (approved/rejected/canceled/outdated are browsable, not just the pending queue). A copy, so callers
+ * can't mutate the store array. Filtering (status/type/search/date) is the page's job.
  */
 export function listAll(): ChangeRequest[] {
   return [...requests].sort((a, b) => {
-    const ka = a.reviewedAt ?? a.withdrawnAt ?? a.submittedAt;
-    const kb = b.reviewedAt ?? b.withdrawnAt ?? b.submittedAt;
+    const ka = lastActionAt(a);
+    const kb = lastActionAt(b);
     return ka < kb ? 1 : ka > kb ? -1 : 0; // newest first (last action, else submitted)
   });
 }
@@ -204,11 +232,13 @@ export function getChangeRequest(id: string): ChangeRequest | undefined {
 }
 
 /**
- * Approve: apply the draft onto the live entity and bump its version. Enforces
- * submitter ≠ reviewer, and a stale check against the entity's current version.
- * 'unregistered' is distinct from 'notFound' so a wiring gap never hides as a missing CR.
+ * Approve: apply the draft onto the live entity and bump its version. Enforces submitter ≠ reviewer,
+ * and a stale check against the entity's current version. ATOMIC auto-outdate (approval-grammar §2):
+ * every OTHER pending CR on the same record flips to 'outdated' in the same call — approval of one
+ * proposal moots its rivals. 'unregistered' is distinct from 'notFound' so a wiring gap never hides
+ * as a missing CR. `decisionReason` is the reviewer's optional rationale.
  */
-export function approve(crId: string, reviewer: string): ApproveResult {
+export function approve(crId: string, reviewer: string, decisionReason?: string): ApproveResult {
   const cr = requests.find((r) => r.id === crId);
   if (!cr || cr.status !== 'pending') return { ok: false, reason: 'notFound' };
   const applicator = applicators.get(cr.entityType);
@@ -220,59 +250,125 @@ export function approve(crId: string, reviewer: string): ApproveResult {
   cr.status = 'approved';
   cr.reviewedBy = reviewer;
   cr.reviewedAt = now();
+  if (decisionReason) cr.decisionReason = decisionReason;
+  // Atomic with the approval: every OTHER pending CR on this record is now moot.
+  const outdatedAt = cr.reviewedAt;
+  for (const other of requests) {
+    if (other !== cr && other.entityId === cr.entityId && other.status === 'pending') {
+      other.status = 'outdated';
+      other.outdatedAt = outdatedAt;
+    }
+  }
   save();
   emitChange();
   return { ok: true, cr };
 }
 
-/** Reject: archive as rejected with an optional note. The live entity is never touched. */
-export function reject(crId: string, reviewer: string, note?: string): RejectResult {
+/** Reject: archive as rejected with an optional reviewer rationale. The live entity is never touched. */
+export function reject(crId: string, reviewer: string, decisionReason?: string): RejectResult {
   const cr = requests.find((r) => r.id === crId);
   if (!cr || cr.status !== 'pending') return { ok: false, reason: 'notFound' };
   if (cr.submittedBy === reviewer) return { ok: false, reason: 'forbidden' };
   cr.status = 'rejected';
   cr.reviewedBy = reviewer;
   cr.reviewedAt = now();
-  cr.note = note;
+  if (decisionReason) cr.decisionReason = decisionReason;
   save();
   emitChange();
   return { ok: true, cr };
 }
 
 /**
- * Withdraw: the SUBMITTER retracts their own still-pending request. Archived, not deleted
- * ("proposed then thought better of" is history compliance asks about). A withdrawal is NOT a
- * review — reviewedBy/At stay empty; withdrawnAt records when (by = submittedBy, implicit).
- * Refusals: 'forbidden' (not the submitter), 'notPending' (already archived / gone). Resubmitting
- * afterward needs no special case — 'withdrawn' is non-pending, so it never blocks the
- * one-pending-per-entity check in submit().
+ * Cancel: the SUBMITTER retracts their own still-pending request (approval-grammar §2 — was
+ * 'withdraw'). Archived, not deleted ("proposed then thought better of" is history compliance asks
+ * about). A cancellation is NOT a review — reviewedBy/At stay empty; canceledAt records when
+ * (by = submittedBy, implicit). Refusals: 'forbidden' (not the submitter), 'notPending' (already
+ * archived / gone). Resubmitting afterward is unblocked — 'canceled' is non-pending, so it never
+ * trips the §3 same-actor guard in submit().
  */
-export function withdraw(crId: string, actor: string): WithdrawResult {
+export function cancel(crId: string, actor: string): CancelResult {
   const cr = requests.find((r) => r.id === crId);
   if (!cr || cr.status !== 'pending') return { ok: false, reason: 'notPending' };
   if (cr.submittedBy !== actor) return { ok: false, reason: 'forbidden' };
-  cr.status = 'withdrawn';
-  cr.withdrawnAt = now();
+  cr.status = 'canceled';
+  cr.canceledAt = now();
   save();
   emitChange();
   return { ok: true, cr };
 }
 
-/** The archive for an entity = its version history (approved + rejected + superseded + withdrawn), newest first. */
+/**
+ * Mark CRs as seen by an actor (approval-grammar §5). Used by the CR-detail view (a checker opening a
+ * pending request; a requester opening a rejected/outdated outcome) AND by bar dismissal alike —
+ * seen is the ONLY alert flag, so both paths write the same mark. Unknown ids are skipped.
+ *
+ * The mark ADVANCES to now on every call (it is not write-once). This is load-bearing for outcomes:
+ * a maker who viewed their request while it was PENDING has a seen-mark; when it later becomes
+ * rejected/outdated, that OUTCOME is newer than the mark, so `unseenOutcomesForRequester` compares
+ * timestamps (not mere presence) and still surfaces it — until the maker sees the outcome itself,
+ * which re-advances the mark past it. "A new outcome lands" thus re-nags exactly once.
+ */
+export function markSeen(crIds: string[], actor: string): void {
+  const ts = now();
+  let touched = false;
+  for (const id of crIds) {
+    const cr = requests.find((r) => r.id === id);
+    if (cr) {
+      cr.seenBy[actor] = ts; // advance the mark (see the outcome-time comparison below)
+      touched = true;
+    }
+  }
+  if (touched) {
+    save();
+    emitChange();
+  }
+}
+
+// ── Derived selectors (derived-only doctrine — no stored alert state; `seenBy` is the one flag) ──
+
+/** Every pending CR on a record (approval-grammar §5 — the contest set a checker chooses among). */
+export function pendingOnRecord(recordId: string): ChangeRequest[] {
+  return requests.filter((r) => r.entityId === recordId && r.status === 'pending');
+}
+
+/** For a CHECKER: pending CRs they can act on (not their own) and haven't yet seen. Drives the
+ *  reviewer's unseen-work indicator. */
+export function unseenPendingForChecker(actor: string): ChangeRequest[] {
+  return requests.filter(
+    (r) => r.status === 'pending' && r.submittedBy !== actor && r.seenBy[actor] === undefined,
+  );
+}
+
+/** For a REQUESTER: their OWN CRs whose negative OUTCOME (rejected | outdated) they haven't seen.
+ *  "Unseen" is outcome-relative, not mere absence: an item counts if never seen OR last seen BEFORE
+ *  the outcome landed (they saw the request while pending, but not its result). Approved outcomes
+ *  apply to the live entity and aren't alerted here; canceled is the requester's own act (excluded). */
+export function unseenOutcomesForRequester(actor: string): ChangeRequest[] {
+  return requests.filter((r) => {
+    if (r.submittedBy !== actor) return false;
+    if (r.status !== 'rejected' && r.status !== 'outdated') return false;
+    const outcomeAt = r.status === 'rejected' ? r.reviewedAt : r.outdatedAt;
+    const seen = r.seenBy[actor];
+    return seen === undefined || (outcomeAt !== undefined && seen < outcomeAt);
+  });
+}
+
+/** The archive for an entity = its version history (approved + rejected + canceled + outdated), newest first. */
 export function history(entityId: string): ChangeRequest[] {
   return requests
     .filter((r) => r.entityId === entityId && r.status !== 'pending')
     .sort((a, b) => {
-      const ka = a.reviewedAt ?? a.withdrawnAt ?? a.submittedAt;
-      const kb = b.reviewedAt ?? b.withdrawnAt ?? b.submittedAt;
+      const ka = lastActionAt(a);
+      const kb = lastActionAt(b);
       return ka < kb ? 1 : ka > kb ? -1 : 0; // newest first
     });
 }
 
 /**
- * Seed a demo pending CR on a fresh store only (empty storage). Called by the entity
- * store, which owns the concrete draft shape — this module stays entity-agnostic.
+ * Run a demo seed on a fresh store only (empty storage). The entity store owns the concrete draft
+ * shape + how many CRs to seed (this module stays entity-agnostic), so it passes a thunk that may
+ * submit several CRs and set seen marks. On a fresh store the duplicate guard can't fire.
  */
-export function seedPendingIfEmpty<T>(makeInput: () => SubmitInput<T>): void {
-  if (requests.length === 0) submit(makeInput());
+export function seedIfEmpty(seed: () => void): void {
+  if (requests.length === 0) seed();
 }

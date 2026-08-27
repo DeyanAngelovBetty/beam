@@ -143,6 +143,11 @@ export const productFonts: Record<ProductName, { title: string; body: string; ti
  *              product, mode-invariant for now.
  *  - `underlineOffset` — the underline's tuck depth (its `bottom`), so it passes BEHIND the
  *              glyphs (marker posture). Per product, mode-invariant (geometry).
+ *  - `underlineMax`    — the underline's `max-width` cap. The rule spans width:100% of the title
+ *              box up to this, so on a WRAPPING title it hugs the text then DISSOLVES (the fade-to-
+ *              background far end reads as an accent, not a ruler across the block) instead of
+ *              running the full multi-line width. `ch`-relative → scales with the title font. Per
+ *              product, mode-invariant (geometry).
  *  - `halo`   — the halo-clone's text-shadow blur radius. The halo impersonates the CANVAS
  *              (background.default) to carve a skip-ink gap between glyph edges and the
  *              underline. Per MODE (a near-white light-mode halo reads differently from a
@@ -158,6 +163,7 @@ export const titleSeeds: Record<
     underlineWeight: string;
     underlineFade: string;
     underlineOffset: string;
+    underlineMax: string;
     halo: { dark: string; light: string };
   }
 > = {
@@ -166,6 +172,7 @@ export const titleSeeds: Record<
     underlineWeight: '2px',
     underlineFade: '50%',
     underlineOffset: '.5rem', // shallower than gaspar — calmer with the 2px weight (proposed)
+    underlineMax: '18ch', // bench value — hugs the title, then dissolves on wrapping titles
     halo: { dark: '4px', light: '5px' },
   },
   gaspar: {
@@ -173,6 +180,7 @@ export const titleSeeds: Record<
     underlineWeight: '3px',
     underlineFade: '50%',
     underlineOffset: '.65rem', // Deyan's bench value
+    underlineMax: '18ch', // bench value — hugs the title, then dissolves on wrapping titles
     halo: { dark: '5px', light: '6px' },
   },
 };

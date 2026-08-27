@@ -1,5 +1,6 @@
 import {
   Stack,
+  Divider,
   FormControl,
   InputLabel,
   Select,
@@ -45,30 +46,34 @@ export function ShellFooter({
 }) {
   const jurisdictions = Object.keys(products.sunlight) as BrandName[];
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1, p: 1.5 }}>
-      {/* Demo actor switcher — chrome control, so it lives here with location + mode (global). */}
+    <Stack sx={{ p: 1.5, gap: 1 }}>
+      {/* Demo actor switcher — the always-visible persona list (its own section; one click per hop). */}
       <ActingAsSwitcher />
-      <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
-        <InputLabel id="sunlight-location">Location</InputLabel>
-        <Select
-          labelId="sunlight-location"
-          label="Location"
-          value={brand}
-          onChange={(e) => onBrandChange(e.target.value as BrandName)}
-        >
-          {jurisdictions.map((j) => (
-            <MenuItem key={j} value={j}>
-              {cap(j)}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      {onOpenThemeLab && (
-        <IconButton onClick={onOpenThemeLab} aria-label="Open Theme Lab" color="inherit">
-          <PaletteOutlinedIcon />
-        </IconButton>
-      )}
-      <ModeToggle />
+      <Divider />
+      {/* Chrome controls — location + Theme Lab + mode, the row that used to live in the app bar. */}
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
+        <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
+          <InputLabel id="sunlight-location">Location</InputLabel>
+          <Select
+            labelId="sunlight-location"
+            label="Location"
+            value={brand}
+            onChange={(e) => onBrandChange(e.target.value as BrandName)}
+          >
+            {jurisdictions.map((j) => (
+              <MenuItem key={j} value={j}>
+                {cap(j)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {onOpenThemeLab && (
+          <IconButton onClick={onOpenThemeLab} aria-label="Open Theme Lab" color="inherit">
+            <PaletteOutlinedIcon />
+          </IconButton>
+        )}
+        <ModeToggle />
+      </Stack>
     </Stack>
   );
 }

@@ -28,8 +28,8 @@ import { LoyaltyRewardsEditor } from './LoyaltyRewardsEditor';
 import { NextGemPanel } from './NextGemPanel';
 import { ExpandedLoyaltyPanel } from './LoyaltyExpandedPanel';
 import { getLoyaltyStatus, LOYALTY_STATUSES, toDraft, type LoyaltyStatus, type LoyaltyStatusDraft } from './loyaltyStatuses';
-import { submit, getPendingFor, withdraw, useChangeRequests } from './changeRequests';
-import { getCurrentUser, useCurrentUser } from './currentUser';
+import { submit, pendingOnRecord, cancel, useChangeRequests } from './changeRequests';
+import { useCurrentUser } from './currentUser';
 import { ConfirmDialog } from './ConfirmDialog';
 import { pageAlertActionSx, PAGE_ALERT_ACTION_GAP } from './pageAlert';
 import { serializeStatus, validateStatusImport, mergeOntoLive, downloadAndCopy, slugifyName } from './loyaltyImportExport';
@@ -103,20 +103,24 @@ export function LoyaltyStatusEditor() {
 function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit: () => void; onImport: (draft: LoyaltyStatusDraft) => void }) {
   const navigate = useNavigate();
   const me = useCurrentUser(); // reactive: flip Acting-as → the alert voice flips
-  useChangeRequests(); // reactive: withdraw here (or approve/reject elsewhere) re-renders → alert clears
-  const pending = getPendingFor(String(status.id));
-  const isRequester = !!pending && pending.submittedBy === me.name;
+  useChangeRequests(); // reactive: cancel here (or approve/reject elsewhere) re-renders → alert clears
+  // Count-aware (grammar §5): the record can hold concurrent pendings. Mine drives the requester
+  // voice; others' drive the reviewer voice (and the "+n more" tail on the requester voice).
+  const recordId = String(status.id);
+  const allPending = pendingOnRecord(recordId);
+  const myPending = allPending.find((cr) => cr.submittedBy === me.name);
+  const othersPending = allPending.filter((cr) => cr.submittedBy !== me.name);
   const [notice, setNotice] = useState<Notice>(null);
-  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
-  const doWithdraw = () => {
-    if (!pending) return;
-    const res = withdraw(pending.id, me.name);
-    setConfirmWithdraw(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const doCancel = () => {
+    if (!myPending) return;
+    const res = cancel(myPending.id, me.name);
+    setConfirmCancel(false);
     // Success: the pending alert simply disappears (pending → null on re-render); the notice confirms.
     setNotice(
       res.ok
-        ? { severity: 'success', msg: `Withdrawn — “${status.name}” proposal archived.` }
-        : { severity: 'error', msg: 'This request can no longer be withdrawn.' },
+        ? { severity: 'success', msg: `Canceled — “${status.name}” proposal archived.` }
+        : { severity: 'error', msg: 'This request can no longer be canceled.' },
     );
   };
   const nextTier = LOYALTY_STATUSES[LOYALTY_STATUSES.findIndex((s) => s.id === status.id) + 1];
@@ -137,7 +141,6 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
       <BeamPageHeader
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
-        subtitle={<GemIcon gem={status.gem} size={20} />}
         // The view is the row's record page → it carries the row's NON-EDIT actions (§6):
         // [Export] [Import…] [Edit], Edit primary + last. In edit mode these hide — the editor's
         // pair stays exactly [Cancel] [Submit for approval] (importing over a live draft is a
@@ -163,46 +166,49 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
         </Alert>
       )}
 
-      {/* A pending CR is a NOTICE in view mode (not a draft to edit; it becomes a seeded draft only
-          on entering edit — §6). Its voice + actions follow the ACTOR'S RELATIONSHIP to the CR
-          (approval-flow "Actor → action-set"): the REQUESTER gets a pending-approval line + Withdraw
-          (an own-request action, no second pair of eyes); everyone ELSE gets an awaiting-review line
-          + Review → the CR page, where the reviewer meets the diff (Approve/Reject deliberately not
-          inline). Derived-only, so flipping Acting-as flips the voice. */}
-      {pending &&
-        (isRequester ? (
-          <Alert
-            severity="info"
-            action={
-              // Flat only, order = emphasis (Withdraw rightmost = primary); cluster never wraps.
-              <Stack direction="row" spacing={PAGE_ALERT_ACTION_GAP} sx={pageAlertActionSx}>
-                <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
-                  View request
-                </Button>
-                <Button size="small" variant="text" onClick={() => setConfirmWithdraw(true)}>
-                  Withdraw
-                </Button>
-              </Stack>
-            }
-          >
-            You submitted a change request for this status on {pending.submittedAt.slice(0, 10)} — it's pending
-            approval. To make further changes, withdraw it and submit a new one.
-          </Alert>
-        ) : (
-          <Alert
-            severity="info"
-            action={
-              <Stack direction="row" spacing={PAGE_ALERT_ACTION_GAP} sx={pageAlertActionSx}>
-                <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${pending.id}`)}>
-                  Review
-                </Button>
-              </Stack>
-            }
-          >
-            {pending.submittedBy} submitted a change request for this status on {pending.submittedAt.slice(0, 10)} —
-            it's awaiting review.
-          </Alert>
-        ))}
+      {/* The change-lifecycle strip in VIEW mode = the count-aware page-level alert (grammar §5). A
+          pending CR is a NOTICE here (never a blocker — editing is always allowed; the alert only
+          informs). Voice follows the ACTOR'S RELATIONSHIP to the record, now COUNT-AWARE: the
+          REQUESTER (own pending) gets a pending-approval line + [View request] · [Cancel request],
+          with a "+n more pending" tail when others also have one; everyone ELSE gets the
+          awaiting-review count + [View requests] → the record-filtered approvals list. Derived-only,
+          so flipping Acting-as flips the voice. Outcome statuses never surface here (§5). */}
+      {myPending ? (
+        <Alert
+          severity="info"
+          action={
+            // Flat only, order = emphasis (Cancel rightmost = primary); cluster never wraps.
+            <Stack direction="row" spacing={PAGE_ALERT_ACTION_GAP} sx={pageAlertActionSx}>
+              <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals/${myPending.id}`)}>
+                View request
+              </Button>
+              <Button size="small" variant="text" onClick={() => setConfirmCancel(true)}>
+                Cancel request
+              </Button>
+            </Stack>
+          }
+        >
+          You submitted a change request on {myPending.submittedAt.slice(0, 10)} — it's pending approval.
+          {othersPending.length > 0 &&
+            ` ${othersPending.length} more request${othersPending.length === 1 ? '' : 's'} ${
+              othersPending.length === 1 ? 'is' : 'are'
+            } pending on this record.`}
+        </Alert>
+      ) : othersPending.length > 0 ? (
+        <Alert
+          severity="info"
+          action={
+            <Stack direction="row" spacing={PAGE_ALERT_ACTION_GAP} sx={pageAlertActionSx}>
+              <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals?record=${recordId}`)}>
+                View requests
+              </Button>
+            </Stack>
+          }
+        >
+          {othersPending.length} change request{othersPending.length === 1 ? '' : 's'}{' '}
+          {othersPending.length === 1 ? 'is' : 'are'} pending on this record — awaiting review.
+        </Alert>
+      ) : null}
 
       {importOpen && (
         <Paper variant="outlined" sx={{ p: 2 }}>
@@ -260,12 +266,12 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
       <ExpandedLoyaltyPanel status={status} next={nextTier} />
 
       <ConfirmDialog
-        open={confirmWithdraw}
-        title="Withdraw change request?"
-        body="Withdraw this change request? It will be archived."
-        confirmLabel="Withdraw"
-        onConfirm={doWithdraw}
-        onClose={() => setConfirmWithdraw(false)}
+        open={confirmCancel}
+        title="Cancel change request?"
+        body="Cancel this change request? It will be archived."
+        confirmLabel="Cancel request"
+        onConfirm={doCancel}
+        onClose={() => setConfirmCancel(false)}
       />
     </Stack>
   );
@@ -277,20 +283,30 @@ type FieldKey = (typeof FIELD_KEYS)[number];
 
 function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imported?: LoyaltyStatusDraft; onCancel: () => void }) {
   const navigate = useNavigate();
-  const pending = getPendingFor(String(status.id));
+  const me = useCurrentUser().name; // reactive: own-pending detection tracks the Acting-as switch
+  useChangeRequests(); // reactive: canceling my request here re-derives the strip (blocker → composer)
+  const recordId = String(status.id);
+  // MY pending on this record (if any) and OTHERS' — the §2 concurrency model. I seed from and revise
+  // only my own proposal; someone else's pending is an independent proposal, never inherited.
+  const myPending = pendingOnRecord(recordId).find((cr) => cr.submittedBy === me);
+  const othersPending = pendingOnRecord(recordId).filter((cr) => cr.submittedBy !== me);
   const [pendingCancel, setPendingCancel] = useState(false);
+  const [confirmCancelReq, setConfirmCancelReq] = useState(false); // the own-pending "Cancel request" confirm
 
-  // Seed the form: an IMPORT wins (dirty from the start), else the pending draft (§6), else live.
-  // The dirty BASELINE, though, is always the stored state (pending ?? live) — so an import reads
-  // as dirty immediately (imported ≠ stored) and Submit is live without a spurious keystroke.
-  const seedSource: LoyaltyStatusDraft = imported ?? (pending ? (pending.draft as LoyaltyStatusDraft) : status);
-  const baselineSource: LoyaltyStatusDraft = pending ? (pending.draft as LoyaltyStatusDraft) : status;
+  // Seed the form: an IMPORT wins (dirty from the start), else MY pending draft (revise my own), else
+  // live. The dirty BASELINE is the stored state (my pending ?? live) — so an import reads as dirty
+  // immediately and Submit needs no spurious keystroke.
+  const seedSource: LoyaltyStatusDraft = imported ?? (myPending ? (myPending.draft as LoyaltyStatusDraft) : status);
+  const baselineSource: LoyaltyStatusDraft = myPending ? (myPending.draft as LoyaltyStatusDraft) : status;
   const initialModel = useMemo<EditorModel>(() => toEditorModel(seedSource), [seedSource]);
   const originalSerialized = useMemo(() => serializeModel(toEditorModel(baselineSource)), [baselineSource]);
 
   const [model, setModel] = useState<EditorModel>(initialModel);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  // The change-lifecycle composer (§4): why this change. REQUIRED to submit — captured here in the
+  // strip, not as a DetailsPanel field (it's metadata about the change, not a field of the record).
+  const [reason, setReason] = useState('');
 
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -309,18 +325,32 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
   );
 
   const doSubmit = () => {
-    if (!v.valid || !isDirty) return;
+    if (!v.valid || !isDirty || myPending) return;
     submittingRef.current = true;
-    submit<LoyaltyStatusDraft>({
+    const res = submit<LoyaltyStatusDraft>({
       entityType: 'loyaltyStatus',
       entityId: String(status.id),
       entityName: status.name,
       baseVersion: status.version, // live version at submit time
       baseSnapshot: toDraft(status), // frozen before-state for the review diff
       draft: toDomainDraft(model, status),
-      submittedBy: getCurrentUser().name,
+      submittedBy: me,
+      submitReason: reason.trim() || undefined, // OPTIONAL (§4) — the DetailsPanel "Change description"
     });
+    // The §3 guard is the SAFETY NET now — the strip's own-pending mode prevents reaching a refusal
+    // (Submit is disabled while myPending exists). If it somehow fires, don't lie about success.
+    if (!res.ok) {
+      submittingRef.current = false;
+      return;
+    }
     navigate('/');
+  };
+
+  // Cancel MY pending request (own-pending mode) → the strip flips to the composer on re-render.
+  const doCancelRequest = () => {
+    if (!myPending) return;
+    cancel(myPending.id, me);
+    setConfirmCancelReq(false);
   };
 
   // Cancel exits edit → view (onCancel discards any imported draft), guarded by the SAME discard
@@ -329,10 +359,16 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
   const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
   const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
 
-  const submitReason = !isDirty
-    ? 'Make a change to submit.'
-    : (v.name ?? v.multiplier ?? v.boxes ?? v.maxDays ?? v.keepGems ?? v.keepBoxes ?? v.aggregate ?? 'Fix the highlighted fields.');
-  const canSubmit = v.valid && isDirty;
+  // The disabled-submit tooltip (why you can't submit yet). The reason is OPTIONAL now (§4), so it
+  // never gates Submit — only own-pending, dirtiness, and validity do.
+  const submitHint = myPending
+    ? 'Cancel your pending request to submit a new change.'
+    : !isDirty
+      ? 'Make a change to submit.'
+      : !v.valid
+        ? (v.name ?? v.multiplier ?? v.boxes ?? v.maxDays ?? v.keepGems ?? v.keepBoxes ?? v.aggregate ?? 'Fix the highlighted fields.')
+        : '';
+  const canSubmit = v.valid && isDirty && !myPending;
 
   // The field twins (BeamField = small outlined; the details-panel grid sizes them — no width here).
   // This is where the queued medium→small convergence lands, as part of the details-panel pattern.
@@ -354,13 +390,12 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
       <BeamPageHeader
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
-        subtitle={<GemIcon gem={status.gem} size={20} />}
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button variant="text" onClick={requestCancel}>
               Cancel
             </Button>
-            <Tooltip title={canSubmit ? '' : submitReason}>
+            <Tooltip title={canSubmit ? '' : submitHint}>
               <span>
                 <Button
                   variant="contained"
@@ -379,18 +414,56 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
         }
       />
 
-      {imported ? (
-        <Alert severity="warning">Imported — review and submit for approval. Nothing is saved until a reviewer approves.</Alert>
-      ) : pending ? (
-        <Alert severity="info">
-          Editing a pending change request submitted by {pending.submittedBy} on {pending.submittedAt.slice(0, 10)}.
-          Submitting replaces it.
+      {/* The change-lifecycle strip in EDIT mode (grammar §4) keeps the own-pending blocker (item 7)
+          and the ambient pending notes — the reason COMPOSER moved into the DetailsPanel below
+          (2026-08-27: once reasons went optional the composer lost its gate job, so it belongs with
+          the other change fields, not as a separate strip surface). Own-pending makes the dead end
+          visible AT ENTRY with the exit attached — editing is never blocked, but Submit is, until you
+          cancel your open request. */}
+      {myPending ? (
+        <Alert
+          severity="warning"
+          action={
+            <Button size="small" variant="text" onClick={() => setConfirmCancelReq(true)}>
+              Cancel request
+            </Button>
+          }
+        >
+          You already have a pending request on this record (submitted {myPending.submittedAt.slice(0, 10)}) —
+          cancel it to submit a new change.
         </Alert>
-      ) : null}
+      ) : (
+        <>
+          {imported && (
+            <Alert severity="info">Imported — review, add a description if you like, and submit for approval. Nothing is saved until a reviewer approves.</Alert>
+          )}
+          {othersPending.length > 0 && (
+            <Alert severity="info">
+              {othersPending.length} change request{othersPending.length === 1 ? '' : 's'} from others{' '}
+              {othersPending.length === 1 ? 'is' : 'are'} pending on this record. Submitting adds a separate
+              proposal; approving one marks the rest outdated.
+            </Alert>
+          )}
+        </>
+      )}
 
       {/* The details panel — same grammatical slots as the view's stats, now fields (morph in place;
-          grammar §2). Unlabeled: the page title is the title. */}
+          grammar §2). Unlabeled: the page title is the title. First row (full-width, gridColumn
+          convention) is the OPTIONAL "Change description" — change metadata captured alongside the
+          change (§4). PRESENT from edit entry, DISABLED until dirty → constant geometry, no mid-edit
+          layout jump. Optional, so it never gates Submit. */}
       <DetailsPanel aria-label="Status fields">
+        <BeamField
+          sx={{ gridColumn: '1 / -1' }}
+          label="Change description"
+          placeholder="What changed and why — shown to the reviewer."
+          multiline
+          minRows={2}
+          disabled={!isDirty}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          helperText="Optional — recorded on the request and shown to the reviewer."
+        />
         {field('name', 'Name', { required: true })}
         {field('maxDays', 'Max days to complete', { hint: `Whole number or ${'∞'}` })}
         {field('boxes', 'Gems')}
@@ -431,6 +504,15 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmCancelReq}
+        title="Cancel change request?"
+        body="Cancel your pending change request? It will be archived, and you can then submit a new one."
+        confirmLabel="Cancel request"
+        onConfirm={doCancelRequest}
+        onClose={() => setConfirmCancelReq(false)}
+      />
     </Stack>
   );
 }

@@ -95,14 +95,19 @@ export function BeamPageHeader({ title, back, subtitle, action, secondaryActions
               // padding is fixed, so the scaleX reveal never shifts layout.
               pb: 'calc(var(--beam-title-underline-weight) + 4px)',
               // UNDERLINE (z1, bottom) — tucked BEHIND the glyphs (marker posture) by
-              // --beam-title-underline-offset. Under the FULL text box (one line, not per
-              // line). Reveal: scaleX 0→1 on mount, `move` pair, transform-only; reduced
-              // motion zeroes the duration → lands static at scaleX(1), visible.
+              // --beam-title-underline-offset. Anchored left, spanning the text box up to
+              // --beam-title-underline-max: on a SINGLE line it hugs the title; on a WRAPPING
+              // title it stops at the cap and DISSOLVES (the fade-to-background far end reads as
+              // an accent, not a ruler across the whole block) instead of running the full
+              // multi-line width. Reveal: scaleX 0→1 on mount (origin left, so it grows from the
+              // anchor), `move` pair, transform-only; reduced motion zeroes the duration → lands
+              // static at scaleX(1), visible.
               '&::after': {
                 content: '""',
                 position: 'absolute',
                 left: 0,
-                right: 0,
+                width: '100%',
+                maxWidth: 'var(--beam-title-underline-max)',
                 bottom: 'var(--beam-title-underline-offset)',
                 zIndex: 1,
                 height: 'var(--beam-title-underline-weight)',

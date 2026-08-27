@@ -286,6 +286,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // Underline tuck depth (per-product geometry) + halo-clone blur (per MODE —
             // :root = dark default; the mode selectors flip it). Halo → 0px = no separation.
             '--beam-title-underline-offset': ti.underlineOffset,
+            // Underline max-width cap (per-product geometry) — the rule spans width:100% up to
+            // this, so a wrapping title hugs the text then dissolves rather than ruling the block.
+            '--beam-title-underline-max': ti.underlineMax,
             '--beam-title-halo': ti.halo.dark,
           },
           // Mode-scoped surface step (TRACER): set on the same data-beam-mode

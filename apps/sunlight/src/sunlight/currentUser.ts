@@ -21,11 +21,19 @@ export interface DemoUser {
 
 export const DEMO_USERS: DemoUser[] = [
   { id: 'maja', name: 'Maja Novak', role: 'maker' },
+  { id: 'ivan', name: 'Ivan Horvat', role: 'maker' }, // second maker — parallel proposals (grammar §3)
   { id: 'ravi', name: 'Ravi Patel', role: 'checker' },
+  { id: 'sofia', name: 'Sofia Delgado', role: 'checker' }, // second checker — the checker-as-maker case
 ];
 
-export const DEMO_MAKER = DEMO_USERS.find((u) => u.role === 'maker')!;
-export const DEMO_CHECKER = DEMO_USERS.find((u) => u.role === 'checker')!;
+// Distinct initials (MN · IH · RP · SD) so avatars/labels read apart. Two makers exercise the
+// parallel model (competing pendings, the checker chooses, the loser outdates); a second checker
+// exercises the checker-as-maker case — a checker submits, sees the OWN-request action set, and a
+// DIFFERENT checker approves (four-eyes is submitter ≠ reviewer — grammar §1).
+export const DEMO_MAKER = DEMO_USERS.find((u) => u.id === 'maja')!; // maker1
+export const DEMO_MAKER2 = DEMO_USERS.find((u) => u.id === 'ivan')!; // maker2
+export const DEMO_CHECKER = DEMO_USERS.find((u) => u.id === 'ravi')!; // checker1
+export const DEMO_CHECKER2 = DEMO_USERS.find((u) => u.id === 'sofia')!; // checker2
 
 let current: DemoUser = DEMO_CHECKER; // default = checker (see file header)
 const listeners = new Set<() => void>();

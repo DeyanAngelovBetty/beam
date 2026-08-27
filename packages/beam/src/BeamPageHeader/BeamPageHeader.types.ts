@@ -7,7 +7,9 @@ import type { ReactNode } from 'react';
  * Layout is the ratified Figma pass (Beam MUI v9 → PageHeader, node 12745:68663): three fixed rows —
  * breadcrumb 26px (ALWAYS reserved, back hidden when absent → constant title Y), title 41px (title |
  * actions, actions pinned to the title line), sub-title 24px (rendered only when present). The title
- * treatment (gradient / halo / underline) is ratified as-is.
+ * treatment (gradient / halo / underline) is ratified as-is. The underline hugs the title up to
+ * --beam-title-underline-max, then DISSOLVES (its fade-to-background far end makes the cap read as
+ * an accent, not a chop) — so a wrapping title gets an accent, never a ruler across the block.
  */
 
 /**
