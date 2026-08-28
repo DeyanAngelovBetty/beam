@@ -4,7 +4,7 @@ import { Stack, Box, Typography, Alert, Button, BeamPageHeader, BeamEmptyState, 
 import { backTo } from './backTo';
 import { getChangeRequest, approve, reject, cancel, pendingOnRecord, markSeen, useChangeRequests } from './changeRequests';
 import { useCurrentUser } from './currentUser';
-import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor } from './changeRequestShared';
+import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor, ENTITY_TYPE_PARAM } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
 import { ConfigDiffPanel } from './ConfigDiffPanel';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -123,13 +123,15 @@ export function PendingApprovalDetailPage() {
         </Alert>
       )}
 
-      {/* Sibling awareness at decision time (grammar §5) — only while this CR is still pending. */}
+      {/* Sibling awareness at decision time (grammar §5) — only while this CR is still pending. The
+          link is TYPE-filtered (no record-filter links anywhere user-facing, 2026-08-28); the count
+          itself is the record-specific signal. */}
       {cr.status === 'pending' && siblings > 0 && (
         <Alert
           severity="info"
           action={
-            <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals?record=${cr.entityId}`)}>
-              View requests
+            <Button size="small" variant="text" onClick={() => navigate(`/pending-approvals?type=${ENTITY_TYPE_PARAM[cr.entityType]}`)}>
+              View change requests
             </Button>
           }
         >

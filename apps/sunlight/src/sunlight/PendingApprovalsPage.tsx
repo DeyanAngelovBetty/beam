@@ -4,7 +4,6 @@ import {
   Stack,
   Alert,
   Box,
-  Button,
   MenuItem,
   Checkbox,
   ListItemText,
@@ -21,7 +20,7 @@ import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { listAll, approve, reject, cancel, useChangeRequests, type ChangeRequest, type ChangeRequestStatus } from './changeRequests';
 import { DEMO_USERS, useCurrentUser } from './currentUser';
-import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor, REASON_PLACEHOLDER } from './changeRequestShared';
+import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor, REASON_PLACEHOLDER, PARAM_TO_ENTITY } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -53,8 +52,8 @@ const EMPTY: Filters = { statuses: [], type: 'any', q: '', by: 'any', from: '', 
  * A BeamFilterBar over the FULL change-request set (the archive is browsable now, not just the
  * pending queue). Status is a FILTER (multi-select), never tabs — one queue, not five pages
  * (grammar §5). Sort: PENDING PINNED FIRST, then recency — the checker's default is "everything
- * actionable, on top." The record page's alert deep-links here with `?record=<id>` (this record's
- * requests); the app bar's maker voice with `?by=<name>` (your own).
+ * actionable, on top." A record page's alert deep-links here with `?type=<slug>` (that FEATURE's
+ * requests — never by record, §5); the app bar's maker voice with `?by=<name>` (your own).
  *
  * NO ROW EXPANSION (2026-08-14): the view-first DETAIL route (/pending-approvals/:id) is the review
  * surface. The kebab is the SINGLE row-action projection (list-grammar §3). The identity link opens
@@ -67,16 +66,26 @@ export function PendingApprovalsPage() {
   useChangeRequests(); // re-render on any CR mutation (approve/reject here, submit anywhere)
   const me = useCurrentUser().name; // reactive: tracks the shell's Acting-as switch
   const [searchParams, setSearchParams] = useSearchParams();
-  const recordParam = searchParams.get('record') ?? '';
+  // Deep-links seed the FEATURE-TYPE filter (a record page's alert) and the SUBMITTER filter (the app
+  // bar's maker voice). There is deliberately NO record filter — per-record filtering is a backend
+  // can't (recorded rejected-for-now, grammar §5); feature pages link to their type, not their row.
+  const typeParam = searchParams.get('type') ?? '';
   const byParam = searchParams.get('by') ?? '';
+  const paramType = PARAM_TO_ENTITY[typeParam]; // undefined when the slug is absent/unknown
 
   const [notice, setNotice] = useState<Notice>(null);
   const [cancelTarget, setCancelTarget] = useState<ChangeRequest | null>(null);
-  const [draft, setDraft] = useState<Filters>({ ...EMPTY, by: byParam || 'any' });
-  const [applied, setApplied] = useState<Filters>({ ...EMPTY, by: byParam || 'any' });
+  const [draft, setDraft] = useState<Filters>({ ...EMPTY, type: paramType ?? 'any', by: byParam || 'any' });
+  const [applied, setApplied] = useState<Filters>({ ...EMPTY, type: paramType ?? 'any', by: byParam || 'any' });
 
-  // A `?by=` deep-link (the app bar's maker voice) seeds the submitter filter live, even when the
-  // page is already mounted (react-router keeps it, only the params change).
+  // Deep-link params seed their filters live, even when the page is already mounted (react-router
+  // keeps it, only the params change).
+  useEffect(() => {
+    if (paramType) {
+      setDraft((d) => ({ ...d, type: paramType }));
+      setApplied((a) => ({ ...a, type: paramType }));
+    }
+  }, [paramType]);
   useEffect(() => {
     if (byParam) {
       setDraft((d) => ({ ...d, by: byParam }));
@@ -86,7 +95,6 @@ export function PendingApprovalsPage() {
 
   const q = applied.q.trim().toLowerCase();
   const filtered = listAll().filter((cr) => {
-    if (recordParam && cr.entityId !== recordParam) return false; // URL-driven, layered on the bar filters
     if (applied.statuses.length > 0 && !applied.statuses.includes(cr.status)) return false;
     if (applied.type !== 'any' && cr.entityType !== applied.type) return false;
     if (applied.by !== 'any' && cr.submittedBy !== applied.by) return false;
@@ -99,7 +107,6 @@ export function PendingApprovalsPage() {
   // Pending pinned first, then the rest by recency. listAll() is already recency-sorted and the
   // filter preserves order, so a stable pending-first partition is all we need.
   const rows = [...filtered.filter((cr) => cr.status === 'pending'), ...filtered.filter((cr) => cr.status !== 'pending')];
-  const recordName = recordParam ? listAll().find((cr) => cr.entityId === recordParam)?.entityName : undefined;
 
   const onApprove = (cr: ChangeRequest) => {
     const res = approve(cr.id, me); // emit → this page (and the app bar) re-render live
@@ -200,15 +207,10 @@ export function PendingApprovalsPage() {
     Boolean(applied.from) ||
     Boolean(applied.to);
 
-  const clearRecord = () => {
-    const next = new URLSearchParams(searchParams);
-    next.delete('record');
-    setSearchParams(next, { replace: true });
-  };
   const clearAll = () => {
     setDraft({ ...EMPTY });
     setApplied({ ...EMPTY });
-    setSearchParams(new URLSearchParams(), { replace: true }); // drop record + by
+    setSearchParams(new URLSearchParams(), { replace: true }); // drop type + by deep-link params
   };
 
   return (
@@ -218,21 +220,6 @@ export function PendingApprovalsPage() {
         title="Configuration Approvals"
         subtitle="Change requests awaiting a second pair of eyes — and the decision history."
       />
-
-      {/* URL-driven record filter (deep-link from a record page) — layered above the bar filters,
-          with its own clear so it reads as a distinct scope, not a buried filter chip. */}
-      {recordParam && (
-        <Alert
-          severity="info"
-          action={
-            <Button size="small" variant="text" onClick={clearRecord}>
-              Clear
-            </Button>
-          }
-        >
-          Showing change requests for {recordName ?? `record ${recordParam}`}.
-        </Alert>
-      )}
 
       <BeamFilterBar
         aria-label="Change request filters"

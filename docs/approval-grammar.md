@@ -62,13 +62,16 @@ contract).*
   `outdated` (§2). No auto-rejection, no rebase, no live re-diffing against
   a moving base — those were considered and rejected as machinery without a
   back-office customer (recorded so the "why can't we…" has an answer).
-- **Proposed, needs decision:** one pending CR per maker per record.
-  Parallel across people is the feature; parallel within one person is
-  version spam — their own Cancel-and-resubmit path is the edit mechanism.
-  **[resolved 2026-08-27 — yes; implemented.** submit() refuses a second
-  pending by the same actor on the same record; the editor's change-lifecycle
-  strip carries the own-pending mode (cancel-to-resubmit) so the dead end is
-  visible at entry, never a submit-time ambush.**]**
+- **One pending CR per maker per record?** Proposed 2026-08-27 (yes) →
+  implemented 2026-08-27 (`duplicatePending` guard + editor own-pending
+  blocker) → **REVERSED 2026-08-28 (NO — multi-pending, no guard).** A maker
+  may hold any number of pending CRs on a record; submitting always creates.
+  Rationale (team, 2026-08-28): *less robust, much simpler; the approvals page
+  is where contests resolve, and sibling auto-outdate on approve (§2) cleans up
+  any pileup — including one maker's own stack — so the guard bought little.*
+  Editing is never blocked; a second submit just adds a CR and the record's
+  pending count rises. *(The proposed → implemented → reversed trail with all
+  three dates is the process, not churn.)*
 
 ## 4. Reasons
 
@@ -110,14 +113,26 @@ on the reason.*
 
 ## 5. Surfaces
 
-**Page-level alert (on the record, view mode)** — actor-relative, per the
-existing ruling, now count-aware:
-- Requester: "You submitted a change request on {date} — it's pending
-  approval." + "{n} more request(s) are pending on this record" when true.
-  Actions: [View request] · [Cancel request].
-- Anyone else: "{n} change request(s) are pending on this record — awaiting
-  review." Action: [View requests] → approvals list **filtered by record**.
-- Editing is never blocked by pending CRs — the alert informs.
+**FEATURE PAGES ARE ACTOR-AGNOSTIC** *(layering principle, 2026-08-28).* A
+record page shows the same thing to everyone; actor-awareness (who may cancel,
+approve, reject; whose outcomes to surface) is confined to the **approvals
+surface** and the **app-level bar**. This keeps the many feature pages simple and
+the maker-checker machinery in one place.
+
+**Page-level alert (on the record, view mode)** — ONE universal voice:
+- "{n} change request(s) pending on this record." + ONE action:
+  **[View change requests]** → the approvals list **filtered by FEATURE TYPE**
+  (`?type=<slug>`, e.g. `loyalty-status`), for EVERY actor.
+- Editing is never blocked by pending CRs — the alert only informs. Acting on a
+  request (Cancel / Approve / Reject) lives on the approvals surface, not here.
+- **No per-record filter link.** Filtering the approvals list by an individual
+  record is a backend can't, and Radi's not-a-must — *recorded rejected-for-now*
+  (revisit if the backend gains it and a real need appears). The count on the
+  alert is the record-specific signal; the link scopes by type.
+- *(Supersedes the 2026-08-17 actor-relative page alert — requester/reviewer
+  voices with [View request] · [Cancel request] / [Review]. That machinery is
+  not lost, it MOVED: actor-relative action sets live on the CR detail + list,
+  actor-relative voices live on the app-level bar. Team decision 2026-08-28.)*
 - Outcome statuses (rejected/outdated) do NOT surface on the record page or
   as list-page columns — backend contract constraint (Tzeno, 2026-08-27).
   Outcome awareness lives in the app-level bar + the approvals page.
@@ -173,7 +188,7 @@ existing ruling, now count-aware:
 
 ## 7. Open questions
 
-1. ~~One pending CR per maker per record?~~ **[resolved 2026-08-27 — yes; implemented (§3).]**
+1. ~~One pending CR per maker per record?~~ **[2026-08-27 yes → 2026-08-28 REVERSED to NO — multi-pending, no guard (§3).]**
 2. Enum spelling `canceled` vs `cancelled` — follow backend contract. **[Tzeno]**
 3. Does `outdated` fire on any record change, or only on sibling-CR
    approval? (Direct edits outside the flow shouldn't exist once approval
@@ -185,6 +200,11 @@ existing ruling, now count-aware:
 per maker per record — yes, implemented (§3, §7.1; guard + own-pending strip
 mode). Bar "seen" is outcome-relative — a new outcome re-nags once even if the
 CR was viewed while pending (§5; bug found + fixed in the surfaces pass).*
+
+*Reversed/amended 2026-08-28 (Deyan + Sunlight team + Radi): one-pending-per-maker
+→ NO (multi-pending, guard removed — §3/§7.1); page alert → one universal
+count-voice, feature pages actor-agnostic, per-record filtering rejected-for-now
+(§5).*
 
 ---
 
@@ -200,6 +220,11 @@ Amended 2026-08-27 (Deyan+Alex walkthrough): reasons OPTIONAL across the board
 change-lifecycle strip composer into the DetailsPanel first-row field
 (supersedes the strip-composer + submit-gate ruling); four-eyes invariant
 stated as submitter ≠ reviewer, role permissions backend-owned (§1).
+Amended 2026-08-28 (Deyan + Sunlight team + Radi): feature pages actor-agnostic /
+one universal page-alert voice + type-filtered link, per-record filtering
+rejected-for-now (§5, supersedes 08-17); multi-pending — one-per-maker guard
+reversed (§3/§7.1).
 Contributor credits: Alex — separate
 approval-grammar doc (proposed 2026-08-26), reason-on-reject (optional);
-Tzeno — outdated model, backend surfacing constraints.*
+Tzeno — outdated model, backend surfacing constraints; Radi — team
+simplification (2026-08-28).*

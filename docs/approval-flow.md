@@ -44,26 +44,28 @@ it's resolved.
 
 | # | Act as | Do | Surface → expected state |
 |---|---|---|---|
-| 1 | **Maja** | Edit Amethyst, change the multiplier, optionally fill the **Change description** (the DetailsPanel's first-row field), **Submit for approval**. | The "Change description" row is present from entry, **disabled until you change a field**, then enabled — it never gates Submit (reasons are optional, §4). After submit: Amethyst's view shows the **requester** alert ("You submitted … pending approval", [View request] · [Cancel request]). |
-| 2 | **Ivan** | Edit Amethyst, a *different* multiplier (± a description), Submit. | Allowed — parallel pendings by different makers (§3). Amethyst view (as Ivan) now shows the requester alert **+ "1 more request is pending on this record"**. Switch to Maja: her requester alert gains the same "+1 more" tail. |
-| 3 | **Maja** (guard) | Edit Amethyst again, try to Submit a second time. | The strip shows the **own-pending blocker** at entry — "You already have a pending request on this record — cancel it to submit a new change" + inline [Cancel request]; Submit stays disabled. (The store's `duplicatePending` guard is the safety net; the strip prevents reaching it.) |
-| 4 | **Ravi** | Open **Configuration Approvals**. | The list opens **pending-first**. Amethyst's two competing CRs sit on top (plus the seeded Topaz two). Each row shows its **Reason**. Open Ivan's CR → the detail shows the request panel (with the editable **Decision note** as its first row), a **"1 other pending request on this record"** sibling line, and the diff with the **submit reason** heading it. |
-| 5 | **Ravi** | **Approve** Ivan's CR (optionally add a decision note). | Ivan's CR → **approved**, Amethyst takes multiplier 1.6 (a new revision). **Maja's CR auto-outdates** (§2): its detail shows the **outdated banner** + a historical, non-actionable diff; the list shows it as **outdated**; Amethyst's record page no longer shows Maja's pending. |
-| 6 | **Maja** | Look at the app-level bar. | The bar shows the **outcome voice**: "Your change request on Amethyst became outdated" — `info`, dismissible. (This surfaces even though Maja viewed her request while it was pending: "seen" is outcome-relative — §5.) |
+| 1 | **Maja** | Edit Amethyst, change the multiplier, optionally fill the **Change description** (the DetailsPanel's first-row field), **Submit for approval**. | The "Change description" row is present from entry, **disabled until you change a field**, then enabled — it never gates Submit (reasons are optional, §4). After submit: Amethyst's view shows the **universal** alert "**1 change request pending on this record.**" + [View change requests] — the SAME for every actor (§5). |
+| 2 | **Ivan** | Edit Amethyst, a *different* multiplier (± a description), Submit. | Parallel pendings by different makers (§3). Every actor's Amethyst alert now reads "**2 change requests pending on this record.**" — no requester/reviewer split, no per-actor tail. |
+| 3 | **Maja** (multi-pending) | Edit Amethyst AGAIN and Submit a second time. | **Allowed — no guard** (2026-08-28 reversal, §3): editing is never blocked and a second submit just adds another CR. The record now has **3 pending**; the alert count rises to "3 change requests pending on this record." |
+| 4 | **Ravi** | Open **Configuration Approvals** (via a record alert's [View change requests] → the list filtered by `?type=loyalty-status`). | The list opens **pending-first**. Amethyst's three CRs sit on top (plus the seeded Topaz two). Each row shows its **Reason**. Open one → the detail shows the request panel (editable **Decision note** as its first row), a **"2 other pending requests on this record"** sibling line, and the diff with the **submit reason** heading it. |
+| 5 | **Ravi** | **Approve Ivan's** Amethyst CR (optionally add a decision note). | Ivan's CR → **approved**, Amethyst takes his value (a new revision). **Every sibling auto-outdates** (§2) — here BOTH of Maja's: each detail shows the **outdated banner** + a historical, non-actionable diff; the list shows them **outdated**; Amethyst's record page count drops to zero. |
+| 6 | **Maja** | Look at the app-level bar. | The bar's **outcome voice**, aggregated over her two: "Your change requests: **2 outdated**" — `info`, dismissible. (These surface even though Maja viewed her requests while pending: "seen" is outcome-relative — §5.) |
 | 7 | **Maja** | Click **✕** (or open the CR). | Dismiss and view are the same transition — both mark it seen. The bar slides away. |
 | 8 | **Maja** | Trigger no new work; switch away and back. | **No re-nag** — the outcome stays seen; the bar reappears only for genuinely new unseen items. |
-| 9 | **Maja** | On a **fresh** clean record (e.g. Opal), submit a CR with a reason. | Requester alert on Opal; the CR joins the checker's queue. |
+| 9 | **Maja** | On a **fresh** clean record (e.g. Opal), submit a CR with a reason. | Opal's universal alert reads "1 change request pending on this record."; the CR joins the checker's queue. |
 | 10 | **Ravi** | Open Maja's Opal CR, **Reject** it with a reason in the decision note. | Opal CR → **rejected** (the decision note is recorded and shown on the CR). The live Opal is untouched. |
 | 11 | **Maja** | App-level bar. | Outcome voice: "Your change request on Opal was rejected" (`info`, dismissible). ✕ clears it; no re-nag. |
-| 12 | **Ravi** (checker-as-maker) | On a fresh clean record (e.g. Sapphire), edit + **Submit**. | A checker may submit — four-eyes is submitter ≠ reviewer, not role (§1). Sapphire's view shows Ravi the **requester** alert. |
+| 12 | **Ravi** (checker-as-maker) | On a fresh clean record (e.g. Sapphire), edit + **Submit**. | A checker may submit — four-eyes is submitter ≠ reviewer, not role (§1). Sapphire's universal alert reads "1 change request pending on this record." (same voice for everyone). |
 | 13 | **Ravi** | Open his own Sapphire CR — list **and** detail. | The **own-request action set**: [Cancel request] only, **no Approve/Reject** (you can't review your own request, even as a checker). The approvals-list kebab matches. |
 | 14 | **Sofia** (checker2) | Open the same CR, **Approve**. | A DIFFERENT checker is a valid second pair of eyes → Ravi's CR approves, Sapphire takes the new revision. This is the case the second checker exists to prove. |
 
-**Every actor-relative derivation flips live on the "Acting as" switch** (verify by
-switching mid-step): the page-level alert **voice + counts**, the app-level **bar
-contents**, the editor's **own-pending blocker**, the `duplicatePending` **guard**, and
-the CR-detail **action set** ([Cancel request] on your own — *including a checker on their
-own CR* · [Reject] [Approve] on another's · none on an archived one).
+**What flips on the "Acting as" switch, and what doesn't** (2026-08-28). The feature
+page is **actor-agnostic** — its pending alert is the SAME for everyone (count only),
+so it does *not* flip. What DOES flip, live: the app-level **bar contents** (checker's
+review count vs a maker's outcomes), and on the approvals surface the CR-detail
+**action set** — [Cancel request] on your own (*including a checker on their own CR*) ·
+[Reject] [Approve] on another's · none on an archived one — plus its **decision-note
+twin** (field for an eligible reviewer, stat otherwise).
 
 ---
 
@@ -332,7 +334,13 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   disabled-until-dirty), NOT a strip composer — the strip keeps only the alert + own-pending blocker;
   a second checker (Sofia Delgado) proves the checker-as-maker case (four-eyes = submitter ≠ reviewer,
   role permissions backend-owned). Demo roster: Maja · Ivan (makers) · Ravi · Sofia (checkers). Full
-  script in the Walkthrough above.
+  script in the Walkthrough above. **v3.2 simplification** *(2026-08-28, Deyan + team + Radi)*: feature
+  pages went ACTOR-AGNOSTIC — the page alert collapsed to one universal count-voice + a type-filtered
+  [View change requests] link (the 08-17 requester/reviewer voices, [View request]/[Cancel request],
+  and per-record filter links all removed; per-record filtering recorded rejected-for-now); and the
+  one-open-per-maker guard was REVERSED — `duplicatePending` + the own-pending blocker deleted,
+  `submit()` always creates (multi-pending; sibling auto-outdate still resolves any pileup). The
+  proposed→built→reversed guard trail (08-27→08-27→08-28) is the process, not churn.
 - **`pendingApproval` vocabulary word** — the §6.4 extension; decide when the
   borrow starts to chafe (e.g. the day a settlement `pending` and an approval
   `pending` share a screen).

@@ -5,8 +5,9 @@ import { DEMO_USERS, setCurrentUser, useCurrentUser } from './currentUser';
  * The demo four-eyes actor switcher — an ALWAYS-VISIBLE persona list in the shell's sidebar footer
  * (nav idiom: ListItemButton rows with a selected state), so the whole four-eyes walkthrough is
  * one-click per hop, never a dropdown. Global, so switching flips every actor-relative derivation
- * live (page-level alert, app bar, own-pending blocker, the CR-detail action set + decision-note
- * twin) — the reactive `useCurrentUser` makes that immediate.
+ * live — the app-level bar's voice, the CR-detail action set, and its decision-note twin (the
+ * feature-page alert is actor-agnostic now, so it does NOT flip). The reactive `useCurrentUser`
+ * makes those immediate.
  *
  * A11Y: it's a single-choice control, so radio semantics — role="radiogroup" on the list, role="radio"
  * + aria-checked on each row (ListItemButton's default is a `button`; the role override makes the

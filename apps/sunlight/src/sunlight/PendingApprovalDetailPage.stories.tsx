@@ -26,10 +26,9 @@ const pendingId = pendingOnRecord('30')[0]?.id ?? '';
 const archivedId = (() => {
   const opal = getLoyaltyStatus('50');
   if (!opal) return '';
-  const res = submit({ entityType: 'loyaltyStatus', entityId: '50', entityName: opal.name, baseVersion: opal.version, baseSnapshot: toDraft(opal), draft: { ...toDraft(opal), multiplier: 2 }, submittedBy: DEMO_MAKER.name, submitReason: 'Demo archive fixture.' });
-  if (!res.ok) return '';
-  reject(res.cr.id, DEMO_CHECKER.name, 'Demo archive fixture.');
-  return res.cr.id;
+  const cr = submit({ entityType: 'loyaltyStatus', entityId: '50', entityName: opal.name, baseVersion: opal.version, baseSnapshot: toDraft(opal), draft: { ...toDraft(opal), multiplier: 2 }, submittedBy: DEMO_MAKER.name, submitReason: 'Demo archive fixture.' });
+  reject(cr.id, DEMO_CHECKER.name, 'Demo archive fixture.');
+  return cr.id;
 })();
 
 function At({ id }: { id: string }) {
@@ -51,8 +50,8 @@ function At({ id }: { id: string }) {
 const ownPendingId = (() => {
   const em = getLoyaltyStatus('60');
   if (!em) return '';
-  const res = submit({ entityType: 'loyaltyStatus', entityId: '60', entityName: em.name, baseVersion: em.version, baseSnapshot: toDraft(em), draft: { ...toDraft(em), multiplier: 3 }, submittedBy: DEMO_CHECKER.name, submitReason: 'Own-pending demo fixture.' });
-  return res.ok ? res.cr.id : '';
+  const cr = submit({ entityType: 'loyaltyStatus', entityId: '60', entityName: em.name, baseVersion: em.version, baseSnapshot: toDraft(em), draft: { ...toDraft(em), multiplier: 3 }, submittedBy: DEMO_CHECKER.name, submitReason: 'Own-pending demo fixture.' });
+  return cr.id;
 })();
 
 // An OUTDATED CR — the §2 auto-transition. Two makers propose on Ruby (id 70); approving one
@@ -63,8 +62,8 @@ const outdatedId = (() => {
   if (!ruby) return '';
   const winner = submit({ entityType: 'loyaltyStatus', entityId: '70', entityName: ruby.name, baseVersion: ruby.version, baseSnapshot: toDraft(ruby), draft: { ...toDraft(ruby), multiplier: 1.5 }, submittedBy: DEMO_MAKER.name, submitReason: 'The proposal that wins.' });
   const loser = submit({ entityType: 'loyaltyStatus', entityId: '70', entityName: ruby.name, baseVersion: ruby.version, baseSnapshot: toDraft(ruby), draft: { ...toDraft(ruby), multiplier: 1.9 }, submittedBy: DEMO_CHECKER.name, submitReason: 'The rival proposal (will be outdated).' });
-  if (winner.ok) approve(winner.cr.id, DEMO_CHECKER.name); // approving the winner outdates the loser
-  return loser.ok ? loser.cr.id : '';
+  approve(winner.id, DEMO_CHECKER.name); // approving the winner outdates the loser
+  return loser.id;
 })();
 
 /** Pending record, someone else's — both review actions live (checker acting on the maker's request). */

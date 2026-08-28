@@ -96,12 +96,6 @@ export interface EntityApplicator<T = unknown> {
   applyDraft(entityId: string, draft: T): void;
 }
 
-export type SubmitResult<T = unknown> =
-  | { ok: true; cr: ChangeRequest<T> }
-  // The §3 guard: the SAME actor already has a pending CR on this record. One open proposal per
-  // actor per record — cancel it before submitting a new one (a different actor may still submit).
-  | { ok: false; reason: 'duplicatePending' };
-
 export type ApproveResult =
   | { ok: true; cr: ChangeRequest }
   | { ok: false; reason: 'notFound' | 'unregistered' | 'forbidden' | 'conflict' };
@@ -171,17 +165,14 @@ export function registerEntity<T>(entityType: ChangeRequestEntity, applicator: E
 }
 
 /**
- * Create a pending CR. Concurrent pendings on the same record are ALLOWED (approval-grammar §2) —
- * two checkers can each propose a change and approval resolves the contest (the approved one wins,
- * the rest go 'outdated'). The ONE limit is the §3 guard: the SAME actor may not hold two open
- * proposals on the same record — that returns { ok: false, reason: 'duplicatePending' } and creates
- * nothing (cancel the open one first). No supersede-on-submit anymore — that was the old model.
+ * Create a pending CR. Concurrent pendings on the same record are ALLOWED without limit
+ * (approval-grammar §3) — ANY number, by any actor INCLUDING the same maker twice. Approval resolves
+ * the pileup: approving one outdates all its siblings (§2). *(2026-08-28: the one-open-per-maker
+ * guard, proposed + implemented 2026-08-27, was reversed — less robust, much simpler, and the
+ * approvals page is where contests resolve. submit() always creates; there are no refusals, so it
+ * returns the CR directly rather than a result union.)*
  */
-export function submit<T>(input: SubmitInput<T>): SubmitResult<T> {
-  const mineOpen = requests.find(
-    (r) => r.entityId === input.entityId && r.status === 'pending' && r.submittedBy === input.submittedBy,
-  );
-  if (mineOpen) return { ok: false, reason: 'duplicatePending' };
+export function submit<T>(input: SubmitInput<T>): ChangeRequest<T> {
   const cr: ChangeRequest<T> = {
     id: newCrId(),
     entityType: input.entityType,
@@ -199,7 +190,7 @@ export function submit<T>(input: SubmitInput<T>): SubmitResult<T> {
   requests.push(cr as ChangeRequest);
   save();
   emitChange();
-  return { ok: true, cr };
+  return cr;
 }
 
 /** All pending CRs (approvals queue; app-level indicators are selectors over this). */

@@ -143,6 +143,6 @@ seedIfEmpty(() => {
   // contest), the checker has seen NEITHER. So the checker opens to "2 awaiting review" while both
   // makers open to nothing — and because each author's own CR stays unseen-by-them, an eventual
   // outdate/reject still surfaces to its author (outcome-relative seen).
-  if (a.ok) markSeen([a.cr.id], DEMO_MAKER2.name); // Ivan has seen Maja's
-  if (b.ok) markSeen([b.cr.id], DEMO_MAKER.name); // Maja has seen Ivan's
+  markSeen([a.id], DEMO_MAKER2.name); // Ivan has seen Maja's
+  markSeen([b.id], DEMO_MAKER.name); // Maja has seen Ivan's
 });

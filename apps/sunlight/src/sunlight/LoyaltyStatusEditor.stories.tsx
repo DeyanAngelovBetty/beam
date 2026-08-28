@@ -11,19 +11,20 @@ import { DEMO_CHECKER } from './currentUser';
  * (approval-flow.md §6): read-only anatomy + an explicit **Edit** action that flips to the editor.
  * The editor uses useParams + useBlocker, so it needs a DATA router (createMemoryRouter).
  *
- * The view-mode pending alert is ACTOR-RELATIVE (approval-flow "Actor → action-set"):
- *  - Topaz (id 30) is the seeded CONTEST — TWO competing pendings (Maja's + Ivan's); the default
- *    actor is the checker → the count-aware REVIEWER voice ("2 … awaiting review", [View requests]).
- *  - Emerald (id 40) below gets a CR submitted by the DEFAULT actor (checker), so viewing it reads
- *    as the REQUESTER voice ("You submitted …", [View request] · [Cancel]) without switching actor.
+ * The view-mode pending alert is ACTOR-AGNOSTIC (grammar §5, 2026-08-28): ONE universal voice —
+ * just the pending count on the record, the same for every actor, + [View change requests] to the
+ * type-filtered approvals list. No requester/reviewer split; acting on requests is the approvals
+ * surface's job.
+ *  - Topaz (id 30) is the seeded CONTEST — TWO pendings → "2 change requests pending".
+ *  - Emerald (id 40) below gets one CR → "1 change request pending" (singular copy).
  * (LoyaltyStatusEditor value-imports the entity store, so registration + seed happen transitively.)
  */
 
-// A pending CR authored by the default actor (checker) → the requester voice on Emerald (id 40).
+// A single pending CR on Emerald (id 40) → the singular-count universal voice.
 (() => {
   if (pendingOnRecord('40').length) return;
   const emerald = getLoyaltyStatus('40');
-  if (emerald) submit({ entityType: 'loyaltyStatus', entityId: '40', entityName: emerald.name, baseVersion: emerald.version, baseSnapshot: toDraft(emerald), draft: { ...toDraft(emerald), multiplier: 1.25 }, submittedBy: DEMO_CHECKER.name, submitReason: 'Requester-voice demo fixture.' });
+  if (emerald) submit({ entityType: 'loyaltyStatus', entityId: '40', entityName: emerald.name, baseVersion: emerald.version, baseSnapshot: toDraft(emerald), draft: { ...toDraft(emerald), multiplier: 1.25 }, submittedBy: DEMO_CHECKER.name, submitReason: 'Single-pending demo fixture.' });
 })();
 const meta: Meta = {
   title: 'Lab/Sunlight/LoyaltyStatusEditor',
@@ -50,14 +51,14 @@ function At({ id }: { id: string }) {
 /** View-first: a status with no pending request (Opal, id 50) opens READ-ONLY; Edit flips to the editor. */
 export const ViewMode: Story = { render: () => <At id="50" /> };
 
-/** Pending as REVIEWER, CONTESTED (Topaz, id 30, seeded with TWO competing pendings — Maja's and
- *  Ivan's; default actor = checker): the count-aware alert reads "2 change requests are pending on
- *  this record — awaiting review" with [View requests] → the record-filtered approvals list. */
-export const PendingAsReviewer: Story = { render: () => <At id="30" /> };
+/** Pending on the record — CONTESTED (Topaz, id 30, seeded with TWO competing pendings). The
+ *  page-level alert is the ONE UNIVERSAL VOICE (same for every actor, 2026-08-28): "2 change requests
+ *  pending on this record." + [View change requests] → the approvals list filtered by feature TYPE. */
+export const PendingContested: Story = { render: () => <At id="30" /> };
 
-/** Pending as REQUESTER (Emerald, id 40, submitted by the default checker): the alert reads
- *  "You submitted …" with [View request] · [Cancel] (the confirm travels with Cancel). */
-export const PendingAsRequester: Story = { render: () => <At id="40" /> };
+/** Pending on the record — SINGLE (Emerald, id 40, one pending): the same universal voice, singular
+ *  copy — "1 change request pending on this record." No requester/reviewer split, no Cancel here. */
+export const PendingSingle: Story = { render: () => <At id="40" /> };
 
 /** An unknown id → the empty state. */
 export const NotFound: Story = { render: () => <At id="999" /> };
@@ -81,12 +82,12 @@ function AtEdit({ id }: { id: string }) {
 
 /** EDIT mode, no pending (Opal, id 50): the OPTIONAL "Change description" is the DetailsPanel's
  *  full-width FIRST ROW (gridColumn 1 / -1), PRESENT from entry, DISABLED until the form goes dirty —
- *  constant geometry, no mid-edit jump (2026-08-27: reasons went optional, so the composer left the
- *  strip and joined the change fields; it never gates Submit). Type in a field to watch it enable. */
+ *  constant geometry, no mid-edit jump (reasons are optional; it never gates Submit). Type in a field
+ *  to watch it enable. */
 export const EditComposer: Story = { render: () => <AtEdit id="50" /> };
 
-/** EDIT mode with YOUR OWN pending (Emerald, id 40, submitted by the default checker): the strip
- *  shows the own-pending blocker — "You already have a pending request on this record — cancel it to
- *  submit a new change" — with an inline [Cancel request]. Submit is disabled until you cancel. The
- *  "Change description" row still sits in the DetailsPanel below (disabled until dirty). */
-export const EditOwnPendingBlocked: Story = { render: () => <AtEdit id="40" /> };
+/** EDIT mode on a record that ALREADY has a pending (Emerald, id 40): no blocker anymore
+ *  (2026-08-28, multi-pending) — editing is never blocked; submitting simply ADDS another CR and the
+ *  record's pending count rises. The strip has no own-pending warning; only the imported cue (absent
+ *  here) would show. */
+export const EditWithExistingPending: Story = { render: () => <AtEdit id="40" /> };

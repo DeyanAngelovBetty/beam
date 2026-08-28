@@ -108,7 +108,7 @@ export function LoyaltyStatusPage() {
       if (!live) continue;
       const changed = gridDiff.changed.some((c) => c.id === String(item.id));
       if (!changed) continue; // unchanged → no CR
-      const res = submit({
+      submit({
         entityType: 'loyaltyStatus',
         entityId: String(live.id),
         entityName: live.name,
@@ -118,9 +118,8 @@ export function LoyaltyStatusPage() {
         submittedBy: getCurrentUser().name,
         submitReason: gridReason.trim() || undefined, // optional; prefilled default, may be cleared
       });
-      // §3 guard: a row this actor already has open on the same record is skipped, not superseded
-      // (the old model superseded in-flight pendings; now duplicates are refused). Count successes.
-      if (res.ok) count += 1;
+      // submit() always creates now (no duplicate guard) — one CR per changed row.
+      count += 1;
     }
     setGridResult(count);
     setGridDiff(null);

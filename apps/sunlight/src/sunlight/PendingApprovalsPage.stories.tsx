@@ -20,8 +20,7 @@ import { DEMO_MAKER, DEMO_CHECKER } from './currentUser';
   const mk = (recordId: string, mult: number, by: string, reason: string) => {
     const s = getLoyaltyStatus(recordId);
     if (!s) return null;
-    const r = submit({ entityType: 'loyaltyStatus', entityId: recordId, entityName: s.name, baseVersion: s.version, baseSnapshot: toDraft(s), draft: { ...toDraft(s), multiplier: mult }, submittedBy: by, submitReason: reason });
-    return r.ok ? r.cr.id : null;
+    return submit({ entityType: 'loyaltyStatus', entityId: recordId, entityName: s.name, baseVersion: s.version, baseSnapshot: toDraft(s), draft: { ...toDraft(s), multiplier: mult }, submittedBy: by, submitReason: reason }).id;
   };
   const approved = mk('80', 1.7, DEMO_MAKER.name, 'Approved-history fixture.');
   if (approved) approve(approved, DEMO_CHECKER.name, 'Looks right.');

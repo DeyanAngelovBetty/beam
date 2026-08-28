@@ -1,7 +1,18 @@
-import type { ChangeRequest } from './changeRequests';
+import type { ChangeRequest, ChangeRequestEntity } from './changeRequests';
 
 /** Entity-type → human label. Grows with the ChangeRequestEntity union. */
 export const ENTITY_LABEL: Record<ChangeRequest['entityType'], string> = { loyaltyStatus: 'Loyalty status' };
+
+/**
+ * Entity-type → URL param slug (kebab), used by the approvals list's `?type=` filter — the one
+ * user-facing cross-link (feature pages deep-link to their own requests BY TYPE, never by record:
+ * per-record filtering is a backend can't, recorded rejected-for-now in the grammar). Bidirectional
+ * via PARAM_TO_ENTITY below.
+ */
+export const ENTITY_TYPE_PARAM: Record<ChangeRequestEntity, string> = { loyaltyStatus: 'loyalty-status' };
+export const PARAM_TO_ENTITY: Record<string, ChangeRequestEntity> = Object.fromEntries(
+  Object.entries(ENTITY_TYPE_PARAM).map(([entity, param]) => [param, entity as ChangeRequestEntity]),
+);
 
 export type CrActionKind = 'approve' | 'reject' | 'cancel';
 
