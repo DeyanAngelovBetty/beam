@@ -199,11 +199,23 @@ Beam** — ported faithfully (`ChangeValue`, `LoyaltyStatusDeltaPanel`,
 `LoyaltyRewardsDeltaTable`), *not* redesigned. Reservations are logged here, not
 fixed in code.
 
-**Two renderings coexist on the page, by intent.** The new delta panel sits
-**above the existing `ConfigDiffPanel`, which is unchanged and unmoved** — both
-render, deliberately. Whether one eventually **supersedes** the other, or they
-**split by role/context**, is an **unresolved future ruling**. Recorded here so
-nobody reads the stacking as an accident.
+**The inline delta panel supersedes `ConfigDiffPanel` on the approval detail
+page** *(ruling 2026-08-31).* It is now the SOLE "Review changes" rendering;
+`ConfigDiffPanel` was unwired from `PendingApprovalDetailPage`. The component is
+**retained in the codebase, unwired** — the candidate rendering for a future
+**CR-vs-CR comparison view** (§3 parallelism) should that ever get a consumer;
+it is not deleted. *(This resolves the earlier "coexist / supersede-or-split"
+open question in favour of supersede-on-page.)*
+
+**What the delta panel loses by standing alone** (reported for honesty; NOT
+replaced in this change — `ConfigDiffPanel` carried these and is no longer on the
+page): the **"N changed · M unchanged hidden" summary line**, and the **compact
+single-line per-reward row format** (`pts → amount type · Nh`). The delta panel
+shows changed scalars only (no unchanged-count) and renders rewards as a
+positional 3-column table rather than that compact line. Also gone from the page:
+`ConfigDiffPanel`'s **"snapshot unavailable" fallback** — the delta panel returns
+null when a CR has no `baseSnapshot`, so such a CR now shows nothing under "Review
+changes" (pre-v3 / hand-built CRs only).
 
 Open items — explicitly **NOT** addressed in this port:
 
