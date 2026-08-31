@@ -186,6 +186,48 @@ the maker-checker machinery in one place.
 - Status words in UI match the enum: a canceled CR is "canceled", not
   "withdrawn", everywhere including historical copy.
 
+## Presentation — inline-delta rendering *(adopted 2026-08-28)*
+
+**Adopted from Alex (official Sunlight), imported deliberately as-is.** Beam's
+approval detail for Loyalty Status renders the entity's review layout as
+**per-cell old→new deltas**: the old value struck through in an error tint, the
+new value in a success tint, side by side; unchanged scalars omitted, unchanged
+rows quiet; changed scalars in a responsive `BeamStat` grid; reward rows in a
+positional diff table; a description line + gem/name meta above. This is the
+**first tracer for taking an organism-level pattern from the Sunlight team into
+Beam** — ported faithfully (`ChangeValue`, `LoyaltyStatusDeltaPanel`,
+`LoyaltyRewardsDeltaTable`), *not* redesigned. Reservations are logged here, not
+fixed in code.
+
+**Two renderings coexist on the page, by intent.** The new delta panel sits
+**above the existing `ConfigDiffPanel`, which is unchanged and unmoved** — both
+render, deliberately. Whether one eventually **supersedes** the other, or they
+**split by role/context**, is an **unresolved future ruling**. Recorded here so
+nobody reads the stacking as an accident.
+
+Open items — explicitly **NOT** addressed in this port:
+
+- **(a) Positional (index-based) reward diff → row-insert cascade.** The reward
+  table pairs rows by INDEX (`before[i]` vs `after[i]`, row id = the index), so
+  inserting or removing a row shifts every row below it and lights them all up as
+  false edits. **The strongest form of the observation:** the extraction memo
+  found that *the keyed mechanism already exists in the same file* — the scalar
+  fields are diffed with `microdiff` over a fixed projection, i.e. addressed by
+  field name with no cascade. So the port already contains, side by side, both a
+  keyed diff (scalars) and a positional one (rows); only the rows cascade.
+  Pending Alex's input on whether the rows should move to a keyed (row-identity)
+  diff.
+- **(b) Colour-only + strikethrough value encoding.** Change is conveyed by
+  colour (error/success) and `line-through` alone — no non-colour channel. An
+  a11y gap (WCAG 1.4.1) that needs a shape/text cue eventually; ported as-is.
+- **(c) Decision-note placement divergence.** The ported layout keeps the
+  decision note **in the panel**; our own doctrine puts change metadata in the
+  **change-lifecycle strip / DetailsPanel first row** (§4). Divergence noted,
+  unresolved — not reconciled in this port.
+
+*Provenance: Alex (official Sunlight — `features/loyalty/approvals`); ported into
+Beam 2026-08-28. Faithful port, reservations logged not fixed.*
+
 ## 7. Open questions
 
 1. ~~One pending CR per maker per record?~~ **[2026-08-27 yes → 2026-08-28 REVERSED to NO — multi-pending, no guard (§3).]**

@@ -7,6 +7,7 @@ import { useCurrentUser } from './currentUser';
 import { ENTITY_LABEL, shortCrId, reasonMessage, crActionsFor, ENTITY_TYPE_PARAM } from './changeRequestShared';
 import { CRStatusChip, OperationChip } from './changeRequestChips';
 import { ConfigDiffPanel } from './ConfigDiffPanel';
+import { LoyaltyStatusDeltaPanel } from './LoyaltyStatusDeltaPanel';
 import { ConfirmDialog } from './ConfirmDialog';
 
 type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
@@ -177,6 +178,11 @@ export function PendingApprovalDetailPage() {
         <Typography variant="subtitle2" color="text.secondary">
           Review changes
         </Typography>
+        {/* Inline-delta rendering — a FAITHFUL PORT from official Sunlight (Alex): the entity's review
+            layout with per-cell old→new deltas. It DELIBERATELY COEXISTS with ConfigDiffPanel below;
+            whether one supersedes the other (or they split by role) is an unresolved future ruling —
+            the stacking is intentional, not an accident (docs/approval-grammar.md "Presentation"). */}
+        <LoyaltyStatusDeltaPanel cr={cr} />
         {/* The diff shows this CR's FROZEN before-state vs its proposal — historically stable for
             archived records. No snapshot → the panel falls back to proposed-only with a notice. */}
         <ConfigDiffPanel cr={cr} />

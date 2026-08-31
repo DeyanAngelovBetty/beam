@@ -93,7 +93,7 @@ export {
 
 // Theme infrastructure. Not re-exported by MUI's root entry, so it comes
 // from '@mui/material/styles' — apps still see one import surface.
-export { ThemeProvider, useColorScheme, useTheme } from '@mui/material/styles';
+export { ThemeProvider, useColorScheme, useTheme, alpha } from '@mui/material/styles';
 export type { Theme } from '@mui/material/styles';
 
 // ---- Organisms (Beam-owned) ----
