@@ -14,6 +14,7 @@ import { ThemeLabDrawer } from '@betty/beam-lab';
 import { PendingReviewAlert } from './sunlight/PendingReviewAlert';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { LoyaltyStatusEditor } from './sunlight/LoyaltyStatusEditor';
+import { LoyaltyLevelsPage } from './sunlight/LoyaltyLevelsPage';
 import { PendingApprovalsPage } from './sunlight/PendingApprovalsPage';
 import { PendingApprovalDetailPage } from './sunlight/PendingApprovalDetailPage';
 import { PlaceholderPage } from './sunlight/PlaceholderPage';
@@ -106,6 +107,7 @@ const router = createBrowserRouter(
         // Maker-checker tracer: the loyalty ladder is fixed, so the editor only edits an
         // existing status (no /new). Approvals is the reviewer's queue.
         { path: 'loyalty-status/:id', element: <LoyaltyStatusEditor /> },
+        { path: 'loyalty-levels', element: <LoyaltyLevelsPage /> },
         { path: 'pending-approvals', element: <PendingApprovalsPage /> },
         { path: 'pending-approvals/:id', element: <PendingApprovalDetailPage /> },
         { path: 'perks', element: <PerksPage /> },

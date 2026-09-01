@@ -9,6 +9,7 @@ import type { BeamNavItem } from '@betty/beam';
 /** Every navigable destination in Sunlight, and its route. */
 export type SunlightPage =
   | 'loyalty-status'
+  | 'loyalty-levels'
   | 'perks'
   | 'payout-configs'
   | 'game-configs'
@@ -21,6 +22,7 @@ export type SunlightPage =
 
 export const PAGE_PATH: Record<SunlightPage, string> = {
   'loyalty-status': '/',
+  'loyalty-levels': '/loyalty-levels',
   perks: '/perks',
   'payout-configs': '/payout-configs',
   'game-configs': '/game-configs',
@@ -59,7 +61,7 @@ export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[]
       label: 'Loyalty',
       icon: <DiamondIcon />,
       defaultOpen: true,
-      children: [leaf('Status', 'loyalty-status'), leaf('Perks', 'perks')],
+      children: [leaf('Status', 'loyalty-status'), leaf('Levels', 'loyalty-levels'), leaf('Perks', 'perks')],
     },
     {
       label: 'Betty Meta Games',
