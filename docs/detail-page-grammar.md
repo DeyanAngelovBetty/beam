@@ -155,6 +155,43 @@ top-aligned, rows sized by their tallest member, booleans inline as peers.
   they keep their own titles once the details panel drops its own is an **OPEN question, noted, not
   ruled**.
 
+*Amended 2026-09-01 — **the mode mechanic generalizes beyond view↔edit** (first non-edit use:
+Loyalty Levels A/B-test config).* Everything above describes view↔edit, but the grammar is really a
+**MODE** grammar, not an edit one. A **feature mode** — a page entering a distinct configuration
+state that is not "editing this record" — reuses the SAME mechanics:
+
+- **Header action swap, constant geometry.** The `BeamPageHeader` actions node swaps for the mode
+  ([A/B Test] [Export] [Import] → [Cancel] [Submit for A/B Test]); the header's fixed rows mean no
+  layout jump. Only the actions node changes — the mode-swap promise the edit case already makes.
+- **A `DetailsPanel` in edit mode carries the mode's fields**, mode border and all — here the
+  test-level fields (Parity Type, Start Date) as 44px field twins (the edit half; there is no
+  view-half on this page, they exist only while configuring a test).
+- **Cancel / Submit pair** closes the mode (Submit's verb depends on whether the mode acts directly
+  or via maker-checker — see open item (4)).
+- **The body may legitimately restructure** across a feature mode (tabs appear, Export/Import move to
+  tab level) — that is the mode, not a geometry break. The constant-geometry promise is about the
+  **header**, not the body.
+
+*First applied:* `LoyaltyLevelsPage` — default mode is the one live scheme (no tabs, the 90% case);
+"A/B Test" enters the mode (tabs + a test-config `DetailsPanel` above them). The A/B fields sit
+**above the tabs** (they describe the TEST, not Scheme B) — a deliberate divergence from Midnight,
+which buries them in the Scheme-B edit dialog.
+
+**Open items — logged, NOT solved in this pass:**
+1. **THE BIG ONE — a *submitted* A/B test is persistent state, not this ephemeral mode.** What does
+   the page show while a test is RUNNING? Likely a THIRD state (tabs + read-only test fields +
+   stop/promote action), distinct from both default and the config mode. Needs Radi / Alex.
+2. **Test-end lifecycle.** Start Date exists; there is no end mechanism — manual stop?
+   promote-winner? Needs Radi.
+3. **Data model.** Are **Parity Type / Start Date** test-level fields or Scheme-B fields? Our
+   placement (above the tabs) assumes **test-level**. And **which scheme is "live"** is itself
+   backend-owned state — the demo hardcodes `LIVE_SCHEME = 'A'`. The whole data-model question in one
+   place for Tzeno.
+4. **Does 'Submit for A/B Test' go through maker-checker** (like other loyalty changes) or act
+   directly? This also settles the verb: **[Submit for A/B Test]** (shipped) reads right if it goes
+   through maker-checker; **[Start A/B Test]** reads truer if it acts directly.
+5. **Import into a scheme while a test is running — allowed?**
+
 ## 3. Meta text goes universal
 
 `tableMetaText` graduates from a table-local rule to the **meta** category rule —
