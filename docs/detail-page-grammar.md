@@ -108,6 +108,12 @@ an explicit, shared geometry, not an accident of typography:
   the family's notable state** — severity (WarningAmber outlined → Error filled), boolean (true
   filled). `severity` (`'warning' | 'error'`; `danger` retired) stays the ONLY alarm channel — never
   inferred from a boolean. (v2 also dropped `tone`: there is no positive/neutral tint channel.)
+  - *Extended from BeamStat to TABLE CELLS, 2026-09-01.* The ruling was written for the BeamStat
+    value slot; it governs any boolean cell. Boolean **table** columns render the same pair via the
+    exported `BeamBool` (not a bespoke check/cross). First applied: the Perks matrix
+    (`PerksPage`) — its old green-✓ / **red-✗** cells (colour reading as alarm) became `BeamBool`:
+    CheckCircle filled / Cancel outlined, colour = yes/no and fill = emphasis, **not** an alarm.
+    This answers the page's parked "red-✗ question" by doctrine rather than a per-page call.
 
 *Convergence note.* Sunlight and Gaspar currently **diverge** on view↔edit treatment; this amendment
 is the estate ruling they converge to — converging existing pages is FOLLOW-UP, not the ratifying

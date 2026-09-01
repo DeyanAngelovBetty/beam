@@ -10,9 +10,10 @@ import {
   TableCell,
   BeamPageHeader,
   Box,
+  GemIcon,
+  BeamBool,
 } from '@betty/beam';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
+import type { GemName } from '@betty/beam';
 
 /**
  * Perks — a static REFERENCE MATRIX (loyalty tiers × capabilities), read-only.
@@ -133,9 +134,12 @@ const stickyStatusSx = {
 };
 
 function PerkCellView({ cell }: { cell: PerkCell }) {
-  // perk-cell semantics: pending design pass (the red-✗ question is Deyan's).
-  if (cell.kind === 'granted') return <CheckIcon fontSize="small" sx={{ color: 'success.main' }} titleAccess="Included" />;
-  if (cell.kind === 'denied') return <CloseIcon fontSize="small" sx={{ color: 'error.main' }} titleAccess="Not included" />;
+  // Boolean cells follow the estate boolean convention (detail-page-grammar §2, extended from
+  // BeamStat to table cells 2026-09-01): the BeamBool icon pair — CheckCircle FILLED for true,
+  // Cancel OUTLINED for false. Colour carries yes/no, fill carries emphasis; NOT an alarm (this
+  // answers the old red-✗ question — severity is never inferred from a boolean).
+  if (cell.kind === 'granted') return <BeamBool value />;
+  if (cell.kind === 'denied') return <BeamBool value={false} />;
   return <Typography variant="body2">{cell.text}</Typography>;
 }
 
@@ -211,9 +215,14 @@ export function PerksPage() {
           <TableBody>
             {PERKS_MATRIX.map((row) => (
               <TableRow key={row.status} hover>
-                <TableCell component="th" scope="row" 
+                <TableCell component="th" scope="row"
                   sx={{ ...stickyStatusSx, zIndex: 2, fontWeight: 500 }}>
-                  {row.status}
+                  {/* Gem visual + name — same size/gap as LoyaltyStatusDeltaPanel's meta header
+                      (GemIcon size 30, gap 1, centred). Tier display name lowercases to its GemName. */}
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <GemIcon gem={row.status.toLowerCase() as GemName} size={30} />
+                    {row.status}
+                  </Box>
                 </TableCell>
                 {row.cells.map((cell, i) => (
                   <TableCell key={i}
