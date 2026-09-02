@@ -5,9 +5,10 @@ import { backTo } from './backTo';
 import { getTokenCampaign, getWallStage, stageLabel } from './tokenCampaigns';
 
 /**
- * Token Campaign drill-down STUBS (Prize Wall flow, step 1): campaign detail · wall stage · winners.
- * Each is just a BeamPageHeader + a back link, registering the route skeleton so the list's identity
- * link and row actions have real targets. Real pages land in later prompts.
+ * Token Campaign drill-down STUBS (Prize Wall flow): campaign detail · wall stage. Each is just a
+ * BeamPageHeader + a back link, registering the route skeleton so the list's identity link and row
+ * actions have real targets. Real pages land in later prompts. (Winners is now a real page —
+ * CampaignWinnersPage — no longer a stub here.)
  *
  * BREADCRUMBS: each level uses BeamPageHeader's single `back` link one level up — a correct back
  * CHAIN. The literal full-path trail (List / Campaign / Stage rendered at once) is a PENDING
@@ -55,16 +56,3 @@ export function WallStagePage() {
   );
 }
 
-/** Winners — /prize-wall/token-campaigns/:id/winners (stub). Back → the campaign detail. */
-export function CampaignWinnersPage() {
-  const { id = '' } = useParams();
-  const navigate = useNavigate();
-  const campaign = getTokenCampaign(id);
-  return (
-    <Stub
-      title={`Winners — ${campaign?.name ?? id}`}
-      back={backTo(navigate, `${BASE}/${id}`, campaign?.name ?? 'Campaign')}
-      note="Winners is a stub — the winners view lands in a later prompt."
-    />
-  );
-}

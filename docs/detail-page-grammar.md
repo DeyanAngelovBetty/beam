@@ -224,6 +224,17 @@ one level up — a correct back CHAIN, not a rendered full trail. The full trail
 organism**: it lives inside the header's **constant-geometry contract** (§1 — breadcrumb-row
 placement, truncation at depth), so its design comes from **Figma first**.
 
+*Transactional child views* *(2026-09-02; first instance: campaign winners).* A new page KIND: a
+**view-only list page for RUNTIME data scoped under a config entity** (winners scoped to a campaign).
+By nature it is **excluded from edit modes and the approval pipeline** — there is no CRUD, no edit
+mode, no CRs, no row/primary actions; it just filters + reads. List-page grammar still governs its
+mechanics (filter bar, datagrid, pagination). Its rows are **historical snapshots**: the granted
+reward's name/type/amount are denormalized at grant time and **never rewritten by later config
+edits** — the same snapshot principle the approval pipeline uses for a CR's `baseSnapshot`. Open
+items for this instance: the **Player identity link** targets a Players section that is out of repo
+scope (resolves to Not-found today); **`grantedAt` timezone display** convention (UTC vs ET); and a
+likely **Export** action for ops (view-only for now, pending Radi).
+
 *OPEN ITEM — CR granularity for this flow* *(pending Radi/Tzeno).* Does an approval carry a
 **whole-campaign aggregate snapshot**, or **per-entity CRs** (a stage CR, a reward CR)? This decides
 the **delta rendering of the nested lists** and ties directly into **approval-grammar "Presentation"
