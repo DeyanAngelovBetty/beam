@@ -198,6 +198,40 @@ which buries them in the Scheme-B edit dialog.
    through maker-checker; **[Start A/B Test]** reads truer if it acts directly.
 5. **Import into a scheme while a test is running — allowed?**
 
+## Drill-down flows — entities get pages *(ratified 2026-09-02, team buy-in Radi)*
+
+The Prize Wall / token-campaign flow moves from Midnight's stacked dialogs to Beam-style **multi-level
+drill-down PAGES**. The rulings:
+
+- **Entities get pages, never dialogs.** Any CRUD-able noun is a ROUTE — its own URL + breadcrumb.
+  **Dialogs are for CONFIRMATIONS only** (are-you-sure, per ConfirmDialog doctrine), never for editing
+  an entity. (Supersedes Midnight's stacked-dialog editing for anything that ports here.)
+- **Drill vs inline.** **DRILL DOWN** (a child gets its own page) when the child **contains lists of
+  its own**; **edit INLINE** (rows in the parent) when the child is a **leaf**. Applied to token
+  campaigns:
+  - **WallStage → DRILL** (it holds `openingWindows[]` + `rewardItems[]`) — its own page.
+  - **OpeningWindow → INLINE rows** (a leaf: openDate / endDate).
+  - **RewardItem → INLINE** (a leaf, ~8 fields) — with a noted **fallback to a leaf ROUTE** if inline
+    editing proves cramped on review.
+- **Children are edited on their own pages.** A child-entity section renders **view-only (or hides)**
+  in a **parent's edit mode** — you don't edit a stage's contents from inside the campaign editor, you
+  drill into the stage. This scopes edit mode to ONE entity at a time (the field-twins §2 morph stays
+  about THIS record's fields).
+
+*Breadcrumbs — pending a BeamPageHeader design decision.* The drill levels want the **full path at
+every level** (List / Campaign / Stage). Today each level uses `BeamPageHeader`'s single `back` link
+one level up — a correct back CHAIN, not a rendered full trail. The full trail is **not scoped as an
+organism**: it lives inside the header's **constant-geometry contract** (§1 — breadcrumb-row
+placement, truncation at depth), so its design comes from **Figma first**.
+
+*OPEN ITEM — CR granularity for this flow* *(pending Radi/Tzeno).* Does an approval carry a
+**whole-campaign aggregate snapshot**, or **per-entity CRs** (a stage CR, a reward CR)? This decides
+the **delta rendering of the nested lists** and ties directly into **approval-grammar "Presentation"
+open item (a)** (positional-vs-keyed row diffs cascade). **Delete's pipeline behaviour hangs on the
+same answer** (a delete is a CR too) — so Delete is a **notice-only stub** for now. Batched with the
+other token-campaign shape questions (win+loss semantics, coins vs rewardAmount, finalOpenDate
+derivation, lifecycle precedence) for Radi/Tzeno.
+
 ## 3. Meta text goes universal
 
 `tableMetaText` graduates from a table-local rule to the **meta** category rule —

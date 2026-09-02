@@ -15,7 +15,7 @@ export type SunlightPage =
   | 'game-configs'
   | 'default-game-configs'
   | 'meta-game-presets'
-  | 'prize-wall'
+  | 'token-campaigns'
   | 'pending-approvals'
   | 'users'
   | 'roles';
@@ -28,7 +28,7 @@ export const PAGE_PATH: Record<SunlightPage, string> = {
   'game-configs': '/game-configs',
   'default-game-configs': '/default-game-configs',
   'meta-game-presets': '/meta-game-presets',
-  'prize-wall': '/prize-wall',
+  'token-campaigns': '/prize-wall/token-campaigns',
   'pending-approvals': '/pending-approvals',
   users: '/users',
   roles: '/roles',
@@ -73,8 +73,12 @@ export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[]
         leaf('MetaGame Presets', 'meta-game-presets'),
       ],
     },
-    // Prize Wall — the renamed Token Campaigns, now a top-level destination.
-    { ...leaf('Prize Wall', 'prize-wall'), icon: <RedeemIcon /> },
+    // Prize Wall — a group now; Token Campaigns is its first destination (drill-down flow).
+    {
+      label: 'Prize Wall',
+      icon: <RedeemIcon />,
+      children: [leaf('Token Campaigns', 'token-campaigns')],
+    },
     {
       label: 'Administration',
       section: true,

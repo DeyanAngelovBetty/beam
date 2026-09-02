@@ -15,6 +15,8 @@ import { PendingReviewAlert } from './sunlight/PendingReviewAlert';
 import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { LoyaltyStatusEditor } from './sunlight/LoyaltyStatusEditor';
 import { LoyaltyLevelsPage } from './sunlight/LoyaltyLevelsPage';
+import { TokenCampaignsPage } from './sunlight/TokenCampaignsPage';
+import { TokenCampaignDetailPage, WallStagePage, CampaignWinnersPage } from './sunlight/tokenCampaignStubs';
 import { PendingApprovalsPage } from './sunlight/PendingApprovalsPage';
 import { PendingApprovalDetailPage } from './sunlight/PendingApprovalDetailPage';
 import { PlaceholderPage } from './sunlight/PlaceholderPage';
@@ -121,7 +123,10 @@ const router = createBrowserRouter(
         { path: 'meta-game-presets', element: <MetaGamePresetsPage /> },
         { path: 'meta-game-presets/new', element: <MetaGamePresetEditor /> },
         { path: 'meta-game-presets/:id', element: <MetaGamePresetEditor /> },
-        { path: 'prize-wall', element: <PlaceholderPage title="Prize Wall" /> },
+        { path: 'prize-wall/token-campaigns', element: <TokenCampaignsPage /> },
+        { path: 'prize-wall/token-campaigns/:id', element: <TokenCampaignDetailPage /> },
+        { path: 'prize-wall/token-campaigns/:id/stages/:sid', element: <WallStagePage /> },
+        { path: 'prize-wall/token-campaigns/:id/winners', element: <CampaignWinnersPage /> },
         { path: 'users', element: <UsersPage /> },
         { path: 'users/:id', element: <UserPage /> },
         { path: 'users/:id/edit', element: <UserPage edit /> },

@@ -228,7 +228,9 @@ Open items — explicitly **NOT** addressed in this port:
   field name with no cascade. So the port already contains, side by side, both a
   keyed diff (scalars) and a positional one (rows); only the rows cascade.
   Pending Alex's input on whether the rows should move to a keyed (row-identity)
-  diff.
+  diff. *(2026-09-02: the token-campaign flow's CR-granularity open item —
+  detail-page-grammar "Drill-down flows" — ties in here: whole-aggregate vs
+  per-entity CRs decides how these nested lists diff.)*
 - **(b) Colour-only + strikethrough value encoding.** Change is conveyed by
   colour (error/success) and `line-through` alone — no non-colour channel. An
   a11y gap (WCAG 1.4.1) that needs a shape/text cue eventually; ported as-is.
