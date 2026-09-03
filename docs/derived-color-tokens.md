@@ -374,3 +374,40 @@ for the designer-collaborator lane (load → tune → Copy Combo → external sy
   documented interchange schema** — the contract between the lab and the external sync — not
   just an ad-hoc shape (next step). (ii) A **designer-collaborator lane doc (`VASCO.md`)** —
   the load → tune → Copy Combo → sync workflow for a non-repo collaborator — is pending.
+
+### 8.2 DECISION — teal graduates to shipped Gaspar/Ontario *(2026-09-03)*
+
+The recovered teal graduates to **THE shipped Gaspar theme (Ontario)** — graduation is replacing
+the product theme values, not shipping the variant switch (§8.1). Values are the **recovered
+2026-07 palette, adopted verbatim** (no tuning deltas), sourced from git history: shipped `08965b8`
+(2026-07-20), last fully-teal at `28aa256^` (before `28aa256` + `bc50e0e`, 2026-08-11). **Alberta
+untouched** (magenta in both eras). The outgoing **lavender is retained as a lab candidate**
+("Lavender (previous)") for reference / rollback; Theme Lab preset #1 is now "Current (shipped)".
+`step`, nav glass, `hueC` pins, and star params **did not move** — the graduation is colour-only,
+and the combo carried no deltas for them.
+
+*Source note:* the decision's combo JSON came through empty (a paste placeholder); the values applied
+are the recovered palette the decision names as authoritative — identical to the lab registry's teal
+bundle. No re-derivation.
+
+**§8.1 Figma-sync OPEN ITEM → TRIGGERED.** The Figma variables collection must be updated to match
+(manual — Vasco / Deyan; repo is the source of truth, Figma is the mirror). Exact pairs — a
+checklist, not an interpretation (old → new; only these move):
+
+*Brand collection · Gaspar · Ontario mode — primary ramp:*
+| variable | light (old → new) | dark (old → new) |
+|---|---|---|
+| `primaryDown1` | `#5C4374` → `#0B534D` | `#946CB8` → `#209486` |
+| `primary0` | `#7C6296` → `#0F766E` | `#D8AFFF` → `#57DDCC` |
+| `primaryUp1` | `#987EB3` → `#3F918B` | `#D8AFFF` → `#57DDCC` |
+| `contrastText` | `#FFFFFF` (unchanged) | `#111827` (unchanged) |
+
+*Product collection · Gaspar mode — surface anchor + page mesh:*
+| variable | light (old → new) | dark (old → new) |
+|---|---|---|
+| `surface/anchor` | `#EEEFF2` → `#EDF1F1` | `#000104` → `#041213` |
+| `gradient/hueB` | `#217A8E` → `#17760F` | `#0077A6` → `#68DD57` |
+| `gradient/intensity` | `14` (unchanged) | `34` → `22` |
+
+**Do NOT change:** `surface/step`, all `nav*` params, `gradient/hueC` (`#33809F` light / `#66D2FF`
+dark), `star*` params, and everything under **Alberta**. Flag when the Figma sync lands.

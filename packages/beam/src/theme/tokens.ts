@@ -90,10 +90,12 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
   },
   gaspar: {
     ontario: {
-      // candy combo (§6 run): Gaspar/primary @ Ontario → lavender family. contrastText UNTOUCHED
-      // (WCAG probe reported, not retuned: dark #111827/#D8AFFF = 9.71:1, light #FFFFFF/#7C6296 = 5.19:1).
-      light: { primaryDown1: '#5C4374', primary0: '#7C6296', primaryUp1: '#987EB3', contrastText: '#FFFFFF' },
-      dark: { primaryDown1: '#946CB8', primary0: '#D8AFFF', primaryUp1: '#D8AFFF', contrastText: '#111827' },
+      // TEAL adopted 2026-09-03 (decision — derived-color-tokens §8): the recovered 2026-07 palette
+      // graduates to THE shipped Gaspar/Ontario primary, values verbatim (08965b8 → 28aa256^). The
+      // outgoing lavender is retained as a lab candidate ("Lavender (previous)"). contrastText
+      // UNCHANGED across both eras.
+      light: { primaryDown1: '#0B534D', primary0: '#0F766E', primaryUp1: '#3F918B', contrastText: '#FFFFFF' },
+      dark: { primaryDown1: '#209486', primary0: '#57DDCC', primaryUp1: '#57DDCC', contrastText: '#111827' },
       states: STATES,
     },
     alberta: {
@@ -252,13 +254,11 @@ export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: Nav
     light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
   gaspar: {
-    // candy combo (§6 run): anchors → near-black dark / cool off-white light. UNLIKE the plum
-    // mirror this MOVED L (dark 0.168 → 0.068). --beam-mark-l still holds, NOT retuned: dark
-    // mark-l 0.82 now sits 0.75 above the anchor (was 0.65 at plum) — light-on-dark, MORE
-    // margin; light anchor 0.952, mark-l 0.40 sits 0.55 below (≈unchanged). The "large L move"
-    // caveat in the mark-l comment was checked: direction holds, margin grows. Reported, not retuned.
-    dark: { anchor: '#000104', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
-    light: { anchor: '#EEEFF2', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
+    // TEAL adopted 2026-09-03 (derived-color-tokens §8): teal-tinted anchors from the recovered
+    // 2026-07 palette, verbatim. step + nav params UNCHANGED (identical across eras — the graduation
+    // moves colour only). Outgoing lavender anchors (#000104 / #EEEFF2) retained as a lab candidate.
+    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
+    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
   },
 };
 
@@ -309,9 +309,12 @@ export const gradientSeeds: Record<
     light: { hueB: '#D3C68F', intensity: 6, hueC: '#F53400', starPitch: 59, starSizeRatio: 0.23, starIntensity: 5 },
   },
   gaspar: {
-    // candy combo (§6 officiating run): hue-c pinned as the first officiated override.
-    dark: { hueB: '#0077A6', intensity: 34, hueC: '#66D2FF', starPitch: 40, starSizeRatio: 0.22, starIntensity: 4 },
-    light: { hueB: '#217A8E', intensity: 14, hueC: '#33809F', starPitch: 40, starSizeRatio: 0.22, starIntensity: 6 },
+    // TEAL adopted 2026-09-03 (derived-color-tokens §8): hueB + dark intensity from the recovered
+    // 2026-07 palette (verbatim: dark hueB #68DD57 int 22, light hueB #17760F int 14). hueC pins +
+    // star params UNCHANGED — the combo carried no hueC/star deltas, and they weren't in the
+    // graduation scope. Outgoing lavender hueB/intensity retained as a lab candidate.
+    dark: { hueB: '#68DD57', intensity: 22, hueC: '#66D2FF', starPitch: 40, starSizeRatio: 0.22, starIntensity: 4 },
+    light: { hueB: '#17760F', intensity: 14, hueC: '#33809F', starPitch: 40, starSizeRatio: 0.22, starIntensity: 6 },
   },
 };
 

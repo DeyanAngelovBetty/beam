@@ -122,5 +122,6 @@ function StaticCompare({ product }: { product: LabProduct }) {
   );
 }
 
-/** Gaspar — Purple (current) │ Teal (recovered), side by side. Compose with Jurisdiction + Mode. */
+/** Gaspar — Current (shipped, teal) │ Lavender (previous), side by side. Compose with Jurisdiction +
+ *  Mode. (Teal graduated to the shipped theme 2026-09-03; lavender is retained for reference/rollback.) */
 export const Gaspar: Story = { render: () => <StaticCompare product="gaspar" /> };
