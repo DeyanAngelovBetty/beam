@@ -14,6 +14,21 @@ const logoStopVars = (g: (typeof gradientSeeds)['gaspar']['dark']) => ({
 });
 
 /**
+ * Optional seed overrides for the theme factory. DEFAULT (undefined) → today's exact behaviour
+ * (reads the shipped tokens). This is the seam the Theme Lab's candidate-variant registry uses to
+ * build an alternate theme WITHOUT touching the shipped per-product tokens — nothing in app code
+ * passes it. Each field, when present, replaces the corresponding seed source for THIS build only:
+ *   - `primary`  → the per-(product,brand) primary token set (`products[product][brand]`)
+ *   - `surface`  → the per-product surface seed (`surfaceSeeds[product]`)
+ *   - `gradient` → the per-product page-mesh seed (`gradientSeeds[product]`)
+ */
+export interface ThemeSeedOverrides {
+  primary?: (typeof products)[ProductName][BrandName];
+  surface?: (typeof surfaceSeeds)[ProductName];
+  gradient?: (typeof gradientSeeds)[ProductName];
+}
+
+/**
  * Beam theme factory.
  *
  * BRAND is deploy-time (token set selection); MODE is runtime (MUI
@@ -22,9 +37,11 @@ const logoStopVars = (g: (typeof gradientSeeds)['gaspar']['dark']) => ({
  * State opacities: hover/selected/focus map to MUI action opacities.
  * focusVisible (30%) and outlinedBorder (50%) are kit-level component
  * concerns — exposed via tokens for component overrides in a later pass.
+ *
+ * `overrides` is the Theme Lab variant seam (see ThemeSeedOverrides) — omit it everywhere in app code.
  */
-export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlight'): Theme {
-  const t = products[product][brand];
+export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlight', overrides?: ThemeSeedOverrides): Theme {
+  const t = overrides?.primary ?? products[product][brand];
   // Product-scoped typeface pair. Every stack ends in a system sans.
   const f = productFonts[product];
   const bodyFont = `"${f.body}", "Helvetica", "Arial", sans-serif`;
@@ -35,11 +52,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   // Product-scoped surface ramp. The step's PRODUCT half bakes here (per scheme);
   // its MODE half flips on the data-beam-mode seam below (product is a theme
   // rebuild, so it resolves at construction — no second seam). Anchor = surface 0.
-  const s = surfaceSeeds[product];
+  const s = overrides?.surface ?? surfaceSeeds[product];
   // Product-scoped page-mesh seeds. hue-b + intensity bake per scheme here (the
   // product half); the mode half flips on the data-beam-mode seam below. intensity
   // carries its unit so it drops straight into the color-mix percentage slot.
-  const g = gradientSeeds[product];
+  const g = overrides?.gradient ?? gradientSeeds[product];
   // Edge highlight lift — how many surface steps ABOVE the rail's top stop the 1px
   // light catch sits. Summed with the nav offsets in JS (seed arithmetic, not colour
   // maths) so --beam-nav-edge-offset stays a single var and doesn't re-raise the

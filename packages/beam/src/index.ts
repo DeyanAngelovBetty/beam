@@ -18,6 +18,7 @@
 // Apps consume the theme through this entry, never by deep-importing
 // ./theme/* — same seam rule as atoms (BEAM.md §6.2).
 export { createBeamTheme } from './theme/createBeamTheme';
+export type { ThemeSeedOverrides } from './theme/createBeamTheme';
 // Betty sparkle geometry — ONE source (theme tiles it, the Lab chip renders through it).
 export { STAR_PATH, starMaskUri } from './theme/starGeometry';
 // Brand wordmark logos — envelope geometry + the mask-sizing helper (colour stays app-owned).

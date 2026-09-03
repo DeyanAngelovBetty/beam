@@ -308,3 +308,41 @@ expression in the estate; nothing else nests arithmetic this deep. Whoever write
 expression that will break a naive parser first — it is the shape to design against,
 not discover. Until then it stays the high-water mark; anything more complex is a
 warning sign.
+
+## 8. Candidate theme variants — decision-time lab artifacts *(2026-09-03)*
+
+When a product needs to **compare and choose** between 2–3 candidate themes, the
+candidates live in the **Theme Lab only** — never in the shipped token set.
+
+- **Never shippable.** A candidate variant is a decision-time artifact. It **graduates
+  by BECOMING the product theme** — replacing the `tokens.ts` seed values (and, per the
+  open item below, the Figma variables) — **not** by the variant switch shipping. There
+  is deliberately no runtime variant axis in an app: `createBeamTheme(brand, product)`
+  resolves exactly one shipped theme per product, as always.
+- **Structural boundary.** The candidate registry lives at
+  `packages/beam-lab/src/variants/themeVariants.ts` and is **not** re-exported from
+  `@betty/beam-lab`'s public entry — nothing outside the lab can import it. Candidates
+  build via a seed-override seam on the factory (`createBeamTheme(brand, product,
+  overrides?)`, default `undefined` → today's exact behaviour), so no shipped per-product
+  value is touched. The comparison surface is a self-contained lab story
+  (`ThemeVariants.stories.tsx`) that owns its own `ThemeProvider` and rebuilds per
+  **variant × jurisdiction**, with **light/dark** the usual attribute flip — a candidate
+  is only meaningful seen under every real mode combination.
+- **Isolate the variable under test.** Non-colour params (surface steps, nav glass, the
+  star-mesh geometry) are held **identical across variants**, so a comparison isolates
+  **colour**. When a recovered variant predates a modern slot, fill it from the shipped
+  theme (neutral) and mark it; drop old params with no modern slot.
+
+**First instance — Gaspar "Teal (recovered)".** The pre-purple teal theme, resurrected
+from git history (shipped `08965b8` 2026-07-20; replaced `28aa256` + `bc50e0e`
+2026-08-11) and ported into today's seed shape. **Bounding finding:** only **Ontario**
+was teal — **Alberta was magenta in both the teal era and today**, so the candidate
+decision is **Ontario-only** (teal `#0F766E` vs today's lavender `#7C6296`), and Alberta
+is constant across the candidates. This also **bounds the eventual Figma sync scope**
+(below) to Ontario.
+
+**OPEN ITEM — Figma propagation.** A landed theme decision must propagate to the Figma
+variables **`product` collection** (Vasco's modes) — Beam's seeds are generated from
+there, so a decision that only lands in `tokens.ts` will be overwritten on the next sync.
+**Manual sync for now; flag when a decision lands** (and scope it — e.g. the teal decision
+is the Ontario `product/gaspar` primary + surface anchor + mesh, not Alberta).
