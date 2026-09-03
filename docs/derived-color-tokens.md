@@ -411,3 +411,36 @@ checklist, not an interpretation (old → new; only these move):
 
 **Do NOT change:** `surface/step`, all `nav*` params, `gradient/hueC` (`#33809F` light / `#66D2FF`
 dark), `star*` params, and everything under **Alberta**. Flag when the Figma sync lands.
+
+**Principle this graduation surfaced — a combo asserts only the fields it carries.** Fields the combo
+is SILENT on are **not** cleared to derived; they **retain their shipped values**. So a decision note
+must list silent fields as **retained-not-asserted** — otherwise a future reader can't tell an
+intentional retention from an oversight. (`copyCombo` exports only what the lab overrode: primary,
+surface `anchor`, gradient `hueB`/`intensity`, star geometry; and, sparsely, `hueC`/`starColor`/logo
+only when overridden.)
+
+**Retained-not-asserted for this graduation** (combo-silent → shipped values kept):
+`surface/step` (`0.085` dark / `0.01` light) · all `nav*` params · primary `contrastText`
+(`#FFFFFF` light / `#111827` dark) · `gradient/hueC` pins (`#66D2FF` dark / `#33809F` light). Derived
+(no pin in either era, listed for completeness): `starColor`, `logoStops`.
+
+### Teal follow-up tuning *(worklist — a complete pass, not rediscovery)*
+
+The recovered 2026-07 palette predates several post-July knobs; the combo is silent on all of them, so
+they carry the previous era's values. Each is a tuning question for the teal era, not a graduation
+change:
+
+1. **`hueC` under teal — the judgment call.** The purple-era cyan pins (`#66D2FF` dark / `#33809F`
+   light) are RETAINED. Keep them under the teal primary, or drop to **derived-from-teal** (rotate
+   +45° off the new primary)? A Theme Lab judgment call — **earmarked for Vasco's pilot** (load
+   "Current (shipped)", return hue-c to derived, eyeball, decide).
+2. **Sweep the other combo-silent, post-July knobs** — each **retained-from-previous-era**, to be
+   confirmed or re-tuned against the teal primary:
+   - `surface/step` + all `nav*` params — retained (identical across eras; likely fine, confirm).
+   - primary `contrastText` — retained (identical across eras; WCAG re-probe against the teal
+     primary is worth a look — teal `#0F766E`/white and `#57DDCC`/`#111827` differ from the lavender
+     the current values were probed against).
+   - `starColor` — currently derived (no pin); confirm the derived star colour reads on teal.
+   - `logoStops` — currently derived (no pin); confirm the 4-stop mark reads on teal.
+
+   The pass is a **worklist**, so the tuning session works a list rather than rediscovering each knob.
