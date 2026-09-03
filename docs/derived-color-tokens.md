@@ -421,6 +421,15 @@ stored; they move with the anchor even though `step` didn't). Computed from the 
 | `2` | `#181F29` → `#2B3B3C` | `#F5F6F9` → `#F4F8F8` |
 | `3` | `#2C343E` → `#415253` | `#F8F9FC` → `#F7FBFB` |
 
+*Reconciliation note (corrected).* Pre-sync, the Figma **anchors and mesh MATCHED the repo's outgoing
+values** — the divergence was **`step` + the baked ramps only**. Repo shipped `step` is **`0.085`
+(dark) / `0.01` (light)**; the Figma mirror carried **`0.042` / `0.015`**, so its old baked ramps
+were derived with the wrong step. `step` did not move in the GRADUATION (repo unchanged), but the
+Figma side must still be corrected to the repo values as part of this sync — repo is the source of
+truth (§8.1). Consequently the **new** baked-ramp column above (computed with repo `step`) is the
+target, while the **old** column is the repo-derived-with-`0.085` set and will NOT equal Figma's
+actual pre-sync baked values (derived with `0.042`) — that gap IS the divergence being reconciled.
+
 **Do NOT change:** `surface/step`, all `nav*` params, `gradient/hueC` (`#33809F` light / `#66D2FF`
 dark), `star*` params, and everything under **Alberta**. Flag when the Figma sync lands.
 
