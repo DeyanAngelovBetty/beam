@@ -409,6 +409,18 @@ checklist, not an interpretation (old → new; only these move):
 | `gradient/hueB` | `#217A8E` → `#17760F` | `#0077A6` → `#68DD57` |
 | `gradient/intensity` | `14` (unchanged) | `34` → `22` |
 
+*Product collection · Gaspar mode — BAKED surface ramp (Figma can't compute `oklch()`, so these are
+stored; they move with the anchor even though `step` didn't). Computed from the derivation
+`oklch(from anchor, L + N·step, c, h)`; slot 0 = the anchor passthrough. Verify against
+`getComputedStyle` in-browser if Figma needs an exact ulp match at the dark floor:*
+| ramp | dark (old → new) | light (old → new) |
+|---|---|---|
+| `-1` | `#000000` → `#000303` | `#EBECEF` → `#EAEEEE` |
+| `0` (= anchor) | `#000104` → `#041213` | `#EEEFF2` → `#EDF1F1` |
+| `1` | `#060C15` → `#162627` | `#F1F2F5` → `#F0F4F4` |
+| `2` | `#181F29` → `#2B3B3C` | `#F5F6F9` → `#F4F8F8` |
+| `3` | `#2C343E` → `#415253` | `#F8F9FC` → `#F7FBFB` |
+
 **Do NOT change:** `surface/step`, all `nav*` params, `gradient/hueC` (`#33809F` light / `#66D2FF`
 dark), `star*` params, and everything under **Alberta**. Flag when the Figma sync lands.
 
@@ -437,9 +449,19 @@ change:
 2. **Sweep the other combo-silent, post-July knobs** — each **retained-from-previous-era**, to be
    confirmed or re-tuned against the teal primary:
    - `surface/step` + all `nav*` params — retained (identical across eras; likely fine, confirm).
-   - primary `contrastText` — retained (identical across eras; WCAG re-probe against the teal
-     primary is worth a look — teal `#0F766E`/white and `#57DDCC`/`#111827` differ from the lavender
-     the current values were probed against).
+   - primary `contrastText` — retained (identical across eras). **WCAG PROBED 2026-09-03** (contrast
+     against the teal ramp, computed from the actual token hexes):
+     - Button-label pairings — `contrastText` on **primary.main** — **PASS both schemes, improved vs
+       lavender**: light `#FFFFFF`/`#0F766E` = **5.47:1** (was 5.19 on lavender), dark
+       `#111827`/`#57DDCC` = **10.66:1** (was 9.71).
+     - Full ramp: light — down1 `#0B534D` **8.90 ✓**, main **5.47 ✓**, up1 `#3F918B` **3.73**
+       (fails 4.5 text · passes 3:1 UI/large); dark — down1 `#209486` **4.77 ✓**, main/up1 `#57DDCC`
+       **10.66 ✓**.
+     - The ONE sub-AA-text result is `#FFFFFF` on **primary.light** (up1 `#3F918B`, light scheme) at
+       3.73:1. MUI uses `primary.light` as a UI/large surface (hover fills, chips), not body text, so
+       it is **conformant at 3:1**. **NO CHANGE proposed** — retain, treat `primary.light` as
+       UI-only. *Fix (not applied) IF a real text-on-primary.light case surfaces:* darken up1 from
+       `#3F918B` to ≥ 4.5:1 on white (≈ oklch L down ~0.04). Otherwise retained as-is.
    - `starColor` — currently derived (no pin); confirm the derived star colour reads on teal.
    - `logoStops` — currently derived (no pin); confirm the 4-stop mark reads on teal.
 
