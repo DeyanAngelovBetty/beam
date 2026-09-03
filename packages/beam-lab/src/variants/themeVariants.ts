@@ -20,6 +20,13 @@ export interface ThemeVariant {
   label: string;
   /** Build this candidate under a real jurisdiction (composes with light/dark via the mode attribute). */
   buildTheme: (brand: BrandName) => Theme;
+  /**
+   * The candidate's seed overrides for a jurisdiction, or `undefined` for the CURRENT shipped theme
+   * (no overrides). The Theme Lab drawer uses this to LOAD a preset into its live editing state — it
+   * translates these seeds into its own override vars, so all knobs + Copy Combo then operate on the
+   * candidate. `undefined` → loading the preset is just a Reset back to the shipped theme.
+   */
+  overrides?: (brand: BrandName) => ThemeSeedOverrides;
 }
 
 // ── Gaspar "Teal (recovered)" — ported from git history ───────────────────────────────────────────
@@ -68,7 +75,7 @@ const tealOverrides = (brand: BrandName): ThemeSeedOverrides => ({
 export const THEME_VARIANTS: Record<LabProduct, ThemeVariant[]> = {
   gaspar: [
     { id: 'current', label: 'Purple (current)', buildTheme: (b) => createBeamTheme(b, 'gaspar') },
-    { id: 'teal', label: 'Teal (recovered)', buildTheme: (b) => createBeamTheme(b, 'gaspar', tealOverrides(b)) },
+    { id: 'teal', label: 'Teal (recovered)', buildTheme: (b) => createBeamTheme(b, 'gaspar', tealOverrides(b)), overrides: tealOverrides },
   ],
   sunlight: [{ id: 'current', label: 'Modern Wisdom (current)', buildTheme: (b) => createBeamTheme(b, 'sunlight') }],
 };

@@ -10,15 +10,21 @@ import {
   Divider,
   Tooltip,
   Snackbar,
+  FormControl,
+  Select,
+  MenuItem,
   useColorScheme,
   starMaskUri,
   logoGradient,
+  type ThemeSeedOverrides,
+  type BrandName,
 } from '@betty/beam';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import { setVar, reset, hasDraft, hasVar, removeVar, type Scheme } from './themeLabSheet';
+import { setVar, reset, getDraft, hasVar, removeVar, type Scheme } from './themeLabSheet';
+import { THEME_VARIANTS, type ThemeVariant, type LabProduct } from './variants/themeVariants';
 import {
   readVar,
   readVarForScheme,
@@ -149,6 +155,92 @@ function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
   const [copied, setCopied] = useState(false);
   const [comboName, setComboName] = useState('');
   const bump = () => setTick((t) => t + 1);
+
+  // ── Candidate presets (variant registry, lab-internal) ──────────────────────────────────────────
+  // A preset LOADS a variant's seed bundle into the drawer's live editing state, so every knob + Copy
+  // Combo then operate on the candidate. Preset #1 = current shipped (no overrides) = default.
+  const presets = THEME_VARIANTS[product as LabProduct] ?? [];
+  const [loadedPresetId, setLoadedPresetId] = useState(presets[0]?.id ?? 'current');
+  // The draft snapshot right after a load — the reference for "unsaved tuning" (diverged from it).
+  const [loadedBaselineStr, setLoadedBaselineStr] = useState(() => JSON.stringify(getDraft()));
+  // The preset-derived default combo name we last set — so a user-typed name survives preset switches
+  // (we only overwrite the name when it's still this untouched default).
+  const [presetDefaultName, setPresetDefaultName] = useState('');
+  // Armed-discard: the id a switch is armed for. First switch-attempt (with unsaved tuning) arms +
+  // warns; picking the same target again confirms and discards (no dialog — a collaborator surface
+  // shouldn't lose a 20-minute session to a one-click caption-guarded discard).
+  const [pendingPresetId, setPendingPresetId] = useState<string | null>(null);
+
+  const unsavedTuning = JSON.stringify(getDraft()) !== loadedBaselineStr;
+  const selectedVariant = presets.find((v) => v.id === loadedPresetId) ?? presets[0];
+
+  // Translate a variant's ThemeSeedOverrides into the drawer's own override vars (the same vars the
+  // knobs write + Copy Combo reads), for BOTH schemes. Mirror-filled params (star geometry) included.
+  const applyOverridesToSheet = (ov: ThemeSeedOverrides) => {
+    const schemes = ['dark', 'light'] as const;
+    if (ov.surface) schemes.forEach((s) => setVar(s, '--beam-surface-anchor', ov.surface![s].anchor));
+    if (ov.gradient) {
+      schemes.forEach((s) => {
+        const g = ov.gradient![s];
+        setVar(s, '--beam-gradient-hue-b', g.hueB);
+        setVar(s, '--beam-gradient-intensity', `${g.intensity}%`);
+        setVar(s, '--beam-star-intensity', `${g.starIntensity}%`);
+        // Star geometry is per-product (mode-invariant) — same value both schemes.
+        setVar(s, '--beam-star-pitch', `${g.starPitch}px`);
+        setVar(s, '--beam-star-size-ratio', String(g.starSizeRatio));
+        setVar(s, '--beam-star-mask', starMaskUri(g.starSizeRatio));
+      });
+    }
+    // Primary is per-jurisdiction (undefined = fall through to shipped, e.g. Alberta magenta). Ramp:
+    // main = primary0, light = up1, dark = down1 — with matching channel triples for alpha states.
+    if (ov.primary) {
+      schemes.forEach((s) => {
+        const p = ov.primary![s];
+        const ramp = { main: p.primary0, light: p.primaryUp1, dark: p.primaryDown1 } as const;
+        (['main', 'light', 'dark'] as const).forEach((slot) => {
+          setVar(s, `--mui-palette-primary-${slot}`, ramp[slot]);
+          setVar(s, `--mui-palette-primary-${slot}Channel`, channelTriple(ramp[slot]));
+        });
+      });
+    }
+  };
+
+  // Load a preset: clear the sheet, apply the variant's overrides, re-hydrate the controls, then take
+  // the new baseline. `comboName` only re-defaults when it's still the prior preset's untouched default.
+  const loadPreset = (variant: ThemeVariant) => {
+    reset();
+    if (variant.overrides) applyOverridesToSheet(variant.overrides(jurisdiction as BrandName));
+    hydrateControls();
+    bump();
+    setLoadedBaselineStr(JSON.stringify(getDraft()));
+    setLoadedPresetId(variant.id);
+    setPendingPresetId(null);
+    const next = `${slug(variant.label)}-tuned`;
+    setComboName((cur) => (cur.trim() === '' || cur === presetDefaultName ? next : cur));
+    setPresetDefaultName(next);
+  };
+
+  // Preset select → arm-then-confirm when there's unsaved tuning to discard.
+  const onSelectPreset = (id: string) => {
+    if (id === loadedPresetId) return setPendingPresetId(null);
+    const variant = presets.find((v) => v.id === id);
+    if (!variant) return;
+    if (unsavedTuning && pendingPresetId !== id) return setPendingPresetId(id); // arm + warn
+    loadPreset(variant); // no unsaved tuning, or second attempt → confirm
+  };
+
+  // On first open, seed the preset-default combo name (if the name is still empty) without disturbing
+  // any existing session draft — the current draft becomes the baseline.
+  const presetInit = useRef(false);
+  useEffect(() => {
+    if (presetInit.current || !presets[0]) return;
+    presetInit.current = true;
+    const next = `${slug(presets[0].label)}-tuned`;
+    setPresetDefaultName(next);
+    setComboName((cur) => (cur.trim() === '' ? next : cur));
+    setLoadedBaselineStr(JSON.stringify(getDraft()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // The active editing var + its keyed slot. For `logo`, both track the selected stop; for every
   // other target they're the target's own var / name. Everything downstream (writeChannel,
@@ -321,11 +413,6 @@ function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
       return { ...prev, [activeKey]: { ...prev[activeKey], [channel]: on } };
     });
 
-  const resetAll = () => {
-    reset(); // clears the sheet's draft blocks → getComputedStyle now returns the seeds
-    hydrateControls(); // re-read them so Pitch/Size/Int + channels snap back with the paint
-    bump();
-  };
 
   const copyCombo = () => {
     const surfaceOf = (s: Scheme) => toHex(readVarForScheme(s, '--beam-surface-anchor'));
@@ -470,6 +557,28 @@ function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
               <CloseIcon fontSize="small" />
             </IconButton>
           </Stack>
+
+          {/* Candidate preset — loads a variant's seeds into the live editing state (top of drawer,
+              above the mode switch). #1 = current shipped = default. Arm-then-confirm on discard. */}
+          {presets.length > 0 && (
+            <Stack spacing={0.5}>
+              <Typography variant="overline" color="text.secondary">
+                Preset
+              </Typography>
+              <FormControl size="small" fullWidth>
+                <Select value={loadedPresetId} onChange={(e) => onSelectPreset(e.target.value)} aria-label="Candidate preset">
+                  {presets.map((v) => (
+                    <MenuItem key={v.id} value={v.id}>{v.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {pendingPresetId && (
+                <Typography variant="caption" color="warning.main">
+                  Unsaved tuning — switch again to discard.
+                </Typography>
+              )}
+            </Stack>
+          )}
 
           {/* Editing scheme — the one mode source. */}
           <Stack spacing={0.5}>
@@ -732,8 +841,10 @@ function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
                 → {slug(comboName)}.json
               </Typography>
             )}
-            <Button variant="outlined" size="small" onClick={resetAll} disabled={!hasDraft()} sx={{ alignSelf: 'flex-start' }}>
-              Reset
+            {/* Reset now returns to the SELECTED PRESET's loaded state (not an empty sheet) — reload
+                its bundle. Enabled only when tuning has diverged from the loaded baseline. */}
+            <Button variant="outlined" size="small" onClick={() => selectedVariant && loadPreset(selectedVariant)} disabled={!unsavedTuning} sx={{ alignSelf: 'flex-start' }}>
+              Reset to preset
             </Button>
             <Typography variant="caption" color="text.secondary">
               Session only — refresh discards. This panel drafts; the sync lanes officiate

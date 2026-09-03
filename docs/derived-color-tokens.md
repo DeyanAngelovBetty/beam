@@ -346,3 +346,31 @@ variables **`product` collection** (Vasco's modes) — Beam's seeds are generate
 there, so a decision that only lands in `tokens.ts` will be overwritten on the next sync.
 **Manual sync for now; flag when a decision lands** (and scope it — e.g. the teal decision
 is the Ontario `product/gaspar` primary + surface anchor + mesh, not Alberta).
+
+### 8.1 Variants integrate into the lab as loadable PRESETS *(2026-09-03)*
+
+The candidate registry is now wired into the **Theme Lab drawer** as presets (the Storybook
+board keeps only the side-by-side static glance). **Selecting a preset LOADS its seed bundle
+into the drawer's live editing state** — the same override vars the knobs write — so all
+controls (anchor, seeds, L/C/H, ramp) and **Copy Combo** operate on the candidate against
+real app surfaces. Comparison and fine-tuning become one tool; this is also the groundwork
+for the designer-collaborator lane (load → tune → Copy Combo → external sync).
+
+- Preset #1 = current shipped (no overrides) = default. **Reset** returns to the loaded
+  preset's state (not an empty sheet). **Switching presets is armed** — a first attempt with
+  unsaved tuning warns inline ("switch again to discard"), a second confirms; no dialog.
+  *Rationale: the drawer is becoming a **collaborator surface** — a one-click destructive
+  discard guarded only by a caption is wrong for a 20-minute tuning session.* Copy Combo's
+  name defaults to the preset (`teal-recovered-tuned`) but a **user-typed name survives**
+  preset switches (the default only overwrites its own untouched prior default).
+
+- **DIRECTION RULING — repo tokens are the source of truth for colour.** The Figma variables
+  `product` collection (Vasco's modes) is a **mirror, updated FROM the repo, never the
+  reverse.** A decision is made in the lab, lands in `tokens.ts` (graduation = replacing the
+  seed values), and is then pushed to Figma — Figma never overwrites a repo colour decision.
+  (This is why the §8 Figma-propagation item is a *push on decision*, not a pull.)
+
+- **OPEN ITEMS.** (i) The **combo JSON** (`copyCombo`'s export) should become a **versioned,
+  documented interchange schema** — the contract between the lab and the external sync — not
+  just an ad-hoc shape (next step). (ii) A **designer-collaborator lane doc (`VASCO.md`)** —
+  the load → tune → Copy Combo → sync workflow for a non-repo collaborator — is pending.
