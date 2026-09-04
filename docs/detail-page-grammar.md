@@ -189,6 +189,23 @@ surface, **`BeamPaper`** — an elevated Paper carrying:
   PageHeader constant-geometry contract **extends into the page body**. (Implemented with the 44px
   `fieldGeometrySx` on cells that hold a value in view and a field in edit.)
 
+*Amendments 2026-09-04 (Token Campaign detail — EDIT mode, prompt B; frame `TokenCampaign-Edit.png`).*
+
+- **Page-body section gap = `spacing(3)` = 24px, BOTH axes.** The gap between section surfaces is
+  uniform horizontally and vertically — the band's between-surface gap equals the band-to-next-section
+  gap. (Previously the band ran 16px horizontal against 24px vertical; now both are `spacing(3)`.) One
+  number for section rhythm, whichever way sections compose.
+- **View Winners in edit → DISABLED (not hidden).** A cross-page action that would navigate away from
+  an active draft is a **silent-discard trap**; disabling is honest and keeps header geometry constant
+  (hiding it would shift the action row). General rule: a page in a draft/edit mode **disables**
+  navigation-away actions rather than hiding or arming them. First applied: View Winners on the Token
+  Campaign editor.
+- **The editability border proves itself — zero wiring.** In edit mode the DetailsPanel and the T&C /
+  Promotional Images / Sounds surfaces grow their border (they now contain fields); the **Wall Stages
+  child-list stays borderless** because a view-only `BeamChildList` never grows a field, so it never
+  trips `:has(.MuiInputBase-root)`. Confirmed on a real page with **no mode prop threaded to the child
+  list** — the border being editability-driven, not mode-driven, is what makes this fall out for free.
+
 *Amended 2026-09-01 — **the mode mechanic generalizes beyond view↔edit** (first non-edit use:
 Loyalty Levels A/B-test config).* Everything above describes view↔edit, but the grammar is really a
 **MODE** grammar, not an edit one. A **feature mode** — a page entering a distinct configuration
@@ -281,8 +298,9 @@ corrected on review; the ruling is the *timezone*, not the format.)
 
 *Open items — Token Campaign detail (view), 2026-09-04.* (1) **Enabled vs Active** label
 inconsistency across the Figma — pending a Figma fix; the page uses `Enabled` (boolean) per the
-grammar. (2) **View Winners in the edit-mode header** — the action stays visible in edit mode, but its
-interaction with unsaved edit state is unresolved; **parked for prompt B** (the editor). (3) **Submit
+grammar. (2) **View Winners in the edit-mode header** — *Resolved 2026-09-04 (prompt B): stays visible but
+**disabled** in edit mode (navigating away from an active draft is a silent-discard trap); see the
+View-Winners-in-edit ruling above.* (3) **Submit
 for Approval implies an aggregate-level CR** (the whole campaign, not a per-entity CR) — pending
 Radi/Tzeno confirmation, and it ties into the CR-granularity open item. (4) **`Additional Windows` =
 total `openingWindows.length`** — per the IA, windows are additive to `finalOpenDate`, so the Figma's
