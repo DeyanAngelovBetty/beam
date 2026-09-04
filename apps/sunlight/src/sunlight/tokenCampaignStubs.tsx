@@ -5,10 +5,9 @@ import { backTo } from './backTo';
 import { getTokenCampaign, getWallStage, stageLabel } from './tokenCampaigns';
 
 /**
- * Token Campaign drill-down STUBS (Prize Wall flow): campaign detail · wall stage. Each is just a
- * BeamPageHeader + a back link, registering the route skeleton so the list's identity link and row
- * actions have real targets. Real pages land in later prompts. (Winners is now a real page —
- * CampaignWinnersPage — no longer a stub here.)
+ * Token Campaign drill-down STUB (Prize Wall flow): the wall stage. Just a BeamPageHeader + a back
+ * link, registering the route skeleton until the real page lands. (Campaign detail + Winners are now
+ * real pages — TokenCampaignDetailPage / CampaignWinnersPage — no longer stubs here.)
  *
  * BREADCRUMBS: each level uses BeamPageHeader's single `back` link one level up — a correct back
  * CHAIN. The literal full-path trail (List / Campaign / Stage rendered at once) is a PENDING
@@ -24,20 +23,6 @@ function Stub({ title, back, note }: { title: string; back: ReturnType<typeof ba
       <BeamPageHeader title={title} back={back} />
       <BeamEmptyState icon={<ConstructionIcon />} title={`${title} — coming soon`} description={note} />
     </Stack>
-  );
-}
-
-/** Campaign detail — /prize-wall/token-campaigns/:id (stub). Back → the list. */
-export function TokenCampaignDetailPage() {
-  const { id = '' } = useParams();
-  const navigate = useNavigate();
-  const campaign = getTokenCampaign(id);
-  return (
-    <Stub
-      title={campaign?.name ?? `Campaign ${id}`}
-      back={backTo(navigate, BASE, 'Token Campaigns')}
-      note="Campaign detail is a stub — the detail page lands in a later prompt."
-    />
   );
 }
 

@@ -13,30 +13,45 @@ import type { BeamStatus } from '@betty/beam';
  *    (fixture semantics — real precedence pending Radi).
  *  - `WallStage.name` optional, "Stage {order}" fallback (the IA gives stages no label; the stage
  *    page + breadcrumb need one).
- *  - Named-slot images/sounds ({ slot, url }[]) per the Figma — slot lists below are partial, the
- *    remaining slots are pending Figma confirm.
+ *  - Named-slot images/sounds per the Figma (2026-09-04): images { slot, desktopUrl, mobileUrl }[],
+ *    sounds { slot, url }[]. Slot ids are the Figma names (see the const unions below).
  *  - JOIN THE Radi/Tzeno BATCH (stored as proposed, unresolved): win+loss probability semantics
  *    (sum-to-100? remainder band?), `coins` vs `rewardAmount` on a reward, `finalOpenDate` vs the
  *    openingWindows (derived or independent?). See also the CR-granularity open item in
  *    detail-page-grammar (ties to approval-grammar open item (a)).
  */
 
-// ── Named slots (Figma) — images/sounds are NAMED SLOTS, not bare arrays ──────────────────────────
-// PARTIAL — remaining slots pending Figma confirm.
-export const PROMO_IMAGE_SLOTS = ['Promotional icon', 'Promotional image', 'Info Bonus image'] as const;
+// ── Named slots (Figma-authoritative, 2026-09-04) — images/sounds are NAMED SLOTS ─────────────────
+// Shape corrected from the detail-page Figma (supersedes the earlier { slot, url } guesses):
+// images carry a desktop + mobile URL per slot; sounds a single URL. Slot ids are the Figma names.
+export const PROMO_IMAGE_SLOTS = ['promotionalIcon', 'promotionalImage', 'infoBannerImage'] as const;
 export type PromoImageSlot = (typeof PROMO_IMAGE_SLOTS)[number];
 
-export const SOUND_SLOTS = ['Background', 'Pop', 'Win'] as const;
+export const SOUND_SLOTS = ['background', 'play', 'win', 'miss'] as const;
 export type SoundSlot = (typeof SOUND_SLOTS)[number];
 
-export interface NamedImage {
+export interface PromoImage {
   slot: PromoImageSlot;
-  url: string;
+  desktopUrl: string;
+  mobileUrl: string;
 }
-export interface NamedSound {
+export interface CampaignSound {
   slot: SoundSlot;
   url: string;
 }
+
+/** Slot id → human label (display in the detail sections). */
+export const PROMO_IMAGE_SLOT_LABEL: Record<PromoImageSlot, string> = {
+  promotionalIcon: 'Promotional icon',
+  promotionalImage: 'Promotional image',
+  infoBannerImage: 'Info banner image',
+};
+export const SOUND_SLOT_LABEL: Record<SoundSlot, string> = {
+  background: 'Background',
+  play: 'Play',
+  win: 'Win',
+  miss: 'Miss',
+};
 
 // ── Leaf: reward item (edited inline on the stage page — ~8 fields, a leaf) ────────────────────────
 export type RewardTier = 'none' | 'low' | 'medium' | 'high';
@@ -87,8 +102,8 @@ export interface TokenCampaign {
   endDate: string; // ISO
   enabled: boolean;
   tAndC: string; // plain text for now; rich/markdown candidate — pending Figma
-  promotionalImages: NamedImage[]; // named slots
-  sounds: NamedSound[]; // named slots
+  promotionalImages: PromoImage[]; // named slots (desktop + mobile URL each)
+  sounds: CampaignSound[]; // named slots
   wallStages: WallStage[];
   createdBy: string; // audit field — added for the list column (not in the IA aggregate)
 }
@@ -136,10 +151,14 @@ export function campaignSummary(c: TokenCampaign): string {
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────────────────────────
 // Placeholder asset URLs (dev-only; real slots/art pending Figma).
-const img = (slot: PromoImageSlot): NamedImage => ({ slot, url: `/assets/prize-wall/${slot.replace(/\s+/g, '-').toLowerCase()}.png` });
-const snd = (slot: SoundSlot): NamedSound => ({ slot, url: `/assets/prize-wall/${slot.toLowerCase()}.mp3` });
-const allImages: NamedImage[] = PROMO_IMAGE_SLOTS.map(img);
-const allSounds: NamedSound[] = SOUND_SLOTS.map(snd);
+const img = (slot: PromoImageSlot): PromoImage => ({
+  slot,
+  desktopUrl: `/assets/prize-wall/${slot}-desktop.png`,
+  mobileUrl: `/assets/prize-wall/${slot}-mobile.png`,
+});
+const snd = (slot: SoundSlot): CampaignSound => ({ slot, url: `/assets/prize-wall/${slot}.mp3` });
+const allImages: PromoImage[] = PROMO_IMAGE_SLOTS.map(img);
+const allSounds: CampaignSound[] = SOUND_SLOTS.map(snd);
 
 const TIERS: RewardTier[] = ['low', 'medium', 'high', 'none'];
 
@@ -217,8 +236,8 @@ export const TOKEN_CAMPAIGNS: TokenCampaign[] = [
     endDate: '2026-12-31T00:00:00.000Z',
     enabled: true,
     tAndC: 'Standard prize-wall terms apply.',
-    promotionalImages: [img('Promotional image')],
-    sounds: [snd('Background'), snd('Win')],
+    promotionalImages: [img('promotionalImage')],
+    sounds: [snd('background'), snd('win')],
     createdBy: 'Ivan Horvat',
     wallStages: [stage('tc-autumn', 1, { startDate: '2026-11-01T00:00:00.000Z', finalOpenDate: '2026-12-31T00:00:00.000Z' })],
   },

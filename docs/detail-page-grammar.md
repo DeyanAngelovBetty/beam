@@ -235,6 +235,32 @@ items for this instance: the **Player identity link** targets a Players section 
 scope (resolves to Not-found today); **`grantedAt` timezone display** convention (UTC vs ET); and a
 likely **Export** action for ops (view-only for now, pending Radi).
 
+*The child-list summary organism — `BeamChildList`* *(2026-09-04; first instance: the Token Campaign
+detail's Wall Stages).* A parent's detail page summarises each **drillable child** through one
+organism: a light, **view-only** table in a card whose columns are **an identity-link column (the
+drill affordance) + a few vital signs** — nothing more. **No add/remove/edit affordances** (the
+child-sections ruling — children are edited on their own pages). It is deliberately **not**
+`BeamDataTable` (no pagination/filters/kebab/bulk — that machinery fights a summary). Built as a real
+Beam organism on its first consumer because its recurrence is **scheduled, not speculative** (Gaspar,
+Prize Wall siblings). Columns pattern for Wall Stages: `Stage` (identity → stage page) · `Enabled`
+(boolean doctrine) · `Additional Windows` (count) · `Start` · `Final Open`.
+
+*Display timezone — ET* *(proposed ruling, 2026-09-04).* Campaign date-times render in **Eastern Time
+with an `ET` suffix** (first applied: the Token Campaign detail's start→end subtitle + Start/End
+twins). If confirmed, this **ties off the winners `grantedAt` timezone open item** above — the estate
+display convention is ET across the Prize Wall flow. (Exact format is Figma-authoritative and
+corrected on review; the ruling is the *timezone*, not the format.)
+
+*Open items — Token Campaign detail (view), 2026-09-04.* (1) **Enabled vs Active** label
+inconsistency across the Figma — pending a Figma fix; the page uses `Enabled` (boolean) per the
+grammar. (2) **View Winners in the edit-mode header** — the action stays visible in edit mode, but its
+interaction with unsaved edit state is unresolved; **parked for prompt B** (the editor). (3) **Submit
+for Approval implies an aggregate-level CR** (the whole campaign, not a per-entity CR) — pending
+Radi/Tzeno confirmation, and it ties into the CR-granularity open item. (4) **`Additional Windows` =
+total `openingWindows.length`** — per the IA, windows are additive to `finalOpenDate`, so the Figma's
+"Additional" header and the total agree; stays coupled to the `finalOpenDate` question in the
+Radi/Tzeno batch.
+
 *OPEN ITEM — CR granularity for this flow* *(pending Radi/Tzeno).* Does an approval carry a
 **whole-campaign aggregate snapshot**, or **per-entity CRs** (a stage CR, a reward CR)? This decides
 the **delta rendering of the nested lists** and ties directly into **approval-grammar "Presentation"

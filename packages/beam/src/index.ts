@@ -103,6 +103,8 @@ export type { BeamAppShellProps, BeamNavItem, BeamBrandMark } from './BeamAppShe
 export { BeamStatusBadge } from './BeamStatusBadge/BeamStatusBadge';
 export type { BeamStatusBadgeProps, BeamStatus } from './BeamStatusBadge/BeamStatusBadge.types';
 export { BeamDataTable } from './BeamDataTable/BeamDataTable';
+export { BeamChildList } from './BeamChildList/BeamChildList';
+export type { BeamChildListProps, BeamChildColumn } from './BeamChildList/BeamChildList.types';
 export { BeamRowMenu } from './BeamRowMenu/BeamRowMenu';
 export type { BeamRowMenuProps, BeamRowAction } from './BeamRowMenu/BeamRowMenu.types';
 export { GemIcon } from './GemIcon/GemIcon';
