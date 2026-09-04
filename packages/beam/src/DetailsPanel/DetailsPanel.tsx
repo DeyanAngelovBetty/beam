@@ -1,5 +1,6 @@
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
+import { editabilityBorderSx } from '../theme/tokens';
 import type { DetailsPanelProps } from './DetailsPanel.types';
 
 /**
@@ -28,11 +29,10 @@ export function DetailsPanel({ children, minColumnWidth = 220, 'aria-label': ari
       sx={{
         py: 3,
         px: 'calc(2 * var(--mui-spacing))',
-        // Constant geometry: the border is always here (transparent in view), so nothing moves on the
-        // mode switch — only the colour transitions. `:has(.MuiInputBase-root)` = "contains fields".
-        border: '1px solid transparent',
-        transition: 'border-color var(--beam-motion-move)',
-        '&:has(.MuiInputBase-root)': { borderColor: 'divider' },
+        // The EDITABILITY border — the ONE shared recipe (editabilityBorderSx): always 1px transparent,
+        // colour → divider only when the surface `:has(.MuiInputBase-root)` (contains a field). Constant
+        // geometry; nothing moves on the switch. Same mixin BeamPaper uses.
+        ...editabilityBorderSx,
       }}
     >
       <Box

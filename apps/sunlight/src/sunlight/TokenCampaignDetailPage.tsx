@@ -3,18 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Stack,
   Box,
-  Paper,
   Typography,
   Alert,
   Button,
   IconButton,
   Snackbar,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
   BeamPageHeader,
   BeamEmptyState,
   DetailsPanel,
   BeamStat,
   BeamBool,
+  BeamPaper,
   BeamChildList,
+  fieldGeometrySx,
+  meta,
 } from '@betty/beam';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEventsOutlined';
@@ -33,15 +40,16 @@ import {
 
 /**
  * TokenCampaignDetailPage — /prize-wall/token-campaigns/:id. VIEW MODE only (the editor is the next
- * prompt; no mode state here). Detail-page grammar governs mechanics; the Figma is authoritative for
- * content/columns. Wall Stages renders through the new BeamChildList organism (a view-only child
- * summary + drill to the stage page — the child-sections ruling: children are edited on their pages).
+ * prompt; no mode state here). Composition follows designs/TokenCampaign-View.png; geometry stability
+ * is sized against TokenCampaign-Edit.png (see designs/SPEC.md). Sections are BeamPaper surfaces
+ * (titles inside; grids/tables bleed to the edge); Wall Stages is BeamChildList (composing BeamPaper).
  */
 
 const BASE = '/prize-wall/token-campaigns';
+const MEDIA = 34; // fixed media-in-cell container (px), object-fit: contain (designs/SPEC.md ruling)
 
-// Dates displayed in EASTERN TIME with an ET suffix (proposed display-timezone ruling — see
-// detail-page-grammar; ties off the winners grantedAt open item). Exact format is Figma-corrected.
+// Dates in EASTERN TIME with an ET suffix (detail-page-grammar display-timezone ruling). Exact
+// format is Figma-authoritative (dd-MMM-yyyy hh:mm:ss AM ET) — corrected on review.
 const fmtDateTimeET = (iso: string) =>
   new Date(iso).toLocaleString('en-US', {
     timeZone: 'America/New_York',
@@ -107,7 +115,7 @@ export function TokenCampaignDetailPage() {
         </Alert>
       )}
 
-      {/* View twins (borderless view DetailsPanel; boolean via BeamBool per doctrine). */}
+      {/* View twins (DetailsPanel — borderless view, editability border in edit; boolean via BeamBool). */}
       <DetailsPanel aria-label="Campaign details">
         <BeamStat label="Name" value={campaign.name} />
         <BeamStat label="Start date" value={fmtDateTimeET(campaign.startDate)} />
@@ -115,105 +123,133 @@ export function TokenCampaignDetailPage() {
         <BeamStat label="Enabled" value={<BeamBool value={campaign.enabled} />} />
       </DetailsPanel>
 
-      {/* Compliance T&C — a text block; scrolls if long. */}
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" color="text.secondary">Compliance T&amp;C</Typography>
-        <Paper variant="outlined" sx={{ p: 2, maxHeight: 200, overflowY: 'auto' }}>
-          <Typography variant="body2" color={campaign.tAndC ? 'text.primary' : 'text.disabled'} sx={{ whiteSpace: 'pre-wrap' }}>
-            {campaign.tAndC || 'No terms provided.'}
-          </Typography>
-        </Paper>
+      {/* Section band — three BeamPaper surfaces side by side, frame proportions (Promotional Images
+          is the wide middle column). Equal height via flex stretch. */}
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: 'stretch' }}>
+        {/* Compliance T&C — padded surface; the text block scrolls if long. */}
+        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0 }}>
+          <BeamPaper title="Compliance - Terms &amp; Conditions">
+            <Box sx={{ maxHeight: 320, overflowY: 'auto' }}>
+              <Typography variant="body2" color={campaign.tAndC ? 'text.primary' : 'text.disabled'} sx={{ whiteSpace: 'pre-wrap' }}>
+                {campaign.tAndC || 'No terms provided.'}
+              </Typography>
+            </Box>
+          </BeamPaper>
+        </Box>
+
+        {/* Promotional Images — full-bleed table: NAME · DESKTOP · MOBILE, a media cell per platform. */}
+        <Box sx={{ flex: { md: '3 1 0' }, minWidth: 0 }}>
+          <BeamPaper title="Promotional Images" bleed>
+            {campaign.promotionalImages.length === 0 ? (
+              <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No images.</Typography></Box>
+            ) : (
+              <Table size="small" aria-label="Promotional images">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ ...meta }}>Name</TableCell>
+                    <TableCell sx={{ ...meta }}>Desktop</TableCell>
+                    <TableCell sx={{ ...meta }}>Mobile</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {campaign.promotionalImages.map((im) => (
+                    <TableRow key={im.slot} hover>
+                      <TableCell>{PROMO_IMAGE_SLOT_LABEL[im.slot]}</TableCell>
+                      <TableCell><MediaCell url={im.desktopUrl} onCopy={copyUrl} /></TableCell>
+                      <TableCell><MediaCell url={im.mobileUrl} onCopy={copyUrl} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </BeamPaper>
+        </Box>
+
+        {/* Sounds — full-bleed table: NAME · URL (a play affordance + Copy URL). */}
+        <Box sx={{ flex: { md: '1.4 1 0' }, minWidth: 0 }}>
+          <BeamPaper title="Sounds" bleed>
+            {campaign.sounds.length === 0 ? (
+              <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No sounds.</Typography></Box>
+            ) : (
+              <Table size="small" aria-label="Sounds">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ ...meta }}>Name</TableCell>
+                    <TableCell sx={{ ...meta }}>URL</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {campaign.sounds.map((sn) => (
+                    <TableRow key={sn.slot} hover>
+                      <TableCell>{SOUND_SLOT_LABEL[sn.slot]}</TableCell>
+                      <TableCell>
+                        {/* Row min-height = the field-row height (fieldGeometrySx) so view↔edit won't
+                            jump when the URL becomes a field (mode-stability ruling). */}
+                        <Box sx={{ ...fieldGeometrySx, gap: 1 }}>
+                          <IconButton size="small" aria-label={`Play ${SOUND_SLOT_LABEL[sn.slot]}`} onClick={() => setNotice({ severity: 'info', msg: 'Audio playback is a stub — not wired.' })}>
+                            <PlayArrowIcon fontSize="small" />
+                          </IconButton>
+                          <CopyUrlButton onClick={() => copyUrl(sn.url)} />
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </BeamPaper>
+        </Box>
       </Stack>
 
-      {/* Promotional Images — a row per slot: thumbnail + Copy URL for desktop AND mobile. Asset URLs
-          are dev placeholders (thumbnails may 404 → alt text). */}
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" color="text.secondary">Promotional Images</Typography>
-        <Paper variant="outlined">
-          {campaign.promotionalImages.length === 0 ? (
-            <Box sx={{ p: 2 }}><Typography variant="body2" color="text.secondary">No images.</Typography></Box>
-          ) : (
-            <Stack divider={<Box sx={{ borderTop: '1px solid', borderColor: 'divider' }} />}>
-              {campaign.promotionalImages.map((im) => (
-                <Box key={im.slot} sx={{ p: 2, display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Typography variant="body2" sx={{ minWidth: 160, fontWeight: 500 }}>{PROMO_IMAGE_SLOT_LABEL[im.slot]}</Typography>
-                  <MediaThumb label="Desktop" url={im.desktopUrl} onCopy={copyUrl} />
-                  <MediaThumb label="Mobile" url={im.mobileUrl} onCopy={copyUrl} />
-                </Box>
-              ))}
-            </Stack>
-          )}
-        </Paper>
-      </Stack>
-
-      {/* Sounds — a row per slot: play affordance (stubbed) + Copy URL. */}
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" color="text.secondary">Sounds</Typography>
-        <Paper variant="outlined">
-          {campaign.sounds.length === 0 ? (
-            <Box sx={{ p: 2 }}><Typography variant="body2" color="text.secondary">No sounds.</Typography></Box>
-          ) : (
-            <Stack divider={<Box sx={{ borderTop: '1px solid', borderColor: 'divider' }} />}>
-              {campaign.sounds.map((sn) => (
-                <Box key={sn.slot} sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ minWidth: 160, fontWeight: 500 }}>{SOUND_SLOT_LABEL[sn.slot]}</Typography>
-                  <IconButton size="small" aria-label={`Play ${SOUND_SLOT_LABEL[sn.slot]}`} onClick={() => setNotice({ severity: 'info', msg: 'Audio playback is a stub — not wired.' })}>
-                    <PlayArrowIcon fontSize="small" />
-                  </IconButton>
-                  <Box sx={{ flex: 1 }} />
-                  <Button size="small" variant="text" startIcon={<ContentCopyIcon fontSize="small" />} onClick={() => copyUrl(sn.url)}>
-                    Copy URL
-                  </Button>
-                </Box>
-              ))}
-            </Stack>
-          )}
-        </Paper>
-      </Stack>
-
-      {/* Wall stages — the child-list summary organism. Identity link drills to the stage page; no
-          add/remove/edit affordances (children are edited on their own pages). */}
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" color="text.secondary">Wall stages</Typography>
-        <BeamChildList<WallStage>
-          aria-label="Wall stages"
-          rows={campaign.wallStages}
-          getRowId={(s) => s.id}
-          identityHeader="Stage"
-          getIdentityLabel={(s) => stageLabel(s)}
-          getHref={(s) => `${import.meta.env.BASE_URL}${BASE.replace(/^\//, '')}/${campaign.id}/stages/${s.id}`}
-          LinkComponent={RouterIdentityLink}
-          emptyMessage="No stages."
-          columns={[
-            { key: 'enabled', header: 'Enabled', align: 'center', width: 100, render: (s) => <BeamBool value={s.enabled} /> },
-            // Additional Windows = total openingWindows (IA: windows are additive to finalOpenDate,
-            // so "Additional" and the total agree — coupled to the finalOpenDate open item).
-            { key: 'windows', header: 'Additional Windows', align: 'right', width: 170, render: (s) => s.openingWindows.length },
-            { key: 'start', header: 'Start', align: 'right', width: 120, render: (s) => fmtDate(s.startDate) },
-            { key: 'finalOpen', header: 'Final Open', align: 'right', width: 130, render: (s) => fmtDate(s.finalOpenDate) },
-          ]}
-        />
-      </Stack>
+      {/* Wall stages — the child-list summary organism (composes BeamPaper: title inside, table
+          full-bleed). View-only (no field ever) → the surface stays borderless even in edit mode. */}
+      <BeamChildList<WallStage>
+        aria-label="Wall stages"
+        title="Wall stages"
+        rows={campaign.wallStages}
+        getRowId={(s) => s.id}
+        identityHeader="Stage"
+        getIdentityLabel={(s) => stageLabel(s)}
+        getHref={(s) => `${import.meta.env.BASE_URL}${BASE.replace(/^\//, '')}/${campaign.id}/stages/${s.id}`}
+        LinkComponent={RouterIdentityLink}
+        emptyMessage="No stages."
+        columns={[
+          { key: 'enabled', header: 'Enabled', align: 'center', width: 100, render: (s) => <BeamBool value={s.enabled} /> },
+          // Additional Windows = total openingWindows (IA: windows are additive to finalOpenDate, so
+          // "Additional" and the total agree — coupled to the finalOpenDate open item).
+          { key: 'windows', header: 'Additional Windows', align: 'right', width: 170, render: (s) => s.openingWindows.length },
+          { key: 'start', header: 'Start', align: 'right', width: 120, render: (s) => fmtDate(s.startDate) },
+          { key: 'finalOpen', header: 'Final Open', align: 'right', width: 130, render: (s) => fmtDate(s.finalOpenDate) },
+        ]}
+      />
 
       <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)} message="URL copied to clipboard" />
     </Stack>
   );
 }
 
-/** A media slot's desktop/mobile block: a thumbnail + a Copy URL button. Placeholder assets may 404. */
-function MediaThumb({ label, url, onCopy }: { label: string; url: string; onCopy: (url: string) => void }) {
+/** A media cell: a fixed 34×34 thumbnail (contain, uniform rows) + Copy URL. Placeholder assets 404
+ *  → onError hides the broken img, leaving the neutral frame (designs/SPEC.md). Row height matches
+ *  the edit field (fieldGeometrySx) so view↔edit doesn't jump. */
+function MediaCell({ url, onCopy }: { url: string; onCopy: (url: string) => void }) {
   return (
-    <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
+    <Box sx={{ ...fieldGeometrySx, gap: 1 }}>
       <Box
         component="img"
         src={url}
-        alt={label}
-        sx={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 1, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}
+        alt=""
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+        sx={{ width: MEDIA, height: MEDIA, flexShrink: 0, objectFit: 'contain', borderRadius: 1, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}
       />
-      <Typography variant="caption" color="text.secondary">{label}</Typography>
-      <Button size="small" variant="text" startIcon={<ContentCopyIcon fontSize="small" />} onClick={() => onCopy(url)}>
-        Copy URL
-      </Button>
-    </Stack>
+      <CopyUrlButton onClick={() => onCopy(url)} />
+    </Box>
+  );
+}
+
+function CopyUrlButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button size="small" variant="text" startIcon={<ContentCopyIcon fontSize="small" />} onClick={onClick} sx={{ flexShrink: 0 }}>
+      Copy URL
+    </Button>
   );
 }

@@ -1,4 +1,3 @@
-import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
@@ -9,13 +8,14 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { meta } from '../theme/textStyles';
+import { BeamPaper } from '../BeamPaper/BeamPaper';
 import type { BeamChildListProps } from './BeamChildList.types';
 
 /**
  * BeamChildList — see BeamChildList.types. A view-only summary of child records: identity link
- * (the drill) + vital-sign columns, in an outlined card. Header cells wear the `meta` voice
- * (detail-grammar §3); the identity column links to the child page and a trailing chevron reads as
- * the drill affordance. No row/primary actions — the identity link IS the interaction.
+ * (the drill) + vital-sign columns. It COMPOSES BeamPaper (the section surface): `title` inside, the
+ * table FULL-BLEED — it owns no surface of its own. Because its content is view-only (never grows a
+ * field), the surface stays borderless even in a page's edit mode — the editability-border ruling.
  */
 export function BeamChildList<Row>({
   'aria-label': ariaLabel,
@@ -31,15 +31,9 @@ export function BeamChildList<Row>({
 }: BeamChildListProps<Row>) {
   const Identity = LinkComponent;
   return (
-    <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-      {title && (
-        <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle2">{title}</Typography>
-        </Box>
-      )}
-
+    <BeamPaper title={title} bleed>
       {rows.length === 0 ? (
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ px: 2, pb: 2 }}>
           <Typography variant="body2" color="text.secondary">{emptyMessage}</Typography>
         </Box>
       ) : (
@@ -83,6 +77,6 @@ export function BeamChildList<Row>({
           </TableBody>
         </Table>
       )}
-    </Paper>
+    </BeamPaper>
   );
 }

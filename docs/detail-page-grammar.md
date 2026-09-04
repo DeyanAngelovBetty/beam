@@ -159,7 +159,35 @@ top-aligned, rows sized by their tallest member, booleans inline as peers.
   panel] · [rest]`. The page-level alert (approval-flow) sits above the panel, below the header.
 - **Subsequent sections** (rules, rows, reward tables, …) are **unchanged this round** — whether
   they keep their own titles once the details panel drops its own is an **OPEN question, noted, not
-  ruled**.
+  ruled**. *(Resolved 2026-09-04 — see the section-surface amendment below: sections DO keep their
+  titles, rendered INSIDE the section surface.)*
+
+*Amended 2026-09-04 — **`BeamPaper`, the section surface** (Token Campaign detail; frames in
+`apps/sunlight/designs/`).* Below the details panel, every content section renders on ONE sanctioned
+surface, **`BeamPaper`** — an elevated Paper carrying:
+- **Title INSIDE the surface.** A section heading lives at the top of its own surface, **never
+  free-floating above it**. (This resolves the open question above.)
+- **Content modes: padded (default) or full-bleed.** Prose/stats get a padded body; **grids, tables,
+  and lists BLEED to the surface edge** (they own their cell padding — the surface must not double
+  it).
+- **The EDITABILITY border — not a mode border.** The shared `editabilityBorderSx` (the SAME recipe
+  `DetailsPanel` uses — one definition, never re-inlined): always 1px transparent, colour → `divider`
+  **per surface, driven purely by whether that surface contains a field** (`:has(.MuiInputBase-root)`).
+  The load-bearing consequence, ratified as the ruling: a surface whose content is **view-only never
+  grows a field, so it stays borderless even in the page's edit mode** — a child-list summary
+  (`BeamChildList`) is bordered-in-edit *by nature only if it were editable*, which it isn't. The
+  border marks EDITABILITY, not the page's mode.
+- **`BeamChildList` composes `BeamPaper`** (title inside, table full-bleed) — it owns no surface of
+  its own. The child-list summary organism (drill-down section) is a `BeamPaper` consumer.
+
+*Body-level geometry rulings 2026-09-04 (Token Campaign detail; sized against the Edit frame — see
+`designs/SPEC.md`).*
+- **Media-in-cell: a fixed `34×34` container, `object-fit: contain`.** Images render in a uniform box
+  regardless of source dimensions, so table rows stay even.
+- **Body mode-stability min-heights.** Rows/sections present in BOTH modes carry a `min-height` sized
+  to the taller (edit-field) version so the view↔edit switch does **not vertically jump** — the
+  PageHeader constant-geometry contract **extends into the page body**. (Implemented with the 44px
+  `fieldGeometrySx` on cells that hold a value in view and a field in edit.)
 
 *Amended 2026-09-01 — **the mode mechanic generalizes beyond view↔edit** (first non-edit use:
 Loyalty Levels A/B-test config).* Everything above describes view↔edit, but the grammar is really a

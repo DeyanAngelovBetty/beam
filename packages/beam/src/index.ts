@@ -105,6 +105,8 @@ export type { BeamStatusBadgeProps, BeamStatus } from './BeamStatusBadge/BeamSta
 export { BeamDataTable } from './BeamDataTable/BeamDataTable';
 export { BeamChildList } from './BeamChildList/BeamChildList';
 export type { BeamChildListProps, BeamChildColumn } from './BeamChildList/BeamChildList.types';
+export { BeamPaper } from './BeamPaper/BeamPaper';
+export type { BeamPaperProps } from './BeamPaper/BeamPaper.types';
 export { BeamRowMenu } from './BeamRowMenu/BeamRowMenu';
 export type { BeamRowMenuProps, BeamRowAction } from './BeamRowMenu/BeamRowMenu.types';
 export { GemIcon } from './GemIcon/GemIcon';
@@ -118,7 +120,7 @@ export { BeamField } from './BeamField/BeamField';
 export type { BeamFieldProps } from './BeamField/BeamField';
 export { DetailsPanel } from './DetailsPanel/DetailsPanel';
 export type { DetailsPanelProps } from './DetailsPanel/DetailsPanel.types';
-export { FIELD_GEOMETRY, fieldGeometrySx } from './theme/tokens';
+export { FIELD_GEOMETRY, fieldGeometrySx, editabilityBorderSx } from './theme/tokens';
 
 // ---- Organisms: PLACEHOLDERS (2026-07-20) ----
 // Shape-only, pending the Figma design pass. Screens can be built against a

@@ -73,6 +73,22 @@ export const fieldGeometrySx = {
   alignItems: 'center',
 } as const;
 
+/**
+ * editabilityBorderSx — the shared "this surface contains something editable" frame. NOT a mode
+ * border: it is an EDITABILITY border. It appears PER SURFACE, driven purely by whether the surface
+ * actually contains a field (`:has(.MuiInputBase-root)`) — so a section whose content never grows
+ * fields (a view-only child-list summary) stays borderless even in the page's edit mode. That
+ * emergent behaviour IS the ruling (detail-page-grammar). Constant geometry: the border is always
+ * present (1px transparent) and only its COLOUR transitions to `divider`, so nothing shifts a pixel.
+ *
+ * The ONE definition consumed by every section surface (DetailsPanel, BeamPaper) — never re-inlined.
+ */
+export const editabilityBorderSx = {
+  border: '1px solid transparent',
+  transition: 'border-color var(--beam-motion-move)',
+  '&:has(.MuiInputBase-root)': { borderColor: 'divider' },
+} as const;
+
 export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
   sunlight: {
     ontario: {
