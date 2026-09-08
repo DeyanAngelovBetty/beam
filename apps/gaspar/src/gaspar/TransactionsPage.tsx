@@ -102,6 +102,23 @@ const STATUS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.status));
 const DIRECTION_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.direction));
 const PROVIDER_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.psp));
 
+/**
+ * BeamFilterBar's apply model (bar v1 spec; UsersPage is the estate reference): the bar edits a
+ * `draft`; the grid filters by `applied`; the Filter CTA commits draft → applied. We keep BOTH stores
+ * page-local — no URL/query-param persistence (this page's own constraint), which is the one deviation
+ * from UsersPage (it persists `applied` in the URL).
+ */
+interface Filters {
+  q: string;
+  start: string; // yyyy-mm-dd, inclusive lower bound on createdAt
+  end: string; // yyyy-mm-dd, inclusive upper bound on createdAt
+  status: string;
+  direction: string;
+  provider: string;
+}
+const EMPTY_FILTERS: Filters = { q: '', start: '', end: '', status: '', direction: '', provider: '' };
+const isActive = (f: Filters) => f.q !== '' || f.start !== '' || f.end !== '' || f.status !== '' || f.direction !== '' || f.provider !== '';
+
 const EM_DASH = '—';
 
 /** Local time, sortable/comparable form `YYYY-MM-DD HH:mm`; full ISO-with-offset in the tooltip. No
@@ -189,27 +206,28 @@ export function TransactionsPage() {
   const [copied, setCopied] = useState(false);
   const onCopied = () => setCopied(true);
 
-  // Filter state — page-local, no persistence, no query-param model. This is a rendered PROPOSAL for a
-  // future backend filter contract, filtered here as a plain client-side array pass over the mock.
-  const [search, setSearch] = useState('');
-  const [start, setStart] = useState(''); // yyyy-mm-dd, inclusive lower bound on createdAt
-  const [end, setEnd] = useState(''); // yyyy-mm-dd, inclusive upper bound on createdAt
-  const [status, setStatus] = useState('');
-  const [direction, setDirection] = useState('');
-  const [provider, setProvider] = useState('');
+  // Filter state — page-local (no persistence, no query-param model). `draft` is what the bar's fields
+  // edit; `applied` is what the grid filters by. The Filter CTA (and Enter in a date field) commits.
+  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
+  const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
+  const patchDraft = (p: Partial<Filters>) => setDraft((d) => ({ ...d, ...p }));
 
-  const applied = Boolean(search || start || end || status || direction || provider);
+  const apply = () => setApplied(draft);
   const clearAll = () => {
-    setSearch('');
-    setStart('');
-    setEnd('');
-    setStatus('');
-    setDirection('');
-    setProvider('');
+    setDraft(EMPTY_FILTERS);
+    setApplied(EMPTY_FILTERS);
+  };
+  // Enter in a date field commits (search-field Enter can't — see the note by the bar).
+  const applyOnEnter = (e: { key: string }) => {
+    if (e.key === 'Enter') apply();
   };
 
+  // isApplied reflects the COMMITTED filters (drives the bar's Filter-CTA fill + Clear-all enablement),
+  // never the uncommitted draft.
+  const isApplied = isActive(applied);
+
   const rows = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = applied.q.trim().toLowerCase();
     return PAYMENTS.filter((r) => {
       // Search: id, pspTransactionId, customerId (spec §1).
       if (q) {
@@ -218,15 +236,15 @@ export function TransactionsPage() {
       }
       // Date range on createdAt — compared as the UTC calendar date (createdAt is ...Z); inclusive.
       const day = r.createdAt.slice(0, 10);
-      if (start && day < start) return false;
-      if (end && day > end) return false;
+      if (applied.start && day < applied.start) return false;
+      if (applied.end && day > applied.end) return false;
       // Exact-match selects.
-      if (status && r.status !== status) return false;
-      if (direction && r.direction !== direction) return false;
-      if (provider && r.psp !== provider) return false;
+      if (applied.status && r.status !== applied.status) return false;
+      if (applied.direction && r.direction !== applied.direction) return false;
+      if (applied.provider && r.psp !== applied.provider) return false;
       return true;
     });
-  }, [search, start, end, status, direction, provider]);
+  }, [applied]);
 
   // Default-visible set, in spec order. (When bullet 3 lands, the CATALOG above joins these as the
   // column manager's contents.)
@@ -249,47 +267,55 @@ export function TransactionsPage() {
     <Stack spacing={3}>
       <BeamPageHeader title="Transactions" />
 
-      {/* Filters — live client-side over the mock (no submit step, so no onFilter CTA). Search is the
-          bar's built-in field; the date range and the three selects are promoted fields passed as
-          `children` (the bar's composition API — a first-class dateRange prop waits for a 2nd consumer,
-          per promotion-follows-usage). Select options are DERIVED from the data. */}
+      {/* Filters — BeamFilterBar's designed apply model (bar v1; UsersPage is the reference): the bar
+          edits `draft`, the grid filters by `applied`, the Filter CTA commits. Search is the bar's
+          built-in field; the date range and the three selects are promoted fields passed as `children`
+          (the bar's composition API — a first-class dateRange prop waits for a 2nd consumer, per
+          promotion-follows-usage). Select options are DERIVED from the data.
+          NOTE: Enter-to-apply is wired on the date fields (page-local). The SEARCH field is the bar's
+          built-in input with no key-event hook exposed, so Enter there cannot commit without a
+          BeamFilterBar API addition — deliberately NOT done (no component change); the Filter CTA
+          commits search. UsersPage, the reference, likewise has no Enter-to-apply. */}
       <BeamFilterBar
         aria-label="Transaction filters"
-        searchValue={search}
-        onSearchChange={setSearch}
+        searchValue={draft.q}
+        onSearchChange={(q) => patchDraft({ q })}
         searchPlaceholder="Search ID, PSP ID, customer"
-        applied={applied}
+        applied={isApplied}
+        onFilter={apply}
         onClearAll={clearAll}
       >
         <BeamField
           label="Created from"
           type="date"
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
+          value={draft.start}
+          onChange={(e) => patchDraft({ start: e.target.value })}
+          onKeyDown={applyOnEnter}
           slotProps={{ inputLabel: { shrink: true } }}
           fullWidth
         />
         <BeamField
           label="Created to"
           type="date"
-          value={end}
-          onChange={(e) => setEnd(e.target.value)}
+          value={draft.end}
+          onChange={(e) => patchDraft({ end: e.target.value })}
+          onKeyDown={applyOnEnter}
           slotProps={{ inputLabel: { shrink: true } }}
           fullWidth
         />
-        <BeamField select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} fullWidth>
+        <BeamField select label="Status" value={draft.status} onChange={(e) => patchDraft({ status: e.target.value })} fullWidth>
           <MenuItem value="">All</MenuItem>
           {STATUS_OPTIONS.map((s) => (
             <MenuItem key={s} value={s}>{s}</MenuItem>
           ))}
         </BeamField>
-        <BeamField select label="Direction" value={direction} onChange={(e) => setDirection(e.target.value)} fullWidth>
+        <BeamField select label="Direction" value={draft.direction} onChange={(e) => patchDraft({ direction: e.target.value })} fullWidth>
           <MenuItem value="">All</MenuItem>
           {DIRECTION_OPTIONS.map((dir) => (
             <MenuItem key={dir} value={dir}>{dir}</MenuItem>
           ))}
         </BeamField>
-        <BeamField select label="Provider" value={provider} onChange={(e) => setProvider(e.target.value)} fullWidth>
+        <BeamField select label="Provider" value={draft.provider} onChange={(e) => patchDraft({ provider: e.target.value })} fullWidth>
           <MenuItem value="">All</MenuItem>
           {PROVIDER_OPTIONS.map((p) => (
             <MenuItem key={p} value={p}>{p}</MenuItem>
