@@ -15,12 +15,14 @@ Two scroll affordances on the horizontal scroll area. No sticky headers (out of 
   scroll position or viewport. Chose container-query units over a measured width for a pure-CSS
   solution on Baseline; `ResizeObserver`-measured width stays the break-glass fallback (not needed —
   `inline-size` containment did not disturb the table layout; verified at build).
-- **Scroll-aware edge shadows — mirrored gradients.** Both edges are the SAME soft gradient (shared
-  `EDGE_WIDTH`, `--beam-edge-shadow` tint), fading away from the edge, so they read as siblings. LEFT
-  is the rail cell's `::after` at `left: 100%` (a rightward-fading band anchored to the rail's *actual*
-  right edge, so it tracks the rail width as controls change it — no hardcoded offset; the old 1px
-  divider line was dropped so it mirrors the right's pure-gradient read). RIGHT is an absolute,
-  `pointer-events:none` overlay at the scroll area's right edge (leftward-fading). Visibility unchanged:
+- **Scroll-aware edge shadows.** Both edges share the SAME soft gradient (shared `EDGE_WIDTH`,
+  `--beam-edge-shadow` tint), fading away from the edge, so they read as siblings. The RIGHT is an
+  absolute `pointer-events:none` overlay at the scroll area's right edge (leftward-fading). The LEFT
+  carries TWO layers on the rail cell, doing different jobs and appearing together: a **`::before` 1px
+  divider** (theme `divider` token) that defines the rail *boundary*, plus the **`::after` gradient**
+  at `left: 100%` (rightward-fading) signalling the *occlusion*. Both left layers anchor to the rail's
+  *actual* right edge (`right:0` / `left:100%`), tracking the rail width as controls change it — no
+  hardcoded offset. Visibility unchanged:
   LEFT via `@container scroll-state(scrollable: inline-start)` + `data-overflow-start` fallback; RIGHT
   via `data-overflow-end`. Both attributes are set on the wrapper by a passive, rAF-throttled
   scroll+resize listener (un-gated so it always runs — the right overlay can't be a `scroll-state`

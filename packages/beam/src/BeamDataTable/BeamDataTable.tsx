@@ -326,13 +326,26 @@ export function BeamDataTable<Row>({
     width: '1%',
     verticalAlign: 'top',
     backgroundColor: 'background.paper',
-    // Scroll-affordance shadow — the MIRROR of the container-right overlay: a soft gradient of the same
-    // 24px width and the same --beam-edge-shadow tint, fading rightward from the rail's ACTUAL right
-    // edge. Anchored at `left: 100%` so it tracks the rail width as controls (checkbox/kebab/caret)
-    // change it — no hardcoded offset. Full-height (top/bottom 0) like the right overlay; the old
-    // 1px divider line is dropped so the two edges read as siblings, not one hard + one soft. Hidden at
-    // scroll start; fades in while content scrolls under the rail (quick motion token; reduced-motion
-    // zeros it). Header + body rail cells inherit this via the shared spread.
+    // Scroll-affordance on the rail's right edge — TWO layers, different jobs, appearing together:
+    //  ::before = a crisp 1px divider (theme `divider` token) that DEFINES the rail boundary;
+    //  ::after  = a soft gradient (mirror of the container-right overlay: same EDGE_WIDTH, same
+    //             --beam-edge-shadow tint) fading rightward, signalling the OCCLUSION.
+    // Both anchor to the rail's ACTUAL right edge (::before at right:0, ::after at left:100%), so they
+    // track the rail width as controls (checkbox/kebab/caret) change it — no hardcoded offset. Both are
+    // hidden at scroll start and fade in together while content scrolls under the rail (quick motion
+    // token; reduced-motion zeros it). Header + body rail cells inherit this via the shared spread.
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: '1px',
+      backgroundColor: 'divider',
+      opacity: 0,
+      transition: 'opacity var(--beam-motion-quick)',
+      pointerEvents: 'none',
+    },
     '&::after': {
       content: '""',
       position: 'absolute',
@@ -348,10 +361,12 @@ export function BeamDataTable<Row>({
     // Enhancement (Chrome): scroll-state container query — pure CSS, no JS. True
     // when there is content hidden toward the inline-start (i.e. scrolled right).
     '@container scroll-state(scrollable: inline-start)': {
+      '&::before': { opacity: 1 },
       '&::after': { opacity: 1 },
     },
     // Base (all engines): the scroll listener sets data-overflow-start on the wrapper (an ancestor).
     // Coexists with the scroll-state enhancement above — same result when both are active.
+    '[data-overflow-start="true"] &::before': { opacity: 1 },
     '[data-overflow-start="true"] &::after': { opacity: 1 },
   };
 
@@ -618,14 +633,18 @@ export function BeamDataTable<Row>({
                   <TableRow>
                     <TableCell
                       colSpan={dataColSpan}
-                      sx={{ py: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
+                      // padding:0 — the td's inline padding otherwise displaces the sticky panel from its
+                      // pinned left:0 and it wiggles across the sticky threshold while scrolling. The
+                      // panel's inset moves onto the sticky box itself (below).
+                      sx={{ p: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
                     >
                       <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
                         {/* Fix 1: pin the panel to the VISIBLE scroll-area width. `100cqw` resolves to
                             the wrapper's inline-size (the container-query wrapper above); `sticky left:0`
                             keeps it put while columns scroll beneath — so the timeline + its action bar
-                            never scroll sideways at any scroll position. */}
-                        <Box sx={{ position: 'sticky', left: 0, width: '100cqw' }}>
+                            never scroll sideways at any scroll position. The inline inset lives HERE (px)
+                            now that the td has none — inside the sticky box, so it never shifts the pin. */}
+                        <Box sx={{ position: 'sticky', left: 0, width: '100cqw', px: 2 }}>
                           <Box sx={{ py: 2, px: 1 }}>
                             {renderExpanded(row.original)}
                             {/* The expanded bar — UNCONDITIONAL when the row has actions (grammar §3,
