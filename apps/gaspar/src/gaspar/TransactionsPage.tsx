@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Stack,
   Box,
@@ -6,6 +6,9 @@ import {
   Snackbar,
   Tooltip,
   IconButton,
+  MenuItem,
+  BeamField,
+  BeamFilterBar,
   BeamDataTable,
   BeamPageHeader,
 } from '@betty/beam';
@@ -91,6 +94,13 @@ const PAYMENTS: PaymentRow[] = [
   { id: 'pay_01H9Z3Q1EF3M8G6V', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0102', customerId: 'cus_74155', paymentMethodId: 'pm_01H9Z3Q1EF3M8G6V', amount: 500.0, currency: 'USD', direction: 'Withdrawal', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213502', createdAt: '2026-09-04T16:44:20Z', updatedAt: '2026-09-04T16:44:25Z' },
   { id: 'pay_01H9Z3R5FG4N9H7W', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0304', customerId: 'cus_74161', paymentMethodId: 'pm_01H9Z3R5FG4N9H7W', amount: 18.25, currency: 'EUR', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213560', createdAt: '2026-09-05T09:03:12Z', updatedAt: '2026-09-05T09:03:15Z' },
 ];
+
+// Select options DERIVED from the mock rows — the filter offers exactly the values present, never a
+// hardcoded vocabulary. (Direction happens to be Deposit/Withdrawal today; still derived, not assumed.)
+const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
+const STATUS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.status));
+const DIRECTION_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.direction));
+const PROVIDER_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.psp));
 
 const EM_DASH = '—';
 
@@ -179,6 +189,45 @@ export function TransactionsPage() {
   const [copied, setCopied] = useState(false);
   const onCopied = () => setCopied(true);
 
+  // Filter state — page-local, no persistence, no query-param model. This is a rendered PROPOSAL for a
+  // future backend filter contract, filtered here as a plain client-side array pass over the mock.
+  const [search, setSearch] = useState('');
+  const [start, setStart] = useState(''); // yyyy-mm-dd, inclusive lower bound on createdAt
+  const [end, setEnd] = useState(''); // yyyy-mm-dd, inclusive upper bound on createdAt
+  const [status, setStatus] = useState('');
+  const [direction, setDirection] = useState('');
+  const [provider, setProvider] = useState('');
+
+  const applied = Boolean(search || start || end || status || direction || provider);
+  const clearAll = () => {
+    setSearch('');
+    setStart('');
+    setEnd('');
+    setStatus('');
+    setDirection('');
+    setProvider('');
+  };
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return PAYMENTS.filter((r) => {
+      // Search: id, pspTransactionId, customerId (spec §1).
+      if (q) {
+        const hay = `${r.id} ${r.pspTransactionId ?? ''} ${r.customerId}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      // Date range on createdAt — compared as the UTC calendar date (createdAt is ...Z); inclusive.
+      const day = r.createdAt.slice(0, 10);
+      if (start && day < start) return false;
+      if (end && day > end) return false;
+      // Exact-match selects.
+      if (status && r.status !== status) return false;
+      if (direction && r.direction !== direction) return false;
+      if (provider && r.psp !== provider) return false;
+      return true;
+    });
+  }, [search, start, end, status, direction, provider]);
+
   // Default-visible set, in spec order. (When bullet 3 lands, the CATALOG above joins these as the
   // column manager's contents.)
   const columns: BeamColumn<PaymentRow>[] = [
@@ -200,11 +249,60 @@ export function TransactionsPage() {
     <Stack spacing={3}>
       <BeamPageHeader title="Transactions" />
 
+      {/* Filters — live client-side over the mock (no submit step, so no onFilter CTA). Search is the
+          bar's built-in field; the date range and the three selects are promoted fields passed as
+          `children` (the bar's composition API — a first-class dateRange prop waits for a 2nd consumer,
+          per promotion-follows-usage). Select options are DERIVED from the data. */}
+      <BeamFilterBar
+        aria-label="Transaction filters"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search ID, PSP ID, customer"
+        applied={applied}
+        onClearAll={clearAll}
+      >
+        <BeamField
+          label="Created from"
+          type="date"
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+          slotProps={{ inputLabel: { shrink: true } }}
+          fullWidth
+        />
+        <BeamField
+          label="Created to"
+          type="date"
+          value={end}
+          onChange={(e) => setEnd(e.target.value)}
+          slotProps={{ inputLabel: { shrink: true } }}
+          fullWidth
+        />
+        <BeamField select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} fullWidth>
+          <MenuItem value="">All</MenuItem>
+          {STATUS_OPTIONS.map((s) => (
+            <MenuItem key={s} value={s}>{s}</MenuItem>
+          ))}
+        </BeamField>
+        <BeamField select label="Direction" value={direction} onChange={(e) => setDirection(e.target.value)} fullWidth>
+          <MenuItem value="">All</MenuItem>
+          {DIRECTION_OPTIONS.map((dir) => (
+            <MenuItem key={dir} value={dir}>{dir}</MenuItem>
+          ))}
+        </BeamField>
+        <BeamField select label="Provider" value={provider} onChange={(e) => setProvider(e.target.value)} fullWidth>
+          <MenuItem value="">All</MenuItem>
+          {PROVIDER_OPTIONS.map((p) => (
+            <MenuItem key={p} value={p}>{p}</MenuItem>
+          ))}
+        </BeamField>
+      </BeamFilterBar>
+
       <BeamDataTable
         columns={columns}
-        rows={PAYMENTS}
+        rows={rows}
         getRowId={(r) => r.id}
         paginated
+        emptyMessage="No transactions match these filters."
         aria-label="Payment transactions"
       />
 
