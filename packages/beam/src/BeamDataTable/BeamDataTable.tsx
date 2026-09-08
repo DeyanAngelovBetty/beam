@@ -186,6 +186,15 @@ export function BeamDataTable<Row>({
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [globalFilter, setGlobalFilter] = useState('');
 
+  // Suspend row hover WHILE a Collapse animates. Rows translating under a stationary cursor during
+  // expand/collapse otherwise latch `:hover` — browsers recompute hover on pointermove, not on layout
+  // change — and keep the tint until the next move. We drop pointer-events on the tbody for the
+  // duration (driven by the Collapse's onEnter/onExited, not timers). A counter, not a boolean, so
+  // overlapping expand/collapse animations compose correctly.
+  const [animatingCount, setAnimatingCount] = useState(0);
+  const onCollapseStart = () => setAnimatingCount((n) => n + 1);
+  const onCollapseEnd = () => setAnimatingCount((n) => Math.max(0, n - 1));
+
   // Translucent state layers, painted over the rail's opaque base so the
   // pinned column shows hover/selected exactly like a normal row instead of
   // ghosting the scrolled cells behind it (the hover-bleed fix).
@@ -538,7 +547,7 @@ export function BeamDataTable<Row>({
               })}
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody sx={animatingCount > 0 ? { pointerEvents: 'none' } : undefined}>
             {visibleRows.length === 0 && (
               <TableRow>
                 <TableCell
@@ -630,6 +639,7 @@ export function BeamDataTable<Row>({
                   })}
                 </TableRow>
                 {renderExpanded && (
+                  // Detail row carries NO `hover` — only the data row above tints on hover.
                   <TableRow>
                     <TableCell
                       colSpan={dataColSpan}
@@ -638,7 +648,17 @@ export function BeamDataTable<Row>({
                       // panel's inset moves onto the sticky box itself (below).
                       sx={{ p: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
                     >
-                      <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
+                      <Collapse
+                        in={row.getIsExpanded()}
+                        timeout="auto"
+                        unmountOnExit
+                        // Suspend tbody hover across the whole geometry change (both directions), so a
+                        // row can't latch a stale :hover as it translates under a parked cursor.
+                        onEnter={onCollapseStart}
+                        onExit={onCollapseStart}
+                        onEntered={onCollapseEnd}
+                        onExited={onCollapseEnd}
+                      >
                         {/* Fix 1: pin the panel to the VISIBLE scroll-area width. `100cqw` resolves to
                             the wrapper's inline-size (the container-query wrapper above); `sticky left:0`
                             keeps it put while columns scroll beneath — so the timeline + its action bar

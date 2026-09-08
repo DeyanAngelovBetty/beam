@@ -3,6 +3,16 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Fix — stale `:hover` on rows after a Collapse animation *(2026-09-08)*
+
+Expanding/collapsing a row translates the rows below under a stationary cursor; browsers only recompute
+`:hover` on pointermove, not on layout change, so a row would latch the hover tint and keep it until the
+next move. Fix: while any `renderExpanded` Collapse animates, drop `pointer-events` on the `<TableBody>`
+so no row can pick up hover during the geometry change — driven by the Collapse's `onEnter`/`onExit`
+(start) and `onEntered`/`onExited` (end), **not timers**. A counter (`animatingCount`), not a boolean,
+so overlapping expand/collapse compose. Hover resumes correctly on the next real pointermove. (The
+detail `<tr>` already carries no `hover`; left a comment making that intentional.)
+
 ## Scroll-behavior — pinned expanded panel + edge shadows *(2026-09-08, density installment #2)*
 
 Two scroll affordances on the horizontal scroll area. No sticky headers (out of scope).
