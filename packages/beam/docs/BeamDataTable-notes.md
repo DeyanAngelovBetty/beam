@@ -3,6 +3,33 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Scroll-behavior — pinned expanded panel + edge shadows *(2026-09-08, density installment #2)*
+
+Two scroll affordances on the horizontal scroll area. No sticky headers (out of scope).
+
+- **Expanded panel pins to the visible width, not the row.** The `renderExpanded` panel used to live in
+  the `colSpan` cell and scroll sideways with the columns. It now sits in a `position: sticky; left: 0;
+  width: 100cqw` wrapper. `100cqw` resolves to a new **container-query wrapper** (`container-type:
+  inline-size`) around the scroll container — the *visible* scroll-area width, independent of the
+  scroller's `scroll-state` support. So the timeline + its action bar never scroll sideways, at any
+  scroll position or viewport. Chose container-query units over a measured width for a pure-CSS
+  solution on Baseline; `ResizeObserver`-measured width stays the break-glass fallback (not needed —
+  `inline-size` containment did not disturb the table layout; verified at build).
+- **Scroll-aware edge shadows.** LEFT shadow sits on the pinned rail's right edge (content vanishing
+  under the rail) — the existing `@container scroll-state(scrollable: inline-start)` enhancement, now
+  also driven by a `data-overflow-start` fallback. RIGHT shadow is an absolute, `pointer-events:none`
+  overlay at the scroll area's right edge, shown via `data-overflow-end`. Both attributes are set on
+  the wrapper by a passive, rAF-throttled scroll+resize listener (un-gated so it always runs — the
+  right overlay can't be a `scroll-state` descendant, so it has no pure-CSS path). Shadows appear only
+  while scrollable in that direction and vanish at the edges; a grid with no horizontal overflow shows
+  **none, ever**.
+- **Compat / posture:** the pinned panel is all-modern-browser (container queries, Baseline 2023). The
+  shadows are **progressive affordance** — scroll-state gives the left shadow pure-CSS on Chrome, the
+  rAF listener covers every browser for both edges; graceful absence only with JS disabled, accepted.
+- **Token:** both edges draw from **`derived.edgeShadow`** (emitted as `--beam-edge-shadow`) — a
+  mode-agnostic `color-mix(... common.black 22% ...)`; **retired the hardcoded `RAIL_SCROLLED_SHADOW`
+  literal.** Sticky headers (a later installment) will draw from the same token.
+
 ## Layout pass — bulk strip inside the surface, manager trigger to the footer *(2026-09-08)*
 
 Two moves; blast radius is Gaspar transactions + two stories (the repo-wide inventory found **no**

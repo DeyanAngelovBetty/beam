@@ -44,10 +44,11 @@ import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
 import { isWhiteSpaceLike } from 'typescript';
 
-// Rail scroll-affordance elevation — a truth-conditional cue shown only while
-// content actually scrolls under the pinned rail. Values are placeholders.
-// elevation: Deyan tunes on the bench
-const RAIL_SCROLLED_SHADOW = '4px 0 6px -3px rgba(0, 0, 0, 0.18)';
+// Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
+// under an edge. Tint from the theme (`--beam-edge-shadow`, derived.edgeShadow); geometry is the only
+// literal. // elevation: Deyan tunes on the bench
+const EDGE_TINT = 'var(--beam-edge-shadow)';
+const RAIL_SCROLLED_SHADOW = `4px 0 6px -3px ${EDGE_TINT}`; // rail-left, casts right into the content
 const RAIL_DIVIDER_INSET = 6; // px top/bottom inset so the rule doesn't bleed to the cell's vertical edges
 
 /**
@@ -277,29 +278,37 @@ export function BeamDataTable<Row>({
   const batchHintId = useId();
   const visibleRows = table.getRowModel().rows;
 
-  // Rail scroll affordance — BASE path. The scroll-state container query is the
-  // enhancement (Chrome, pure CSS); where it's unsupported (Safari/Firefox) this
-  // passive, rAF-throttled listener toggles data-rail-scrolled on the scroller.
-  // Feature-gated so supporting engines run zero JS (squircle/grid-lanes posture).
+  // Scroll-affordance edges. `data-overflow-start` / `data-overflow-end` on the WRAPPER drive both
+  // shadows: the rail-left shadow (start) and the container-right overlay (end). The rail ALSO has a
+  // pure-CSS scroll-state enhancement (Chrome) that needs no JS; this passive, rAF-throttled listener
+  // is the universal source for the right overlay (which can't be a scroll-state descendant) and the
+  // fallback for the left. Recomputes on scroll AND resize (columns/viewport change overflow).
   const scrollRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    const supportsScrollState =
-      typeof CSS !== 'undefined' && CSS.supports?.('container-type', 'scroll-state');
-    if (supportsScrollState) return; // enhancement handles it — no listener
+    const wrap = wrapperRef.current;
+    if (!el || !wrap) return;
     let raf = 0;
     const apply = () => {
       raf = 0;
-      el.dataset.railScrolled = el.scrollLeft > 0 ? 'true' : 'false';
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      wrap.dataset.overflowStart = el.scrollLeft > 0 ? 'true' : 'false';
+      // 1px slack so sub-pixel widths don't leave a ghost shadow at the true end.
+      wrap.dataset.overflowEnd = el.scrollLeft < maxScroll - 1 ? 'true' : 'false';
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(apply);
     };
     apply();
     el.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onScroll) : null;
+    ro?.observe(el);
     return () => {
       el.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      ro?.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
@@ -343,10 +352,10 @@ export function BeamDataTable<Row>({
       boxShadow: RAIL_SCROLLED_SHADOW,
       '&::after': { opacity: 1 },
     },
-    // Base (Safari/Firefox): the scroll listener sets data-rail-scrolled on the
-    // scroll container where scroll-state queries aren't supported.
-    '[data-rail-scrolled="true"] &': { boxShadow: RAIL_SCROLLED_SHADOW },
-    '[data-rail-scrolled="true"] &::after': { opacity: 1 },
+    // Base (all engines): the scroll listener sets data-overflow-start on the wrapper (an ancestor).
+    // Coexists with the scroll-state enhancement above — same result when both are active.
+    '[data-overflow-start="true"] &': { boxShadow: RAIL_SCROLLED_SHADOW },
+    '[data-overflow-start="true"] &::after': { opacity: 1 },
   };
 
   const paginationEl = paginated ? (
@@ -457,10 +466,23 @@ export function BeamDataTable<Row>({
           </Toolbar>
         )}
 
-      {/* The scroll container also queries its own scroll state (enhancement).
-          The cast: 'scroll-state' is newer than csstype's container-type union. */}
-      <TableContainer ref={scrollRef} sx={{ containerType: 'scroll-state' as 'normal' }}>
-        <Table size="small" aria-label={ariaLabel}>
+      {/* Scroll-affordance wrapper: `container-type: inline-size` so the expanded panel's 100cqw
+          resolves to the VISIBLE width (Fix 1), and `position: relative` to host the right-edge shadow
+          overlay (Fix 2). The listener sets data-overflow-start/end here. Baseline container queries —
+          independent of the scroller's scroll-state support. */}
+      <Box
+        ref={wrapperRef}
+        sx={{
+          position: 'relative',
+          containerType: 'inline-size',
+          '& .beam-edge-right': { opacity: 0, transition: 'opacity var(--beam-motion-quick)' },
+          '&[data-overflow-end="true"] .beam-edge-right': { opacity: 1 },
+        }}
+      >
+        {/* The scroll container also queries its own scroll state (enhancement).
+            The cast: 'scroll-state' is newer than csstype's container-type union. */}
+        <TableContainer ref={scrollRef} sx={{ containerType: 'scroll-state' as 'normal' }}>
+          <Table size="small" aria-label={ariaLabel}>
           <TableHead>
             <TableRow>
               {railEnabled && (
@@ -602,12 +624,18 @@ export function BeamDataTable<Row>({
                       sx={{ py: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
                     >
                       <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
-                        <Box sx={{ py: 2, px: 1 }}>
-                          {renderExpanded(row.original)}
-                          {/* The expanded bar — UNCONDITIONAL when the row has actions (grammar §3,
-                              no opt-out). Below panel content, left-aligned, same `actions` as the
-                              kebab: one definition, two projections. */}
-                          {actions.length > 0 && <RowActionBar actions={actions} />}
+                        {/* Fix 1: pin the panel to the VISIBLE scroll-area width. `100cqw` resolves to
+                            the wrapper's inline-size (the container-query wrapper above); `sticky left:0`
+                            keeps it put while columns scroll beneath — so the timeline + its action bar
+                            never scroll sideways at any scroll position. */}
+                        <Box sx={{ position: 'sticky', left: 0, width: '100cqw' }}>
+                          <Box sx={{ py: 2, px: 1 }}>
+                            {renderExpanded(row.original)}
+                            {/* The expanded bar — UNCONDITIONAL when the row has actions (grammar §3,
+                                no opt-out). Below panel content, left-aligned, same `actions` as the
+                                kebab: one definition, two projections. */}
+                            {actions.length > 0 && <RowActionBar actions={actions} />}
+                          </Box>
                         </Box>
                       </Collapse>
                     </TableCell>
@@ -618,7 +646,24 @@ export function BeamDataTable<Row>({
             })}
           </TableBody>
         </Table>
-      </TableContainer>
+        </TableContainer>
+        {/* Right-edge scroll shadow — visible only while content continues off-screen to the right
+            (data-overflow-end on the wrapper); gone at the end. Tint from the theme edge-shadow token. */}
+        <Box
+          className="beam-edge-right"
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: 24,
+            pointerEvents: 'none',
+            zIndex: 2,
+            background: `linear-gradient(to left, ${EDGE_TINT}, transparent)`,
+          }}
+        />
+      </Box>
 
       {/* Footer: a left cluster — column-manager trigger (leftmost), then the aria-live selection
           count — and pagination on the right (grammar §4). The count is always present when selectable

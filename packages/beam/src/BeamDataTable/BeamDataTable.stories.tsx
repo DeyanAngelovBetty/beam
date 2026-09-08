@@ -327,3 +327,89 @@ export const ColumnManager: Story = {
     'aria-label': 'Perks — column manager',
   },
 };
+
+/**
+ * Horizontal-overflow affordances (density installment #2). Wide columns force horizontal scroll to
+ * exercise: the RIGHT edge shadow (visible at start/mid, gone at end), the LEFT shadow on the pinned
+ * rail's right edge (appears once scrolled off start), and — via `renderExpanded` — the expanded panel
+ * PINNED to the visible scroll-area width (`100cqw` + sticky), so the timeline + action bar never
+ * scroll sideways. `selectable` is on so the rail renders (the left shadow's home). Narrow the canvas
+ * to see shadows appear; widen past the table to see them all vanish (no overflow → no shadows).
+ */
+interface WideRow {
+  id: string;
+  ref: string;
+  customer: string;
+  email: string;
+  method: string;
+  provider: string;
+  amount: string;
+  currency: string;
+  status: BeamStatus;
+  created: string;
+  updated: string;
+  note: string;
+}
+const wideCols: BeamColumn<WideRow>[] = [
+  { key: 'ref', header: 'Reference', render: (r) => r.ref, getValue: (r) => r.ref, width: 160 },
+  { key: 'customer', header: 'Customer', render: (r) => r.customer, getValue: (r) => r.customer, width: 180 },
+  { key: 'email', header: 'Email', render: (r) => r.email, getValue: (r) => r.email, width: 240 },
+  { key: 'method', header: 'Method', render: (r) => r.method, getValue: (r) => r.method, width: 160 },
+  { key: 'provider', header: 'Provider', render: (r) => r.provider, getValue: (r) => r.provider, width: 160 },
+  { key: 'amount', header: 'Amount', align: 'right', render: (r) => r.amount, getValue: (r) => r.amount, width: 140 },
+  { key: 'currency', header: 'Currency', render: (r) => r.currency, getValue: (r) => r.currency, width: 120 },
+  { key: 'status', header: 'Status', render: (r) => <BeamStatusBadge status={r.status} />, getValue: (r) => r.status, width: 150 },
+  { key: 'created', header: 'Created', align: 'right', render: (r) => r.created, getValue: (r) => r.created, width: 170 },
+  { key: 'updated', header: 'Last updated', align: 'right', render: (r) => r.updated, getValue: (r) => r.updated, width: 170 },
+  { key: 'note', header: 'Note', render: (r) => r.note, getValue: (r) => r.note, width: 260 },
+];
+const wideRows: WideRow[] = Array.from({ length: 8 }, (_, i) => ({
+  id: `w-${i}`,
+  ref: `GSP-${48213 + i * 7}`,
+  customer: ['A. Okafor', 'M. Tremblay', 'S. Patel', 'J. Nowak', 'R. Silva'][i % 5],
+  email: `operator${i}@example.com`,
+  method: ['Bank transfer', 'Card', 'e-Wallet', 'Voucher'][i % 4],
+  provider: ['Interac', 'Trustly', 'Paysafe', 'Nuvei'][i % 4],
+  amount: (40 + ((i * 137) % 960)).toFixed(2),
+  currency: 'CAD',
+  status: (['settled', 'pending', 'refunded', 'chargeback'] as BeamStatus[])[i % 4],
+  created: `2026-07-${String(6 + i).padStart(2, '0')} 10:${String((i * 13) % 60).padStart(2, '0')}`,
+  updated: `2026-07-${String(7 + i).padStart(2, '0')} 11:${String((i * 17) % 60).padStart(2, '0')}`,
+  note: 'Routed on primary; no failover configured for this tier.',
+}));
+
+export const HorizontalOverflow: StoryObj = {
+  render: () => (
+    <div style={{ maxWidth: 720 }}>
+      <BeamDataTable<WideRow>
+        columns={wideCols}
+        rows={wideRows}
+        getRowId={(r) => r.id}
+        selectable
+        renderExpanded={(r) => (
+          <Stack spacing={1}>
+            <Box sx={{ fontWeight: 600 }}>Detail — {r.ref}</Box>
+            <Box sx={{ color: 'text.secondary' }}>
+              This panel stays pinned to the visible width; scroll the table sideways and it does not move.
+            </Box>
+            <Box sx={{ color: 'text.secondary' }}>{r.note}</Box>
+          </Stack>
+        )}
+        aria-label="Wide transactions (overflow affordances)"
+      />
+    </div>
+  ),
+};
+
+/** No horizontal overflow → shadows must NEVER appear (acceptance). Same columns, roomy canvas. */
+export const NoOverflowNoShadows: StoryObj = {
+  render: () => (
+    <BeamDataTable<Perk>
+      columns={columns}
+      rows={rows}
+      getRowId={(r) => r.id}
+      selectable
+      aria-label="No overflow — no shadows"
+    />
+  ),
+};

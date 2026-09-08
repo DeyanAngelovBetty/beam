@@ -193,6 +193,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // the data-beam-mode rules flip them. Painted on a fixed layer in
             // BeamAppShell — behind everything, occluded by the opaque ramp surfaces.
             '--beam-page-mesh': derived.pageMesh,
+            // Scroll-affordance edge-shadow tint (mode-agnostic; see derived.edgeShadow).
+            '--beam-edge-shadow': derived.edgeShadow,
             '--beam-gradient-hue-b': g.dark.hueB,
             // hue-c: officiated override SEED if present (gaspar candy), else the derived
             // rotation (Sunlight/Midnight — absent seed → byte-identical to before).

@@ -389,6 +389,15 @@ export const derived = {
     light: 'color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, black)',
   },
   /**
+   * EDGE SHADOW — the occlusion tint for a scroll-affordance edge (BeamDataTable's rail-left and
+   * container-right shadows; sticky headers will want it next). A quiet black at low alpha reads as
+   * depth on both light and dark surfaces, so ONE mode-agnostic value — no per-scheme fork, no
+   * hardcoded rgba. Consumed as a box-shadow tint and as a linear-gradient stop; retired
+   * `RAIL_SCROLLED_SHADOW` (the old hardcoded literal) in favour of this. CSS computes it at runtime
+   * (color-mix), so it lives here in `derived`, not as a Figma-baked value.
+   */
+  edgeShadow: 'color-mix(in srgb, var(--mui-palette-common-black) 22%, transparent)',
+  /**
    * PAGE MESH — a three-point tint field over the page background. ONE formula,
    * all products; product identity is the intensity dial (`gradientSeeds`), not a
    * forked formula. Three large soft radials, each anchored at a different edge:
