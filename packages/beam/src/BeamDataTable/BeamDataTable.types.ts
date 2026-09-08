@@ -44,6 +44,34 @@ export interface BeamColumn<Row> {
   isIdentity?: boolean;
   /** Canonical route for the identity link. Required for the link to render. */
   getHref?: (row: Row) => string;
+  /**
+   * Ships in the defs but starts hidden — a catalog column that exists but is
+   * off by default until a user opts it in via the column manager. Inert unless
+   * `columnManager` is enabled (with no manager there is no way to reveal it).
+   */
+  defaultHidden?: boolean;
+}
+
+/**
+ * A non-rendered "awaiting data" ledger row for the column manager (bullet-3
+ * spec, option b): a column the product knows about but has no data source for
+ * yet. It appears in the manager popover disabled + annotated, and NEVER renders
+ * as a real table column or participates in order/visibility persistence.
+ */
+export interface BeamCatalogColumn {
+  id: string;
+  label: string;
+}
+
+/**
+ * Opt-in column manager: show/hide + reorder + persistence, all internal to the
+ * organism. Absent ⇒ today's behavior, byte-identical. `storageKey` is required
+ * (persistence without a stable identity is a bug factory).
+ */
+export interface BeamColumnManagerConfig {
+  storageKey: string;
+  /** Disabled "awaiting data" rows shown in the manager only (option b). */
+  catalog?: BeamCatalogColumn[];
 }
 
 export interface BeamBulkAction {
@@ -90,5 +118,10 @@ export interface BeamDataTableProps<Row> {
   /** Report row hover for cross-widget linking */
   onRowHover?: (rowId: string | null) => void;
   emptyMessage?: string;
+  /**
+   * Opt-in column show/hide + reorder + persistence (bullet-3). Omit for today's
+   * behavior — the capability is invisible until a grid asks for it.
+   */
+  columnManager?: BeamColumnManagerConfig;
   'aria-label': string;
 }

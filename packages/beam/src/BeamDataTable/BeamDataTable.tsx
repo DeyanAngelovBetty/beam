@@ -40,6 +40,8 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
 import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps } from './BeamDataTable.types';
+import { useColumnManager } from './useColumnManager';
+import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
 import { isWhiteSpaceLike } from 'typescript';
 
 // Rail scroll-affordance elevation — a truth-conditional cue shown only while
@@ -175,6 +177,7 @@ export function BeamDataTable<Row>({
   highlightRowId = null,
   onRowHover,
   emptyMessage = 'Nothing here yet.',
+  columnManager,
   'aria-label': ariaLabel,
 }: BeamDataTableProps<Row>) {
   const theme = useTheme();
@@ -202,16 +205,29 @@ export function BeamDataTable<Row>({
     [columns]
   );
 
+  // Opt-in column manager. When disabled, NOTHING below is threaded into the table (no
+  // columnVisibility/columnOrder state, no on…Change) — the table behaves exactly as before.
+  const cm = useColumnManager(columns, columnManager);
+
   const table = useReactTable({
     data: rows,
     columns: columnDefs,
     getRowId,
     initialState: { pagination: { pageSize: defaultPageSize } },
-    state: { sorting, rowSelection, expanded, globalFilter },
+    state: {
+      sorting,
+      rowSelection,
+      expanded,
+      globalFilter,
+      ...(cm.enabled ? { columnVisibility: cm.columnVisibility, columnOrder: cm.columnOrder } : {}),
+    },
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     onExpandedChange: setExpanded,
     onGlobalFilterChange: setGlobalFilter,
+    ...(cm.enabled
+      ? { onColumnVisibilityChange: cm.onColumnVisibilityChange, onColumnOrderChange: cm.onColumnOrderChange }
+      : {}),
     enableRowSelection: selectable,
     getRowCanExpand: () => Boolean(renderExpanded),
     getCoreRowModel: getCoreRowModel(),
@@ -220,6 +236,37 @@ export function BeamDataTable<Row>({
     getExpandedRowModel: getExpandedRowModel(),
     ...(paginated ? { getPaginationRowModel: getPaginationRowModel() } : {}),
   });
+
+  // Render through the table's VISIBLE, ORDERED leaf columns (not the raw `columns` prop), resolving
+  // each back to its BeamColumn by id. With no manager this is the declared order, all visible — the
+  // render stays byte-identical. This is the reroute the column-manager spec required.
+  const columnByKey = useMemo(() => new Map(columns.map((c) => [c.key, c])), [columns]);
+  const leafColumns = table.getVisibleLeafColumns();
+  const dataColSpan = leafColumns.length + (Boolean(renderExpanded) || selectable || Boolean(rowActions) ? 1 : 0);
+
+  // Manager popover model: real columns in CURRENT order (hidden included), plus the enforced-≥1 guard.
+  const managerColumns: ManagerColumn[] = cm.enabled
+    ? (cm.columnOrder.length ? cm.columnOrder : columns.map((c) => c.key))
+        .map((id) => columnByKey.get(id))
+        .filter((c): c is BeamColumn<Row> => Boolean(c))
+        .map((c) => ({ id: c.key, label: c.header, visible: cm.columnVisibility[c.key] !== false }))
+    : [];
+  const toggleColumn = (id: string) =>
+    cm.onColumnVisibilityChange((old) => {
+      const nowVisible = old[id] !== false;
+      // Minimum one visible column — refuse to hide the last one (the UI also disables it).
+      if (nowVisible && managerColumns.filter((c) => c.visible).length <= 1) return old;
+      return { ...old, [id]: !nowVisible };
+    });
+  const moveColumn = (id: string, dir: 'up' | 'down') =>
+    cm.onColumnOrderChange((old) => {
+      const base = old.length ? [...old] : columns.map((c) => c.key);
+      const i = base.indexOf(id);
+      const j = dir === 'up' ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= base.length) return old;
+      [base[i], base[j]] = [base[j], base[i]];
+      return base;
+    });
 
   const selectedIds = Object.keys(rowSelection);
   const selectedCount = selectedIds.length;
@@ -258,7 +305,7 @@ export function BeamDataTable<Row>({
   // selection anchors the rail's outer edge; the expand caret sits innermost,
   // nearest the row content it opens.
   const railEnabled = Boolean(renderExpanded) || selectable || Boolean(rowActions);
-  const railCol = railEnabled ? 1 : 0;
+  // (colSpan uses `dataColSpan`, computed up top from the visible leaf columns + the rail.)
 
   const railStickySx = {
     position: 'sticky' as const,
@@ -373,26 +420,43 @@ export function BeamDataTable<Row>({
       )}
 
       <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-        {/* Internal search is only for lists with no page-level filter bar;
-            when search lives in BeamFilterBar this toolbar renders nothing. */}
-        {searchable && (
+        {/* Toolbar region: internal search (only for lists with no page-level filter bar) on the left,
+            the column-manager trigger right-aligned. Renders when EITHER is present — so a grid that
+            moved search into BeamFilterBar but opted into the manager still gets this strip. */}
+        {(searchable || cm.enabled) && (
           <Toolbar variant="dense" sx={{ gap: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <TextField
-              size="small"
-              placeholder="Search"
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{ width: 280 }}
-            />
+            {searchable && (
+              <TextField
+                size="small"
+                placeholder="Search"
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ width: 280 }}
+              />
+            )}
+            {cm.enabled && (
+              <>
+                {/* Spacer + trigger exist ONLY with the manager, so a searchable-only grid's toolbar
+                    stays byte-identical to today (just the search field). */}
+                <Box sx={{ flexGrow: 1 }} />
+                <BeamColumnManager
+                  columns={managerColumns}
+                  catalog={cm.catalog}
+                  onToggle={toggleColumn}
+                  onMove={moveColumn}
+                  onReset={cm.reset}
+                />
+              </>
+            )}
           </Toolbar>
         )}
 
@@ -416,8 +480,9 @@ export function BeamDataTable<Row>({
                   )}
                 </TableCell>
               )}
-              {columns.map((c, i) => {
-                const col = table.getAllColumns()[i];
+              {leafColumns.map((col) => {
+                const c = columnByKey.get(col.id);
+                if (!c) return null;
                 const sortDir = col.getIsSorted();
                 return (
                   <TableCell
@@ -446,7 +511,7 @@ export function BeamDataTable<Row>({
             {visibleRows.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + railCol}
+                  colSpan={dataColSpan}
                   align="center"
                   sx={{ py: 6, color: 'text.secondary' }}
                 >
@@ -515,24 +580,28 @@ export function BeamDataTable<Row>({
                       </Stack>
                     </TableCell>
                   )}
-                  {columns.map((c) => (
+                  {leafColumns.map((col) => {
+                    const c = columnByKey.get(col.id);
+                    if (!c) return null;
                     // Numeric-cell treatment: right-alignment signals a numeric column in
                     // this estate, so tabular figures are applied there — columns line up
                     // digit-for-digit. Requires the body face to carry tabular-nums (Geist
                     // does; it's why it was chosen over a geometric face). BEAM Appendix B.
-                    <TableCell
-                      key={c.key}
-                      align={c.align}
-                      sx={c.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : undefined}
-                    >
-                      {renderCell(c, row.original, LinkComponent)}
-                    </TableCell>
-                  ))}
+                    return (
+                      <TableCell
+                        key={c.key}
+                        align={c.align}
+                        sx={c.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : undefined}
+                      >
+                        {renderCell(c, row.original, LinkComponent)}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
                 {renderExpanded && (
                   <TableRow>
                     <TableCell
-                      colSpan={columns.length + railCol}
+                      colSpan={dataColSpan}
                       sx={{ py: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
                     >
                       <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>

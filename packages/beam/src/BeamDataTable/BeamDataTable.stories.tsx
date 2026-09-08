@@ -296,3 +296,34 @@ export const PaytablesYodaPatterns: StoryObj = {
     />
   ),
 };
+
+/**
+ * Column manager (bullet 3): the toolbar trigger opens a popover to show/hide + reorder columns,
+ * persisted to localStorage under `beam:grid:beam.demo.perks:columns:v1`. `Updated` ships hidden
+ * (`defaultHidden`); the `catalog` lists non-rendered "awaiting data" columns (option b). Reorder via
+ * the ▲/▼ buttons (keyboard + pointer); "Reset to defaults" clears storage. Grids WITHOUT the prop are
+ * unaffected — the capability is opt-in.
+ */
+const managedColumns: BeamColumn<Perk>[] = [
+  { key: 'name', header: 'Perk', render: (r) => r.name, getValue: (r) => r.name },
+  { key: 'loyalty', header: 'Loyalty status', render: (r) => r.loyaltyStatus, getValue: (r) => r.loyaltyStatus },
+  { key: 'reward', header: 'Reward', render: (r) => r.reward, getValue: (r) => r.reward },
+  { key: 'status', header: 'Status', render: (r) => <BeamStatusBadge status={r.status} />, getValue: (r) => r.status },
+  { key: 'updated', header: 'Updated', render: (r) => r.updated, align: 'right', getValue: (r) => r.updated, defaultHidden: true },
+];
+
+export const ColumnManager: Story = {
+  args: {
+    columns: managedColumns,
+    rows,
+    getRowId: (r: Perk) => r.id,
+    columnManager: {
+      storageKey: 'beam.demo.perks',
+      catalog: [
+        { id: 'redemptions', label: 'Redemptions' },
+        { id: 'lastRedeemed', label: 'Last redeemed' },
+      ],
+    },
+    'aria-label': 'Perks — column manager',
+  },
+};

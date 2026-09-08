@@ -288,6 +288,9 @@ Apps alias `@betty/beam` to `packages/beam/src` and consume it as source; there 
 package build step. Published to GitHub Pages on push to `main`: landing at the site
 root, each app and Storybook in its own subdirectory.
 
+**Spec homes** *(convention, 2026-09-08):* organism-level specs live in `packages/beam/docs/`;
+page design artifacts in `apps/*/designs/`; cross-cutting doctrine in `/docs`.
+
 | Surface | Figma | Code |
 |---|---|---|
 | Foundations + Organisms | [Beam (MUI v9)](https://www.figma.com/design/9yNbolohxGitkMJKDjoyKG/Beam--MUI-v9-?node-id=4662-14) | `packages/beam` |

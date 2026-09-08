@@ -329,6 +329,18 @@ export function TransactionsPage() {
         getRowId={(r) => r.id}
         paginated
         emptyMessage="No transactions match these filters."
+        // Column manager (bullet 3). Catalog = the bullet-1 columns with no data source yet — shown in
+        // the manager disabled/"awaiting data" (option b). Payment Method Details is excluded: it's the
+        // Phase B card cell inside Payment method, not a column of its own.
+        columnManager={{
+          storageKey: 'gaspar.transactions',
+          catalog: [
+            { id: 'transactionType', label: 'Transaction Type' },
+            { id: 'nameOnCard', label: 'Name on Card' },
+            { id: 'processedBy', label: 'ProcessedBy' },
+            { id: 'fraudRulesMatched', label: 'Fraud Rules Matched' },
+          ],
+        }}
         aria-label="Payment transactions"
       />
 
