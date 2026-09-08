@@ -45,11 +45,10 @@ import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
 import { isWhiteSpaceLike } from 'typescript';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
-// under an edge. Tint from the theme (`--beam-edge-shadow`, derived.edgeShadow); geometry is the only
-// literal. // elevation: Deyan tunes on the bench
+// under an edge. BOTH edges are the same soft gradient: a 24px band of the theme tint
+// (`--beam-edge-shadow`, derived.edgeShadow) fading away from the edge — the left mirrors the right.
 const EDGE_TINT = 'var(--beam-edge-shadow)';
-const RAIL_SCROLLED_SHADOW = `4px 0 6px -3px ${EDGE_TINT}`; // rail-left, casts right into the content
-const RAIL_DIVIDER_INSET = 6; // px top/bottom inset so the rule doesn't bleed to the cell's vertical edges
+const EDGE_WIDTH = 24; // px band width, shared by both edges so they read as siblings
 
 /**
  * The kebab that opens a row's overflow menu. Dim at rest, full on row
@@ -327,21 +326,21 @@ export function BeamDataTable<Row>({
     width: '1%',
     verticalAlign: 'top',
     backgroundColor: 'background.paper',
-    // Scroll-affordance elevation (constant geometry — pigment/elevation only,
-    // detail-grammar §1). At scrollLeft 0 both are gone; a rightward shadow +
-    // an inset right-edge divider fade in while content scrolls under the rail.
-    // Both transition on the quick motion token (reduced-motion zeros it →
-    // instant). Header + body rail cells inherit this via the shared spread.
-    transition: 'box-shadow var(--beam-motion-quick)',
-    boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
+    // Scroll-affordance shadow — the MIRROR of the container-right overlay: a soft gradient of the same
+    // 24px width and the same --beam-edge-shadow tint, fading rightward from the rail's ACTUAL right
+    // edge. Anchored at `left: 100%` so it tracks the rail width as controls (checkbox/kebab/caret)
+    // change it — no hardcoded offset. Full-height (top/bottom 0) like the right overlay; the old
+    // 1px divider line is dropped so the two edges read as siblings, not one hard + one soft. Hidden at
+    // scroll start; fades in while content scrolls under the rail (quick motion token; reduced-motion
+    // zeros it). Header + body rail cells inherit this via the shared spread.
     '&::after': {
       content: '""',
       position: 'absolute',
-      top: `${RAIL_DIVIDER_INSET}px`,
-      bottom: `${RAIL_DIVIDER_INSET}px`,
-      right: 0,
-      width: '1px',
-      backgroundColor: 'divider',
+      left: '100%',
+      top: 0,
+      bottom: 0,
+      width: EDGE_WIDTH,
+      background: `linear-gradient(to right, ${EDGE_TINT}, transparent)`,
       opacity: 0,
       transition: 'opacity var(--beam-motion-quick)',
       pointerEvents: 'none',
@@ -349,12 +348,10 @@ export function BeamDataTable<Row>({
     // Enhancement (Chrome): scroll-state container query — pure CSS, no JS. True
     // when there is content hidden toward the inline-start (i.e. scrolled right).
     '@container scroll-state(scrollable: inline-start)': {
-      boxShadow: RAIL_SCROLLED_SHADOW,
       '&::after': { opacity: 1 },
     },
     // Base (all engines): the scroll listener sets data-overflow-start on the wrapper (an ancestor).
     // Coexists with the scroll-state enhancement above — same result when both are active.
-    '[data-overflow-start="true"] &': { boxShadow: RAIL_SCROLLED_SHADOW },
     '[data-overflow-start="true"] &::after': { opacity: 1 },
   };
 
@@ -657,7 +654,7 @@ export function BeamDataTable<Row>({
             top: 0,
             bottom: 0,
             right: 0,
-            width: 24,
+            width: EDGE_WIDTH,
             pointerEvents: 'none',
             zIndex: 2,
             background: `linear-gradient(to left, ${EDGE_TINT}, transparent)`,

@@ -330,11 +330,12 @@ export const ColumnManager: Story = {
 
 /**
  * Horizontal-overflow affordances (density installment #2). Wide columns force horizontal scroll to
- * exercise: the RIGHT edge shadow (visible at start/mid, gone at end), the LEFT shadow on the pinned
- * rail's right edge (appears once scrolled off start), and — via `renderExpanded` — the expanded panel
- * PINNED to the visible scroll-area width (`100cqw` + sticky), so the timeline + action bar never
- * scroll sideways. `selectable` is on so the rail renders (the left shadow's home). Narrow the canvas
- * to see shadows appear; widen past the table to see them all vanish (no overflow → no shadows).
+ * exercise the two MIRRORED edge shadows — matching soft gradients drawn from one token: the RIGHT
+ * shadow at the container edge (visible at start/mid, gone at end) and the LEFT shadow fading rightward
+ * from the pinned rail's right edge (appears once scrolled off start) — and, via `renderExpanded`, the
+ * expanded panel PINNED to the visible scroll-area width (`100cqw` + sticky), so the timeline + action
+ * bar never scroll sideways. `selectable` is on so the rail renders (the left shadow's home). Narrow
+ * the canvas to see shadows appear; widen past the table to see them all vanish (no overflow → none).
  */
 interface WideRow {
   id: string;

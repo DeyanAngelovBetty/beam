@@ -15,14 +15,17 @@ Two scroll affordances on the horizontal scroll area. No sticky headers (out of 
   scroll position or viewport. Chose container-query units over a measured width for a pure-CSS
   solution on Baseline; `ResizeObserver`-measured width stays the break-glass fallback (not needed —
   `inline-size` containment did not disturb the table layout; verified at build).
-- **Scroll-aware edge shadows.** LEFT shadow sits on the pinned rail's right edge (content vanishing
-  under the rail) — the existing `@container scroll-state(scrollable: inline-start)` enhancement, now
-  also driven by a `data-overflow-start` fallback. RIGHT shadow is an absolute, `pointer-events:none`
-  overlay at the scroll area's right edge, shown via `data-overflow-end`. Both attributes are set on
-  the wrapper by a passive, rAF-throttled scroll+resize listener (un-gated so it always runs — the
-  right overlay can't be a `scroll-state` descendant, so it has no pure-CSS path). Shadows appear only
-  while scrollable in that direction and vanish at the edges; a grid with no horizontal overflow shows
-  **none, ever**.
+- **Scroll-aware edge shadows — mirrored gradients.** Both edges are the SAME soft gradient (shared
+  `EDGE_WIDTH`, `--beam-edge-shadow` tint), fading away from the edge, so they read as siblings. LEFT
+  is the rail cell's `::after` at `left: 100%` (a rightward-fading band anchored to the rail's *actual*
+  right edge, so it tracks the rail width as controls change it — no hardcoded offset; the old 1px
+  divider line was dropped so it mirrors the right's pure-gradient read). RIGHT is an absolute,
+  `pointer-events:none` overlay at the scroll area's right edge (leftward-fading). Visibility unchanged:
+  LEFT via `@container scroll-state(scrollable: inline-start)` + `data-overflow-start` fallback; RIGHT
+  via `data-overflow-end`. Both attributes are set on the wrapper by a passive, rAF-throttled
+  scroll+resize listener (un-gated so it always runs — the right overlay can't be a `scroll-state`
+  descendant, so it has no pure-CSS path). Shadows appear only while scrollable in that direction and
+  vanish at the edges; a grid with no horizontal overflow shows **none, ever**.
 - **Compat / posture:** the pinned panel is all-modern-browser (container queries, Baseline 2023). The
   shadows are **progressive affordance** — scroll-state gives the left shadow pure-CSS on Chrome, the
   rAF listener covers every browser for both edges; graceful absence only with JS disabled, accepted.
