@@ -1,79 +1,183 @@
 import { useState } from 'react';
 import {
-  Typography,
   Stack,
   Box,
-  Divider,
+  Chip,
+  Snackbar,
+  Tooltip,
+  IconButton,
   BeamDataTable,
-  BeamStatusBadge,
   BeamPageHeader,
   BeamTabs,
 } from '@betty/beam';
-import type { BeamColumn, BeamStatus, BeamTabItem } from '@betty/beam';
+import type { BeamColumn, BeamTabItem } from '@betty/beam';
+import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
 
 /**
- * The Payment Orchestrator's list screen, built entirely from Beam organisms
- * already shipped for Sunlight — no new components, no product fork. The
- * settlement half of the status vocabulary was added for this screen
- * (BEAM.md §6.4).
+ * Gaspar Transactions — the payments list grid.
  *
- * Patterns carried over from the Yoda audit (§8): status + search on every
- * list, pagination rather than an endless page, and progressive disclosure
- * via row expansion instead of a detail-page round trip.
+ * Column set per `apps/gaspar/docs/SPEC-gaspar-transactions-columns.md` (Tracer Bullet 1, v2):
+ * columns and cell treatments only, against the new `payments` list response. BeamDataTable is
+ * UNTOUCHED — all cell treatments here are PAGE-LOCAL helpers, no organism API change, no Beam
+ * promotion (that follows usage, not prediction).
+ *
+ * Scope fence (spec): no column show/hide + reorder (bullet 3), no selection/export, no advanced
+ * filters, no detail drawer. The leading cell gutter is left clean for a future selection checkbox,
+ * and there is deliberately NO onRowClick / renderExpanded — the future detail drawer (roadmap #4,
+ * fed by the payment-details `events[]`) owns that interaction.
+ *
+ * Two page-local copy affordances now exist in the estate (this + Sunlight's CopyUrlButton) — a Beam
+ * copy molecule is a QUEUED promotion candidate, tracked separately, not built here. Likewise the
+ * status-vocabulary reconciliation (API strings ↔ BeamStatus) is a separate future Beam task; this
+ * page does NOT touch BeamStatus and renders badges page-locally.
  */
 
-interface Transaction {
-  id: string;
-  reference: string;
-  player: string;
-  method: string;
-  provider: string;
-  amount: number;
-  currency: string;
-  status: BeamStatus;
-  createdAt: string;
-  /** Routing decisions taken for this transaction — shown on expansion */
-  route: { step: string; detail: string }[];
+/**
+ * Phase B seam (spec §"Payment method column"): a card summary lives on the payment-methods resource,
+ * NOT in the payments list response today. The cell ACCEPTS this optional object and falls back to the
+ * Phase A GUID when it is absent. No client-side joins, no per-row fetch, no faking — the branch is
+ * simply unreachable until the backend embeds a card summary in the list row.
+ */
+interface CardSummary {
+  brand: string;
+  last4: string;
+  bin?: string;
+  expiry?: string;
+  prepaid?: boolean;
 }
 
-const PROVIDERS = ['Interac', 'Trustly', 'Paysafe', 'Nuvei', 'Adyen'];
-const METHODS = ['Bank transfer', 'Card', 'e-Wallet', 'Voucher'];
-const STATUSES: BeamStatus[] = ['settled', 'pending', 'refunded', 'chargeback', 'error'];
+/** Mirrors the `payments` list response row (spec §"Data source"). */
+interface PaymentRow {
+  id: string;
+  organizationId: string; // context-scoped — not a column
+  marketId: string; // context-scoped — not a column
+  idempotencyKey: string; // not a column
+  customerId: string;
+  paymentMethodId: string;
+  amount: number;
+  currency: string;
+  direction: string;
+  psp: string;
+  status: string;
+  threeDsStatus: string;
+  threeDsSessionReference: string | null; // detail material — not a column
+  pspTransactionId: string | null;
+  createdAt: string; // ISO 8601 with offset
+  updatedAt: string; // ISO 8601 with offset
+  cardSummary?: CardSummary; // Phase B seam — absent in the list response today
+}
 
-const TRANSACTIONS: Transaction[] = Array.from({ length: 24 }, (_, i) => {
-  const provider = PROVIDERS[i % PROVIDERS.length];
-  const status = STATUSES[i % STATUSES.length];
-  const method = METHODS[i % METHODS.length];
-  return {
-    id: `tx-${1000 + i}`,
-    reference: `GSP-${(48213 + i * 7).toString()}`,
-    player: ['A. Okafor', 'M. Tremblay', 'S. Patel', 'J. Nowak', 'R. Silva'][i % 5],
-    method,
-    provider,
-    amount: 40 + ((i * 137) % 960),
-    currency: 'CAD',
-    status,
-    createdAt: `2026-07-${String(6 + (i % 14)).padStart(2, '0')} 1${i % 10}:${String((i * 13) % 60).padStart(2, '0')}`,
-    route: [
-      { step: 'Rule matched', detail: `${method} · amount tier ${i % 3 === 0 ? 'high' : 'standard'}` },
-      { step: 'Primary provider', detail: provider },
-      {
-        step: 'Outcome',
-        detail:
-          status === 'error'
-            ? `Declined by ${provider} — failover not configured`
-            : status === 'chargeback'
-              ? `Disputed after settlement via ${provider}`
-              : `Completed via ${provider}`,
-      },
-    ],
-  };
-});
+/**
+ * CATALOG — columns known but NOT built (no data source in the `payments` list response). Documented
+ * here so bullet 3's column manager inherits the full conversation; nothing below renders. Do not fake.
+ *   • Transaction Type      — MN concept; new API has only `direction`. Until Konstantin answers
+ *                             (is Type subsumed by direction, or a richer enum coming?), direction IS
+ *                             the type column.
+ *   • Name on Card          — absent from payments AND payment-methods. Backend ask.
+ *   • Payment Method Details— brand/last4/etc. → becomes the Phase B card cell (above), not a column.
+ *   • ProcessedBy           — no field in response. Source unknown.
+ *   • Fraud Rules Matched   — no field. Presumably future rules-engine integration.
+ * Also intentionally not shown: organizationId, marketId (context-scoped), idempotencyKey,
+ * threeDsSessionReference (detail material).
+ */
 
-const money = (amount: number, currency: string) =>
-  new Intl.NumberFormat('en-CA', { style: 'currency', currency }).format(amount);
+// Mock of the server-paginated payments response (no real endpoint reachable in this app). Deliberate
+// variety proves the acceptance criteria: a null pspTransactionId (→ em-dash), and unseen enum values
+// (→ neutral badge + raw string, never an error).
+const PAYMENTS: PaymentRow[] = [
+  { id: 'pay_01H9Z3K7A2QF4M8N', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_9f21', customerId: 'cus_74126', paymentMethodId: 'pm_01H9Z3K7A2QF4M8N', amount: 149.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213445', createdAt: '2026-09-04T13:32:11Z', updatedAt: '2026-09-04T13:32:14Z' },
+  { id: 'pay_01H9Z3M0BX7T5P2R', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_a0b2', customerId: 'cus_74127', paymentMethodId: 'pm_01H9Z3M0BX7T5P2R', amount: 32.5, currency: 'EUR', direction: 'Withdrawal', psp: 'Adyen', status: 'Succeeded', threeDsStatus: 'Authenticated', threeDsSessionReference: 'tds_ref_5521', pspTransactionId: 'adyen_8853120019', createdAt: '2026-09-04T14:01:47Z', updatedAt: '2026-09-04T14:02:03Z' },
+  { id: 'pay_01H9Z3N4CQ9W6D1S', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_c3d4', customerId: 'cus_74131', paymentMethodId: 'pm_01H9Z3N4CQ9W6D1S', amount: 1200.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Pending', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: null, createdAt: '2026-09-04T14:22:09Z', updatedAt: '2026-09-04T14:22:09Z' },
+  { id: 'pay_01H9Z3P8DR2K7F5T', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_e5f6', customerId: 'cus_74140', paymentMethodId: 'pm_01H9Z3P8DR2K7F5T', amount: 75.99, currency: 'CAD', direction: 'Deposit', psp: 'Adyen', status: 'Failed', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'adyen_8853120044', createdAt: '2026-09-04T15:10:33Z', updatedAt: '2026-09-04T15:10:58Z' },
+  { id: 'pay_01H9Z3Q1EF3M8G6V', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0102', customerId: 'cus_74155', paymentMethodId: 'pm_01H9Z3Q1EF3M8G6V', amount: 500.0, currency: 'USD', direction: 'Withdrawal', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213502', createdAt: '2026-09-04T16:44:20Z', updatedAt: '2026-09-04T16:44:25Z' },
+  { id: 'pay_01H9Z3R5FG4N9H7W', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0304', customerId: 'cus_74161', paymentMethodId: 'pm_01H9Z3R5FG4N9H7W', amount: 18.25, currency: 'EUR', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213560', createdAt: '2026-09-05T09:03:12Z', updatedAt: '2026-09-05T09:03:15Z' },
+];
 
-/** One level deliberately — nesting is available but competes with the drawer. */
+const EM_DASH = '—';
+
+/** Local time, sortable/comparable form `YYYY-MM-DD HH:mm`; full ISO-with-offset in the tooltip. No
+ *  relative time (spec: ops need sortable, comparable values). */
+function TimestampCell({ iso }: { iso: string }) {
+  const local = new Date(iso).toLocaleString('sv-SE', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return (
+    <Tooltip title={iso}>
+      <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{local}</Box>
+    </Tooltip>
+  );
+}
+
+const middleTruncate = (s: string, head = 8, tail = 6) =>
+  s.length <= head + tail + 1 ? s : `${s.slice(0, head)}…${s.slice(-tail)}`;
+
+/** GUID / PSP-id cell: middle-truncated, full value in tooltip, click-to-copy with confirmation.
+ *  PAGE-LOCAL (spec §"Shared cell treatments": no Beam copy pattern exists — flagged, not invented). */
+function TruncateCopyCell({ value, mono, onCopied }: { value: string | null; mono?: boolean; onCopied: () => void }) {
+  if (!value) return <Box component="span" sx={{ color: 'text.disabled' }}>{EM_DASH}</Box>;
+  return (
+    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', minWidth: 0 }}>
+      <Tooltip title={value}>
+        <Box component="span" sx={{ fontFamily: mono ? 'monospace' : undefined, whiteSpace: 'nowrap' }}>
+          {middleTruncate(value)}
+        </Box>
+      </Tooltip>
+      <Tooltip title="Copy">
+        <IconButton
+          size="small"
+          aria-label={`Copy ${value}`}
+          onClick={() => {
+            void navigator.clipboard?.writeText(value);
+            onCopied();
+          }}
+          sx={{ flexShrink: 0 }}
+        >
+          <ContentCopyIcon fontSize="inherit" />
+        </IconButton>
+      </Tooltip>
+    </Stack>
+  );
+}
+
+// Observed-only positive map (spec enum rule): the ONLY value seen in sample payloads that reads as a
+// success signal. Everything else — Direction, 3DS, and any unseen status — renders NEUTRAL + raw
+// string. No invented enum→color table; unseen values never crash and never get a color.
+const POSITIVE_STATUSES = new Set(['Succeeded']);
+
+/** Page-local badge: raw string label always; positive tone only for observed positives, else neutral.
+ *  Colors route through theme palette tokens (Chip color), never hardcoded. Does NOT touch BeamStatus. */
+function TxBadge({ value }: { value: string }) {
+  return (
+    <Chip
+      size="small"
+      variant="outlined"
+      color={POSITIVE_STATUSES.has(value) ? 'success' : 'default'}
+      label={value}
+    />
+  );
+}
+
+/** Phase A: the payment-method GUID. Phase B (unreachable today): a composite card cell when the row
+ *  carries an embedded card summary — falls back to Phase A when absent (spec §"two phases"). */
+function PaymentMethodCell({ row, onCopied }: { row: PaymentRow; onCopied: () => void }) {
+  if (row.cardSummary) {
+    const { brand, last4, bin, expiry, prepaid } = row.cardSummary;
+    const detail = [bin && `BIN ${bin}`, expiry && `exp ${expiry}`, prepaid && 'prepaid'].filter(Boolean).join(' · ');
+    return (
+      <Tooltip title={detail || ''}>
+        <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{brand} •••• {last4}</Box>
+      </Tooltip>
+    );
+  }
+  return <TruncateCopyCell value={row.paymentMethodId} onCopied={onCopied} />;
+}
+
+/** One level deliberately — nesting competes with the future detail drawer. Non-functioning today
+ *  (rows are not filtered by tab); left untouched pending the filters conversation (spec roadmap #3). */
 const TABS: BeamTabItem[] = [
   { id: 'all', label: 'All' },
   { id: 'deposits', label: 'Deposits' },
@@ -84,28 +188,24 @@ const TABS: BeamTabItem[] = [
 
 export function TransactionsPage() {
   const [tab, setTab] = useState('all');
+  const [copied, setCopied] = useState(false);
+  const onCopied = () => setCopied(true);
 
-  const columns: BeamColumn<Transaction>[] = [
-    { key: 'reference', header: 'Reference', render: (t) => t.reference, getValue: (t) => t.reference, width: 130 },
-    { key: 'player', header: 'Player', render: (t) => t.player, getValue: (t) => t.player },
-    { key: 'method', header: 'Method', render: (t) => t.method, getValue: (t) => t.method },
-    { key: 'provider', header: 'Provider', render: (t) => t.provider, getValue: (t) => t.provider },
-    {
-      key: 'amount',
-      header: 'Amount',
-      align: 'right',
-      render: (t) => money(t.amount, t.currency),
-      getValue: (t) => t.amount,
-      width: 130,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (t) => <BeamStatusBadge status={t.status} />,
-      getValue: (t) => t.status,
-      width: 140,
-    },
-    { key: 'createdAt', header: 'Created', align: 'right', render: (t) => t.createdAt, getValue: (t) => t.createdAt, width: 150 },
+  // Default-visible set, in spec order. (When bullet 3 lands, the CATALOG above joins these as the
+  // column manager's contents.)
+  const columns: BeamColumn<PaymentRow>[] = [
+    { key: 'id', header: 'Transaction ID', getValue: (r) => r.id, width: 168, render: (r) => <TruncateCopyCell value={r.id} onCopied={onCopied} /> },
+    { key: 'pspTransactionId', header: 'PSP Transaction ID', getValue: (r) => r.pspTransactionId ?? '', width: 184, render: (r) => <TruncateCopyCell value={r.pspTransactionId} mono onCopied={onCopied} /> },
+    { key: 'customerId', header: 'Customer', getValue: (r) => r.customerId, width: 130, render: (r) => r.customerId },
+    { key: 'paymentMethodId', header: 'Payment method', getValue: (r) => r.paymentMethodId, width: 168, render: (r) => <PaymentMethodCell row={r} onCopied={onCopied} /> },
+    { key: 'amount', header: 'Amount', align: 'right', getValue: (r) => r.amount, width: 110, render: (r) => r.amount.toFixed(2) },
+    { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
+    { key: 'direction', header: 'Direction', getValue: (r) => r.direction, width: 124, render: (r) => <TxBadge value={r.direction} /> },
+    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <TxBadge value={r.status} /> },
+    { key: 'psp', header: 'Provider', getValue: (r) => r.psp, width: 110, render: (r) => r.psp },
+    { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => <TxBadge value={r.threeDsStatus} /> },
+    { key: 'createdAt', header: 'Created At', align: 'right', getValue: (r) => r.createdAt, width: 150, render: (r) => <TimestampCell iso={r.createdAt} /> },
+    { key: 'updatedAt', header: 'Last Updated', align: 'right', getValue: (r) => r.updatedAt, width: 150, render: (r) => <TimestampCell iso={r.updatedAt} /> },
   ];
 
   return (
@@ -116,56 +216,19 @@ export function TransactionsPage() {
 
       <BeamDataTable
         columns={columns}
-        rows={TRANSACTIONS}
-        getRowId={(t) => t.id}
+        rows={PAYMENTS}
+        getRowId={(r) => r.id}
         searchable
         paginated
-        renderExpanded={(t) => <RoutePanel transaction={t} />}
         aria-label="Payment transactions"
       />
-    </Stack>
-  );
-}
 
-/**
- * Progressive disclosure: the routing decision trail, inline. The node-graph
- * Rule Builder will eventually render this same data as a graph — this list
- * is the honest placeholder until that library choice is made.
- */
-function RoutePanel({ transaction }: { transaction: Transaction }) {
-  return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={6}>
-      <Stack spacing={1} sx={{ minWidth: 260 }}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Routing trail
-        </Typography>
-        <Stack
-          spacing={0}
-          divider={<Divider flexItem />}
-          sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}
-        >
-          {transaction.route.map((step) => (
-            <Box key={step.step} sx={{ px: 1.5, py: 1 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {step.step}
-              </Typography>
-              <Typography variant="body2">{step.detail}</Typography>
-            </Box>
-          ))}
-        </Stack>
-      </Stack>
-
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Settlement
-        </Typography>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          <BeamStatusBadge status={transaction.status} />
-          <Typography variant="body2" color="text.secondary">
-            {money(transaction.amount, transaction.currency)} · {transaction.createdAt}
-          </Typography>
-        </Stack>
-      </Stack>
+      <Snackbar
+        open={copied}
+        autoHideDuration={2000}
+        onClose={() => setCopied(false)}
+        message="Copied to clipboard"
+      />
     </Stack>
   );
 }
