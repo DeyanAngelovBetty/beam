@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Stack,
   Box,
+  Typography,
   Chip,
   Snackbar,
   Tooltip,
@@ -64,6 +65,9 @@ interface PaymentRow {
   threeDsStatus: string;
   threeDsSessionReference: string | null; // detail material — not a column
   pspTransactionId: string | null;
+  // PROPOSED column — no such field in the payments API today (vocabulary TBD: MTI vs response/decline
+  // vs PSP codes, an open backend question). Optional/nullable; null or absent renders an em-dash.
+  errorCode?: string | null;
   createdAt: string; // ISO 8601 with offset
   updatedAt: string; // ISO 8601 with offset
   cardSummary?: CardSummary; // Phase B seam — absent in the list response today
@@ -87,10 +91,10 @@ interface PaymentRow {
 // variety proves the acceptance criteria: a null pspTransactionId (→ em-dash), and unseen enum values
 // (→ neutral badge + raw string, never an error).
 const PAYMENTS: PaymentRow[] = [
-  { id: 'pay_01H9Z3K7A2QF4M8N', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_9f21', customerId: 'cus_74126', paymentMethodId: 'pm_01H9Z3K7A2QF4M8N', amount: 149.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213445', createdAt: '2026-09-04T13:32:11Z', updatedAt: '2026-09-04T13:32:14Z' },
+  { id: 'pay_01H9Z3K7A2QF4M8N', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_9f21', customerId: 'cus_74126', paymentMethodId: 'pm_01H9Z3K7A2QF4M8N', amount: 149.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213445', errorCode: null, createdAt: '2026-09-04T13:32:11Z', updatedAt: '2026-09-04T13:32:14Z' },
   { id: 'pay_01H9Z3M0BX7T5P2R', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_a0b2', customerId: 'cus_74127', paymentMethodId: 'pm_01H9Z3M0BX7T5P2R', amount: 32.5, currency: 'EUR', direction: 'Withdrawal', psp: 'Adyen', status: 'Succeeded', threeDsStatus: 'Authenticated', threeDsSessionReference: 'tds_ref_5521', pspTransactionId: 'adyen_8853120019', createdAt: '2026-09-04T14:01:47Z', updatedAt: '2026-09-04T14:02:03Z' },
   { id: 'pay_01H9Z3N4CQ9W6D1S', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_c3d4', customerId: 'cus_74131', paymentMethodId: 'pm_01H9Z3N4CQ9W6D1S', amount: 1200.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Pending', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: null, createdAt: '2026-09-04T14:22:09Z', updatedAt: '2026-09-04T14:22:09Z' },
-  { id: 'pay_01H9Z3P8DR2K7F5T', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_e5f6', customerId: 'cus_74140', paymentMethodId: 'pm_01H9Z3P8DR2K7F5T', amount: 75.99, currency: 'CAD', direction: 'Deposit', psp: 'Adyen', status: 'Failed', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'adyen_8853120044', createdAt: '2026-09-04T15:10:33Z', updatedAt: '2026-09-04T15:10:58Z' },
+  { id: 'pay_01H9Z3P8DR2K7F5T', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_e5f6', customerId: 'cus_74140', paymentMethodId: 'pm_01H9Z3P8DR2K7F5T', amount: 75.99, currency: 'CAD', direction: 'Deposit', psp: 'Adyen', status: 'Failed', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'adyen_8853120044', errorCode: '0400', createdAt: '2026-09-04T15:10:33Z', updatedAt: '2026-09-04T15:10:58Z' },
   { id: 'pay_01H9Z3Q1EF3M8G6V', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0102', customerId: 'cus_74155', paymentMethodId: 'pm_01H9Z3Q1EF3M8G6V', amount: 500.0, currency: 'USD', direction: 'Withdrawal', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213502', createdAt: '2026-09-04T16:44:20Z', updatedAt: '2026-09-04T16:44:25Z' },
   { id: 'pay_01H9Z3R5FG4N9H7W', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0304', customerId: 'cus_74161', paymentMethodId: 'pm_01H9Z3R5FG4N9H7W', amount: 18.25, currency: 'EUR', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213560', createdAt: '2026-09-05T09:03:12Z', updatedAt: '2026-09-05T09:03:15Z' },
 ];
@@ -120,6 +124,64 @@ const EMPTY_FILTERS: Filters = { q: '', start: '', end: '', status: '', directio
 const isActive = (f: Filters) => f.q !== '' || f.start !== '' || f.end !== '' || f.status !== '' || f.direction !== '' || f.provider !== '';
 
 const EM_DASH = '—';
+
+/**
+ * ISO 8583 MTI dictionary — DATA, not logic. Verbatim from the pasted table; keyed by code. A code
+ * absent here is unknown: the cell shows the code and the reveal says "Unknown code" — no invented
+ * meanings (the same honesty rule as the badges). Entries with a meaning but no usage note (0420,
+ * 0430) omit the usage line entirely.
+ */
+const MTI_CODES: Record<string, { meaning: string; usage?: string }> = {
+  '0100': { meaning: 'Authorization Request', usage: 'Request from a point-of-sale terminal for authorization for a cardholder purchase' },
+  '0110': { meaning: 'Authorization Response', usage: 'Request response to a point-of-sale terminal for authorization for a cardholder purchase' },
+  '0120': { meaning: 'Authorization Advice', usage: 'When the point-of-sale device breaks down and you have to sign a voucher' },
+  '0121': { meaning: 'Authorization Advice Repeat', usage: 'If the advice times out' },
+  '0130': { meaning: 'Acquirer Response to Authorization Advice', usage: 'Confirmation of receipt of authorization advice' },
+  '0200': { meaning: 'Acquirer Financial Request', usage: 'Request for funds, typically from an ATM or pinned point-of-sale device' },
+  '0210': { meaning: 'Acquirer Response to Financial Request', usage: 'Issuer response to request for funds' },
+  '0220': { meaning: 'Acquirer Financial Advice', usage: 'e.g. Checkout at a hotel. Used to complete transaction initiated with authorization request' },
+  '0221': { meaning: 'Acquirer Financial Advice Repeat', usage: 'If the advice times out' },
+  '0230': { meaning: 'Acquirer Response to Financial Advice', usage: 'Confirmation of receipt of financial advice' },
+  '0320': { meaning: 'Batch Upload', usage: 'File update/transfer advice' },
+  '0330': { meaning: 'Batch Upload Response', usage: 'File update/transfer advice response' },
+  '0400': { meaning: 'Acquirer Reversal Request', usage: 'Reverses a transaction' },
+  '0420': { meaning: 'Acquirer Reversal Advice' },
+  '0430': { meaning: 'Acquirer Reversal Advice Response' },
+  '0510': { meaning: 'Batch Settlement Response', usage: 'Card acceptor reconciliation request response' },
+  '0800': { meaning: 'Network Management Request', usage: 'Hypercom terminals initialize request. Echo test, logon, logoff etc.' },
+  '0810': { meaning: 'Network Management Response', usage: 'Hypercom terminals initialize response. Echo test, logon, logoff etc.' },
+  '0820': { meaning: 'Network Management Advice', usage: 'Key change' },
+};
+
+/**
+ * ErrorCodeCell — mono code text; hover OR keyboard focus reveals the code's meaning (+ usage note if
+ * present) from MTI_CODES. Tooltip (estate precedent for reveal-on-hover/focus; Popover is click-only).
+ * The trigger is a focusable span (tabIndex 0) so keyboard users get the reveal. Null/absent → em-dash.
+ * Unknown code → the code plus a "Unknown code" reveal (no invented meaning).
+ */
+function ErrorCodeCell({ code }: { code: string | null | undefined }) {
+  if (!code) return <Box component="span" sx={{ color: 'text.disabled' }}>{EM_DASH}</Box>;
+  const entry = MTI_CODES[code];
+  const title = entry ? (
+    <>
+      <Typography variant="body2">{entry.meaning}</Typography>
+      {entry.usage && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+          {entry.usage}
+        </Typography>
+      )}
+    </>
+  ) : (
+    'Unknown code'
+  );
+  return (
+    <Tooltip title={title}>
+      <Box component="span" tabIndex={0} sx={{ fontFamily: 'monospace', cursor: 'help', borderRadius: 0.5 }}>
+        {code}
+      </Box>
+    </Tooltip>
+  );
+}
 
 /** Local time, sortable/comparable form `YYYY-MM-DD HH:mm`; full ISO-with-offset in the tooltip. No
  *  relative time (spec: ops need sortable, comparable values). */
@@ -257,6 +319,8 @@ export function TransactionsPage() {
     { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
     { key: 'direction', header: 'Direction', getValue: (r) => r.direction, width: 124, render: (r) => <TxBadge value={r.direction} /> },
     { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <TxBadge value={r.status} /> },
+    // PROPOSED column — errorCode has no data source in the payments API yet (see SPEC build-notes).
+    { key: 'errorCode', header: 'Error Code', getValue: (r) => r.errorCode ?? '', width: 110, render: (r) => <ErrorCodeCell code={r.errorCode} /> },
     { key: 'psp', header: 'Provider', getValue: (r) => r.psp, width: 110, render: (r) => r.psp },
     { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => <TxBadge value={r.threeDsStatus} /> },
     { key: 'createdAt', header: 'Created At', align: 'right', getValue: (r) => r.createdAt, width: 150, render: (r) => <TimestampCell iso={r.createdAt} /> },

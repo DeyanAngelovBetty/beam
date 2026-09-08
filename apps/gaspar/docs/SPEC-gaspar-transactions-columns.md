@@ -99,3 +99,12 @@ Deltas between the spec's language and this repo, recorded so the next reader is
 - **Row expansion removed.** The prior page's `renderExpanded`/`RoutePanel`/`route[]` mock is dropped — orphaned by the new API and fenced off for the future detail drawer (roadmap #4). No `onRowClick`, no selection gutter consumed.
 - **Tabs left untouched and non-functioning.** The `BeamTabs` row does not filter rows (it never did); retained as-is pending the filters conversation (roadmap #3), not wired this pass.
 - **Mock, not live.** `PAYMENTS` mocks the list response (no endpoint reachable here). It deliberately includes a null `pspTransactionId` and unseen enum values (`Pending`, `Failed`, `Authenticated`) to exercise the em-dash and neutral-fallback acceptance criteria.
+
+### Error Code — PROPOSED column (2026-09-08), pending backend confirmation
+
+Added a page-local **Error Code** column (after Status), driven by `PaymentRow.errorCode?: string | null`. **This field does not exist in the payments API today** — the column is a rendered proposal, not an implementation.
+
+- **Vocabulary is an OPEN backend question:** MTI (ISO 8583 message-type indicators) vs response/decline codes vs PSP-specific codes. The demo dictionary (`MTI_CODES`) is seeded from the ISO 8583 MTI table as a stand-in; the real code space is TBD with the backend team.
+- **Cell (`ErrorCodeCell`, page-local):** mono code text; hover **or keyboard focus** (focusable `tabIndex=0` trigger) reveals the meaning (+ usage note when present) via `Tooltip` — estate precedent for a reveal-on-hover/focus (Popover is click-only). Dictionary is **data, not logic**; an unknown code renders the code with a "Unknown code" reveal — the same no-invented-meanings honesty rule as the badges.
+- **Null/absent → em-dash**, same treatment as `pspTransactionId`. Mock seeding: the `Failed` row carries `0400`, one `Succeeded` row is explicit `null`, the rest absent.
+- **Scope:** no filter for it, no organism change. When the backend settles the field + vocabulary, the dictionary and column graduate from proposal to real.
