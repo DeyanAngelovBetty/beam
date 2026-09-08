@@ -77,7 +77,18 @@ export interface BeamColumnManagerConfig {
 export interface BeamBulkAction {
   id: string;
   label: string;
+  /** Error-tinted; also auto-confirms (see `confirm`). Grouped by convention last. */
   destructive?: boolean;
+  /**
+   * Page-computed eligibility. Disabled when the current selection can't take this action (on top of
+   * the always-on zero-selection disable). Mirrors BeamRowAction — the bulk surface follows the same
+   * "disable with a reason, never silently hide" doctrine the row kebab already does.
+   */
+  disabled?: boolean;
+  /** Shown as a tooltip when `disabled` — say why the action can't apply to the selection. */
+  disabledReason?: string;
+  /** Confirm before firing even when not destructive (destructive already confirms). */
+  confirm?: boolean;
 }
 
 export interface BeamDataTableProps<Row> {
@@ -86,7 +97,12 @@ export interface BeamDataTableProps<Row> {
   getRowId: (row: Row) => string;
   /** Checkboxes + bulk toolbar */
   selectable?: boolean;
-  bulkActions?: BeamBulkAction[];
+  /**
+   * Batch actions. An array, or a FACTORY resolved with the currently-selected rows — mirrors
+   * `rowActions: (row) => …` so bulk actions can compute `disabled`/`disabledReason` against the
+   * selection (the organism stays the single owner of selection state). Back-compat: an array works.
+   */
+  bulkActions?: BeamBulkAction[] | ((selectedRows: Row[]) => BeamBulkAction[]);
   onBulkAction?: (actionId: string, selectedIds: string[]) => void;
   /** Global search field above the table (searches columns with getValue) */
   searchable?: boolean;

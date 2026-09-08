@@ -270,6 +270,10 @@ export function BeamDataTable<Row>({
 
   const selectedIds = Object.keys(rowSelection);
   const selectedCount = selectedIds.length;
+  // Resolve the bulk-actions factory (Option C) with the actual selected Row objects, so page-computed
+  // eligibility (disabled/disabledReason) can reflect the selection. An array is used as-is.
+  const selectedRows = table.getSelectedRowModel().rows.map((r) => r.original);
+  const resolvedBulkActions = typeof bulkActions === 'function' ? bulkActions(selectedRows) : bulkActions;
   const batchHintId = useId();
   const visibleRows = table.getRowModel().rows;
 
@@ -365,25 +369,29 @@ export function BeamDataTable<Row>({
           renders this itself. Constant geometry, variable enablement: every
           action always renders, disabled at zero selection. Destructive actions
           confirm. // styling: pending design pass */}
-      {bulkActions.length > 0 && (
+      {resolvedBulkActions.length > 0 && (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 0.5, minHeight: 40 }}>
-          {bulkActions.map((a) => {
-            const disabled = selectedCount === 0;
-            return (
+          {resolvedBulkActions.map((a) => {
+            // Zero selection always disables; a page-supplied `disabled` adds eligibility on top.
+            const zeroSelection = selectedCount === 0;
+            const disabled = zeroSelection || Boolean(a.disabled);
+            const btn = (
               <Button
                 key={a.id}
                 size="small"
                 color={a.destructive ? 'error' : 'primary'}
                 // aria-disabled (not `disabled`) keeps the button focusable and
                 // announced, so a screen-reader user discovers the action and,
-                // via the hint, learns why it's inert. The handler no-ops when
-                // disabled; enablement is also conveyed visually (opacity).
+                // via the hint/tooltip, learns why it's inert. The handler no-ops
+                // when disabled; enablement is also conveyed visually (opacity).
                 aria-disabled={disabled}
-                aria-describedby={disabled ? batchHintId : undefined}
+                // Zero-selection uses the shared visually-hidden hint; a page-supplied
+                // eligibility reason uses a tooltip (wrapped below) — the BeamRowMenu doctrine.
+                aria-describedby={zeroSelection ? batchHintId : undefined}
                 onClick={() => {
                   if (disabled) return;
                   if (
-                    a.destructive &&
+                    (a.confirm || a.destructive) &&
                     typeof window !== 'undefined' &&
                     !window.confirm(`${a.label} ${selectedCount} selected item(s)?`)
                   ) {
@@ -396,6 +404,12 @@ export function BeamDataTable<Row>({
               >
                 {a.label}
               </Button>
+            );
+            // Eligibility reason → tooltip (only when the page disabled it AND gave a reason).
+            return a.disabled && a.disabledReason ? (
+              <Tooltip key={a.id} title={a.disabledReason}>{btn}</Tooltip>
+            ) : (
+              btn
             );
           })}
           {/* Why the actions are disabled — referenced by each disabled button. */}

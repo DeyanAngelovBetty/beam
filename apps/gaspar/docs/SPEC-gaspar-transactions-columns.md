@@ -108,3 +108,23 @@ Added a page-local **Error Code** column (after Status), driven by `PaymentRow.e
 - **Cell (`ErrorCodeCell`, page-local):** mono code text; hover **or keyboard focus** (focusable `tabIndex=0` trigger) reveals the meaning (+ usage note when present) via `Tooltip` — estate precedent for a reveal-on-hover/focus (Popover is click-only). Dictionary is **data, not logic**; an unknown code renders the code with a "Unknown code" reveal — the same no-invented-meanings honesty rule as the badges.
 - **Null/absent → em-dash**, same treatment as `pspTransactionId`. Mock seeding: the `Failed` row carries `0400`, one `Succeeded` row is explicit `null`, the rest absent.
 - **Scope:** no filter for it, no organism change. When the backend settles the field + vocabulary, the dictionary and column graduate from proposal to real.
+
+### Selection + batch actions, details-as-expandable-row (2026-09-08)
+
+**Selection + batch actions (Task A).** `selectable` on; the rail's select control lives in the gutter bullet-1 kept clean. Batch actions and the row kebab both carry **Export / Complete / Decline** (one definition, two projections — rail grammar; the kebab also satisfies the head-of-payments per-row export ask).
+
+- **Export is REAL:** serializes the selected `PaymentRow[]` (or the single row, from the kebab) to a downloaded `.json`, client-side blob. No backend.
+- **Complete / Decline are PROPOSALS:** confirm (action + count) → snackbar stating it's a design proposal, no backend, **no mock mutation**. Decline is destructive-styled.
+- **Eligibility = Pending only — an ASSUMPTION to validate with backend.** When the selection (or row) has no eligible row, the action is **disabled with a tooltip reason** (never clickable-then-refused). Bulk eligibility works because `bulkActions` is the selection-aware factory (organism Option C); row eligibility uses `BeamRowAction.disabled`/`disabledReason`.
+- **Confirm mechanism:** the shipped `window.confirm` (bulk via the organism's `confirm`/`destructive`; row via `onSelect`). A styled confirm surface is a queued organism decision — see `packages/beam/docs/BeamDataTable-notes.md`.
+- **Usage question to watch:** the organism resets row selection after every bulk action, so selection clears after **Export** too ("export-then-act re-selection"). Accepted for now; revisit if operators expect the selection to persist after an export.
+
+**Details as an expandable row (Task B) — INTERIM.** `renderExpanded` shows a light event timeline (time · type · details) in the payment-details `events[]` shape (`eventType`, `occurredOnUtc`, `details`, `amountModifier`, `pspTransactionId`), seeded per row from status via `buildEvents`. This is a deliberate **for-now** choice; a richer detail surface (drawer/page) is a queued topic, not built here.
+
+- **Observed event types only:** Succeeded → Initiated · PspAssigned · SubmittedToProvider · Approved; Pending → Initiated · PspAssigned; **Failed → Initiated · PspAssigned · SubmittedToProvider and STOP.** No failure event type has ever been observed — the visibly incomplete Failed timeline is the honest rendering and a deliberate open question, not a bug.
+
+### Backend ledger (open questions for the payments team)
+
+- **errorCode field + vocabulary** — MTI vs response/decline vs PSP codes (from the Error Code column, above).
+- **Complete / Decline endpoints + eligibility rules** — the actions are stubs; the Pending-only eligibility is our assumption.
+- **Failure event vocabulary** — what event type(s) mark a failed payment in `events[]`; today none is observed, so a Failed timeline stops mid-flow.

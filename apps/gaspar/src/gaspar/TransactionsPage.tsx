@@ -49,6 +49,18 @@ interface CardSummary {
   prepaid?: boolean;
 }
 
+/**
+ * One entry of the payment-details `events[]` timeline (Task B, interim details-as-expandable-row).
+ * Observed event types only — see `buildEvents`. Shape mirrors the payment-details resource.
+ */
+interface PaymentEvent {
+  eventType: string;
+  occurredOnUtc: string;
+  details?: string;
+  amountModifier?: number | null;
+  pspTransactionId?: string | null;
+}
+
 /** Mirrors the `payments` list response row (spec §"Data source"). */
 interface PaymentRow {
   id: string;
@@ -71,6 +83,7 @@ interface PaymentRow {
   createdAt: string; // ISO 8601 with offset
   updatedAt: string; // ISO 8601 with offset
   cardSummary?: CardSummary; // Phase B seam — absent in the list response today
+  events: PaymentEvent[]; // detail timeline (Task B) — seeded from status, observed types only
 }
 
 /**
@@ -90,7 +103,7 @@ interface PaymentRow {
 // Mock of the server-paginated payments response (no real endpoint reachable in this app). Deliberate
 // variety proves the acceptance criteria: a null pspTransactionId (→ em-dash), and unseen enum values
 // (→ neutral badge + raw string, never an error).
-const PAYMENTS: PaymentRow[] = [
+const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = [
   { id: 'pay_01H9Z3K7A2QF4M8N', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_9f21', customerId: 'cus_74126', paymentMethodId: 'pm_01H9Z3K7A2QF4M8N', amount: 149.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213445', errorCode: null, createdAt: '2026-09-04T13:32:11Z', updatedAt: '2026-09-04T13:32:14Z' },
   { id: 'pay_01H9Z3M0BX7T5P2R', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_a0b2', customerId: 'cus_74127', paymentMethodId: 'pm_01H9Z3M0BX7T5P2R', amount: 32.5, currency: 'EUR', direction: 'Withdrawal', psp: 'Adyen', status: 'Succeeded', threeDsStatus: 'Authenticated', threeDsSessionReference: 'tds_ref_5521', pspTransactionId: 'adyen_8853120019', createdAt: '2026-09-04T14:01:47Z', updatedAt: '2026-09-04T14:02:03Z' },
   { id: 'pay_01H9Z3N4CQ9W6D1S', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_c3d4', customerId: 'cus_74131', paymentMethodId: 'pm_01H9Z3N4CQ9W6D1S', amount: 1200.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Pending', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: null, createdAt: '2026-09-04T14:22:09Z', updatedAt: '2026-09-04T14:22:09Z' },
@@ -98,6 +111,27 @@ const PAYMENTS: PaymentRow[] = [
   { id: 'pay_01H9Z3Q1EF3M8G6V', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0102', customerId: 'cus_74155', paymentMethodId: 'pm_01H9Z3Q1EF3M8G6V', amount: 500.0, currency: 'USD', direction: 'Withdrawal', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213502', createdAt: '2026-09-04T16:44:20Z', updatedAt: '2026-09-04T16:44:25Z' },
   { id: 'pay_01H9Z3R5FG4N9H7W', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0304', customerId: 'cus_74161', paymentMethodId: 'pm_01H9Z3R5FG4N9H7W', amount: 18.25, currency: 'EUR', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213560', createdAt: '2026-09-05T09:03:12Z', updatedAt: '2026-09-05T09:03:15Z' },
 ];
+
+/**
+ * Seed a row's event timeline using ONLY observed event types (Initiated, PspAssigned,
+ * SubmittedToProvider, Approved). Succeeded → all four; Pending → Initiated·PspAssigned; Failed →
+ * Initiated·PspAssigned·SubmittedToProvider and STOP — no failure event type has ever been observed,
+ * so the visibly incomplete timeline is the honest rendering (a deliberate open question, not a bug).
+ */
+const buildEvents = (r: Omit<PaymentRow, 'events'>): PaymentEvent[] => {
+  const t0 = new Date(r.createdAt).getTime();
+  const at = (min: number) => new Date(t0 + min * 60_000).toISOString();
+  const initiated: PaymentEvent = { eventType: 'Initiated', occurredOnUtc: at(0), details: `${r.direction} initiated` };
+  const assigned: PaymentEvent = { eventType: 'PspAssigned', occurredOnUtc: at(1), details: `Routed to ${r.psp}` };
+  const submitted: PaymentEvent = { eventType: 'SubmittedToProvider', occurredOnUtc: at(2), details: `Submitted to ${r.psp}`, pspTransactionId: r.pspTransactionId };
+  const approved: PaymentEvent = { eventType: 'Approved', occurredOnUtc: r.updatedAt, amountModifier: r.amount, pspTransactionId: r.pspTransactionId };
+  if (r.status === 'Succeeded') return [initiated, assigned, submitted, approved];
+  if (r.status === 'Pending') return [initiated, assigned];
+  if (r.status === 'Failed') return [initiated, assigned, submitted]; // STOP — no observed failure event
+  return [initiated]; // any other status: only what we can honestly assert
+};
+
+const PAYMENTS: PaymentRow[] = RAW_PAYMENTS.map((r) => ({ ...r, events: buildEvents(r) }));
 
 // Select options DERIVED from the mock rows — the filter offers exactly the values present, never a
 // hardcoded vocabulary. (Direction happens to be Deposit/Withdrawal today; still derived, not assumed.)
@@ -264,9 +298,55 @@ function PaymentMethodCell({ row, onCopied }: { row: PaymentRow; onCopied: () =>
   return <TruncateCopyCell value={row.paymentMethodId} onCopied={onCopied} />;
 }
 
+// Eligibility for Complete/Decline is an ASSUMPTION (Pending only) — validate with backend.
+const ELIGIBILITY_REASON = 'Only Pending transactions can be completed or declined (assumption — backend eligibility rules TBD).';
+
+/** Serialize to a downloaded .json (the one REAL action — client-side blob, no backend). */
+function downloadJson(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+const fmtEventTime = (iso: string) =>
+  new Date(iso).toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+/**
+ * PaymentTimeline — INTERIM details-as-expandable-row (Task B). A light event list: time · type ·
+ * details. Deliberately not over-invested — a richer detail surface (drawer/page) is a queued topic.
+ * A Failed row's timeline stops at SubmittedToProvider because no failure event type has been observed.
+ */
+function PaymentTimeline({ events }: { events: PaymentEvent[] }) {
+  return (
+    <Box sx={{ py: 1 }}>
+      <Typography variant="overline" color="text.secondary">Event timeline</Typography>
+      <Stack spacing={1} sx={{ mt: 0.5 }}>
+        {events.map((e, i) => (
+          <Stack key={i} direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
+            <Box component="span" sx={{ fontFamily: 'monospace', color: 'text.secondary', whiteSpace: 'nowrap', minWidth: 148 }}>
+              {fmtEventTime(e.occurredOnUtc)}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body2">{e.eventType}</Typography>
+              {e.details && <Typography variant="caption" color="text.secondary">{e.details}</Typography>}
+            </Box>
+          </Stack>
+        ))}
+      </Stack>
+    </Box>
+  );
+}
+
 export function TransactionsPage() {
-  const [copied, setCopied] = useState(false);
-  const onCopied = () => setCopied(true);
+  // One snackbar for all transient notices (copy confirmations + the action proposals).
+  const [snack, setSnack] = useState<string | null>(null);
+  const onCopied = () => setSnack('Copied to clipboard');
 
   // Filter state — page-local (no persistence, no query-param model). `draft` is what the bar's fields
   // edit; `applied` is what the grid filters by. The Filter CTA (and Enter in a date field) commits.
@@ -307,6 +387,48 @@ export function TransactionsPage() {
       return true;
     });
   }, [applied]);
+
+  // TASK A — selection + batch actions. Export is REAL (client-side JSON download); Complete/Decline
+  // are PROPOSALS (confirm → snackbar, no mutation). Eligibility: Pending only (assumption).
+  // Bulk actions are a FACTORY (Option C) so disabled/reason reflect the live selection.
+  const bulkActions = (selectedRows: PaymentRow[]) => {
+    const noEligible = selectedRows.every((r) => r.status !== 'Pending');
+    return [
+      { id: 'export', label: 'Export' },
+      { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
+      { id: 'decline', label: 'Decline', destructive: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
+    ];
+  };
+  const onBulkAction = (actionId: string, selectedIds: string[]) => {
+    const selected = PAYMENTS.filter((r) => selectedIds.includes(r.id));
+    if (actionId === 'export') {
+      downloadJson(`transactions-${selected.length}.json`, selected);
+      setSnack(`Exported ${selected.length} transaction(s) to JSON.`);
+      return;
+    }
+    // Complete/Decline already passed the organism's confirm (confirm / destructive).
+    const eligible = selected.filter((r) => r.status === 'Pending').length;
+    const verb = actionId === 'complete' ? 'Complete' : 'Decline';
+    setSnack(`${verb} — design proposal, no backend. ${eligible} eligible transaction(s) would be affected. Nothing was changed.`);
+  };
+
+  // Same three actions on the row kebab (rail grammar) — Export real per-row, Complete/Decline
+  // proposals with a per-row confirm (row-level confirm lives in onSelect). Disabled + reason when the
+  // row isn't Pending (BeamRowAction doctrine).
+  const rowActions = (row: PaymentRow) => {
+    const notPending = row.status !== 'Pending';
+    return [
+      { id: 'export', label: 'Export', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
+      {
+        id: 'complete', label: 'Complete', disabled: notPending, disabledReason: ELIGIBILITY_REASON,
+        onSelect: () => { if (window.confirm(`Complete transaction ${row.id}?`)) setSnack('Complete — design proposal, no backend. Nothing was changed.'); },
+      },
+      {
+        id: 'decline', label: 'Decline', destructive: true, disabled: notPending, disabledReason: ELIGIBILITY_REASON,
+        onSelect: () => { if (window.confirm(`Decline transaction ${row.id}?`)) setSnack('Decline — design proposal, no backend. Nothing was changed.'); },
+      },
+    ];
+  };
 
   // Default-visible set, in spec order. (When bullet 3 lands, the CATALOG above joins these as the
   // column manager's contents.)
@@ -392,6 +514,11 @@ export function TransactionsPage() {
         rows={rows}
         getRowId={(r) => r.id}
         paginated
+        selectable
+        bulkActions={bulkActions}
+        onBulkAction={onBulkAction}
+        rowActions={rowActions}
+        renderExpanded={(r) => <PaymentTimeline events={r.events} />}
         emptyMessage="No transactions match these filters."
         // Column manager (bullet 3). Catalog = the bullet-1 columns with no data source yet — shown in
         // the manager disabled/"awaiting data" (option b). Payment Method Details is excluded: it's the
@@ -409,10 +536,10 @@ export function TransactionsPage() {
       />
 
       <Snackbar
-        open={copied}
-        autoHideDuration={2000}
-        onClose={() => setCopied(false)}
-        message="Copied to clipboard"
+        open={snack !== null}
+        autoHideDuration={3000}
+        onClose={() => setSnack(null)}
+        message={snack ?? ''}
       />
     </Stack>
   );
