@@ -8,9 +8,8 @@ import {
   IconButton,
   BeamDataTable,
   BeamPageHeader,
-  BeamTabs,
 } from '@betty/beam';
-import type { BeamColumn, BeamTabItem } from '@betty/beam';
+import type { BeamColumn } from '@betty/beam';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
 
 /**
@@ -176,18 +175,7 @@ function PaymentMethodCell({ row, onCopied }: { row: PaymentRow; onCopied: () =>
   return <TruncateCopyCell value={row.paymentMethodId} onCopied={onCopied} />;
 }
 
-/** One level deliberately — nesting competes with the future detail drawer. Non-functioning today
- *  (rows are not filtered by tab); left untouched pending the filters conversation (spec roadmap #3). */
-const TABS: BeamTabItem[] = [
-  { id: 'all', label: 'All' },
-  { id: 'deposits', label: 'Deposits' },
-  { id: 'withdrawals', label: 'Withdrawals' },
-  { id: 'disputes', label: 'Disputes' },
-  { id: 'reconciliation', label: 'Reconciliation' },
-];
-
 export function TransactionsPage() {
-  const [tab, setTab] = useState('all');
   const [copied, setCopied] = useState(false);
   const onCopied = () => setCopied(true);
 
@@ -212,13 +200,10 @@ export function TransactionsPage() {
     <Stack spacing={3}>
       <BeamPageHeader title="Transactions" />
 
-      <BeamTabs items={TABS} value={tab} onChange={setTab} aria-label="Transaction views" />
-
       <BeamDataTable
         columns={columns}
         rows={PAYMENTS}
         getRowId={(r) => r.id}
-        searchable
         paginated
         aria-label="Payment transactions"
       />
