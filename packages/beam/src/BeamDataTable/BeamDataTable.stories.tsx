@@ -298,7 +298,7 @@ export const PaytablesYodaPatterns: StoryObj = {
 };
 
 /**
- * Column manager (bullet 3): the toolbar trigger opens a popover to show/hide + reorder columns,
+ * Column manager (bullet 3): the footer trigger (leftmost) opens a popover to show/hide + reorder columns,
  * persisted to localStorage under `beam:grid:beam.demo.perks:columns:v1`. `Updated` ships hidden
  * (`defaultHidden`); the `catalog` lists non-rendered "awaiting data" columns (option b). Reorder via
  * the ▲/▼ buttons (keyboard + pointer); "Reset to defaults" clears storage. Grids WITHOUT the prop are

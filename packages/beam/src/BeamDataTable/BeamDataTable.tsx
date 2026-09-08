@@ -363,14 +363,13 @@ export function BeamDataTable<Row>({
 
   return (
     <>
-      {/* Batch actions — a persistent, UNBOXED strip on the page background,
-          sitting between the filter bar and the table (grammar §4; §1.3 exempt:
-          plain actions, not a raised container). The table owns selection and
-          renders this itself. Constant geometry, variable enablement: every
-          action always renders, disabled at zero selection. Destructive actions
-          confirm. // styling: pending design pass */}
-      {resolvedBulkActions.length > 0 && (
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 0.5, minHeight: 40 }}>
+      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+        {/* Batch actions — a top SECTION of the grid surface (moved inside the Paper 2026-09-08, the
+            BeamPaper-sectioning pattern; DetailsPanel/PrizeWall precedent). Persistent when bulkActions
+            is set; constant geometry, variable enablement — every action renders, disabled at zero
+            selection; confirm/destructive actions confirm. */}
+        {resolvedBulkActions.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: 48, borderBottom: 1, borderColor: 'divider' }}>
           {resolvedBulkActions.map((a) => {
             // Zero selection always disables; a page-supplied `disabled` adds eligibility on top.
             const zeroSelection = selectedCount === 0;
@@ -433,44 +432,28 @@ export function BeamDataTable<Row>({
         </Stack>
       )}
 
-      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-        {/* Toolbar region: internal search (only for lists with no page-level filter bar) on the left,
-            the column-manager trigger right-aligned. Renders when EITHER is present — so a grid that
-            moved search into BeamFilterBar but opted into the manager still gets this strip. */}
-        {(searchable || cm.enabled) && (
+        {/* Toolbar region: the internal search field ONLY (for lists with no page-level filter bar).
+            The column-manager trigger moved to the footer (2026-09-08). So the toolbar now renders
+            solely for `searchable` — when false it doesn't render at all, reclaiming its height
+            (density installment #1). */}
+        {searchable && (
           <Toolbar variant="dense" sx={{ gap: 2, borderBottom: 1, borderColor: 'divider' }}>
-            {searchable && (
-              <TextField
-                size="small"
-                placeholder="Search"
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                sx={{ width: 280 }}
-              />
-            )}
-            {cm.enabled && (
-              <>
-                {/* Spacer + trigger exist ONLY with the manager, so a searchable-only grid's toolbar
-                    stays byte-identical to today (just the search field). */}
-                <Box sx={{ flexGrow: 1 }} />
-                <BeamColumnManager
-                  columns={managerColumns}
-                  catalog={cm.catalog}
-                  onToggle={toggleColumn}
-                  onMove={moveColumn}
-                  onReset={cm.reset}
-                />
-              </>
-            )}
+            <TextField
+              size="small"
+              placeholder="Search"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ width: 280 }}
+            />
           </Toolbar>
         )}
 
@@ -637,15 +620,30 @@ export function BeamDataTable<Row>({
         </Table>
       </TableContainer>
 
-      {/* Footer: selection count on the left, pagination on the right (grammar
-          §4). The count is always present when selectable — constant geometry,
-          zero-state included — and aria-live so its changes are announced. The
-          footer border-top is the styling pass. // styling: pending design pass */}
-      {selectable ? (
+      {/* Footer: a left cluster — column-manager trigger (leftmost), then the aria-live selection
+          count — and pagination on the right (grammar §4). The count is always present when selectable
+          (constant geometry, zero-state included) and aria-live so its changes are announced. Grids
+          with neither `selectable` nor `columnManager` keep the bare pagination path — byte-identical.
+          // styling: pending design pass */}
+      {selectable || cm.enabled ? (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="body2" aria-live="polite" sx={{ pl: 2, color: 'text.secondary' }}>
-            {selectedCount === 0 ? '' : `${selectedCount} selected`}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
+            {cm.enabled && (
+              <BeamColumnManager
+                columns={managerColumns}
+                catalog={cm.catalog}
+                onToggle={toggleColumn}
+                onMove={moveColumn}
+                onReset={cm.reset}
+              />
+            )}
+            {selectable && (
+              // aria-live preserved across the move — the count still announces on change.
+              <Typography variant="body2" aria-live="polite" sx={{ pl: cm.enabled ? 0 : 1.5, color: 'text.secondary' }}>
+                {selectedCount === 0 ? '' : `${selectedCount} selected`}
+              </Typography>
+            )}
+          </Box>
           {paginationEl ?? <Box />}
         </Box>
       ) : (

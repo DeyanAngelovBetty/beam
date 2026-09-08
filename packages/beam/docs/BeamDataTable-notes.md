@@ -3,6 +3,30 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Layout pass — bulk strip inside the surface, manager trigger to the footer *(2026-09-08)*
+
+Two moves; blast radius is Gaspar transactions + two stories (the repo-wide inventory found **no**
+Sunlight/midnight grid passes `selectable`/`columnManager`/`bulkActions`).
+
+- **Bulk-actions strip moved INSIDE the grid's `Paper`, as the top section** (was an unboxed strip on
+  the page background above the surface). Now a bordered top region (`px:2`, `minHeight:48`,
+  `borderBottom`) — the BeamPaper-sectioning *pattern* (DetailsPanel/PrizeWall precedent), applied
+  without adopting the component (see the future task below).
+- **Column-manager trigger relocated to the FOOTER, leftmost**, with the aria-live selection count
+  immediately to its right; rows-per-page + range + pagination stay right. aria-live preserved across
+  the move. The footer's left cluster renders only when `selectable || columnManager`; everyone else
+  keeps the **bare `paginationEl`** path → byte-identical.
+- **Density installment #1 — empty-toolbar elimination.** With the trigger gone, the top toolbar
+  renders only for `searchable`. A grid with `searchable=false` (Gaspar transactions) now renders **no
+  top toolbar at all**, reclaiming the dense toolbar row (~48px). This is the first concrete move of
+  the density topic; further density/sticky work is out of scope until picked up deliberately.
+
+**Future doctrine task (own task, own gate):** *grid surface → a shared surface primitive, or an
+always-bordered / full-bleed / multi-region BeamPaper variant.* Today the grid uses raw
+`Paper variant="outlined"`. BeamPaper was **not** adopted here because its border is a semantic — the
+editability border (transparent until the surface holds an input) — whereas a grid must be
+always-outlined; adopting it without an API extension would ship a regression as a swap.
+
 ## Batch-actions surface — eligibility + confirm + selection-aware factory *(2026-09-08)*
 
 Brought the bulk-actions surface up to the **BeamRowMenu doctrine** the row kebab already followed
