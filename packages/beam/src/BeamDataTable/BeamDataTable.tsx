@@ -293,7 +293,6 @@ export function BeamDataTable<Row>({
   // fallback for the left. Recomputes on scroll AND resize (columns/viewport change overflow).
   const scrollRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const railRef = useRef<HTMLTableCellElement>(null);
   useEffect(() => {
     const el = scrollRef.current;
     const wrap = wrapperRef.current;
@@ -321,20 +320,6 @@ export function BeamDataTable<Row>({
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
-
-  // Publish the rail's content-driven width as `--beam-rail-width` so the detail-row panel can offset
-  // by it (left + width) without a hardcoded px — the rail sizes to whichever controls render, and this
-  // tracks that. Measured off the header rail cell; recomputed when the rail composition changes.
-  useEffect(() => {
-    const rail = railRef.current;
-    const wrap = wrapperRef.current;
-    if (!rail || !wrap) return;
-    const measure = () => wrap.style.setProperty('--beam-rail-width', `${rail.getBoundingClientRect().width}px`);
-    measure();
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
-    ro?.observe(rail);
-    return () => ro?.disconnect();
-  }, [selectable, renderExpanded, rowActions]);
 
   // One pinned rail column holds all row controls, in fixed order
   // [select][kebab][expand] — each rendered only if enabled (grammar §3):
@@ -523,9 +508,8 @@ export function BeamDataTable<Row>({
             <TableRow>
               {railEnabled && (
                 // Header sits above the body rail cells if stickyHeader is ever
-                // enabled, and above its own row's data cells now. `railRef` measures the rail's
-                // content-driven width into --beam-rail-width (consumed by the detail panel).
-                <TableCell ref={railRef} sx={{ ...railStickySx, zIndex: 3 }}>
+                // enabled, and above its own row's data cells now.
+                <TableCell sx={{ ...railStickySx, zIndex: 3 }}>
                   {selectable && (
                     <Checkbox
                       checked={table.getIsAllRowsSelected()}
@@ -657,23 +641,11 @@ export function BeamDataTable<Row>({
                 {renderExpanded && (
                   // Detail row carries NO `hover` — only the data row above tints on hover.
                   <TableRow>
-                    {railEnabled && (
-                      // The detail row's OWN rail cell — same railStickySx, so the rail column's sticky,
-                      // opaque layer (and its left-edge affordance) is CONTINUOUS through detail rows.
-                      // This is the structural fix: the detail content is no longer a foreign colSpan
-                      // cell overlapped by the sticky rail (the source of the missed-invalidation /
-                      // stale-paint artifact) — the rail is one uninterrupted layer top to bottom.
-                      <TableCell
-                        aria-hidden
-                        className="beam-rail"
-                        sx={{ ...railStickySx, zIndex: 2, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
-                      />
-                    )}
                     <TableCell
-                      colSpan={leafColumns.length}
+                      colSpan={dataColSpan}
                       // padding:0 — the td's inline padding otherwise displaces the sticky panel from its
-                      // pin and it wiggles across the sticky threshold while scrolling. The panel's inset
-                      // moves onto the sticky box itself (below).
+                      // pinned left:0 and it wiggles across the sticky threshold while scrolling. The
+                      // panel's inset moves onto the sticky box itself (below).
                       sx={{ p: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
                     >
                       <Collapse
@@ -687,21 +659,12 @@ export function BeamDataTable<Row>({
                         onEntered={onCollapseEnd}
                         onExited={onCollapseEnd}
                       >
-                        {/* Fix 1: pin the panel to the VISIBLE scroll area, BESIDE the rail. It pins at
-                            the rail's right edge (`left: --beam-rail-width`) and spans the rest of the
-                            scrollport (`calc(100cqw - --beam-rail-width)`) — 100cqw resolves to the
-                            container-query wrapper's inline size; the rail-width var is measured from the
-                            rail cell, so no hardcoded offset and it tracks which controls render. The
-                            inline inset lives HERE (px) now that the td has none, so it never shifts the
-                            pin. Fallback 0px when there is no rail. */}
-                        <Box
-                          sx={{
-                            position: 'sticky',
-                            left: 'var(--beam-rail-width, 0px)',
-                            width: 'calc(100cqw - var(--beam-rail-width, 0px))',
-                            px: 2,
-                          }}
-                        >
+                        {/* Fix 1: pin the panel to the VISIBLE scroll-area width. `100cqw` resolves to
+                            the wrapper's inline-size (the container-query wrapper above); `sticky left:0`
+                            keeps it put while columns scroll beneath — so the timeline + its action bar
+                            never scroll sideways at any scroll position. The inline inset lives HERE (px)
+                            now that the td has none — inside the sticky box, so it never shifts the pin. */}
+                        <Box sx={{ position: 'sticky', left: 0, width: '100cqw', px: 2 }}>
                           <Box sx={{ py: 2, px: 1 }}>
                             {renderExpanded(row.original)}
                             {/* The expanded bar — UNCONDITIONAL when the row has actions (grammar §3,
