@@ -93,3 +93,79 @@ export const WithPresets: Story = {
     );
   },
 };
+
+/**
+ * ADVANCED representation (add / remove / persist fields). Same bar, same position — plus a [+]
+ * add-field menu and [x]-removable added fields. The bar owns the STRUCTURE (which fields are added)
+ * and persists it (localStorage `beam:filters:sb.demo:fields:v1`); the page owns the VALUES. The menu
+ * offers only not-yet-added fields and shows disabled "awaiting data" entries. Keyboard: [+] opens the
+ * menu, arrows/Enter add, each [x] is focusable. (Values are per-page draft here; reload restores the
+ * added fields empty-valued.)
+ */
+export const Advanced: Story = {
+  args: { 'aria-label': 'Transaction filters', children: null },
+  render: (args) => {
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('');
+    const [currency, setCurrency] = useState('');
+    const [threeDs, setThreeDs] = useState('');
+    const applied = search !== '' || status !== '' || currency !== '' || threeDs !== '';
+    return (
+      <BeamFilterBar
+        {...args}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search ID, customer"
+        applied={applied}
+        onFilter={() => {}}
+        onClearAll={() => {
+          setSearch('');
+          setStatus('');
+          setCurrency('');
+          setThreeDs('');
+        }}
+        advanced={{
+          storageKey: 'sb.demo',
+          onFieldRemoved: (id) => {
+            if (id === 'currency') setCurrency('');
+            if (id === 'threeDs') setThreeDs('');
+          },
+          addableFields: [
+            {
+              id: 'currency',
+              label: 'Currency',
+              control: (
+                <TextField label="Currency" size="small" select fullWidth value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  <MenuItem value="">Any</MenuItem>
+                  <MenuItem value="USD">USD</MenuItem>
+                  <MenuItem value="EUR">EUR</MenuItem>
+                  <MenuItem value="CAD">CAD</MenuItem>
+                </TextField>
+              ),
+            },
+            {
+              id: 'threeDs',
+              label: '3DS status',
+              control: (
+                <TextField label="3DS status" size="small" select fullWidth value={threeDs} onChange={(e) => setThreeDs(e.target.value)}>
+                  <MenuItem value="">Any</MenuItem>
+                  <MenuItem value="NotRequired">NotRequired</MenuItem>
+                  <MenuItem value="Authenticated">Authenticated</MenuItem>
+                </TextField>
+              ),
+            },
+            { id: 'nameOnCard', label: 'Name on Card', control: null, disabled: true, disabledReason: 'awaiting data' },
+            { id: 'fraudRulesMatched', label: 'Fraud Rules Matched', control: null, disabled: true, disabledReason: 'awaiting data' },
+          ],
+        }}
+      >
+        <TextField label="Status" size="small" select fullWidth value={status} onChange={(e) => setStatus(e.target.value)}>
+          <MenuItem value="">Any</MenuItem>
+          <MenuItem value="Succeeded">Succeeded</MenuItem>
+          <MenuItem value="Pending">Pending</MenuItem>
+          <MenuItem value="Failed">Failed</MenuItem>
+        </TextField>
+      </BeamFilterBar>
+    );
+  },
+};

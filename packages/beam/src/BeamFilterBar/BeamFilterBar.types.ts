@@ -19,6 +19,31 @@ export interface BeamFilterPreset {
   label: string;
 }
 
+/**
+ * An addable filter field for the ADVANCED representation. `control` is the page-wired input rendered
+ * when the field is added (composition — same mechanism as `children`); `disabled` marks a menu entry
+ * that can't be added yet (the "awaiting data" ledger), never rendered as a field.
+ */
+export interface AddableField {
+  id: string;
+  label: string;
+  control: ReactNode;
+  disabled?: boolean;
+  disabledReason?: string;
+}
+
+/**
+ * Advanced-representation config. Presence turns BeamFilterBar into the advanced panel: a [+] add-field
+ * menu and [x]-removable added fields, whose STRUCTURE (which fields are added) the bar owns and
+ * persists. Values stay the page's (draft/applied). Absent = today's default representation, untouched.
+ */
+export interface BeamFilterAdvancedConfig {
+  addableFields: AddableField[];
+  storageKey: string;
+  /** Called when a field is removed so the page can clear that field's draft value(s). */
+  onFieldRemoved?: (id: string) => void;
+}
+
 export interface BeamFilterBarProps {
   /** Promoted filter fields. App-supplied until a field-schema API is designed. */
   children: ReactNode;
@@ -42,6 +67,12 @@ export interface BeamFilterBarProps {
    * a visible border on the bar and a filled Filter CTA. App-computed.
    */
   applied?: boolean;
+
+  /**
+   * Opt-in ADVANCED representation (add/remove/persist fields). Omit for today's default bar —
+   * byte-identical. See BeamFilterAdvancedConfig.
+   */
+  advanced?: BeamFilterAdvancedConfig;
 
   'aria-label': string;
 }

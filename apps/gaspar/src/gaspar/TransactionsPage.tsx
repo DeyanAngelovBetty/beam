@@ -13,7 +13,7 @@ import {
   BeamDataTable,
   BeamPageHeader,
 } from '@betty/beam';
-import type { BeamColumn } from '@betty/beam';
+import type { BeamColumn, AddableField } from '@betty/beam';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
 
 /**
@@ -100,17 +100,45 @@ interface PaymentRow {
  * threeDsSessionReference (detail material).
  */
 
-// Mock of the server-paginated payments response (no real endpoint reachable in this app). Deliberate
-// variety proves the acceptance criteria: a null pspTransactionId (→ em-dash), and unseen enum values
-// (→ neutral badge + raw string, never an error).
-const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = [
-  { id: 'pay_01H9Z3K7A2QF4M8N', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_9f21', customerId: 'cus_74126', paymentMethodId: 'pm_01H9Z3K7A2QF4M8N', amount: 149.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213445', errorCode: null, createdAt: '2026-09-04T13:32:11Z', updatedAt: '2026-09-04T13:32:14Z' },
-  { id: 'pay_01H9Z3M0BX7T5P2R', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_a0b2', customerId: 'cus_74127', paymentMethodId: 'pm_01H9Z3M0BX7T5P2R', amount: 32.5, currency: 'EUR', direction: 'Withdrawal', psp: 'Adyen', status: 'Succeeded', threeDsStatus: 'Authenticated', threeDsSessionReference: 'tds_ref_5521', pspTransactionId: 'adyen_8853120019', createdAt: '2026-09-04T14:01:47Z', updatedAt: '2026-09-04T14:02:03Z' },
-  { id: 'pay_01H9Z3N4CQ9W6D1S', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_c3d4', customerId: 'cus_74131', paymentMethodId: 'pm_01H9Z3N4CQ9W6D1S', amount: 1200.0, currency: 'USD', direction: 'Deposit', psp: 'Nuvei', status: 'Pending', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: null, createdAt: '2026-09-04T14:22:09Z', updatedAt: '2026-09-04T14:22:09Z' },
-  { id: 'pay_01H9Z3P8DR2K7F5T', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_e5f6', customerId: 'cus_74140', paymentMethodId: 'pm_01H9Z3P8DR2K7F5T', amount: 75.99, currency: 'CAD', direction: 'Deposit', psp: 'Adyen', status: 'Failed', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'adyen_8853120044', errorCode: '0400', createdAt: '2026-09-04T15:10:33Z', updatedAt: '2026-09-04T15:10:58Z' },
-  { id: 'pay_01H9Z3Q1EF3M8G6V', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0102', customerId: 'cus_74155', paymentMethodId: 'pm_01H9Z3Q1EF3M8G6V', amount: 500.0, currency: 'USD', direction: 'Withdrawal', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213502', createdAt: '2026-09-04T16:44:20Z', updatedAt: '2026-09-04T16:44:25Z' },
-  { id: 'pay_01H9Z3R5FG4N9H7W', organizationId: 'org_betty', marketId: 'mkt_ca', idempotencyKey: 'idm_0304', customerId: 'cus_74161', paymentMethodId: 'pm_01H9Z3R5FG4N9H7W', amount: 18.25, currency: 'EUR', direction: 'Deposit', psp: 'Nuvei', status: 'Succeeded', threeDsStatus: 'NotRequired', threeDsSessionReference: null, pspTransactionId: 'nuvei_txn_88213560', createdAt: '2026-09-05T09:03:12Z', updatedAt: '2026-09-05T09:03:15Z' },
-];
+// Mock of the server-paginated payments response (no real endpoint reachable in this app). Generated
+// (~40 rows) for the advanced-filters demo — NO new enum values (statuses Succeeded/Pending/Failed,
+// providers Nuvei/Adyen, currencies USD/EUR/CAD). Mostly-Succeeded; Pending rows carry a null
+// pspTransactionId; Failed rows carry distinct MTI errorCodes; amounts span magnitudes; createdAt
+// spreads across ~3 weeks. Deliberate variety also exercises earlier acceptance (em-dash, neutral badge).
+const CURRENCIES = ['USD', 'EUR', 'CAD'] as const;
+const AMOUNT_MAGNITUDES = [12.5, 47.99, 149, 320, 899.5, 1200, 2450, 4800, 75, 18.25];
+const FAILED_MTI = ['0400', '0100', '0200', '0210', '0230', '0800', '0120', '0330']; // distinct observed codes
+const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 40 }, (_, i) => {
+  const bucket = i % 10; // 0–5 Succeeded, 6–7 Pending, 8–9 Failed → mostly-Succeeded
+  const status = bucket <= 5 ? 'Succeeded' : bucket <= 7 ? 'Pending' : 'Failed';
+  const psp = i % 2 === 0 ? 'Nuvei' : 'Adyen';
+  const currency = CURRENCIES[i % 3];
+  const direction = i % 3 === 0 ? 'Withdrawal' : 'Deposit';
+  const amount = Number((AMOUNT_MAGNITUDES[i % AMOUNT_MAGNITUDES.length] + (i % 5) * 3.5).toFixed(2));
+  const created = new Date(Date.UTC(2026, 7, 20, 8, 0, 0) + ((i * 13) % 21) * 86_400_000 + (i % 24) * 3_600_000);
+  const updated = new Date(created.getTime() + (2 + (i % 40)) * 1_000);
+  const failedIdx = Math.floor(i / 10) * 2 + (bucket - 8); // 0,1,2,3,… across the failed rows
+  const token = (100000 + i * 37).toString(36).toUpperCase().padStart(10, '0');
+  return {
+    id: `pay_${token}`,
+    organizationId: 'org_betty',
+    marketId: 'mkt_ca',
+    idempotencyKey: `idm_${(4000 + i * 7).toString(16)}`,
+    customerId: `cus_${74120 + i}`,
+    paymentMethodId: `pm_${token}`,
+    amount,
+    currency,
+    direction,
+    psp,
+    status,
+    threeDsStatus: i % 6 === 0 ? 'Authenticated' : 'NotRequired',
+    threeDsSessionReference: i % 6 === 0 ? `tds_ref_${5500 + i}` : null,
+    pspTransactionId: status === 'Pending' ? null : `${psp.toLowerCase()}_txn_${88213400 + i * 7}`,
+    errorCode: status === 'Failed' ? FAILED_MTI[failedIdx % FAILED_MTI.length] : null,
+    createdAt: created.toISOString(),
+    updatedAt: updated.toISOString(),
+  };
+});
 
 /**
  * Seed a row's event timeline using ONLY observed event types (Initiated, PspAssigned,
@@ -139,6 +167,9 @@ const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 const STATUS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.status));
 const DIRECTION_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.direction));
 const PROVIDER_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.psp));
+const CURRENCY_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.currency));
+const THREEDS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.threeDsStatus));
+const ERROR_CODE_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.errorCode).filter((c): c is string => Boolean(c)));
 
 /**
  * BeamFilterBar's apply model (bar v1 spec; UsersPage is the estate reference): the bar edits a
@@ -147,15 +178,27 @@ const PROVIDER_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.psp));
  * from UsersPage (it persists `applied` in the URL).
  */
 interface Filters {
+  // Default (always-present) fields.
   q: string;
   start: string; // yyyy-mm-dd, inclusive lower bound on createdAt
   end: string; // yyyy-mm-dd, inclusive upper bound on createdAt
   status: string;
   direction: string;
   provider: string;
+  // Addable-field VALUE slots (empty unless the field is added AND filled — empty filters nothing).
+  // The bar owns whether these fields are shown; the page always owns their values.
+  currency: string;
+  threeDs: string;
+  errorCode: string; // '' = any; '__none__' = rows with no error code
+  amountMin: string;
+  amountMax: string;
 }
-const EMPTY_FILTERS: Filters = { q: '', start: '', end: '', status: '', direction: '', provider: '' };
-const isActive = (f: Filters) => f.q !== '' || f.start !== '' || f.end !== '' || f.status !== '' || f.direction !== '' || f.provider !== '';
+const EMPTY_FILTERS: Filters = { q: '', start: '', end: '', status: '', direction: '', provider: '', currency: '', threeDs: '', errorCode: '', amountMin: '', amountMax: '' };
+const isActive = (f: Filters) =>
+  f.q !== '' || f.start !== '' || f.end !== '' || f.status !== '' || f.direction !== '' || f.provider !== '' ||
+  f.currency !== '' || f.threeDs !== '' || f.errorCode !== '' || f.amountMin !== '' || f.amountMax !== '';
+
+const ERROR_CODE_NONE = '__none__'; // sentinel value for "rows with no error code"
 
 const EM_DASH = '—';
 
@@ -368,6 +411,64 @@ export function TransactionsPage() {
   // never the uncommitted draft.
   const isApplied = isActive(applied);
 
+  // ADVANCED filters (bar owns structure + persistence; page owns these controls' values in `draft`).
+  // Each control is a page-wired input rendered by the bar only when the field is added. Selects offer
+  // observed values only. Amount is one field, two inputs.
+  const addableFields: AddableField[] = [
+    {
+      id: 'currency',
+      label: 'Currency',
+      control: (
+        <BeamField select label="Currency" value={draft.currency} onChange={(e) => patchDraft({ currency: e.target.value })} fullWidth>
+          <MenuItem value="">Any</MenuItem>
+          {CURRENCY_OPTIONS.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+        </BeamField>
+      ),
+    },
+    {
+      id: 'threeDs',
+      label: '3DS status',
+      control: (
+        <BeamField select label="3DS status" value={draft.threeDs} onChange={(e) => patchDraft({ threeDs: e.target.value })} fullWidth>
+          <MenuItem value="">Any</MenuItem>
+          {THREEDS_OPTIONS.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+        </BeamField>
+      ),
+    },
+    {
+      id: 'errorCode',
+      label: 'Error code',
+      control: (
+        <BeamField select label="Error code" value={draft.errorCode} onChange={(e) => patchDraft({ errorCode: e.target.value })} fullWidth>
+          <MenuItem value="">Any</MenuItem>
+          <MenuItem value={ERROR_CODE_NONE}>None</MenuItem>
+          {ERROR_CODE_OPTIONS.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+        </BeamField>
+      ),
+    },
+    {
+      id: 'amount',
+      label: 'Amount',
+      control: (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <BeamField label="Min" type="number" value={draft.amountMin} onChange={(e) => patchDraft({ amountMin: e.target.value })} onKeyDown={applyOnEnter} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
+          <BeamField label="Max" type="number" value={draft.amountMax} onChange={(e) => patchDraft({ amountMax: e.target.value })} onKeyDown={applyOnEnter} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
+        </Box>
+      ),
+    },
+    // Disabled "awaiting data" ledger — the third rendered ledger (columns manager, error codes, now
+    // the filter [+] menu). Never addable; sourced from the bullet-1 catalog.
+    { id: 'transactionType', label: 'Transaction Type', control: null, disabled: true, disabledReason: 'awaiting data' },
+    { id: 'nameOnCard', label: 'Name on Card', control: null, disabled: true, disabledReason: 'awaiting data' },
+    { id: 'processedBy', label: 'ProcessedBy', control: null, disabled: true, disabledReason: 'awaiting data' },
+    { id: 'fraudRulesMatched', label: 'Fraud Rules Matched', control: null, disabled: true, disabledReason: 'awaiting data' },
+  ];
+  // Removing a field clears its draft value(s); the grid updates only on the next FILTER (doctrine).
+  const onFieldRemoved = (id: string) => {
+    if (id === 'amount') patchDraft({ amountMin: '', amountMax: '' });
+    else if (id === 'currency' || id === 'threeDs' || id === 'errorCode') patchDraft({ [id]: '' } as Partial<Filters>);
+  };
+
   const rows = useMemo(() => {
     const q = applied.q.trim().toLowerCase();
     return PAYMENTS.filter((r) => {
@@ -380,10 +481,22 @@ export function TransactionsPage() {
       const day = r.createdAt.slice(0, 10);
       if (applied.start && day < applied.start) return false;
       if (applied.end && day > applied.end) return false;
-      // Exact-match selects.
+      // Exact-match selects (defaults).
       if (applied.status && r.status !== applied.status) return false;
       if (applied.direction && r.direction !== applied.direction) return false;
       if (applied.provider && r.psp !== applied.provider) return false;
+      // Addable fields — each inert when empty (i.e. not added, or added-but-unfilled).
+      if (applied.currency && r.currency !== applied.currency) return false;
+      if (applied.threeDs && r.threeDsStatus !== applied.threeDs) return false;
+      if (applied.errorCode) {
+        if (applied.errorCode === ERROR_CODE_NONE) {
+          if (r.errorCode) return false; // want rows WITHOUT an error code
+        } else if (r.errorCode !== applied.errorCode) {
+          return false;
+        }
+      }
+      if (applied.amountMin && r.amount < Number(applied.amountMin)) return false;
+      if (applied.amountMax && r.amount > Number(applied.amountMax)) return false;
       return true;
     });
   }, [applied]);
@@ -470,6 +583,7 @@ export function TransactionsPage() {
         applied={isApplied}
         onFilter={apply}
         onClearAll={clearAll}
+        advanced={{ addableFields, storageKey: 'gaspar.transactions', onFieldRemoved }}
       >
         <BeamField
           label="Created from"
