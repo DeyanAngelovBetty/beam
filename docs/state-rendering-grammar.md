@@ -124,7 +124,11 @@ silent/neutral estate-consistent, because a disabled campaign asks nobody to act
 | completed  | nobody — good news       | success     | noted  | outlined success |
 
 One loud state, and it's the one the grid's own Complete/Decline eligibility already
-points at. This mapping is a proposal for ops validation, not a decree.
+points at. **Shipped 2026-09-09** (phase-3 item 1) — this table is now the page's live map;
+the mock is reseeded to this vocabulary. Still a proposal for ops validation, not a decree.
+(`pending`'s `warning` here is a per-product homonym of Sunlight's `in-progress` `Pending` anchor —
+word-hue consistency scopes per product vocabulary; the grammar's "estate-wide" wording gets that
+one-line clarification in a later grammar pass, logged not applied.)
 
 ## Adoption
 
@@ -141,20 +145,24 @@ proposed amendments come back as edits here, not as local divergence.
   amber-`Disabled` collision → silent; Scheduled dimmed loud→noted), Loyalty Status approval
   (`Pending` loud), Pending Approvals `CRStatusChip` (`Pending`/decision-history noted; canceled/
   outdated silent). Raw strings no longer drive color on these three.
+- **Gaspar transactions reseeded** to the real vocabulary (`created/processing/pending/failed/
+  completed`); Status renders via `BeamBadge` + the worked-example map; Direction / 3DS de-badged to
+  plain text; `TxBadge` retired. *(queue item 1, done.)* Backend assumptions (event mapping,
+  `pending` pre/post-submit, null-`pspTransactionId`, pending-only eligibility) are in the page's SPEC
+  ledger. The per-product word-hue clarification is logged here, to be applied in a later grammar pass.
 
 *Remaining queue — parked, suggested order (each its own gated pass):*
-1. **Gaspar `TxBadge` + mock reseed** to the real five-status vocabulary (`created/processing/pending/
-   failed/completed`) via a page map — the worked example above is its target. Also stop rendering
-   Direction / 3DS through the badge mechanism (categorical enums render silent/plain, not semantic).
-2. **Remaining `BeamStatusBadge` call sites → page maps** (config/payout/preset pages via `statusBadge`,
+1. **Remaining `BeamStatusBadge` call sites → page maps** (config/payout/preset pages via `statusBadge`,
    midnight players/payments, gaspar bench legend's relabeled tokens `active→"Routing"` etc.), retiring
    the `statusBadge`/`lifecycleBadge` helpers and eventually the adapter.
-3. **Severity unification:** `BeamStat` (`warning|error`) and MUI `Alert` (`info|success|warning|error`)
+2. **Severity unification:** `BeamStat` (`warning|error`) and MUI `Alert` (`info|success|warning|error`)
    reconcile to the one hue set (`danger/warning/success/in-progress/neutral`).
-4. **Boolean consolidation:** the "Enabled" three-ways (BeamStatusBadge active/draft vs BeamBool vs
+3. **Boolean consolidation:** the "Enabled" three-ways (BeamStatusBadge active/draft vs BeamBool vs
    BeamSwitchField) settle on the boolean treatment (BeamBool / switch), not a status chip.
-5. **`NodeKindChip`** (gaspar rule builder) — categorical node kinds, decide silent/plain vs a
+4. **`NodeKindChip`** (gaspar rule builder) — categorical node kinds, decide silent/plain vs a
    sanctioned categorical treatment (not semantic hues).
-6. **Hand-rolled story chips** (`BeamPageHeader.stories` Pending/Active) → `BeamBadge`.
+5. **Hand-rolled story chips** (`BeamPageHeader.stories` Pending/Active) → `BeamBadge`.
+6. **Grammar wording:** clarify "hue fixed across the estate" → **per product vocabulary** (the
+   Gaspar-`warning` vs Sunlight-`in-progress` `Pending` homonym). Doc-only.
 
 The grammar changes no code by itself; the list above is the ledger, not this pass's mandate.

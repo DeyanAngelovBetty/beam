@@ -126,5 +126,15 @@ Added a page-local **Error Code** column (after Status), driven by `PaymentRow.e
 ### Backend ledger (open questions for the payments team)
 
 - **errorCode field + vocabulary** — MTI vs response/decline vs PSP codes (from the Error Code column, above).
-- **Complete / Decline endpoints + eligibility rules** — the actions are stubs; the Pending-only eligibility is our assumption.
-- **Failure event vocabulary** — what event type(s) mark a failed payment in `events[]`; today none is observed, so a Failed timeline stops mid-flow.
+- **Complete / Decline endpoints + eligibility rules** — the actions are stubs; **eligibility = `pending` rows only** is our assumption (restated for the real vocabulary).
+- **Failure event vocabulary** — what event type(s) mark a `failed` payment in `events[]`; today none is observed, so a `failed` timeline stops mid-flow (at `SubmittedToProvider`).
+
+### Status reseed → real vocabulary (2026-09-09, phase-3 queue item 1 — grammar's first Gaspar consumer)
+
+Mock + everything status-driven reseeded to **`created / processing / pending / failed / completed`**. New ledger assumptions to validate:
+
+- **Event mapping per status (ASSUMPTION)** — observed event types only, increasing depth: `created`→Initiated; `pending`→+PspAssigned; `processing`→+SubmittedToProvider; `completed`→+Approved; `failed`→stops at SubmittedToProvider (no failure event observed). **Open question:** does **`pending` mean awaiting an ops decision (pre-submit)** — our assumption, which is why pending sits *before* processing and carries a null `pspTransactionId` — **or awaiting the PSP (post-submit)?** This ordering encodes a manual-capture process assumption; confirm with backend.
+- **`pspTransactionId` placement (ASSUMPTION)** — null on `created` and `pending` (pre-`SubmittedToProvider`); present on `processing`/`failed`/`completed`. Internally consistent with the event mapping (the id is assigned at submit).
+- **Status filter options auto-derive** from the data (`uniqueSorted`), so they now offer the five real values with no hand-maintained list.
+
+The Status column renders through **`BeamBadge`** via an explicit page map (the state-rendering-grammar's own Gaspar worked example): `created`/`processing` silent, `pending` **warning/LOUD**, `failed` danger/noted, `completed` success/noted. **One loud state on the surface — and it's the one the bulk actions (Complete/Decline) light up for.** `Direction` and `3DS Status` are categories, not states → plain text (de-badged); `TxBadge` is retired. `pending` is `warning` here (payment awaiting ops action) — a homonym of Sunlight's `in-progress` `Pending` anchor, not the same word (word-hue consistency scopes per product vocabulary; grammar clarification logged for a later grammar pass).

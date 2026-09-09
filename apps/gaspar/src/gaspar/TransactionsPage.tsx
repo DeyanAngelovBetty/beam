@@ -3,17 +3,17 @@ import {
   Stack,
   Box,
   Typography,
-  Chip,
   Snackbar,
   Tooltip,
   IconButton,
   MenuItem,
   BeamField,
+  BeamBadge,
   BeamFilterBar,
   BeamDataTable,
   BeamPageHeader,
 } from '@betty/beam';
-import type { BeamColumn, AddableField } from '@betty/beam';
+import type { BeamColumn, AddableField, BeamBadgeProps } from '@betty/beam';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
 
 /**
@@ -101,16 +101,23 @@ interface PaymentRow {
  */
 
 // Mock of the server-paginated payments response (no real endpoint reachable in this app). Generated
-// (~40 rows) for the advanced-filters demo — NO new enum values (statuses Succeeded/Pending/Failed,
-// providers Nuvei/Adyen, currencies USD/EUR/CAD). Mostly-Succeeded; Pending rows carry a null
-// pspTransactionId; Failed rows carry distinct MTI errorCodes; amounts span magnitudes; createdAt
-// spreads across ~3 weeks. Deliberate variety also exercises earlier acceptance (em-dash, neutral badge).
+// (~40 rows) — real status vocabulary (phase-3 reseed): created/processing/pending/failed/completed;
+// providers Nuvei/Adyen; currencies USD/EUR/CAD. Mostly-completed; created/pending carry a null
+// pspTransactionId (pre-submit); failed rows carry distinct MTI errorCodes; amounts span magnitudes;
+// createdAt spreads across ~3 weeks.
 const CURRENCIES = ['USD', 'EUR', 'CAD'] as const;
 const AMOUNT_MAGNITUDES = [12.5, 47.99, 149, 320, 899.5, 1200, 2450, 4800, 75, 18.25];
 const FAILED_MTI = ['0400', '0100', '0200', '0210', '0230', '0800', '0120', '0330']; // distinct observed codes
 const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 40 }, (_, i) => {
-  const bucket = i % 10; // 0–5 Succeeded, 6–7 Pending, 8–9 Failed → mostly-Succeeded
-  const status = bucket <= 5 ? 'Succeeded' : bucket <= 7 ? 'Pending' : 'Failed';
+  // Real vocabulary (phase-3 reseed): completed 0–3 · pending 4–5 · processing 6 · created 7 · failed
+  // 8–9 → mostly-completed, pending prominent (the loud/actionable one), 8 failed rows (distinct codes).
+  const bucket = i % 10;
+  const status =
+    bucket <= 3 ? 'completed'
+    : bucket <= 5 ? 'pending'
+    : bucket === 6 ? 'processing'
+    : bucket === 7 ? 'created'
+    : 'failed';
   const psp = i % 2 === 0 ? 'Nuvei' : 'Adyen';
   const currency = CURRENCIES[i % 3];
   const direction = i % 3 === 0 ? 'Withdrawal' : 'Deposit';
@@ -133,8 +140,9 @@ const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 40 }, (_
     status,
     threeDsStatus: i % 6 === 0 ? 'Authenticated' : 'NotRequired',
     threeDsSessionReference: i % 6 === 0 ? `tds_ref_${5500 + i}` : null,
-    pspTransactionId: status === 'Pending' ? null : `${psp.toLowerCase()}_txn_${88213400 + i * 7}`,
-    errorCode: status === 'Failed' ? FAILED_MTI[failedIdx % FAILED_MTI.length] : null,
+    // No PSP transaction id before submit — created/pending are pre-SubmittedToProvider.
+    pspTransactionId: status === 'created' || status === 'pending' ? null : `${psp.toLowerCase()}_txn_${88213400 + i * 7}`,
+    errorCode: status === 'failed' ? FAILED_MTI[failedIdx % FAILED_MTI.length] : null,
     createdAt: created.toISOString(),
     updatedAt: updated.toISOString(),
   };
@@ -142,9 +150,10 @@ const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 40 }, (_
 
 /**
  * Seed a row's event timeline using ONLY observed event types (Initiated, PspAssigned,
- * SubmittedToProvider, Approved). Succeeded → all four; Pending → Initiated·PspAssigned; Failed →
- * Initiated·PspAssigned·SubmittedToProvider and STOP — no failure event type has ever been observed,
- * so the visibly incomplete timeline is the honest rendering (a deliberate open question, not a bug).
+ * SubmittedToProvider, Approved), increasing depth per status: created → Initiated; pending →
+ * +PspAssigned; processing → +SubmittedToProvider; completed → +Approved. failed stops at
+ * SubmittedToProvider — no failure event type has ever been observed, so the visibly incomplete
+ * timeline is the honest rendering (a deliberate open question, not a bug).
  */
 const buildEvents = (r: Omit<PaymentRow, 'events'>): PaymentEvent[] => {
   const t0 = new Date(r.createdAt).getTime();
@@ -153,9 +162,13 @@ const buildEvents = (r: Omit<PaymentRow, 'events'>): PaymentEvent[] => {
   const assigned: PaymentEvent = { eventType: 'PspAssigned', occurredOnUtc: at(1), details: `Routed to ${r.psp}` };
   const submitted: PaymentEvent = { eventType: 'SubmittedToProvider', occurredOnUtc: at(2), details: `Submitted to ${r.psp}`, pspTransactionId: r.pspTransactionId };
   const approved: PaymentEvent = { eventType: 'Approved', occurredOnUtc: r.updatedAt, amountModifier: r.amount, pspTransactionId: r.pspTransactionId };
-  if (r.status === 'Succeeded') return [initiated, assigned, submitted, approved];
-  if (r.status === 'Pending') return [initiated, assigned];
-  if (r.status === 'Failed') return [initiated, assigned, submitted]; // STOP — no observed failure event
+  // Observed event types only; increasing depth (ASSUMPTION — see the SPEC backend ledger, incl. the
+  // open question of whether `pending` is pre-submit (awaiting ops) or post-submit (awaiting PSP)).
+  if (r.status === 'completed') return [initiated, assigned, submitted, approved];
+  if (r.status === 'processing') return [initiated, assigned, submitted];
+  if (r.status === 'pending') return [initiated, assigned];
+  if (r.status === 'failed') return [initiated, assigned, submitted]; // STOP — no failure event observed
+  if (r.status === 'created') return [initiated];
   return [initiated]; // any other status: only what we can honestly assert
 };
 
@@ -308,23 +321,23 @@ function TruncateCopyCell({ value, mono, onCopied }: { value: string | null; mon
   );
 }
 
-// Observed-only positive map (spec enum rule): the ONLY value seen in sample payloads that reads as a
-// success signal. Everything else — Direction, 3DS, and any unseen status — renders NEUTRAL + raw
-// string. No invented enum→color table; unseen values never crash and never get a color.
-const POSITIVE_STATUSES = new Set(['Succeeded']);
-
-/** Page-local badge: raw string label always; positive tone only for observed positives, else neutral.
- *  Colors route through theme palette tokens (Chip color), never hardcoded. Does NOT touch BeamStatus. */
-function TxBadge({ value }: { value: string }) {
-  return (
-    <Chip
-      size="small"
-      variant="outlined"
-      color={POSITIVE_STATUSES.has(value) ? 'success' : 'default'}
-      label={value}
-    />
-  );
-}
+/**
+ * Status grammar map — this page's vocabulary → (hue, volume) via BeamBadge (state-rendering-grammar.md;
+ * the grammar's own Gaspar worked example). One LOUD state, `pending` — and it's the one the bulk
+ * actions (Complete/Decline) light up for. `pending` is `warning` here (a payment awaiting ops action,
+ * per actionability) — a HOMONYM of Sunlight's in-progress `Pending` anchor, not the same word; word-hue
+ * consistency scopes per product vocabulary. created/processing are silent (system mid-work, no news);
+ * failed is noted danger (investigate, don't alarm); completed is noted success.
+ */
+const STATUS_TIER: Record<string, BeamBadgeProps> = {
+  created: { hue: 'neutral', label: 'Created' },
+  processing: { hue: 'neutral', label: 'Processing' },
+  pending: { hue: 'warning', volume: 'loud', label: 'Pending' },
+  failed: { hue: 'danger', volume: 'noted', label: 'Failed' },
+  completed: { hue: 'success', volume: 'noted', label: 'Completed' },
+};
+/** Unobserved status → silent with its raw label (the estate's honesty rule, now canonical). */
+const statusTier = (s: string): BeamBadgeProps => STATUS_TIER[s] ?? { hue: 'neutral', label: s };
 
 /** Phase A: the payment-method GUID. Phase B (unreachable today): a composite card cell when the row
  *  carries an embedded card summary — falls back to Phase A when absent (spec §"two phases"). */
@@ -505,7 +518,7 @@ export function TransactionsPage() {
   // are PROPOSALS (confirm → snackbar, no mutation). Eligibility: Pending only (assumption).
   // Bulk actions are a FACTORY (Option C) so disabled/reason reflect the live selection.
   const bulkActions = (selectedRows: PaymentRow[]) => {
-    const noEligible = selectedRows.every((r) => r.status !== 'Pending');
+    const noEligible = selectedRows.every((r) => r.status !== 'pending');
     return [
       { id: 'export', label: 'Export' },
       { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
@@ -520,7 +533,7 @@ export function TransactionsPage() {
       return;
     }
     // Complete/Decline already passed the organism's confirm (confirm / destructive).
-    const eligible = selected.filter((r) => r.status === 'Pending').length;
+    const eligible = selected.filter((r) => r.status === 'pending').length;
     const verb = actionId === 'complete' ? 'Complete' : 'Decline';
     setSnack(`${verb} — design proposal, no backend. ${eligible} eligible transaction(s) would be affected. Nothing was changed.`);
   };
@@ -529,7 +542,7 @@ export function TransactionsPage() {
   // proposals with a per-row confirm (row-level confirm lives in onSelect). Disabled + reason when the
   // row isn't Pending (BeamRowAction doctrine).
   const rowActions = (row: PaymentRow) => {
-    const notPending = row.status !== 'Pending';
+    const notPending = row.status !== 'pending';
     return [
       { id: 'export', label: 'Export', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
       {
@@ -552,12 +565,14 @@ export function TransactionsPage() {
     { key: 'paymentMethodId', header: 'Payment method', getValue: (r) => r.paymentMethodId, width: 168, render: (r) => <PaymentMethodCell row={r} onCopied={onCopied} /> },
     { key: 'amount', header: 'Amount', align: 'right', getValue: (r) => r.amount, width: 110, render: (r) => r.amount.toFixed(2) },
     { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
-    { key: 'direction', header: 'Direction', getValue: (r) => r.direction, width: 124, render: (r) => <TxBadge value={r.direction} /> },
-    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <TxBadge value={r.status} /> },
+    // Direction is a CATEGORY, not a state — plain text, no badge (grammar: semantic hues are for states only).
+    { key: 'direction', header: 'Direction', getValue: (r) => r.direction, width: 124, render: (r) => r.direction },
+    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <BeamBadge {...statusTier(r.status)} size="small" /> },
     // PROPOSED column — errorCode has no data source in the payments API yet (see SPEC build-notes).
     { key: 'errorCode', header: 'Error Code', getValue: (r) => r.errorCode ?? '', width: 110, render: (r) => <ErrorCodeCell code={r.errorCode} /> },
     { key: 'psp', header: 'Provider', getValue: (r) => r.psp, width: 110, render: (r) => r.psp },
-    { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => <TxBadge value={r.threeDsStatus} /> },
+    // 3DS status is a CATEGORY, not a state — plain text, no badge.
+    { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => r.threeDsStatus },
     { key: 'createdAt', header: 'Created At', align: 'right', getValue: (r) => r.createdAt, width: 150, render: (r) => <TimestampCell iso={r.createdAt} /> },
     { key: 'updatedAt', header: 'Last Updated', align: 'right', getValue: (r) => r.updatedAt, width: 150, render: (r) => <TimestampCell iso={r.updatedAt} /> },
   ];
