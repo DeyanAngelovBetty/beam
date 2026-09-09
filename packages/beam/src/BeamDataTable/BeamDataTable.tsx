@@ -586,6 +586,7 @@ export function BeamDataTable<Row>({
                       backgroundImage: `${selectedLayer}, ${hoverLayer}`,
                     },
                     ...(isHighlighted && { '& .beam-rail': { backgroundImage: hoverLayer } }),
+                     ...(row.getIsExpanded() && { borderTop: 2, borderColor: 'divider' }),
                   }}
                 >
                   {railEnabled && (
@@ -646,7 +647,8 @@ export function BeamDataTable<Row>({
                       // padding:0 — the td's inline padding otherwise displaces the sticky panel from its
                       // pinned left:0 and it wiggles across the sticky threshold while scrolling. The
                       // panel's inset moves onto the sticky box itself (below).
-                      sx={{ p: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 1, borderColor: 'divider' }) }}
+                      sx={{ p: 0, border: 0, ...(row.getIsExpanded() && { borderBottom: 3, borderColor: 'divider' }) }}
+                      // sx={{ p: 0, border: 0, borderBottom: 2, borderColor: 'divider' }}
                     >
                       <Collapse
                         in={row.getIsExpanded()}
