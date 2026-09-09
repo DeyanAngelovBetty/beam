@@ -1,7 +1,8 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
+import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
-import { GASPAR_NAV, type GasparView, type GasparNavItem } from './gaspar/navItems';
+import { GASPAR_NAV, VIEW_PATH, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
 import { ThemeLabDrawer } from '@betty/beam-lab';
 import { TransactionsPage } from './gaspar/TransactionsPage';
@@ -53,27 +54,41 @@ const brandMark = {
  * ⚠️ Gaspar's token values are glanceable DEMO placeholders, not its
  * identity (BEAM.md Appendix C). The real design pass is pending.
  */
+// HashRouter (not Browser) — gh-pages-safe with no server config, survives refresh, and gives
+// deep-linkable URLs (…/beam/gaspar/#/transactions opens directly — the London demo link). The hash
+// sits AFTER Vite's base path, so no basename is needed. The shell stays nav-agnostic; only Gaspar's
+// own wiring changed. Page state that's localStorage-backed (column arrangement, added filter fields)
+// survives the remount a refresh causes; filter VALUES are page-local by design and reset (values are
+// query, not workspace).
 export function App() {
+  return (
+    <HashRouter>
+      <GasparApp />
+    </HashRouter>
+  );
+}
+
+function GasparApp() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [brand, setBrand] = useState<BrandName>('ontario');
-  // Minimal view switch — Gaspar has no router yet. Nav leaves that route carry a
-  // `view` tag (navItems.tsx); we wire selected/onClick from it. Dashboard is the
-  // default landing view; the bench lives in Storybook, not the app.
-  const [view, setView] = useState<GasparView>('dashboard');
   const [labOpen, setLabOpen] = useState(false); // Theme Lab drawer (Gaspar only)
   const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
 
-  // Wire selected/onClick from the `view` tag at ANY depth (Rule Builder is nested under Routing).
+  // Wire selected/onClick from the `view` tag at ANY depth (Rule Builder is nested under Routing):
+  // selected from the current pathname, onClick → navigate to the view's hash route.
   const navItems = useMemo<BeamNavItem[]>(() => {
     const wire = (item: GasparNavItem): BeamNavItem => {
       const { view: itemView, children, ...rest } = item;
+      const path = itemView ? VIEW_PATH[itemView] : undefined;
       return {
         ...rest,
-        ...(itemView ? { selected: view === itemView, onClick: () => setView(itemView) } : {}),
+        ...(path ? { selected: pathname === path, onClick: () => navigate(path) } : {}),
         ...(children ? { children: children.map(wire) } : {}),
       };
     };
     return GASPAR_NAV.map(wire);
-  }, [view]);
+  }, [pathname, navigate]);
 
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
@@ -84,13 +99,21 @@ export function App() {
         persistKey="beam.shell.gaspar"
         footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
       >
-        {view === 'dashboard' && <DashboardPage />}
-        {view === 'transactions' && <TransactionsPage />}
-        {view === 'ruleBuilder' && (
-          <Suspense fallback={<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>Loading Rule Builder…</Typography>}>
-            <RuleBuilderPage />
-          </Suspense>
-        )}
+        <Routes>
+          <Route path="/" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
+          <Route path={VIEW_PATH.dashboard} element={<DashboardPage />} />
+          <Route path={VIEW_PATH.transactions} element={<TransactionsPage />} />
+          <Route
+            path={VIEW_PATH.ruleBuilder}
+            element={
+              <Suspense fallback={<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>Loading Rule Builder…</Typography>}>
+                <RuleBuilderPage />
+              </Suspense>
+            }
+          />
+          {/* Unknown hash → back to the landing view. */}
+          <Route path="*" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
+        </Routes>
       </BeamAppShell>
       {/* Non-modal — the live app above IS the preview; it stays interactable. */}
       <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />

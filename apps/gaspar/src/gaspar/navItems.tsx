@@ -12,6 +12,14 @@ import type { BeamNavItem } from '@betty/beam';
  *  the `view` tag below — no positional (index-0) coupling. */
 export type GasparView = 'dashboard' | 'transactions' | 'ruleBuilder';
 
+/** view → hash route path. The App wires nav onClick → navigate(path) and selected from the pathname;
+ *  HashRouter keeps these gh-pages-safe and deep-linkable (…/#/transactions). */
+export const VIEW_PATH: Record<GasparView, string> = {
+  dashboard: '/dashboard',
+  transactions: '/transactions',
+  ruleBuilder: '/rule-builder',
+};
+
 /** A nav leaf that routes to a top-level view carries `view` — at ANY depth, so children override
  *  BeamNavItem's `children` to stay GasparNavItem (Rule Builder is nested under Routing). */
 export type GasparNavItem = Omit<BeamNavItem, 'children'> & { view?: GasparView; children?: GasparNavItem[] };
