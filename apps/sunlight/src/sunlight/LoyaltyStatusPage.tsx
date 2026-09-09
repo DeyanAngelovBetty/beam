@@ -12,7 +12,7 @@ import {
   GemIcon,
   BeamPageHeader,
   BeamTabs,
-  BeamStatusBadge,
+  BeamBadge,
 } from '@betty/beam';
 import type { BeamColumn, BeamTabItem } from '@betty/beam';
 import EditIcon from '@mui/icons-material/EditRounded';
@@ -153,8 +153,10 @@ export function LoyaltyStatusPage() {
       width: '120px',
       render: (r) => {
         // Concurrency-aware: the badge means "this record has at least one pending request."
+        // Grammar map (one word): Pending is in-progress/LOUD — the deliberate loud exception on an
+        // otherwise quiet surface, because it blocks on a checker's decision (actionability = loud).
         const hasPending = pendingOnRecord(String(r.id)).length > 0;
-        return hasPending ? <BeamStatusBadge status="pending" label="Pending" size="small" /> : null;
+        return hasPending ? <BeamBadge hue="in-progress" volume="loud" label="Pending" size="small" /> : null;
       },
     },
   ];

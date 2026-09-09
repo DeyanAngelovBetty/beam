@@ -43,6 +43,27 @@ nothing — the alarm-wall failure.
    *noted danger*. A state blocking on someone's decision is the loud one, whatever
    its emotional color. Map by asking "who must act?", never "how bad does it feel?".
 
+## Hue is estate-wide; volume is per-surface *(contextual-volume note, 2026-09-09)*
+
+A word's **hue is fixed across the estate** — `Pending` is `in-progress` everywhere, `Failed` is
+`danger` everywhere. Hue is meaning, and meaning does not change per screen. **Volume is chosen
+per surface**, by the loudness budget (at most one loud state per surface, earned by actionability).
+So the same word can be *noted* on one surface and *loud* on another — same hue, different volume —
+and that is not a collision; it is the budget doing its job.
+
+**Worked example — `Pending` on two surfaces (both shipped):**
+
+| Surface | Word | Hue (fixed) | Volume (per budget) | Why |
+|---|---|---|---|---|
+| Loyalty Status (approval column) | Pending | `in-progress` | **loud** (filled) | the lone actionable state on an otherwise quiet record grid — a checker must decide |
+| Pending Approvals (the queue) | Pending | `in-progress` | **noted** (outlined) | the whole queue is pending; loud on every row is a wall of alarm — the budget forbids it |
+
+The hue is identical (both `in-progress`); only the volume differs, and each is right for its surface.
+When a word's *hue* would need to change per surface (the audit's `Disabled` = config-`draft` vs
+lifecycle-`paused`), that is a real collision — the fix is renaming the vocabulary, not overloading
+the hue. (Token Campaigns took the other branch: `Disabled` is now silent/neutral estate-consistent,
+because a disabled campaign asks nobody to act.)
+
 ## Architecture: who speaks what
 
 - **The organism speaks tiers.** One badge component; its API is
@@ -87,9 +108,29 @@ This grammar governs the design repo now. Official Beam/Sunlight repos are invit
 to adopt by reference — collisions found there reconcile toward this document, and
 proposed amendments come back as edits here, not as local divergence.
 
-**Phase 3 (reconciliation, separate pass):** one badge organism speaking tiers;
-page vocabulary maps for every audit surface; the audit's anomalies (fill
-conventions, severity member sets, relabeled tokens, hand-rolled story chips)
-resolved against these rules; Gaspar transactions reseeded to the real five-status
-vocabulary. Each reconciliation is its own gated task — the grammar changes no code
-by itself.
+**Phase 3 (reconciliation) — each reconciliation is its own gated task.**
+
+*Done (2026-09-09, first reconciliation pass):*
+- **Keystone** `BeamBadge` (grammar-native `(hue, volume, label)`, filled-neutral + label-less
+  unrepresentable); `BeamStatusBadge` reimplemented as a legacy adapter over it (pixel-identical).
+- **Three Sunlight surfaces migrated to explicit vocabulary→tier maps:** Token Campaigns (executed the
+  amber-`Disabled` collision → silent; Scheduled dimmed loud→noted), Loyalty Status approval
+  (`Pending` loud), Pending Approvals `CRStatusChip` (`Pending`/decision-history noted; canceled/
+  outdated silent). Raw strings no longer drive color on these three.
+
+*Remaining queue — parked, suggested order (each its own gated pass):*
+1. **Gaspar `TxBadge` + mock reseed** to the real five-status vocabulary (`created/processing/pending/
+   failed/completed`) via a page map — the worked example above is its target. Also stop rendering
+   Direction / 3DS through the badge mechanism (categorical enums render silent/plain, not semantic).
+2. **Remaining `BeamStatusBadge` call sites → page maps** (config/payout/preset pages via `statusBadge`,
+   midnight players/payments, gaspar bench legend's relabeled tokens `active→"Routing"` etc.), retiring
+   the `statusBadge`/`lifecycleBadge` helpers and eventually the adapter.
+3. **Severity unification:** `BeamStat` (`warning|error`) and MUI `Alert` (`info|success|warning|error`)
+   reconcile to the one hue set (`danger/warning/success/in-progress/neutral`).
+4. **Boolean consolidation:** the "Enabled" three-ways (BeamStatusBadge active/draft vs BeamBool vs
+   BeamSwitchField) settle on the boolean treatment (BeamBool / switch), not a status chip.
+5. **`NodeKindChip`** (gaspar rule builder) — categorical node kinds, decide silent/plain vs a
+   sanctioned categorical treatment (not semantic hues).
+6. **Hand-rolled story chips** (`BeamPageHeader.stories` Pending/Active) → `BeamBadge`.
+
+The grammar changes no code by itself; the list above is the ledger, not this pass's mandate.

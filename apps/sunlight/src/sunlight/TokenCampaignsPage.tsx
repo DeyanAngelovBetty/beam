@@ -9,10 +9,10 @@ import {
   BeamPageHeader,
   BeamFilterBar,
   BeamDataTable,
-  BeamStatusBadge,
+  BeamBadge,
   BeamBool,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowAction } from '@betty/beam';
+import type { BeamColumn, BeamRowAction, BeamBadgeProps } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditRounded';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEventsOutlined';
@@ -21,12 +21,24 @@ import { RouterIdentityLink } from './RouterIdentityLink';
 import {
   getTokenCampaigns,
   campaignLifecycle,
-  lifecycleBadge,
   campaignSummary,
   LIFECYCLES,
   type CampaignLifecycle,
   type TokenCampaign,
 } from './tokenCampaigns';
+
+/**
+ * Campaign lifecycle → (hue, volume) — this page's status grammar map (state-rendering-grammar.md).
+ * Running is the only loud state; Scheduled is noted (in progress, worth registering but not shouting);
+ * Ended and Disabled are silent — executing the audit's amber-`Disabled` collision (was warning/paused,
+ * now neutral, because a disabled campaign asks nobody to act). Raw strings never drive color.
+ */
+const LIFECYCLE_TIER: Record<CampaignLifecycle, BeamBadgeProps> = {
+  running: { hue: 'success', volume: 'loud', label: 'Running' },
+  scheduled: { hue: 'in-progress', volume: 'noted', label: 'Scheduled' },
+  ended: { hue: 'neutral', label: 'Ended' },
+  disabled: { hue: 'neutral', label: 'Disabled' },
+};
 
 /**
  * Token Campaigns — the Prize Wall flow's list page (step 1), per list-page grammar: a filter bar,
@@ -106,10 +118,7 @@ export function TokenCampaignsPage() {
       header: 'Status',
       width: 120,
       getValue: (c) => campaignLifecycle(c),
-      render: (c) => {
-        const b = lifecycleBadge(campaignLifecycle(c));
-        return <BeamStatusBadge status={b.status} label={b.label} size="small" />;
-      },
+      render: (c) => <BeamBadge {...LIFECYCLE_TIER[campaignLifecycle(c)]} size="small" />,
     },
     // Placeholder content — real "token / prize info" corrected on Deyan's Figma review.
     { key: 'summary', header: 'Prize info', getValue: (c) => campaignSummary(c), render: (c) => campaignSummary(c), width: 170 },

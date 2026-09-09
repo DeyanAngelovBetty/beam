@@ -100,6 +100,8 @@ export type { Theme } from '@mui/material/styles';
 // ---- Organisms (Beam-owned) ----
 export { BeamAppShell } from './BeamAppShell/BeamAppShell';
 export type { BeamAppShellProps, BeamNavItem, BeamBrandMark } from './BeamAppShell/BeamAppShell.types';
+export { BeamBadge } from './BeamBadge/BeamBadge';
+export type { BeamBadgeProps, BeamBadgeHue } from './BeamBadge/BeamBadge.types';
 export { BeamStatusBadge } from './BeamStatusBadge/BeamStatusBadge';
 export type { BeamStatusBadgeProps, BeamStatus } from './BeamStatusBadge/BeamStatusBadge.types';
 export { BeamDataTable } from './BeamDataTable/BeamDataTable';

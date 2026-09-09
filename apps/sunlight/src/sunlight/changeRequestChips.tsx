@@ -1,30 +1,26 @@
-import { Chip } from '@betty/beam';
+import { Chip, BeamBadge } from '@betty/beam';
+import type { BeamBadgeProps } from '@betty/beam';
 import type { ChangeRequestStatus } from './changeRequests';
 
 /**
- * CR-status pigments — a PAGE-LOCAL vocabulary, deliberately NOT BeamStatus (changeRequests.ts
- * declares CR lifecycle "NOT BeamStatus — no design-vocabulary implications"). Mirrors only the
- * BeamStatusBadge *mechanism*: word → semantic-token colour → MUI Chip (theme picks the hex).
+ * CR-status grammar map — this surface's vocabulary → (hue, volume) (state-rendering-grammar.md).
+ * The Pending Approvals queue is AMBIENT: `pending` is in-progress/NOTED (not loud — the queue's whole
+ * content is pending; a wall of loud communicates nothing, the budget forbids it). Decision-history
+ * statuses map per grammar: `approved` noted success, `rejected` noted danger. `canceled` (requester
+ * retraction) and `outdated` (a sibling CR won) are silent — neither is the reviewer's danger.
+ * (Contrast: the SAME word Pending is LOUD on Loyalty Status, where it's the lone actionable state —
+ * hue fixed estate-wide, volume per surface via the loudness budget.)
  */
-const CR_STATUS_COLOR: Record<ChangeRequestStatus, 'info' | 'success' | 'error' | 'default'> = {
-  pending: 'info',
-  approved: 'success',
-  rejected: 'error',
-  // Canceled (the requester's own retraction) and outdated (a sibling CR was approved) are both
-  // neutral — neither is the reviewer's red 'rejected'.
-  canceled: 'default',
-  outdated: 'default',
-};
-const CR_STATUS_LABEL: Record<ChangeRequestStatus, string> = {
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  canceled: 'Canceled',
-  outdated: 'Outdated',
+const CR_STATUS_TIER: Record<ChangeRequestStatus, BeamBadgeProps> = {
+  pending: { hue: 'in-progress', volume: 'noted', label: 'Pending' },
+  approved: { hue: 'success', volume: 'noted', label: 'Approved' },
+  rejected: { hue: 'danger', volume: 'noted', label: 'Rejected' },
+  canceled: { hue: 'neutral', label: 'Canceled' },
+  outdated: { hue: 'neutral', label: 'Outdated' },
 };
 
 export function CRStatusChip({ status, size = 'small' }: { status: ChangeRequestStatus; size?: 'small' | 'medium' }) {
-  return <Chip label={CR_STATUS_LABEL[status]} color={CR_STATUS_COLOR[status]} size={size} variant="outlined" />;
+  return <BeamBadge {...CR_STATUS_TIER[status]} size={size} />;
 }
 
 /**
