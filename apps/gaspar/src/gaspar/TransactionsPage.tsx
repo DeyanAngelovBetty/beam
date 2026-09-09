@@ -172,7 +172,21 @@ const buildEvents = (r: Omit<PaymentRow, 'events'>): PaymentEvent[] => {
   return [initiated]; // any other status: only what we can honestly assert
 };
 
-const PAYMENTS: PaymentRow[] = RAW_PAYMENTS.map((r) => ({ ...r, events: buildEvents(r) }));
+// DEMO STAGING (not a sort feature): reorder the mock so page one leads with the severity story
+// top-down — ~4 failed, ~3 pending, a processing, a created, a completed — then the remainder tapers
+// severity-descending across later pages. This is mock-data ordering only; the grid has no default-sort
+// state and no sort logic — a real product sort is not being claimed here.
+const stageForDemo = (rows: Omit<PaymentRow, 'events'>[]): Omit<PaymentRow, 'events'>[] => {
+  const of = (s: string) => rows.filter((r) => r.status === s);
+  const failed = of('failed'), pending = of('pending'), processing = of('processing'), created = of('created'), completed = of('completed');
+  return [
+    // Page one — the headline mix.
+    ...failed.slice(0, 4), ...pending.slice(0, 3), ...processing.slice(0, 1), ...created.slice(0, 1), ...completed.slice(0, 1),
+    // Onward — remaining rows, severity-descending (completed dominates the tail).
+    ...failed.slice(4), ...pending.slice(3), ...processing.slice(1), ...created.slice(1), ...completed.slice(1),
+  ];
+};
+const PAYMENTS: PaymentRow[] = stageForDemo(RAW_PAYMENTS).map((r) => ({ ...r, events: buildEvents(r) }));
 
 // Select options DERIVED from the mock rows — the filter offers exactly the values present, never a
 // hardcoded vocabulary. (Direction happens to be Deposit/Withdrawal today; still derived, not assumed.)
@@ -560,15 +574,18 @@ export function TransactionsPage() {
   // Default-visible set, in spec order. (When bullet 3 lands, the CATALOG above joins these as the
   // column manager's contents.)
   const columns: BeamColumn<PaymentRow>[] = [
+    // Declared default order (2026-09-09): Status promoted to 3rd (after the IDs, before Customer) so
+    // the severity read leads. Persisted arrangements are untouched by the column-manager merge rule —
+    // browsers with saved order need "Reset to defaults" to adopt this.
     { key: 'id', header: 'Transaction ID', getValue: (r) => r.id, width: 168, render: (r) => <TruncateCopyCell value={r.id} onCopied={onCopied} /> },
     { key: 'pspTransactionId', header: 'PSP Transaction ID', getValue: (r) => r.pspTransactionId ?? '', width: 184, render: (r) => <TruncateCopyCell value={r.pspTransactionId} mono onCopied={onCopied} /> },
+    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <BeamBadge {...statusTier(r.status)} size="small" /> },
     { key: 'customerId', header: 'Customer', getValue: (r) => r.customerId, width: 130, render: (r) => r.customerId },
     { key: 'paymentMethodId', header: 'Payment method', getValue: (r) => r.paymentMethodId, width: 168, render: (r) => <PaymentMethodCell row={r} onCopied={onCopied} /> },
     { key: 'amount', header: 'Amount', align: 'right', getValue: (r) => r.amount, width: 110, render: (r) => r.amount.toFixed(2) },
     { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
     // Direction is a CATEGORY, not a state — plain text, no badge (grammar: semantic hues are for states only).
     { key: 'direction', header: 'Direction', getValue: (r) => r.direction, width: 124, render: (r) => r.direction },
-    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <BeamBadge {...statusTier(r.status)} size="small" /> },
     // PROPOSED column — errorCode has no data source in the payments API yet (see SPEC build-notes).
     { key: 'errorCode', header: 'Error Code', getValue: (r) => r.errorCode ?? '', width: 110, render: (r) => <ErrorCodeCell code={r.errorCode} /> },
     { key: 'psp', header: 'Provider', getValue: (r) => r.psp, width: 110, render: (r) => r.psp },
