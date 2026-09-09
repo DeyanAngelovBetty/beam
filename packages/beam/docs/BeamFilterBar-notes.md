@@ -2,6 +2,11 @@
 
 Decisions and additive changes to the organism, newest first.
 
+> The `[+]` menu's disabled "awaiting data" entries are a rendered-state ledger; how state/status
+> renders across the estate is [/docs/state-rendering-grammar.md](../../../docs/state-rendering-grammar.md)
+> (evidence: [/docs/status-grammar-audit.md](../../../docs/status-grammar-audit.md)). Phase-3
+> reconciliation is separately gated — not triggered by these notes.
+
 ## Advanced representation — add / remove / persist fields *(2026-09-09)*
 
 Opt-in `advanced` config turns the bar into the advanced filters panel (Figma `AdvancedFiltersPanel`,

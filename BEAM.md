@@ -166,7 +166,9 @@ pain each one prevents:
 4. **Statuses are semantic vocabulary, not colors.** `BeamStatusBadge` accepts
    `active | scheduled | draft | paused | expired | error`; extending the union is a
    vocabulary decision made deliberately, never a color pick. (Approval-flow states like
-   `pendingApproval` are anticipated candidates.)
+   `pendingApproval` are anticipated candidates.) *How* any state renders (hue = meaning,
+   fill = volume) is the estate-wide [docs/state-rendering-grammar.md](docs/state-rendering-grammar.md),
+   written against the census in [docs/status-grammar-audit.md](docs/status-grammar-audit.md).
 5. **Headless engine + themed surface.** Complex behavior (tables today, likely more) uses
    headless libraries (TanStack Table) purely as state engines; Beam renders 100% of the
    pixels with themed MUI atoms. We do not adopt pre-styled component libraries beyond MUI.

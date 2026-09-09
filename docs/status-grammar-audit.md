@@ -3,6 +3,10 @@
 **Date:** 2026-09-09 · **Scope:** read-only inventory. No recommendations — the grammar (phase 2) is
 written against this table. Home is `/docs` (cross-cutting, per the spec-home convention).
 
+> **Phase 2 landed:** [docs/state-rendering-grammar.md](state-rendering-grammar.md) is written against
+> this census — this audit is its evidence base. Phase 3 (reconciliation) is a queue of separate gated
+> tasks, not started by the grammar.
+
 **Method:** every place a status, state, or boolean condition is rendered with a visual encoding
 (chip/badge, colored text, icon, dot, filled/outlined variant, spine, switch). Verbatim vocabulary.
 Findings are recorded as found — the inconsistencies are the point.

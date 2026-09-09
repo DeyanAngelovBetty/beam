@@ -3,6 +3,11 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+> Status/state cells rendered in the grid (`BeamStatusBadge`, page-local `TxBadge`, `BeamBool`, the
+> column-manager's "awaiting data" ledger) follow [/docs/state-rendering-grammar.md](../../../docs/state-rendering-grammar.md)
+> (evidence: [/docs/status-grammar-audit.md](../../../docs/status-grammar-audit.md)). Phase-3
+> reconciliation is separately gated — not triggered by these notes.
+
 ## PARKED BUG — stale paint on expanded rows at rail width *(2026-09-09)*
 
 **Status: open, deliberately parked.** A structural fix was built and **reverted** (commit `ed0e71b`,
