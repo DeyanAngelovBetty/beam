@@ -3,6 +3,46 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## PARKED BUG — stale paint on expanded rows at rail width *(2026-09-09)*
+
+**Status: open, deliberately parked.** A structural fix was built and **reverted** (commit `ed0e71b`,
+reverted by `e9f71a3`) because it caused a visual regression; we chose the known cosmetic bug over the
+regression for now. This note is so the next attempt starts warm — the day this was parked belonged to
+advanced filters.
+
+**Symptom.** Expand/collapse translates the detail row's geometry while the sticky rail column overlaps
+it; a region **exactly rail-width wide** at the left of the expanded panel paints stale — an
+unconditional debug border proves it (border paints, then visually clips to rail width once the Collapse
+settles). **Computed styles stay correct while the pixels are wrong** — a classic missed-invalidation of
+the overlapped region. **Any repaint clears it** (hovering a row below, a node screenshot, devtools
+paint-flash). Root cause: sticky rail layers + animated Collapse height ⇒ the compositor never
+invalidates the rail-width slice of the detail cell. (Distinct from the 2026-09-08 stale-`:hover` fix,
+which is real and stays — see below.)
+
+**Fix attempted and why reverted.** Give the detail row its own rail cell (empty, same `railStickySx`)
+so the rail column is a continuous sticky layer top-to-bottom, and shrink the content cell to the data
+columns with the panel offset by a measured `--beam-rail-width`. It did resolve the paint bug, but the
+result read as a **visual regression** vs. the full-width `100cqw` pinned panel we want for now — so it
+was reverted. Current (shipped) state: detail row is a single `colSpan` cell, panel `position: sticky;
+left: 0; width: 100cqw`.
+
+**Leads for next time.**
+- **`width` is ignored on `display: table-row`/`table-cell` boxes' participation** — the panel can't be
+  authoritatively sized while it's part of table layout, which is why the reverted fix needed a measured
+  rail-width var and still fought the layout. Sizing a pinned panel inside a `<table>` is the crux.
+- **Candidate real fixes:** (a) take the detail panel **out of table layout entirely** — a positioned
+  overlay (absolute/fixed to the scroll wrapper) that isn't a table descendant, so its paint layer is
+  self-contained and its width is free; or (b) the grid **moves off `<table>` layout** (CSS grid /
+  flex rows), which dissolves both this bug and the width-ignored constraint.
+- **Simplify the two-container setup when touched next.** The `inline-size` wrapper (for `100cqw`) +
+  the `scroll-state` scroller are two nested containers doing subtly different jobs; that subtlety is
+  part of why the paint invalidation is fragile. Consolidating or clarifying them is worth doing
+  alongside the real fix.
+- **Last-resort escape hatch:** promote the detail cell to its own paint layer (`will-change: transform`
+  scoped to detail rows) to make invalidation self-contained — a compositor hint, not a real fix, and
+  only if the layout approaches above stall.
+
+
 ## Fix — stale `:hover` on rows after a Collapse animation *(2026-09-08)*
 
 Expanding/collapsing a row translates the rows below under a stationary cursor; browsers only recompute
