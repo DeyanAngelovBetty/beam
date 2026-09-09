@@ -51,18 +51,42 @@ per surface**, by the loudness budget (at most one loud state per surface, earne
 So the same word can be *noted* on one surface and *loud* on another — same hue, different volume —
 and that is not a collision; it is the budget doing its job.
 
-**Worked example — `Pending` on two surfaces (both shipped):**
+### The sanctioned exception: the JOURNEY ANCHOR *(2026-09-09)*
 
-| Surface | Word | Hue (fixed) | Volume (per budget) | Why |
+A product may **pin one status's full rendering — hue AND volume — across all its surfaces** when that
+status names the central object of a cross-surface workflow. Recognizing the tracked object at a glance,
+everywhere it appears, outranks per-surface volume tuning for that one word. This overrides the
+default (volume-per-surface) rule above, for the anchor only.
+
+Anchors are **scarce by rule**: at most one or two per product, and **declared explicitly** (not
+inferred). Everything that is not the anchor still obeys the budget.
+
+**Accepted cost, stated honestly:** the anchor's home queue — the surface where every row is the anchor
+status — renders **uniform loud**. That is tolerated because it is *uniform*: one base tone, not a set
+of competing shouts. The alarm-wall failure is many *different* loud states fighting for attention; a
+single status rendered loud on every row is a texture, not a competition. And the budget still governs
+every non-anchor status on that surface, so nothing else can pile on.
+
+**Declared anchors:**
+- **Sunlight → `Pending`** (`in-progress` / **loud**, every surface). Maker-checker is Sunlight's
+  essential workflow; a pending change request is the object the whole product tracks.
+
+**Worked example — `Pending` (default rule vs anchor override):**
+
+| Surface | Word | Hue (fixed) | Volume | Why |
 |---|---|---|---|---|
-| Loyalty Status (approval column) | Pending | `in-progress` | **loud** (filled) | the lone actionable state on an otherwise quiet record grid — a checker must decide |
-| Pending Approvals (the queue) | Pending | `in-progress` | **noted** (outlined) | the whole queue is pending; loud on every row is a wall of alarm — the budget forbids it |
+| Loyalty Status (approval column) | Pending | `in-progress` | **loud** | *Default rule also yields loud* — the lone actionable state on a quiet grid. Default and anchor agree here. |
+| Pending Approvals (the queue) | Pending | `in-progress` | **loud** | *Default rule would say noted* (whole queue is pending → budget dampens); the **anchor override wins** → loud. Uniform-loud queue, accepted per the cost above. |
 
-The hue is identical (both `in-progress`); only the volume differs, and each is right for its surface.
+Same hue everywhere (`in-progress`); on Loyalty Status the default and the anchor land on the same
+volume, on Pending Approvals the anchor overrides the budget's *noted* up to *loud*. Every non-anchor
+status on both surfaces still follows the budget (decision-history `approved`/`rejected` are *noted*,
+`canceled`/`outdated` *silent*).
+
 When a word's *hue* would need to change per surface (the audit's `Disabled` = config-`draft` vs
-lifecycle-`paused`), that is a real collision — the fix is renaming the vocabulary, not overloading
-the hue. (Token Campaigns took the other branch: `Disabled` is now silent/neutral estate-consistent,
-because a disabled campaign asks nobody to act.)
+lifecycle-`paused`), that is a real collision — not an anchor case — and the fix is renaming the
+vocabulary, not overloading the hue. (Token Campaigns took the other branch: `Disabled` is now
+silent/neutral estate-consistent, because a disabled campaign asks nobody to act.)
 
 ## Architecture: who speaks what
 

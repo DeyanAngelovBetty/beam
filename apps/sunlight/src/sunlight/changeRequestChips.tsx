@@ -4,15 +4,15 @@ import type { ChangeRequestStatus } from './changeRequests';
 
 /**
  * CR-status grammar map — this surface's vocabulary → (hue, volume) (state-rendering-grammar.md).
- * The Pending Approvals queue is AMBIENT: `pending` is in-progress/NOTED (not loud — the queue's whole
- * content is pending; a wall of loud communicates nothing, the budget forbids it). Decision-history
- * statuses map per grammar: `approved` noted success, `rejected` noted danger. `canceled` (requester
+ * `pending` is in-progress/LOUD: Pending is Sunlight's JOURNEY ANCHOR (maker-checker is the product's
+ * essential workflow), pinned loud on every Sunlight surface — even here, where the whole queue is
+ * pending. The accepted cost is a uniform-loud queue; it's bounded because uniform (a base tone, not
+ * competing shouts) and because the budget still governs every OTHER status on this surface.
+ * Decision-history: `approved` noted success, `rejected` noted danger. `canceled` (requester
  * retraction) and `outdated` (a sibling CR won) are silent — neither is the reviewer's danger.
- * (Contrast: the SAME word Pending is LOUD on Loyalty Status, where it's the lone actionable state —
- * hue fixed estate-wide, volume per surface via the loudness budget.)
  */
 const CR_STATUS_TIER: Record<ChangeRequestStatus, BeamBadgeProps> = {
-  pending: { hue: 'in-progress', volume: 'noted', label: 'Pending' },
+  pending: { hue: 'in-progress', volume: 'loud', label: 'Pending' },
   approved: { hue: 'success', volume: 'noted', label: 'Approved' },
   rejected: { hue: 'danger', volume: 'noted', label: 'Rejected' },
   canceled: { hue: 'neutral', label: 'Canceled' },
