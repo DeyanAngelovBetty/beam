@@ -3,6 +3,28 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Fix — stale-paint artifact on expanded rows, structural *(2026-09-09)*
+
+Rediagnosed the expanded-row visual bug as **compositing/invalidation**, not hover (the 2026-09-08
+hover fix addressed a real but different hazard — kept). Evidence: an unconditional debug border painted
+then clipped to exactly rail width after the Collapse settled; Computed styles stayed correct while
+pixels were wrong; any repaint cleared it. Cause: the sticky rail layers overlapping a *foreign* detail
+cell (a single `colSpan` cell spanning the whole width) while the Collapse animated height → the
+rail-width region's invalidation was missed.
+
+**Structural fix — make the detail row a normal citizen of the rail system:**
+- The detail row now has its **own rail cell** (empty, same `railStickySx`, `zIndex: 2`), so the rail
+  column is a **continuous** sticky/opaque layer top-to-bottom — no foreign cell under the sticky rail.
+  Its left-edge affordance (divider + gradient) renders exactly as data rows', continuous down the rail.
+- The content cell now spans **data columns only** (`colSpan={leafColumns.length}`).
+- The pinned panel sits BESIDE the rail: `position: sticky; left: var(--beam-rail-width); width:
+  calc(100cqw - var(--beam-rail-width))`. `--beam-rail-width` is measured off the header rail cell
+  (ResizeObserver, recomputed when the rail composition changes) — no hardcoded px; it tracks whichever
+  controls render. Fallback `0px` when there is no rail.
+- Fallback if the artifact had survived (it didn't): promote the detail cell to its own paint layer
+  (`will-change: transform`, scoped to detail rows) and flag Chrome-bug territory. **Not needed** — the
+  structural fix resolves it; no compositor hint shipped.
+
 ## Fix — stale `:hover` on rows after a Collapse animation *(2026-09-08)*
 
 Expanding/collapsing a row translates the rows below under a stationary cursor; browsers only recompute
