@@ -50,6 +50,11 @@ import { isWhiteSpaceLike } from 'typescript';
 const EDGE_TINT = 'var(--beam-edge-shadow)';
 const EDGE_WIDTH = 24; // px band width, shared by both edges so they read as siblings
 
+// Severity accent (rowAccent): grammar hue → theme semantic palette key (theme picks the hex; no
+// literals). The accent is status-truth — always visible, independent of the scroll affordance.
+const ACCENT_PALETTE: Record<string, string> = { danger: 'error', warning: 'warning', success: 'success', 'in-progress': 'info' };
+const ACCENT_WIDTH = 3; // px
+
 /**
  * The kebab that opens a row's overflow menu. Dim at rest, full on row
  * hover and keyboard focus (the `.beam-kebab` class is targeted by the row).
@@ -178,6 +183,7 @@ export function BeamDataTable<Row>({
   onRowHover,
   emptyMessage = 'Nothing here yet.',
   columnManager,
+  rowAccent,
   'aria-label': ariaLabel,
 }: BeamDataTableProps<Row>) {
   const theme = useTheme();
@@ -564,6 +570,7 @@ export function BeamDataTable<Row>({
               // One definition, projected to every surface (grammar §3): the
               // kebab and the expansion action bar both render from `actions`.
               const actions = rowActions ? rowActions(row.original) : [];
+              const accentHue = rowAccent?.(row.original); // grammar hue | undefined
               return (
               <Fragment key={row.id}>
                 <TableRow
@@ -596,6 +603,24 @@ export function BeamDataTable<Row>({
                       onClick={(e) => e.stopPropagation()}
                       sx={{ ...railStickySx, zIndex: 2, whiteSpace: 'nowrap' }}
                     >
+                      {accentHue && (
+                        // Severity accent — a thin bar at the row's LEADING edge, status-truth, ALWAYS
+                        // visible (not scroll-conditional; the scroll affordance lives at the rail's
+                        // right edge, no interplay). Decorative, aria-hidden.
+                        <Box
+                          aria-hidden
+                          sx={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: `${ACCENT_WIDTH}px`,
+                            pointerEvents: 'none',
+                            zIndex: 1,
+                            bgcolor: `${ACCENT_PALETTE[accentHue]}.main`,
+                          }}
+                        />
+                      )}
                       <Stack direction="row" sx={{ alignItems: 'center' }}>
                         {selectable && (
                           <Checkbox

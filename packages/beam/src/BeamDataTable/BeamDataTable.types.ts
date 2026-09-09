@@ -1,5 +1,6 @@
 import type { ComponentType, MouseEventHandler, ReactNode } from 'react';
 import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
+import type { BeamBadgeHue } from '../BeamBadge/BeamBadge.types';
 
 /**
  * The identity link renders through this component. Default: a real MUI
@@ -139,5 +140,13 @@ export interface BeamDataTableProps<Row> {
    * behavior — the capability is invisible until a grid asks for it.
    */
   columnManager?: BeamColumnManagerConfig;
+  /**
+   * Per-row SEVERITY ACCENT — a thin colored bar in the rail region, redundant reinforcement of the
+   * row's status chip (the chip names, the accent locates; color is additive, never the sole carrier —
+   * state-rendering-grammar spatial-accents note). Return a grammar hue for accented rows, `undefined`
+   * for the rest. Requires the rail (v1 — rail-less fallback is a future decision). Decorative /
+   * aria-hidden. Omit for byte-identical behavior.
+   */
+  rowAccent?: (row: Row) => BeamBadgeHue | undefined;
   'aria-label': string;
 }

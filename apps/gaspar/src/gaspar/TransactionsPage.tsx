@@ -662,6 +662,9 @@ export function TransactionsPage() {
         getRowId={(r) => r.id}
         paginated
         selectable
+        // Severity accent — failed rows get a leading danger bar (redundant reinforcement of the
+        // Status chip; the chip names, the accent locates). Grammar spatial-accents note.
+        rowAccent={(r) => (r.status === 'failed' ? 'danger' : undefined)}
         bulkActions={bulkActions}
         onBulkAction={onBulkAction}
         rowActions={rowActions}

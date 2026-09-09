@@ -5,6 +5,7 @@ import { BeamStatusBadge } from '../BeamStatusBadge/BeamStatusBadge';
 import type { BeamStatus } from '../BeamStatusBadge/BeamStatusBadge.types';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 /** Realistic Sunlight shape: perks management list (Beam candidate page) */
 interface Perk {
@@ -413,5 +414,30 @@ export const NoOverflowNoShadows: StoryObj = {
       selectable
       aria-label="No overflow — no shadows"
     />
+  ),
+};
+
+/**
+ * Row severity accent (`rowAccent`) — a thin colored bar at the row's LEADING edge, redundant
+ * reinforcement of the status chip (chip names, accent locates; state-rendering-grammar spatial-accents
+ * note). Status-truth: scroll sideways and it holds at every position (not scroll-conditional). Here
+ * `chargeback` rows accent `danger`. Decorative / `aria-hidden`; grids without `rowAccent` are
+ * unchanged.
+ */
+const accentRows: WideRow[] = wideRows.map((r, i) => (i === 2 || i === 6 ? { ...r, status: 'chargeback' as BeamStatus } : r));
+
+export const SeverityAccent: StoryObj = {
+  render: () => (
+    <div style={{ maxWidth: 720 }}>
+      <Typography variant="overline" color="text.secondary">Leading-edge danger accent (chargeback rows)</Typography>
+      <BeamDataTable<WideRow>
+        columns={wideCols}
+        rows={accentRows}
+        getRowId={(r) => r.id}
+        selectable
+        rowAccent={(r) => (r.status === 'chargeback' ? 'danger' : undefined)}
+        aria-label="Severity accent — leading edge"
+      />
+    </div>
   ),
 };

@@ -88,6 +88,16 @@ lifecycle-`paused`), that is a real collision — not an anchor case — and the
 vocabulary, not overloading the hue. (Token Campaigns took the other branch: `Disabled` is now
 silent/neutral estate-consistent, because a disabled campaign asks nobody to act.)
 
+## Spatial accents *(2026-09-09)*
+
+Hue may extend beyond chips to **spatial markers** — a thin colored bar in a row's rail region —
+as **redundant reinforcement** of the status chip (the chip names the state, the accent locates the
+row; color is additive, never the sole carrier — the a11y rule holds, accents are `aria-hidden`).
+Accents key on **hue** (the category), with **`danger`** the primary sanctioned use (scanning a queue
+for the rows that need investigation). The **loudness budget governs chips, not accents** — an accent
+*locates*, it doesn't *shout*, so multiple accented rows are not an alarm-wall. First use:
+`BeamDataTable`'s `rowAccent` (Gaspar transactions, failed rows).
+
 ## Architecture: who speaks what
 
 - **The organism speaks tiers.** One badge component; its API is

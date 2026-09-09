@@ -3,6 +3,31 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Row severity accent — `rowAccent` *(2026-09-09)*
+
+A thin colored bar at a row's **leading edge** (rail cell `left:0`, 3px), redundant reinforcement of the
+row's status chip — the chip names the state, the accent *locates* the row (state-rendering-grammar's
+spatial-accents note). Additive, opt-in.
+
+- **API:** `rowAccent?: (row) => BeamBadgeHue | undefined` — hue-typed (grammar vocabulary); the page
+  maps status → hue. Color from the theme semantic palette (`danger→error.main`, …), no literals.
+  First consumer: Gaspar transactions, `failed → 'danger'`.
+- **Status-truth, not scroll-conditional:** an unconditional rail-cell child, visible at every scroll
+  position — deliberately does NOT ride the scroll-state divider/gradient (those are scroll-conditional
+  and live at the rail's *right* edge; the accent is on the *left*, zero interplay).
+- **Decorative:** `aria-hidden`, `pointer-events:none` — keyboard/AT unaffected. Byte-identical when a
+  row returns `undefined` or `rowAccent` is omitted (the accent element simply isn't rendered).
+- **Placement pick:** leading edge chosen by eye over a rail-right-edge variant (which coexisted with
+  the scroll gradient) — leading is the conventional "locate this row" stripe, calmest, no
+  mechanism-sharing. (The temporary `accentPlacement` prop used for the pick was removed.)
+
+**Recorded limits (v1, not solved — fenced):**
+- **Detail/expanded rows carry no accent** — they have no rail cell since the `ed0e71b` revert (tied to
+  the parked compositing bug, see the parked-bug note). Accent continuity down an expanded row comes
+  free once that's structurally fixed.
+- **Rail-less grids get no accent** — the accent requires the rail in v1; a rail-less fallback is a
+  future decision, not built.
+
 > Status/state cells rendered in the grid (`BeamStatusBadge`, page-local `TxBadge`, `BeamBool`, the
 > column-manager's "awaiting data" ledger) follow [/docs/state-rendering-grammar.md](../../../docs/state-rendering-grammar.md)
 > (evidence: [/docs/status-grammar-audit.md](../../../docs/status-grammar-audit.md)). Phase-3
