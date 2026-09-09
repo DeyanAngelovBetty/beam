@@ -323,17 +323,18 @@ function TruncateCopyCell({ value, mono, onCopied }: { value: string | null; mon
 
 /**
  * Status grammar map — this page's vocabulary → (hue, volume) via BeamBadge (state-rendering-grammar.md;
- * the grammar's own Gaspar worked example). One LOUD state, `pending` — and it's the one the bulk
- * actions (Complete/Decline) light up for. `pending` is `warning` here (a payment awaiting ops action,
- * per actionability) — a HOMONYM of Sunlight's in-progress `Pending` anchor, not the same word; word-hue
- * consistency scopes per product vocabulary. created/processing are silent (system mid-work, no news);
- * failed is noted danger (investigate, don't alarm); completed is noted success.
+ * the grammar's Gaspar worked example, now OPS-VALIDATED — Boryana/PM confirmed the read). One LOUD
+ * state: `failed` — failures are what ops SCANS for and acts on (investigate / retry); `pending` is
+ * noted because it largely resolves itself. Note the loud slot (scan-target = failed) is NOT the bulk-
+ * action eligibility target (pending) — scan-target and action-target differ by design. `pending` is
+ * `warning` here (payment awaiting ops) — a HOMONYM of Sunlight's in-progress `Pending` anchor, not the
+ * same word; word-hue consistency scopes per product vocabulary. created/processing are silent.
  */
 const STATUS_TIER: Record<string, BeamBadgeProps> = {
   created: { hue: 'neutral', label: 'Created' },
   processing: { hue: 'neutral', label: 'Processing' },
-  pending: { hue: 'warning', volume: 'loud', label: 'Pending' },
-  failed: { hue: 'danger', volume: 'noted', label: 'Failed' },
+  pending: { hue: 'warning', volume: 'noted', label: 'Pending' },
+  failed: { hue: 'danger', volume: 'loud', label: 'Failed' },
   completed: { hue: 'success', volume: 'noted', label: 'Completed' },
 };
 /** Unobserved status → silent with its raw label (the estate's honesty rule, now canonical). */

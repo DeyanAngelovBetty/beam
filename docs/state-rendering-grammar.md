@@ -113,22 +113,25 @@ silent/neutral estate-consistent, because a disabled campaign asks nobody to act
 - **Labels:** sentence case for display; raw API value available on hover where they
   differ.
 
-## Worked example — Gaspar transactions (incoming vocabulary)
+## Worked example — Gaspar transactions (ops-validated)
 
-| Status     | Who must act?            | Hue         | Volume | Rendering        |
-|------------|--------------------------|-------------|--------|------------------|
-| created    | nobody (system)          | —           | silent | plain outlined   |
-| processing | nobody (system)          | —           | silent | plain outlined   |
-| pending    | ops (complete/decline)   | warning     | LOUD   | filled warning   |
-| failed     | investigator, eventually | danger      | noted  | outlined danger  |
-| completed  | nobody — good news       | success     | noted  | outlined success |
+| Status     | Who scans / acts?              | Hue         | Volume | Rendering        |
+|------------|--------------------------------|-------------|--------|------------------|
+| created    | nobody (system)                | —           | silent | plain outlined   |
+| processing | nobody (system)                | —           | silent | plain outlined   |
+| pending    | largely self-resolving         | warning     | noted  | outlined warning |
+| failed     | ops — scan target, investigate/retry | danger | **LOUD** | filled danger    |
+| completed  | nobody — good news             | success     | noted  | outlined success |
 
-One loud state, and it's the one the grid's own Complete/Decline eligibility already
-points at. **Shipped 2026-09-09** (phase-3 item 1) — this table is now the page's live map;
-the mock is reseeded to this vocabulary. Still a proposal for ops validation, not a decree.
-(`pending`'s `warning` here is a per-product homonym of Sunlight's `in-progress` `Pending` anchor —
-word-hue consistency scopes per product vocabulary; the grammar's "estate-wide" wording gets that
-one-line clarification in a later grammar pass, logged not applied.)
+One loud state — `failed`, the thing ops scans a payments queue *for* and acts on (investigate / retry).
+`pending` is noted, not loud: it largely resolves itself, so it registers without shouting.
+**Shipped + ops-validated 2026-09-09** (phase-3 item 1; Boryana/PM confirmed) — this table is the page's
+live map, and the example graduates from *proposal* toward *observed truth*. Note the loud slot
+(scan-target = `failed`) is deliberately **not** the bulk-action eligibility target (`pending`):
+what you scan for and what you act on are different, and the grammar renders the scan-target loud.
+(`pending`'s `warning` is a per-product homonym of Sunlight's `in-progress` `Pending` anchor — word-hue
+consistency scopes per product vocabulary; the "estate-wide" wording gets that clarification in a later
+grammar pass, logged not applied.)
 
 ## Adoption
 
