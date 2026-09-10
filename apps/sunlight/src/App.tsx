@@ -16,7 +16,7 @@ import { LoyaltyStatusPage } from './sunlight/LoyaltyStatusPage';
 import { LoyaltyStatusEditor } from './sunlight/LoyaltyStatusEditor';
 import { LoyaltyLevelsPage } from './sunlight/LoyaltyLevelsPage';
 import { TokenCampaignsPage } from './sunlight/TokenCampaignsPage';
-import { WallStagePage } from './sunlight/tokenCampaignStubs';
+import { WallStagePage } from './sunlight/WallStagePage';
 import { TokenCampaignDetailPage } from './sunlight/TokenCampaignDetailPage';
 import { CampaignWinnersPage } from './sunlight/CampaignWinnersPage';
 import { PendingApprovalsPage } from './sunlight/PendingApprovalsPage';

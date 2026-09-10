@@ -56,15 +56,21 @@ export const SOUND_SLOT_LABEL: Record<SoundSlot, string> = {
 // ── Leaf: reward item (edited inline on the stage page — ~8 fields, a leaf) ────────────────────────
 export type RewardTier = 'none' | 'low' | 'medium' | 'high';
 
+export type RewardType = 'Physical' | 'Digital' | 'Bonus';
+export const REWARD_TYPES: RewardType[] = ['Physical', 'Digital', 'Bonus'];
+
 export interface RewardItem {
   id: string;
   name: string;
   description: string;
-  coins: number; // vs rewardAmount — semantics pending Radi/Tzeno
+  type: RewardType; // Reward Item dialog "TYPE" (added for the Wall Stage port)
+  cashValue: number; // dialog "CASH VALUE"
+  quantity: number; // dialog "QUANTITY"; card badge ×{quantity}
+  coins: number; // vs rewardAmount — semantics pending Radi/Tzeno; card caption {coins} × ${cashValue}
   tier: RewardTier;
   imgUrl: string;
   quality: string; // free string for now; enum candidate — pending Figma
-  rewardAmount: number;
+  rewardAmount: number; // dialog "REWARD AMOUNT"
   order: number;
 }
 
@@ -73,6 +79,16 @@ export interface OpeningWindow {
   id: string;
   openDate: string; // ISO
   endDate: string; // ISO
+  durationMin: number; // derived (end − open); the Edit frame's DURATION (MIN) field. No recompute
+  //                      coupling this pass — real duration semantics stay on the Radi/Tzeno flag.
+}
+
+/** A "quick rule" / "info page rule" row: a name + desktop/mobile media URLs (copy in View, fields in Edit). */
+export interface QuickRule {
+  id: string;
+  name: string;
+  desktopUrl: string;
+  mobileUrl: string;
 }
 
 // ── Drill child: wall stage (contains lists → its own page) ───────────────────────────────────────
@@ -92,6 +108,9 @@ export interface WallStage {
   lossProbabilityPct: number;
   costOfPlay: number;
   rewardItems: RewardItem[];
+  quickRules: QuickRule[]; // Wall Stage "Quick Rules" section
+  infoPageTitle: string; // Wall Stage "Info Page Rules" → INFO PAGE TITLE
+  infoRules: QuickRule[]; // Wall Stage "Info Page Rules" rows
 }
 
 // ── Aggregate root: token campaign ────────────────────────────────────────────────────────────────
@@ -163,11 +182,15 @@ const allSounds: CampaignSound[] = SOUND_SLOTS.map(snd);
 const TIERS: RewardTier[] = ['low', 'medium', 'high', 'none'];
 
 function rewards(stageId: string, count: number): RewardItem[] {
+  // Uniform card values per the frame's grid (× {quantity}, {coins} × ${cashValue}); varied type/tier/name.
   return Array.from({ length: count }, (_, i) => ({
     id: `${stageId}-r${i + 1}`,
     name: `Reward ${i + 1}`,
     description: `Prize wall reward ${i + 1}`,
-    coins: (i + 1) * 100,
+    type: REWARD_TYPES[i % REWARD_TYPES.length],
+    cashValue: 100,
+    quantity: 5,
+    coins: 100,
     tier: TIERS[i % TIERS.length],
     imgUrl: `/assets/prize-wall/reward-${i + 1}.png`,
     quality: i % 2 === 0 ? 'Standard' : 'Premium',
@@ -177,7 +200,24 @@ function rewards(stageId: string, count: number): RewardItem[] {
 }
 
 function windows(stageId: string, ...pairs: [string, string][]): OpeningWindow[] {
-  return pairs.map(([openDate, endDate], i) => ({ id: `${stageId}-w${i + 1}`, openDate, endDate }));
+  return pairs.map(([openDate, endDate], i) => ({
+    id: `${stageId}-w${i + 1}`,
+    openDate,
+    endDate,
+    durationMin: Math.round((Date.parse(endDate) - Date.parse(openDate)) / 60_000),
+  }));
+}
+
+// Rule copy per the frames (Quick Rules + Info Page Rules).
+const QUICK_RULE_NAMES = ['Collect Hot Cocoas throughout the week', 'Visit the Prize Wall on Sunday 7pm', 'Use your Hot Cocoas for a chance to win prizes'];
+const INFO_RULE_NAMES = ['Collect hot cocoas through promotions and the daily wheel', 'Visit the Prize Wall on Sunday 7pm', 'Use your Hot Cocoas for a chance to win prizes'];
+function ruleRows(stageId: string, prefix: string, names: string[]): QuickRule[] {
+  return names.map((name, i) => ({
+    id: `${stageId}-${prefix}${i + 1}`,
+    name,
+    desktopUrl: `/assets/prize-wall/${stageId}-${prefix}${i + 1}-desktop.png`,
+    mobileUrl: `/assets/prize-wall/${stageId}-${prefix}${i + 1}-mobile.png`,
+  }));
 }
 
 function stage(campaignId: string, order: number, overrides: Partial<WallStage> = {}): WallStage {
@@ -191,12 +231,15 @@ function stage(campaignId: string, order: number, overrides: Partial<WallStage> 
     openingWindows: windows(id, ['2026-08-15T09:00:00.000Z', '2026-08-15T21:00:00.000Z']),
     headerImageDesktop: `/assets/prize-wall/${id}-header-desktop.png`,
     headerImageMobile: `/assets/prize-wall/${id}-header-mobile.png`,
-    backgroundImageDesktop: `/assets/prize-wall/${id}-bg-desktop.png`,
-    backgroundImageMobile: `/assets/prize-wall/${id}-bg-mobile.png`,
+    backgroundImageDesktop: '',
+    backgroundImageMobile: '',
     winProbabilityPct: 65,
     lossProbabilityPct: 35,
     costOfPlay: 50,
-    rewardItems: rewards(id, 3),
+    rewardItems: rewards(id, 12),
+    quickRules: ruleRows(id, 'qr', QUICK_RULE_NAMES),
+    infoPageTitle: 'Prize wall',
+    infoRules: ruleRows(id, 'ir', INFO_RULE_NAMES),
     ...overrides,
   };
 }
@@ -222,7 +265,7 @@ export const TOKEN_CAMPAIGNS: TokenCampaign[] = [
           ['2026-08-15T17:00:00.000Z', '2026-08-15T21:00:00.000Z'],
           ['2026-08-16T09:00:00.000Z', '2026-08-16T21:00:00.000Z'],
         ),
-        rewardItems: rewards('tc-summer-s1', 5),
+        rewardItems: rewards('tc-summer-s1', 12),
       }),
       stage('tc-summer', 2, { costOfPlay: 100, winProbabilityPct: 55, lossProbabilityPct: 45, rewardItems: rewards('tc-summer-s2', 4) }),
       stage('tc-summer', 3, { costOfPlay: 250, winProbabilityPct: 40, lossProbabilityPct: 60, rewardItems: rewards('tc-summer-s3', 6) }),
