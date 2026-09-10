@@ -112,6 +112,13 @@ would discard the parent's unsaved draft. Save writes into the wall-stage draft 
 discards. The repo's **"no dialogs" default stands everywhere else** — this is the sanctioned exception,
 not a new pattern to spread.
 
+*Scope extension (2026-09-10): **view usage of the same dialog surface is sanctioned alongside
+leaf-edit.*** Reward cards are clickable in **View** too, opening the SAME dialog **read-only** — fields
+as view reps (BeamStat, mirroring the page's own view-twins), title "Reward Item" (no "Edit"), a single
+**Close** action, no Save. This is **View-first extended to the leaf level**: every drill-down level is
+inspectable without entering an edit session. Cards carry a proper button affordance in both modes
+(pointer, focus ring, Enter/Space opens) — View was previously inert.
+
 ### Ambiguities resolved by asking (not invented)
 - **Reward card caption** (frame `×5` / `100 × $100`): confirmed **badge = `×{quantity}`, caption =
   `{coins} × ${cashValue}`** (design intent, not a guess). Mock seeds quantity 5, coins 100, cash 100.

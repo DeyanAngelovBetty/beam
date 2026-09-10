@@ -258,7 +258,7 @@ export function WallStagePage() {
           <BeamPaper title="Reward items">
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
               {(isEdit && d ? d.rewardItems : stage.rewardItems).map((item) => (
-                <RewardCard key={item.id} item={item} edit={isEdit} onOpen={() => openReward(item)} />
+                <RewardCard key={item.id} item={item} onOpen={() => openReward(item)} />
               ))}
             </Box>
           </BeamPaper>
@@ -320,39 +320,66 @@ export function WallStagePage() {
         </Stack>
       </Stack>
 
-      {/* Reward Item dialog — the estate's FIRST sanctioned dialog: a leaf sub-record edited inside the
-          parent (wall stage) edit session, where navigating away would discard the parent's draft. */}
+      {/* Reward Item dialog — the estate's FIRST sanctioned dialog. Edit: a leaf sub-record edited inside
+          the parent (wall stage) edit session. View: the SAME surface read-only (View-first extended to
+          the leaf — every drill level inspectable without entering an edit session). */}
       <Dialog open={rewardDraft !== null} onClose={() => setRewardDraft(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Reward Item</DialogTitle>
+        <DialogTitle>{isEdit ? 'Edit Reward Item' : 'Reward Item'}</DialogTitle>
         <DialogContent>
           {rewardDraft && (
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, pt: 1 }}>
-              <Box sx={{ gridColumn: '1 / -1' }}>
-                <BeamField label="Name" value={rewardDraft.name} onChange={(e) => rp({ name: e.target.value })} fullWidth />
-              </Box>
-              <Box sx={{ gridColumn: '1 / -1' }}>
-                <BeamField label="Description" value={rewardDraft.description} onChange={(e) => rp({ description: e.target.value })} multiline minRows={2} fullWidth />
-              </Box>
-              <BeamField select label="Type" value={rewardDraft.type} onChange={(e) => rp({ type: e.target.value as RewardItem['type'] })} fullWidth>
-                {REWARD_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </BeamField>
-              <BeamField label="Cash value" type="number" value={String(rewardDraft.cashValue)} onChange={(e) => rp({ cashValue: Number(e.target.value) || 0 })} fullWidth />
-              <BeamField select label="Tier" value={rewardDraft.tier} onChange={(e) => rp({ tier: e.target.value as RewardTier })} fullWidth>
-                {REWARD_TIERS.map((t) => <MenuItem key={t} value={t}>{cap(t)}</MenuItem>)}
-              </BeamField>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <Thumb url={rewardDraft.imgUrl} />
-                <BeamField label="URL" value={rewardDraft.imgUrl} onChange={(e) => rp({ imgUrl: e.target.value })} fullWidth />
-              </Box>
-              <BeamField label="Quantity" type="number" value={String(rewardDraft.quantity)} onChange={(e) => rp({ quantity: Number(e.target.value) || 0 })} fullWidth />
-              <BeamField label="Reward amount" type="number" value={String(rewardDraft.rewardAmount)} onChange={(e) => rp({ rewardAmount: Number(e.target.value) || 0 })} fullWidth />
-              <BeamField label="Order" type="number" value={String(rewardDraft.order)} onChange={(e) => rp({ order: Number(e.target.value) || 0 })} fullWidth />
+              {isEdit ? (
+                <>
+                  <Box sx={{ gridColumn: '1 / -1' }}>
+                    <BeamField label="Name" value={rewardDraft.name} onChange={(e) => rp({ name: e.target.value })} fullWidth />
+                  </Box>
+                  <Box sx={{ gridColumn: '1 / -1' }}>
+                    <BeamField label="Description" value={rewardDraft.description} onChange={(e) => rp({ description: e.target.value })} multiline minRows={2} fullWidth />
+                  </Box>
+                  <BeamField select label="Type" value={rewardDraft.type} onChange={(e) => rp({ type: e.target.value as RewardItem['type'] })} fullWidth>
+                    {REWARD_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                  </BeamField>
+                  <BeamField label="Cash value" type="number" value={String(rewardDraft.cashValue)} onChange={(e) => rp({ cashValue: Number(e.target.value) || 0 })} fullWidth />
+                  <BeamField select label="Tier" value={rewardDraft.tier} onChange={(e) => rp({ tier: e.target.value as RewardTier })} fullWidth>
+                    {REWARD_TIERS.map((t) => <MenuItem key={t} value={t}>{cap(t)}</MenuItem>)}
+                  </BeamField>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Thumb url={rewardDraft.imgUrl} />
+                    <BeamField label="URL" value={rewardDraft.imgUrl} onChange={(e) => rp({ imgUrl: e.target.value })} fullWidth />
+                  </Box>
+                  <BeamField label="Quantity" type="number" value={String(rewardDraft.quantity)} onChange={(e) => rp({ quantity: Number(e.target.value) || 0 })} fullWidth />
+                  <BeamField label="Reward amount" type="number" value={String(rewardDraft.rewardAmount)} onChange={(e) => rp({ rewardAmount: Number(e.target.value) || 0 })} fullWidth />
+                  <BeamField label="Order" type="number" value={String(rewardDraft.order)} onChange={(e) => rp({ order: Number(e.target.value) || 0 })} fullWidth />
+                </>
+              ) : (
+                // Read-only view reps — mirror the page's own view-twins (BeamStat), no editable inputs.
+                <>
+                  <Box sx={{ gridColumn: '1 / -1' }}><BeamStat label="Name" value={rewardDraft.name} /></Box>
+                  <Box sx={{ gridColumn: '1 / -1' }}><BeamStat label="Description" value={rewardDraft.description} /></Box>
+                  <BeamStat label="Type" value={rewardDraft.type} />
+                  <BeamStat label="Cash value" value={String(rewardDraft.cashValue)} />
+                  <BeamStat label="Tier" value={cap(rewardDraft.tier)} />
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', minWidth: 0 }}>
+                    <Thumb url={rewardDraft.imgUrl} />
+                    <BeamStat label="Image URL" value={rewardDraft.imgUrl} />
+                  </Box>
+                  <BeamStat label="Quantity" value={String(rewardDraft.quantity)} />
+                  <BeamStat label="Reward amount" value={String(rewardDraft.rewardAmount)} />
+                  <BeamStat label="Order" value={String(rewardDraft.order)} />
+                </>
+              )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button variant="text" onClick={() => setRewardDraft(null)}>Cancel</Button>
-          <Button variant="contained" onClick={saveReward}>Save</Button>
+          {isEdit ? (
+            <>
+              <Button variant="text" onClick={() => setRewardDraft(null)}>Cancel</Button>
+              <Button variant="contained" onClick={saveReward}>Save</Button>
+            </>
+          ) : (
+            <Button variant="text" onClick={() => setRewardDraft(null)}>Close</Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -386,15 +413,16 @@ function RulesTable({ rows, edit, onCopy, onChange }: { rows: QuickRule[]; edit:
   );
 }
 
-/** A reward card: ×{quantity} badge, image, {coins} × ${cashValue} caption. In Edit it's a button that
- *  opens the Reward Item dialog. */
-function RewardCard({ item, edit, onOpen }: { item: RewardItem; edit: boolean; onOpen: () => void }) {
+/** A reward card: ×{quantity} badge, image, {coins} × ${cashValue} caption. Clickable in BOTH modes —
+ *  opens the Reward Item dialog (read-only in View, editable in Edit). Keyboard: Enter/Space opens. */
+function RewardCard({ item, onOpen }: { item: RewardItem; onOpen: () => void }) {
   return (
     <Box
-      role={edit ? 'button' : undefined}
-      tabIndex={edit ? 0 : undefined}
-      onClick={edit ? onOpen : undefined}
-      onKeyDown={edit ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } : undefined}
+      role="button"
+      tabIndex={0}
+      aria-label={`Reward item ${item.name}`}
+      onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}
       sx={{
         position: 'relative',
         border: '1px solid',
@@ -402,9 +430,9 @@ function RewardCard({ item, edit, onOpen }: { item: RewardItem; edit: boolean; o
         borderRadius: 1,
         p: 1.5,
         bgcolor: 'action.hover',
-        cursor: edit ? 'pointer' : 'default',
+        cursor: 'pointer',
         transition: 'border-color var(--beam-motion-move)',
-        ...(edit && { '&:hover, &:focus-visible': { borderColor: 'primary.main' } }),
+        '&:hover, &:focus-visible': { borderColor: 'primary.main' },
       }}
     >
       <Box component="span" sx={{ ...meta, position: 'absolute', top: 8, left: 10 }}>×{item.quantity}</Box>
