@@ -20,11 +20,13 @@ import { useSearchParams } from 'react-router-dom';
 
 export type Milestone = 'v1_0' | 'v1_1' | 'v1_2' | 'beyond';
 
-export const MILESTONES: { id: Milestone; label: string }[] = [
-  { id: 'v1_0', label: 'v1.0' },
-  { id: 'v1_1', label: 'v1.1' },
-  { id: 'v1_2', label: 'v1.2' },
-  { id: 'beyond', label: 'Beyond' },
+/** Canonical order + display metadata for the switcher rows: `badge` is the circle's version number,
+ *  `label` the primary line, `sub` the release-date sub-line (Beyond has none — it's the open-ended top). */
+export const MILESTONES: { id: Milestone; badge: string; label: string; sub?: string }[] = [
+  { id: 'v1_0', badge: '1.0', label: 'v1.0', sub: '5 October' },
+  { id: 'v1_1', badge: '1.1', label: 'v1.1', sub: '1 November (TBC)' },
+  { id: 'v1_2', badge: '1.2', label: 'v1.2', sub: 'date TBD' },
+  { id: 'beyond', badge: '2.0', label: 'Beyond v1.2' },
 ];
 
 /** The four capabilities the switcher gates, each = an opt-in prop the page passes (or doesn't). */

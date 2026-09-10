@@ -2,9 +2,9 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
-import { GASPAR_NAV, VIEW_PATH, type GasparNavItem } from './gaspar/navItems';
+import { GASPAR_NAV, VIEW_PATH, allowedViews, landingView, pruneNav, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
-import { MilestoneProvider } from './gaspar/milestone';
+import { MilestoneProvider, useMilestone } from './gaspar/milestone';
 import { ThemeLabDrawer } from '@betty/beam-lab';
 import { TransactionsPage } from './gaspar/TransactionsPage';
 import { DashboardPage } from './gaspar/DashboardPage';
@@ -64,7 +64,11 @@ const brandMark = {
 export function App() {
   return (
     <HashRouter>
-      <GasparApp />
+      {/* Provider ABOVE GasparApp so the shell itself can read the milestone — it gates the nav and the
+          route guards, not just the page. */}
+      <MilestoneProvider>
+        <GasparApp />
+      </MilestoneProvider>
     </HashRouter>
   );
 }
@@ -72,12 +76,24 @@ export function App() {
 function GasparApp() {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
+  const { milestone } = useMilestone();
   const [brand, setBrand] = useState<BrandName>('ontario');
   const [labOpen, setLabOpen] = useState(false); // Theme Lab drawer (Gaspar only)
   const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
 
+  // MILESTONE NAV GATE — the views this phase HAS (Boryana's phasing + Deyan's ruling). Hidden =
+  // absent: the nav is pruned to allowed views (+ their ancestors), and routes outside the phase
+  // redirect to Transactions with ?milestone preserved, so the URL never shows a page the version
+  // lacks. Beyond = all three functional views (v1.1+ set).
+  const allowed = useMemo(() => allowedViews(milestone), [milestone]);
+  const landing = VIEW_PATH[landingView(milestone)];
+  // A redirect target that keeps the current milestone in the URL.
+  const toTransactions = { pathname: VIEW_PATH.transactions, search };
+  const toLanding = { pathname: landing, search };
+
   // Wire selected/onClick from the `view` tag at ANY depth (Rule Builder is nested under Routing):
-  // selected from the current pathname, onClick → navigate to the view's hash route.
+  // selected from the current pathname, onClick → navigate to the view's hash route. Pruned to the
+  // milestone's allowed views first.
   const navItems = useMemo<BeamNavItem[]>(() => {
     const wire = (item: GasparNavItem): BeamNavItem => {
       const { view: itemView, children, ...rest } = item;
@@ -90,38 +106,45 @@ function GasparApp() {
         ...(children ? { children: children.map(wire) } : {}),
       };
     };
-    return GASPAR_NAV.map(wire);
-  }, [pathname, search, navigate]);
+    return pruneNav(GASPAR_NAV, allowed).map(wire);
+  }, [pathname, search, navigate, allowed]);
 
   return (
-    <MilestoneProvider>
-      <ThemeProvider theme={theme} defaultMode="dark" noSsr>
-        <CssBaseline />
-        <BeamAppShell
-          brandMark={brandMark}
-          navItems={navItems}
-          persistKey="beam.shell.gaspar"
-          footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
-        >
-          <Routes>
-            <Route path="/" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
-            <Route path={VIEW_PATH.dashboard} element={<DashboardPage />} />
-            <Route path={VIEW_PATH.transactions} element={<TransactionsPage />} />
-            <Route
-              path={VIEW_PATH.ruleBuilder}
-              element={
+    <ThemeProvider theme={theme} defaultMode="dark" noSsr>
+      <CssBaseline />
+      <BeamAppShell
+        brandMark={brandMark}
+        navItems={navItems}
+        persistKey="beam.shell.gaspar"
+        footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
+      >
+        <Routes>
+          <Route path="/" element={<Navigate to={toLanding} replace />} />
+          {/* Route guard: a page outside the milestone redirects to Transactions (always present),
+              milestone preserved — the URL never shows a view the version doesn't have. */}
+          <Route
+            path={VIEW_PATH.dashboard}
+            element={allowed.has('dashboard') ? <DashboardPage /> : <Navigate to={toTransactions} replace />}
+          />
+          <Route path={VIEW_PATH.transactions} element={<TransactionsPage />} />
+          <Route
+            path={VIEW_PATH.ruleBuilder}
+            element={
+              allowed.has('ruleBuilder') ? (
                 <Suspense fallback={<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>Loading Rule Builder…</Typography>}>
                   <RuleBuilderPage />
                 </Suspense>
-              }
-            />
-            {/* Unknown hash → back to the landing view. */}
-            <Route path="*" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
-          </Routes>
-        </BeamAppShell>
-        {/* Non-modal — the live app above IS the preview; it stays interactable. */}
-        <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />
-      </ThemeProvider>
-    </MilestoneProvider>
+              ) : (
+                <Navigate to={toTransactions} replace />
+              )
+            }
+          />
+          {/* Unknown hash → the milestone's landing view. */}
+          <Route path="*" element={<Navigate to={toLanding} replace />} />
+        </Routes>
+      </BeamAppShell>
+      {/* Non-modal — the live app above IS the preview; it stays interactable. */}
+      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />
+    </ThemeProvider>
   );
 }

@@ -5,11 +5,18 @@ cumulative requirements doc `gaspar-transactions-requirements-v1.md`.
 
 ## What it is
 
-A demo control (`ShellFooter` → "View as version", precedent: Sunlight's Acting-as switcher) that
+A demo control (`ShellFooter` → "Viewing as", precedent: Sunlight's Acting-as switcher) that
 shapeshifts the Transactions page to a release phase — v1.0 → v1.1 → v1.2 → Beyond. **Gating is
 existence, not disablement:** each capability maps to *not passing* an already-opt-in prop on
 `BeamDataTable` / `BeamFilterBar`. The switcher shows what a version IS, not what it's missing. Zero
 organism changes.
+
+The switcher itself (`MilestoneSwitcher.tsx`) is the always-visible **radio list** styled like
+Sunlight's Acting-as — avatar-circle (version number) + label + release-date sub-line rows, selected
+state, one click per hop. The "Viewing as" header links out to Boryana's Notion spec (external, new
+tab). **Promotion candidate (logged, not built):** this is the *second* consumer of that persona-list
+pattern, so the BEAM.md §2 trigger is met — extracting a shared organism is queued as a deliberate
+task, replicated app-locally for now.
 
 ## Mechanism
 
@@ -19,11 +26,31 @@ organism changes.
   truth = the URL; context distributes the derived `caps`.
 - **Default = Beyond** (everything, today's behavior) when the param is absent or unrecognised. Beyond
   is written as *absence* — selecting it clears the param, keeping the default URL clean.
-- Footer select ↔ URL stay in sync (`setMilestone` writes the query, `replace` so phase hops don't
+- Footer switcher ↔ URL stay in sync (`setMilestone` writes the query, `replace` so phase hops don't
   pollute back-button history). Nav wiring in `App.tsx` preserves `?milestone` across in-app
   navigation, so the phase survives moving between views (harmless query on other routes).
 - **Demo scaffolding, not access control** — the requirements doc is explicit: "hiding a control is
   not access control"; real enforcement is server-side.
+
+## Nav & route gating (2026-09-10)
+
+The **sidenav** gates by milestone too, per the release phasing + Deyan's ruling:
+
+| Milestone | Nav |
+| --- | --- |
+| v1.0 | Transactions only |
+| v1.1+ (incl. Beyond) | Dashboard · Transactions · Rule Builder |
+
+- Policy + prune live in `navItems.tsx` (`allowedViews`, `pruneNav`, `landingView`); the nav is pruned
+  to allowed views plus their ancestors. **Hidden = absent from the nav, not disabled.**
+- **Read literally:** the ruling enumerates exactly the functional views, so the speculative IA
+  sections (Providers, Disputes, Reporting, Administration) are pruned at *every* milestone — including
+  Beyond — since none maps to a real view. If the placeholder IA should return at v1.1+/Beyond, that's
+  a one-line change to `MILESTONE_VIEWS` (add them) — flagged, not assumed.
+- **Route guard** (`App.tsx`): a deep-link to a view outside the milestone (e.g.
+  `#/dashboard?milestone=v1_0`) redirects to Transactions with `?milestone` preserved — the URL never
+  shows a page the version lacks. Landing (`/`, unknown hash) resolves to the milestone's landing view
+  (Dashboard when present, else Transactions).
 
 ## Caps → prop map (cumulative; ✓ = present)
 
@@ -76,3 +103,7 @@ conversation; the fence excluded sorting and anything server-side.
    page: localStorage.
 10. **Pagination affordances** — doc: total count + visible range shown, size configurable up to 500
     with jump-to-page; page uses the organism's default client pagination.
+11. **v1.0: Rule Builder present or not?** — Boryana's v1.0 references 3DS rules living *in the Rule
+    Builder* while also stating the Back Office is Transactions-only at v1.0. The nav ruling puts Rule
+    Builder at v1.1; the contradiction is Boryana's to resolve (agenda material, nav follows the
+    ruling).

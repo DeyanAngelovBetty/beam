@@ -7,6 +7,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import SettingsIcon from '@mui/icons-material/Settings';
 import type { BeamNavItem } from '@betty/beam';
+import type { Milestone } from './milestone';
 
 /** Top-level app views a nav leaf can route to. App wires selected/onClick from
  *  the `view` tag below — no positional (index-0) coupling. */
@@ -42,3 +43,38 @@ export const GASPAR_NAV: GasparNavItem[] = [
   { label: 'Reporting', icon: <BarChartIcon />, children: [{ label: 'Settlement' }] },
   { label: 'Administration', icon: <SettingsIcon />, children: [{ label: 'Users & Roles' }] },
 ];
+
+/**
+ * Milestone → which views the Back Office HAS (Boryana's release phasing + Deyan's ruling): v1.0 is
+ * Transactions-only; v1.1 onward adds Dashboard + Rule Builder. Cumulative. Read literally: the demo
+ * nav shows exactly these functional views per phase — the speculative IA sections (Providers,
+ * Disputes, Reporting, Administration) are pruned at every milestone, since none maps to a real view
+ * and "hidden = absent" is the rule.
+ *
+ * (Gap for Boryana, recorded not resolved: v1.0 also references 3DS rules living IN the Rule Builder
+ * while stating the BO is Transactions-only at v1.0 — a contradiction. Nav follows the ruling: Rule
+ * Builder at v1.1.)
+ */
+const MILESTONE_VIEWS: Record<Milestone, GasparView[]> = {
+  v1_0: ['transactions'],
+  v1_1: ['dashboard', 'transactions', 'ruleBuilder'],
+  v1_2: ['dashboard', 'transactions', 'ruleBuilder'],
+  beyond: ['dashboard', 'transactions', 'ruleBuilder'],
+};
+
+export const allowedViews = (m: Milestone): Set<GasparView> => new Set(MILESTONE_VIEWS[m]);
+
+/** Landing view for a milestone — Dashboard when the phase has it, else Transactions (v1.0). */
+export const landingView = (m: Milestone): GasparView =>
+  allowedViews(m).has('dashboard') ? 'dashboard' : 'transactions';
+
+/** Prune the nav tree to items that ARE, or CONTAIN, an allowed view. An item with no allowed view
+ *  and no surviving child drops out — so a group is kept only as an ancestor of something real. */
+export function pruneNav(items: GasparNavItem[], allowed: Set<GasparView>): GasparNavItem[] {
+  return items.flatMap((item) => {
+    const children = item.children ? pruneNav(item.children, allowed) : undefined;
+    const keep = (item.view && allowed.has(item.view)) || (children && children.length > 0);
+    if (!keep) return [];
+    return [{ ...item, ...(item.children ? { children } : {}) }];
+  });
+}

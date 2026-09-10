@@ -1,5 +1,6 @@
 import {
   Stack,
+  Divider,
   FormControl,
   InputLabel,
   Select,
@@ -12,7 +13,7 @@ import type { BrandName } from '@betty/beam';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
-import { MILESTONES, useMilestone } from './milestone';
+import { MilestoneSwitcher } from './MilestoneSwitcher';
 
 const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
@@ -44,27 +45,13 @@ export function ShellFooter({
   onOpenThemeLab?: () => void;
 }) {
   const jurisdictions = Object.keys(products.gaspar) as BrandName[];
-  const { milestone, setMilestone } = useMilestone();
   return (
-    <Stack spacing={1} sx={{ p: 1.5 }}>
-      {/* Milestone / "view as version" — a DEMO control (like Sunlight's Acting-as), so it leads the
-          footer as its own full-width row. Shapeshifts the Transactions page to a release phase; the
-          value is URL-backed (?milestone=) so each phase is deep-linkable for the deck. */}
-      <FormControl size="small" fullWidth>
-        <InputLabel id="gaspar-milestone">View as version</InputLabel>
-        <Select
-          labelId="gaspar-milestone"
-          label="View as version"
-          value={milestone}
-          onChange={(e) => setMilestone(e.target.value as typeof milestone)}
-        >
-          {MILESTONES.map((m) => (
-            <MenuItem key={m.id} value={m.id}>
-              {m.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+    <Stack sx={{ p: 1.5, gap: 1 }}>
+      {/* Demo "view as version" switcher — the always-visible radio list (its own section, one click
+          per hop), mirroring Sunlight's Acting-as. URL-backed, so each phase is deep-linkable. */}
+      <MilestoneSwitcher />
+      <Divider />
+      {/* Chrome controls — location + Theme Lab + mode. */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
           <InputLabel id="gaspar-location">Location</InputLabel>
