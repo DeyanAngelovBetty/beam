@@ -245,6 +245,12 @@ which buries them in the Scheme-B edit dialog.
 
 ## Drill-down flows — entities get pages *(ratified 2026-09-02, team buy-in Radi)*
 
+> The full drill-down model — **route level vs leaf surface**, the sessions-never-nest invariant, and
+> the CR-granularity open question — is its own doc: [docs/drill-down-grammar.md](drill-down-grammar.md)
+> *(ratified 2026-09-10)*. A **route level** is exactly a detail page as specified below; a **leaf
+> surface** (inline rows, or the sanctioned Reward Item dialog) inherits the parent's mode. That doc
+> refines the "leaf → inline / leaf route" note below to include a leaf **dialog** as a first-class form.
+
 The Prize Wall / token-campaign flow moves from Midnight's stacked dialogs to Beam-style **multi-level
 drill-down PAGES**. The rulings:
 

@@ -110,7 +110,9 @@ two-column `BeamField` grid; `CANCEL`/`SAVE`; keyboard + focus-trap are MUI defa
 ruling, exactly:** a *leaf sub-record edited inside a parent edit session*, where navigating to a page
 would discard the parent's unsaved draft. Save writes into the wall-stage draft (same session); Cancel
 discards. The repo's **"no dialogs" default stands everywhere else** — this is the sanctioned exception,
-not a new pattern to spread.
+not a new pattern to spread. The dialog is the **founding leaf-surface** example of the drill-down
+model — see [/docs/drill-down-grammar.md](../../../docs/drill-down-grammar.md) (route level vs leaf
+surface; sessions never nest).
 
 *Scope extension (2026-09-10): **view usage of the same dialog surface is sanctioned alongside
 leaf-edit.*** Reward cards are clickable in **View** too, opening the SAME dialog **read-only** — fields
