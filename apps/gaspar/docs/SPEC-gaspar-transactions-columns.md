@@ -123,6 +123,12 @@ Added a page-local **Error Code** column (after Status), driven by `PaymentRow.e
 
 - **Observed event types only:** Succeeded → Initiated · PspAssigned · SubmittedToProvider · Approved; Pending → Initiated · PspAssigned; **Failed → Initiated · PspAssigned · SubmittedToProvider and STOP.** No failure event type has ever been observed — the visibly incomplete Failed timeline is the honest rendering and a deliberate open question, not a bug.
 
+### Column update — meeting 2026-09-10
+
+- **New declared default order** (top-down): Created At, Last Updated, Transaction ID, Direction, Amount, Status, Customer, Customer Email, PSP Transaction ID, Payment method, Currency, Error Code, Provider, 3DS Status. Persisted arrangements are **untouched** by the column-manager merge rule — a browser with a saved order keeps its order and needs **Reset to defaults** to adopt the new ORDER; the new **Customer Email** column alone appears via the merge, inserted at its declared position (after Customer).
+- **New column: Customer Email** (`PaymentRow.customerEmail`, seeded stable per customer id). Copy-able like the ID cells (`TruncateCopyCell`) but in the **normal text face** via a new `mode="auto"` — full value in tooltip, click-to-copy, and **ellipsis only when the column is too narrow** (CSS end-ellipsis; true pixel-measured *middle*-truncation would need per-cell measurement — not built, char-based `mode="middle"` stays for the ID cells). CSV serialization gains the field in the new order (13 → 14); JSON picks it up automatically.
+- **Search predicate** gains `customerEmail` (search-by-email ops flow); placeholder updated to "Search ID, PSP ID, customer, email".
+
 ### Backend ledger (open questions for the payments team)
 
 - **errorCode field + vocabulary** — MTI vs response/decline vs PSP codes (from the Error Code column, above).

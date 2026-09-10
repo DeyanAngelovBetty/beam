@@ -68,6 +68,7 @@ interface PaymentRow {
   marketId: string; // context-scoped — not a column
   idempotencyKey: string; // not a column
   customerId: string;
+  customerEmail: string;
   paymentMethodId: string;
   amount: number;
   currency: string;
@@ -132,6 +133,8 @@ const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 40 }, (_
     marketId: 'mkt_ca',
     idempotencyKey: `idm_${(4000 + i * 7).toString(16)}`,
     customerId: `cus_${74120 + i}`,
+    customerEmail: `player${74120 + i}@example.com`, // stable, derived from the customer id
+
     paymentMethodId: `pm_${token}`,
     amount,
     currency,
@@ -309,13 +312,22 @@ const middleTruncate = (s: string, head = 8, tail = 6) =>
 
 /** GUID / PSP-id cell: middle-truncated, full value in tooltip, click-to-copy with confirmation.
  *  PAGE-LOCAL (spec §"Shared cell treatments": no Beam copy pattern exists — flagged, not invented). */
-function TruncateCopyCell({ value, mono, onCopied }: { value: string | null; mono?: boolean; onCopied: () => void }) {
+function TruncateCopyCell({ value, mono, mode = 'middle', onCopied }: { value: string | null; mono?: boolean; mode?: 'middle' | 'auto'; onCopied: () => void }) {
   if (!value) return <Box component="span" sx={{ color: 'text.disabled' }}>{EM_DASH}</Box>;
   return (
     <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', minWidth: 0 }}>
       <Tooltip title={value}>
-        <Box component="span" sx={{ fontFamily: mono ? 'monospace' : undefined, whiteSpace: 'nowrap' }}>
-          {middleTruncate(value)}
+        <Box
+          component="span"
+          sx={{
+            fontFamily: mono ? 'monospace' : undefined,
+            whiteSpace: 'nowrap',
+            // 'middle' (IDs): char-based middle-truncate always. 'auto' (emails): full value in the
+            // normal face, CSS end-ellipsis ONLY when the column is too narrow.
+            ...(mode === 'auto' && { flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }),
+          }}
+        >
+          {mode === 'auto' ? value : middleTruncate(value)}
         </Box>
       </Tooltip>
       <Tooltip title="Copy">
@@ -400,19 +412,20 @@ const EXPORT_LABEL: Record<string, string> = Object.fromEntries(EXPORT_FORMATS.m
 
 // CSV of the visible-catalog fields (the 13 default columns, in order). Real, RFC-4180 quoting.
 const CSV_FIELDS: { header: string; get: (r: PaymentRow) => string | number }[] = [
+  { header: 'Created At', get: (r) => r.createdAt },
+  { header: 'Last Updated', get: (r) => r.updatedAt },
   { header: 'Transaction ID', get: (r) => r.id },
-  { header: 'PSP Transaction ID', get: (r) => r.pspTransactionId ?? '' },
+  { header: 'Direction', get: (r) => r.direction },
+  { header: 'Amount', get: (r) => r.amount.toFixed(2) },
   { header: 'Status', get: (r) => r.status },
   { header: 'Customer', get: (r) => r.customerId },
+  { header: 'Customer Email', get: (r) => r.customerEmail },
+  { header: 'PSP Transaction ID', get: (r) => r.pspTransactionId ?? '' },
   { header: 'Payment method', get: (r) => r.paymentMethodId },
-  { header: 'Amount', get: (r) => r.amount.toFixed(2) },
   { header: 'Currency', get: (r) => r.currency },
-  { header: 'Direction', get: (r) => r.direction },
   { header: 'Error Code', get: (r) => r.errorCode ?? '' },
   { header: 'Provider', get: (r) => r.psp },
   { header: '3DS Status', get: (r) => r.threeDsStatus },
-  { header: 'Created At', get: (r) => r.createdAt },
-  { header: 'Last Updated', get: (r) => r.updatedAt },
 ];
 const csvCell = (v: string | number) => {
   const s = String(v);
@@ -538,9 +551,9 @@ export function TransactionsPage() {
   const rows = useMemo(() => {
     const q = applied.q.trim().toLowerCase();
     return PAYMENTS.filter((r) => {
-      // Search: id, pspTransactionId, customerId (spec §1).
+      // Search: id, pspTransactionId, customerId, customerEmail (email added 2026-09-10 — ops flow).
       if (q) {
-        const hay = `${r.id} ${r.pspTransactionId ?? ''} ${r.customerId}`.toLowerCase();
+        const hay = `${r.id} ${r.pspTransactionId ?? ''} ${r.customerId} ${r.customerEmail}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       // Date range on createdAt — compared as the UTC calendar date (createdAt is ...Z); inclusive.
@@ -622,25 +635,28 @@ export function TransactionsPage() {
   // Default-visible set, in spec order. (When bullet 3 lands, the CATALOG above joins these as the
   // column manager's contents.)
   const columns: BeamColumn<PaymentRow>[] = [
-    // Declared default order (2026-09-09): Status promoted to 3rd (after the IDs, before Customer) so
-    // the severity read leads. Persisted arrangements are untouched by the column-manager merge rule —
-    // browsers with saved order need "Reset to defaults" to adopt this.
+    // Declared default order (2026-09-10 meeting): timestamps lead, then the transaction essentials,
+    // then customer + the rest. Persisted arrangements are untouched by the column-manager merge rule —
+    // browsers with a saved order need "Reset to defaults" to adopt this ORDER (the new Customer Email
+    // column alone appears via the merge, at its declared position after Customer).
+    { key: 'createdAt', header: 'Created At', align: 'right', getValue: (r) => r.createdAt, width: 150, render: (r) => <TimestampCell iso={r.createdAt} /> },
+    { key: 'updatedAt', header: 'Last Updated', align: 'right', getValue: (r) => r.updatedAt, width: 150, render: (r) => <TimestampCell iso={r.updatedAt} /> },
     { key: 'id', header: 'Transaction ID', getValue: (r) => r.id, width: 168, render: (r) => <TruncateCopyCell value={r.id} onCopied={onCopied} /> },
-    { key: 'pspTransactionId', header: 'PSP Transaction ID', getValue: (r) => r.pspTransactionId ?? '', width: 184, render: (r) => <TruncateCopyCell value={r.pspTransactionId} mono onCopied={onCopied} /> },
-    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <BeamBadge {...statusTier(r.status)} size="small" /> },
-    { key: 'customerId', header: 'Customer', getValue: (r) => r.customerId, width: 130, render: (r) => r.customerId },
-    { key: 'paymentMethodId', header: 'Payment method', getValue: (r) => r.paymentMethodId, width: 168, render: (r) => <PaymentMethodCell row={r} onCopied={onCopied} /> },
-    { key: 'amount', header: 'Amount', align: 'right', getValue: (r) => r.amount, width: 110, render: (r) => r.amount.toFixed(2) },
-    { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
     // Direction is a CATEGORY, not a state — plain text, no badge (grammar: semantic hues are for states only).
     { key: 'direction', header: 'Direction', getValue: (r) => r.direction, width: 124, render: (r) => r.direction },
+    { key: 'amount', header: 'Amount', align: 'right', getValue: (r) => r.amount, width: 110, render: (r) => r.amount.toFixed(2) },
+    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <BeamBadge {...statusTier(r.status)} size="small" /> },
+    { key: 'customerId', header: 'Customer', getValue: (r) => r.customerId, width: 130, render: (r) => r.customerId },
+    // Customer Email — copy-able like the ID cells, normal face, ellipsis only when width-constrained.
+    { key: 'customerEmail', header: 'Customer Email', getValue: (r) => r.customerEmail, width: 200, render: (r) => <TruncateCopyCell value={r.customerEmail} mode="auto" onCopied={onCopied} /> },
+    { key: 'pspTransactionId', header: 'PSP Transaction ID', getValue: (r) => r.pspTransactionId ?? '', width: 184, render: (r) => <TruncateCopyCell value={r.pspTransactionId} mono onCopied={onCopied} /> },
+    { key: 'paymentMethodId', header: 'Payment method', getValue: (r) => r.paymentMethodId, width: 168, render: (r) => <PaymentMethodCell row={r} onCopied={onCopied} /> },
+    { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
     // PROPOSED column — errorCode has no data source in the payments API yet (see SPEC build-notes).
     { key: 'errorCode', header: 'Error Code', getValue: (r) => r.errorCode ?? '', width: 110, render: (r) => <ErrorCodeCell code={r.errorCode} /> },
     { key: 'psp', header: 'Provider', getValue: (r) => r.psp, width: 110, render: (r) => r.psp },
     // 3DS status is a CATEGORY, not a state — plain text, no badge.
     { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => r.threeDsStatus },
-    { key: 'createdAt', header: 'Created At', align: 'right', getValue: (r) => r.createdAt, width: 150, render: (r) => <TimestampCell iso={r.createdAt} /> },
-    { key: 'updatedAt', header: 'Last Updated', align: 'right', getValue: (r) => r.updatedAt, width: 150, render: (r) => <TimestampCell iso={r.updatedAt} /> },
   ];
 
   return (
@@ -660,7 +676,7 @@ export function TransactionsPage() {
         aria-label="Transaction filters"
         searchValue={draft.q}
         onSearchChange={(q) => patchDraft({ q })}
-        searchPlaceholder="Search ID, PSP ID, customer"
+        searchPlaceholder="Search ID, PSP ID, customer, email"
         applied={isApplied}
         onFilter={apply}
         onClearAll={clearAll}
