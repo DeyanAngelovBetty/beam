@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, Typogra
 import type { BrandName, BeamNavItem } from '@betty/beam';
 import { GASPAR_NAV, VIEW_PATH, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
+import { MilestoneProvider } from './gaspar/milestone';
 import { ThemeLabDrawer } from '@betty/beam-lab';
 import { TransactionsPage } from './gaspar/TransactionsPage';
 import { DashboardPage } from './gaspar/DashboardPage';
@@ -70,7 +71,7 @@ export function App() {
 
 function GasparApp() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const [brand, setBrand] = useState<BrandName>('ontario');
   const [labOpen, setLabOpen] = useState(false); // Theme Lab drawer (Gaspar only)
   const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
@@ -83,40 +84,44 @@ function GasparApp() {
       const path = itemView ? VIEW_PATH[itemView] : undefined;
       return {
         ...rest,
-        ...(path ? { selected: pathname === path, onClick: () => navigate(path) } : {}),
+        // Preserve the current query (the ?milestone switcher) across in-app nav, so the demo phase
+        // survives moving between views — selected still compares pathname only, ignoring the query.
+        ...(path ? { selected: pathname === path, onClick: () => navigate({ pathname: path, search }) } : {}),
         ...(children ? { children: children.map(wire) } : {}),
       };
     };
     return GASPAR_NAV.map(wire);
-  }, [pathname, navigate]);
+  }, [pathname, search, navigate]);
 
   return (
-    <ThemeProvider theme={theme} defaultMode="dark" noSsr>
-      <CssBaseline />
-      <BeamAppShell
-        brandMark={brandMark}
-        navItems={navItems}
-        persistKey="beam.shell.gaspar"
-        footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
-      >
-        <Routes>
-          <Route path="/" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
-          <Route path={VIEW_PATH.dashboard} element={<DashboardPage />} />
-          <Route path={VIEW_PATH.transactions} element={<TransactionsPage />} />
-          <Route
-            path={VIEW_PATH.ruleBuilder}
-            element={
-              <Suspense fallback={<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>Loading Rule Builder…</Typography>}>
-                <RuleBuilderPage />
-              </Suspense>
-            }
-          />
-          {/* Unknown hash → back to the landing view. */}
-          <Route path="*" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
-        </Routes>
-      </BeamAppShell>
-      {/* Non-modal — the live app above IS the preview; it stays interactable. */}
-      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />
-    </ThemeProvider>
+    <MilestoneProvider>
+      <ThemeProvider theme={theme} defaultMode="dark" noSsr>
+        <CssBaseline />
+        <BeamAppShell
+          brandMark={brandMark}
+          navItems={navItems}
+          persistKey="beam.shell.gaspar"
+          footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}
+        >
+          <Routes>
+            <Route path="/" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
+            <Route path={VIEW_PATH.dashboard} element={<DashboardPage />} />
+            <Route path={VIEW_PATH.transactions} element={<TransactionsPage />} />
+            <Route
+              path={VIEW_PATH.ruleBuilder}
+              element={
+                <Suspense fallback={<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>Loading Rule Builder…</Typography>}>
+                  <RuleBuilderPage />
+                </Suspense>
+              }
+            />
+            {/* Unknown hash → back to the landing view. */}
+            <Route path="*" element={<Navigate to={VIEW_PATH.dashboard} replace />} />
+          </Routes>
+        </BeamAppShell>
+        {/* Non-modal — the live app above IS the preview; it stays interactable. */}
+        <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />
+      </ThemeProvider>
+    </MilestoneProvider>
   );
 }

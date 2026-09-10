@@ -12,6 +12,7 @@ import type { BrandName } from '@betty/beam';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import { MILESTONES, useMilestone } from './milestone';
 
 const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
@@ -43,29 +44,50 @@ export function ShellFooter({
   onOpenThemeLab?: () => void;
 }) {
   const jurisdictions = Object.keys(products.gaspar) as BrandName[];
+  const { milestone, setMilestone } = useMilestone();
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', p: 1.5 }}>
-      <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
-        <InputLabel id="gaspar-location">Location</InputLabel>
+    <Stack spacing={1} sx={{ p: 1.5 }}>
+      {/* Milestone / "view as version" — a DEMO control (like Sunlight's Acting-as), so it leads the
+          footer as its own full-width row. Shapeshifts the Transactions page to a release phase; the
+          value is URL-backed (?milestone=) so each phase is deep-linkable for the deck. */}
+      <FormControl size="small" fullWidth>
+        <InputLabel id="gaspar-milestone">View as version</InputLabel>
         <Select
-          labelId="gaspar-location"
-          label="Location"
-          value={brand}
-          onChange={(e) => onBrandChange(e.target.value as BrandName)}
+          labelId="gaspar-milestone"
+          label="View as version"
+          value={milestone}
+          onChange={(e) => setMilestone(e.target.value as typeof milestone)}
         >
-          {jurisdictions.map((j) => (
-            <MenuItem key={j} value={j}>
-              {cap(j)}
+          {MILESTONES.map((m) => (
+            <MenuItem key={m.id} value={m.id}>
+              {m.label}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
-      {onOpenThemeLab && (
-        <IconButton onClick={onOpenThemeLab} aria-label="Open Theme Lab" color="inherit">
-          <PaletteOutlinedIcon />
-        </IconButton>
-      )}
-      <ModeToggle />
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <FormControl size="small" sx={{ minWidth: 120, flexGrow: 1 }}>
+          <InputLabel id="gaspar-location">Location</InputLabel>
+          <Select
+            labelId="gaspar-location"
+            label="Location"
+            value={brand}
+            onChange={(e) => onBrandChange(e.target.value as BrandName)}
+          >
+            {jurisdictions.map((j) => (
+              <MenuItem key={j} value={j}>
+                {cap(j)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {onOpenThemeLab && (
+          <IconButton onClick={onOpenThemeLab} aria-label="Open Theme Lab" color="inherit">
+            <PaletteOutlinedIcon />
+          </IconButton>
+        )}
+        <ModeToggle />
+      </Stack>
     </Stack>
   );
 }

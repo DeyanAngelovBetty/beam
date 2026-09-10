@@ -15,6 +15,7 @@ import {
 } from '@betty/beam';
 import type { BeamColumn, AddableField, BeamBadgeProps } from '@betty/beam';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
+import { useMilestone } from './milestone';
 
 /**
  * Gaspar Transactions — the payments list grid.
@@ -466,6 +467,11 @@ function PaymentTimeline({ events }: { events: PaymentEvent[] }) {
 }
 
 export function TransactionsPage() {
+  // Milestone gate ("view as version"). Each capability = an opt-in prop passed (or not) below —
+  // existence, not disablement (docs/NOTES-gaspar-transactions-milestones.md). Default (Beyond) is
+  // today's full behavior: every cap true.
+  const { caps } = useMilestone();
+
   // One snackbar for all transient notices (copy confirmations + the action proposals).
   const [snack, setSnack] = useState<string | null>(null);
   const onCopied = () => setSnack('Copied to clipboard');
@@ -584,12 +590,17 @@ export function TransactionsPage() {
   // are PROPOSALS (confirm → snackbar, no mutation). Eligibility: Pending only (assumption).
   // Bulk actions are a FACTORY (Option C) so disabled/reason reflect the live selection.
   const bulkActions = (selectedRows: PaymentRow[]) => {
+    // Export is present whenever the bulk strip is (v1.1+); Complete/Decline join the SAME strip only
+    // at Beyond (caps.actions). Export is a FORMAT MENU (JSON/CSV real, PDF/Excel proposals).
     const noEligible = selectedRows.every((r) => r.status !== 'pending');
     return [
-      // Export is a FORMAT MENU (JSON/CSV real, PDF/Excel proposals) — options-bearing bulk action.
       { id: 'export', label: 'Export', options: EXPORT_FORMATS },
-      { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
-      { id: 'decline', label: 'Decline', destructive: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
+      ...(caps.actions
+        ? [
+            { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
+            { id: 'decline', label: 'Decline', destructive: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
+          ]
+        : []),
     ];
   };
   const onBulkAction = (actionId: string, selectedIds: string[], optionId?: string) => {
@@ -680,7 +691,11 @@ export function TransactionsPage() {
         applied={isApplied}
         onFilter={apply}
         onClearAll={clearAll}
-        advanced={{ addableFields, storageKey: 'gaspar.transactions', onFieldRemoved }}
+        // Advanced [+] addable-field menu is v1.2+ (caps.advancedFilters). Below it, only the base
+        // filters (search, date range, Status, Direction, Provider) show. NOTE (v-spec gap): the
+        // requirements doc places Error Code + 3DS Status as v1.0 *default* filters, but the page
+        // implements them as [+] fields, so they too appear only at v1.2 — recorded in the gap list.
+        advanced={caps.advancedFilters ? { addableFields, storageKey: 'gaspar.transactions', onFieldRemoved } : undefined}
       >
         <BeamField
           label="Created from"
@@ -725,27 +740,34 @@ export function TransactionsPage() {
         rows={rows}
         getRowId={(r) => r.id}
         paginated
-        selectable
+        // MILESTONE GATE — existence, not disablement. selection (checkboxes + bulk strip) is v1.1+;
+        // the row kebab (rowActions: Complete/Decline + per-row Export folded in) is Beyond-only; the
+        // column manager is v1.2+. Beyond = every cap true = today's full behavior.
+        selectable={caps.selection}
         // Severity accent — failed rows get a leading danger bar (redundant reinforcement of the
         // Status chip; the chip names, the accent locates). Grammar spatial-accents note.
         rowAccent={(r) => (r.status === 'failed' ? 'danger' : undefined)}
-        bulkActions={bulkActions}
-        onBulkAction={onBulkAction}
-        rowActions={rowActions}
+        bulkActions={caps.selection ? bulkActions : undefined}
+        onBulkAction={caps.selection ? onBulkAction : undefined}
+        rowActions={caps.actions ? rowActions : undefined}
         renderExpanded={(r) => <PaymentTimeline events={r.events} />}
         emptyMessage="No transactions match these filters."
-        // Column manager (bullet 3). Catalog = the bullet-1 columns with no data source yet — shown in
-        // the manager disabled/"awaiting data" (option b). Payment Method Details is excluded: it's the
-        // Phase B card cell inside Payment method, not a column of its own.
-        columnManager={{
-          storageKey: 'gaspar.transactions',
-          catalog: [
-            { id: 'transactionType', label: 'Transaction Type' },
-            { id: 'nameOnCard', label: 'Name on Card' },
-            { id: 'processedBy', label: 'ProcessedBy' },
-            { id: 'fraudRulesMatched', label: 'Fraud Rules Matched' },
-          ],
-        }}
+        // Column manager (bullet 3, v1.2+). Catalog = the bullet-1 columns with no data source yet —
+        // shown in the manager disabled/"awaiting data" (option b). Payment Method Details is excluded:
+        // it's the Phase B card cell inside Payment method, not a column of its own.
+        columnManager={
+          caps.columnManager
+            ? {
+                storageKey: 'gaspar.transactions',
+                catalog: [
+                  { id: 'transactionType', label: 'Transaction Type' },
+                  { id: 'nameOnCard', label: 'Name on Card' },
+                  { id: 'processedBy', label: 'ProcessedBy' },
+                  { id: 'fraudRulesMatched', label: 'Fraud Rules Matched' },
+                ],
+              }
+            : undefined
+        }
         aria-label="Payment transactions"
       />
 
