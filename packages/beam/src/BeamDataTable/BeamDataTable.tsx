@@ -367,6 +367,16 @@ export function BeamDataTable<Row>({
       [base[i], base[j]] = [base[j], base[i]];
       return base;
     });
+  // Pointer-drag reorder — an array-move to an arbitrary index (the ▲/▼ arrows do adjacent swaps). Both
+  // funnel through the SAME onColumnOrderChange, so the drag and the keyboard path can't diverge.
+  const reorderColumn = (id: string, toIndex: number) =>
+    cm.onColumnOrderChange((old) => {
+      const base = old.length ? [...old] : columns.map((c) => c.key);
+      const from = base.indexOf(id);
+      if (from < 0 || toIndex < 0 || toIndex >= base.length || toIndex === from) return old;
+      base.splice(toIndex, 0, base.splice(from, 1)[0]);
+      return base;
+    });
 
   const selectedIds = Object.keys(rowSelection);
   const selectedCount = selectedIds.length;
@@ -801,6 +811,7 @@ export function BeamDataTable<Row>({
                 catalog={cm.catalog}
                 onToggle={toggleColumn}
                 onMove={moveColumn}
+                onReorder={reorderColumn}
                 onReset={cm.reset}
               />
             )}

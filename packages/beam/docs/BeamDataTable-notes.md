@@ -3,6 +3,27 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Column manager — pointer drag-and-drop reorder *(2026-09-10)*
+
+The manager's reorder gained a **pointer drag handle** alongside the existing ▲/▼ arrows (which stay —
+they're the keyboard/AT path). Deferred at v1 deliberately (no dependency); live meeting usage
+(reordering with stakeholders) now justifies it.
+
+- **Hand-rolled on Pointer Events, no dnd-kit.** A simple ~14-row vertical list doesn't earn a
+  ~10–13 KB-gz dependency added to the shared system, and dnd-kit's headline value — its a11y
+  (keyboard sensor + live-region announcer) — we already have in the arrows. So the drag is a pure
+  pointer enhancement.
+- **Honest a11y:** the handle (`DragIndicator`) is pointer-only — `aria-hidden`, non-focusable,
+  `touch-action: none`. AT users reorder with the arrows (`aria-label="Move X up/down"`); we don't
+  ship a half-built ARIA drag.
+- **No path divergence:** the drag commits through a new `onReorder(id, toIndex)` → `reorderColumn`
+  in the organism, which does an array-move and calls the SAME `onColumnOrderChange` the arrows'
+  `moveColumn` uses. Persist / merge / ≥1-visible rules are untouched (order ≠ visibility, ≠ input
+  method). Catalog ("awaiting data") rows are non-draggable, in their own list below the divider.
+- **Drop indicator:** a 2px `primary.main` insertion line, absolutely positioned within the
+  (`position: relative`) reorderable list at the target boundary's `offsetTop` — no layout shift, no
+  reflow of the rows under the pointer. The dragged row dims to 0.4.
+
 ## Menu (options-bearing) actions — bulk + row *(2026-09-10)*
 
 An action can now carry a **menu of options** (first use: Export → JSON/CSV/PDF/Excel). Additive,
