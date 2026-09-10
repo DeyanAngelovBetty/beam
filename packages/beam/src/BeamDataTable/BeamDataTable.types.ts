@@ -90,6 +90,19 @@ export interface BeamBulkAction {
   disabledReason?: string;
   /** Confirm before firing even when not destructive (destructive already confirms). */
   confirm?: boolean;
+  /**
+   * Menu options. Present ⇒ the button opens a menu instead of firing directly; selecting fires
+   * `onBulkAction(actionId, selectedIds, optionId)`. Options-actions skip the button-level confirm
+   * (fine for export; a destructive menu option would want per-option confirm — a future addition).
+   */
+  options?: BeamActionOption[];
+}
+
+/** One entry of a bulk menu action (e.g. an export format). The organism owns the selection, so the
+ *  handler is centralized in `onBulkAction`, keyed by `optionId`. */
+export interface BeamActionOption {
+  id: string;
+  label: string;
 }
 
 export interface BeamDataTableProps<Row> {
@@ -104,7 +117,7 @@ export interface BeamDataTableProps<Row> {
    * selection (the organism stays the single owner of selection state). Back-compat: an array works.
    */
   bulkActions?: BeamBulkAction[] | ((selectedRows: Row[]) => BeamBulkAction[]);
-  onBulkAction?: (actionId: string, selectedIds: string[]) => void;
+  onBulkAction?: (actionId: string, selectedIds: string[], optionId?: string) => void;
   /** Global search field above the table (searches columns with getValue) */
   searchable?: boolean;
   /** Built-in pagination footer */

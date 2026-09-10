@@ -372,9 +372,8 @@ function PaymentMethodCell({ row, onCopied }: { row: PaymentRow; onCopied: () =>
 // Eligibility for Complete/Decline is an ASSUMPTION (Pending only) — validate with backend.
 const ELIGIBILITY_REASON = 'Only Pending transactions can be completed or declined (assumption — backend eligibility rules TBD).';
 
-/** Serialize to a downloaded .json (the one REAL action — client-side blob, no backend). */
-function downloadJson(filename: string, data: unknown) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+/** Client-side file download (no backend). */
+function triggerDownload(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -383,6 +382,45 @@ function downloadJson(filename: string, data: unknown) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+function downloadJson(filename: string, data: unknown) {
+  triggerDownload(filename, new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+}
+
+// Export FORMATS — a rendered ledger (formats-as-open-questions): JSON + CSV are REAL client-side
+// downloads; PDF + Excel are PROPOSALS (design-proposal snackbar, no fake file) pending an export-service
+// decision. Order = menu order.
+const EXPORT_FORMATS = [
+  { id: 'json', label: 'JSON' },
+  { id: 'csv', label: 'CSV' },
+  { id: 'pdf', label: 'PDF' },
+  { id: 'excel', label: 'Excel' },
+];
+const EXPORT_LABEL: Record<string, string> = Object.fromEntries(EXPORT_FORMATS.map((f) => [f.id, f.label]));
+
+// CSV of the visible-catalog fields (the 13 default columns, in order). Real, RFC-4180 quoting.
+const CSV_FIELDS: { header: string; get: (r: PaymentRow) => string | number }[] = [
+  { header: 'Transaction ID', get: (r) => r.id },
+  { header: 'PSP Transaction ID', get: (r) => r.pspTransactionId ?? '' },
+  { header: 'Status', get: (r) => r.status },
+  { header: 'Customer', get: (r) => r.customerId },
+  { header: 'Payment method', get: (r) => r.paymentMethodId },
+  { header: 'Amount', get: (r) => r.amount.toFixed(2) },
+  { header: 'Currency', get: (r) => r.currency },
+  { header: 'Direction', get: (r) => r.direction },
+  { header: 'Error Code', get: (r) => r.errorCode ?? '' },
+  { header: 'Provider', get: (r) => r.psp },
+  { header: '3DS Status', get: (r) => r.threeDsStatus },
+  { header: 'Created At', get: (r) => r.createdAt },
+  { header: 'Last Updated', get: (r) => r.updatedAt },
+];
+const csvCell = (v: string | number) => {
+  const s = String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; // quote + escape only when needed (RFC 4180)
+};
+function downloadCsv(filename: string, rows: PaymentRow[]) {
+  const lines = [CSV_FIELDS.map((f) => csvCell(f.header)).join(','), ...rows.map((r) => CSV_FIELDS.map((f) => csvCell(f.get(r))).join(','))];
+  triggerDownload(filename, new Blob([`${lines.join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' }));
 }
 
 const fmtEventTime = (iso: string) =>
@@ -535,16 +573,18 @@ export function TransactionsPage() {
   const bulkActions = (selectedRows: PaymentRow[]) => {
     const noEligible = selectedRows.every((r) => r.status !== 'pending');
     return [
-      { id: 'export', label: 'Export' },
+      // Export is a FORMAT MENU (JSON/CSV real, PDF/Excel proposals) — options-bearing bulk action.
+      { id: 'export', label: 'Export', options: EXPORT_FORMATS },
       { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
       { id: 'decline', label: 'Decline', destructive: true, disabled: noEligible, disabledReason: ELIGIBILITY_REASON },
     ];
   };
-  const onBulkAction = (actionId: string, selectedIds: string[]) => {
+  const onBulkAction = (actionId: string, selectedIds: string[], optionId?: string) => {
     const selected = PAYMENTS.filter((r) => selectedIds.includes(r.id));
     if (actionId === 'export') {
-      downloadJson(`transactions-${selected.length}.json`, selected);
-      setSnack(`Exported ${selected.length} transaction(s) to JSON.`);
+      if (optionId === 'json') { downloadJson(`transactions-${selected.length}.json`, selected); setSnack(`Exported ${selected.length} transaction(s) to JSON.`); }
+      else if (optionId === 'csv') { downloadCsv(`transactions-${selected.length}.csv`, selected); setSnack(`Exported ${selected.length} transaction(s) to CSV.`); }
+      else { setSnack(`${EXPORT_LABEL[optionId ?? '']} export — design proposal, no backend. Nothing was generated.`); }
       return;
     }
     // Complete/Decline already passed the organism's confirm (confirm / destructive).
@@ -553,13 +593,21 @@ export function TransactionsPage() {
     setSnack(`${verb} — design proposal, no backend. ${eligible} eligible transaction(s) would be affected. Nothing was changed.`);
   };
 
-  // Same three actions on the row kebab (rail grammar) — Export real per-row, Complete/Decline
-  // proposals with a per-row confirm (row-level confirm lives in onSelect). Disabled + reason when the
-  // row isn't Pending (BeamRowAction doctrine).
+  // Same three actions on the row kebab (rail grammar) — Export as a format SUBMENU (JSON/CSV real per
+  // row, PDF/Excel proposal snackbar); Complete/Decline proposals with a per-row confirm. Disabled +
+  // reason when the row isn't Pending (BeamRowAction doctrine).
+  const exportProposal = (fmt: string) => setSnack(`${EXPORT_LABEL[fmt]} export — design proposal, no backend.`);
   const rowActions = (row: PaymentRow) => {
     const notPending = row.status !== 'pending';
     return [
-      { id: 'export', label: 'Export', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
+      {
+        id: 'export', label: 'Export', options: [
+          { id: 'json', label: 'JSON', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
+          { id: 'csv', label: 'CSV', onSelect: () => { downloadCsv(`payment-${row.id}.csv`, [row]); setSnack('Exported 1 transaction to CSV.'); } },
+          { id: 'pdf', label: 'PDF', onSelect: () => exportProposal('pdf') },
+          { id: 'excel', label: 'Excel', onSelect: () => exportProposal('excel') },
+        ],
+      },
       {
         id: 'complete', label: 'Complete', disabled: notPending, disabledReason: ELIGIBILITY_REASON,
         onSelect: () => { if (window.confirm(`Complete transaction ${row.id}?`)) setSnack('Complete — design proposal, no backend. Nothing was changed.'); },

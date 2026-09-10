@@ -3,6 +3,26 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Menu (options-bearing) actions — bulk + row *(2026-09-10)*
+
+An action can now carry a **menu of options** (first use: Export → JSON/CSV/PDF/Excel). Additive,
+back-compat, action-as-data.
+
+- **Bulk (`BeamBulkAction.options?: BeamActionOption[]`, `{id,label}`).** With `options`, the batch
+  button becomes a **menu trigger** (▾) instead of a direct fire; selecting an option fires
+  `onBulkAction(actionId, selectedIds, optionId)`. The organism owns the selection, so the handler is
+  **centralized** and keyed by `optionId` (the third arg is optional — existing consumers unchanged).
+  Options-actions **skip the button-level confirm** — fine for export; a destructive menu option would
+  want per-option confirm, a **future addition** (recorded, not built).
+- **Row (`BeamRowAction` is now a DISCRIMINATED UNION).** Flat `{ onSelect, options?: never }` XOR menu
+  `{ options: {id,label,onSelect}[], onSelect?: never }` — an action with neither/both is
+  unrepresentable (grammar as types, the BeamBadge lesson). The row is closure-captured, so each option
+  carries its **own `onSelect`** (distributed, mirroring the flat action). `BeamRowMenu` renders a menu
+  action as a **submenu** (chevron → nested Menu); the expanded-row `RowActionBar` renders it as a small
+  anchored menu — one definition, both projections, can't drift (grammar §3).
+- **Asymmetry, deliberate:** bulk centralizes (`onBulkAction(…, optionId)`) because the organism owns
+  selection; row distributes (per-option `onSelect`) because the page owns the row closure.
+
 ## Row severity accent — `rowAccent` *(2026-09-09)*
 
 A thin colored bar at a row's **leading edge** (rail cell `left:0`, 3px), redundant reinforcement of the

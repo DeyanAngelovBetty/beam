@@ -12,18 +12,36 @@ import type { ReactNode } from 'react';
  *  - ineligible actions are DISABLED with a reason — never silently hidden
  *    (to hide an action, don't return it from `rowActions`)
  */
-export interface BeamRowAction {
+/** One entry of a menu action's submenu — carries its own handler (the row is closure-captured). */
+export interface BeamRowActionOption {
+  id: string;
+  label: string;
+  onSelect: () => void;
+}
+
+interface BeamRowActionBase {
   id: string;
   label: string;
   icon?: ReactNode;
-  /** The row is already captured by the `(row) => …` closure, so no arg. */
-  onSelect: () => void;
   /** Error-tinted; grouped last (menu) / error color (bar). */
   destructive?: boolean;
   disabled?: boolean;
   /** Shown as a tooltip when disabled — say why it can't apply. */
   disabledReason?: string;
 }
+
+/**
+ * BeamRowAction — a row's action, defined ONCE per datagrid as data (BeamDataTable `rowActions`). Every
+ * surface projects this one definition, so surfaces cannot drift (list-grammar §3).
+ *
+ * A DISCRIMINATED UNION (grammar as types, the BeamBadge lesson): an action is EITHER **flat**
+ * (`onSelect`, no `options`) or a **menu** (`options`, no `onSelect`) — an action with neither, or with
+ * both, is unrepresentable. Rules every surface enforces: always LABELED; destructive reads error-tinted
+ * (grouped last); ineligible is DISABLED with a reason (never silently hidden).
+ */
+export type BeamRowAction =
+  | (BeamRowActionBase & { onSelect: () => void; options?: never })
+  | (BeamRowActionBase & { options: BeamRowActionOption[]; onSelect?: never });
 
 export interface BeamRowMenuProps {
   anchorEl: HTMLElement | null;

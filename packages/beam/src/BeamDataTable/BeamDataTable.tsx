@@ -23,6 +23,9 @@ import TablePagination from '@mui/material/TablePagination';
 import Paper from '@mui/material/Paper';
 import Checkbox from '@mui/material/Checkbox';
 import Toolbar from '@mui/material/Toolbar';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
@@ -39,7 +42,7 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
 import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
-import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps } from './BeamDataTable.types';
+import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
 import { isWhiteSpaceLike } from 'typescript';
@@ -94,32 +97,48 @@ function RailKebab({ items }: { items: BeamRowAction[] }) {
 function RowActionBar({ actions }: { actions: BeamRowAction[] }) {
   return (
     <Stack direction="row" spacing={1} sx={{ pt: 2 }}>
-      {actions.map((a) => {
-        const button = (
-          <Button
-            key={a.id}
-            variant="outlined"
-            size="small"
-            color={a.destructive ? 'error' : 'primary'}
-            aria-disabled={a.disabled || undefined}
-            startIcon={a.icon}
-            onClick={() => {
-              if (!a.disabled) a.onSelect();
-            }}
-            sx={a.disabled ? { opacity: 0.5 } : undefined}
-          >
-            {a.label}
-          </Button>
-        );
-        return a.disabled && a.disabledReason ? (
-          <Tooltip key={a.id} title={a.disabledReason}>
-            {button}
-          </Tooltip>
-        ) : (
-          button
-        );
-      })}
+      {actions.map((a) => (
+        <RowActionBarItem key={a.id} action={a} />
+      ))}
     </Stack>
+  );
+}
+
+/** One action-bar button. Flat → fires onSelect; menu (options) → opens a small menu of its options —
+ *  the same one definition the kebab projects as a submenu (grammar §3, surfaces can't drift). */
+function RowActionBarItem({ action }: { action: BeamRowAction }) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const hasOptions = Boolean(action.options);
+  const button = (
+    <Button
+      variant="outlined"
+      size="small"
+      color={action.destructive ? 'error' : 'primary'}
+      aria-disabled={action.disabled || undefined}
+      aria-haspopup={hasOptions ? 'menu' : undefined}
+      startIcon={action.icon}
+      endIcon={hasOptions ? <ArrowDropDownIcon /> : undefined}
+      onClick={(e) => {
+        if (action.disabled) return;
+        if (action.options) setAnchor(e.currentTarget);
+        else action.onSelect();
+      }}
+      sx={action.disabled ? { opacity: 0.5 } : undefined}
+    >
+      {action.label}
+    </Button>
+  );
+  const wrapped = action.disabled && action.disabledReason ? <Tooltip title={action.disabledReason}>{button}</Tooltip> : button;
+  if (!action.options) return wrapped;
+  return (
+    <>
+      {wrapped}
+      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ list: { dense: true } }}>
+        {action.options.map((opt) => (
+          <MenuItem key={opt.id} onClick={() => { setAnchor(null); opt.onSelect(); }}>{opt.label}</MenuItem>
+        ))}
+      </Menu>
+    </>
   );
 }
 
@@ -157,6 +176,72 @@ function renderCell<Row>(
     );
   }
   return content;
+}
+
+/**
+ * One batch-action button. Plain actions fire directly (with the optional confirm); an action with
+ * `options` becomes a menu trigger (▾) — selecting an option fires `onFire(optionId)`. Options-actions
+ * skip the button-level confirm (per the ruling — export only; a destructive menu option would want
+ * per-option confirm, a future addition). Disabled uses aria-disabled (focusable + announced); an
+ * eligibility reason shows as a tooltip.
+ */
+function BulkActionButton({
+  action,
+  disabled,
+  zeroSelection,
+  batchHintId,
+  count,
+  onFire,
+}: {
+  action: BeamBulkAction;
+  disabled: boolean;
+  zeroSelection: boolean;
+  batchHintId: string;
+  count: number;
+  onFire: (optionId?: string) => void;
+}) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const hasOptions = Boolean(action.options?.length);
+  const btn = (
+    <Button
+      size="small"
+      color={action.destructive ? 'error' : 'primary'}
+      aria-disabled={disabled}
+      aria-haspopup={hasOptions ? 'menu' : undefined}
+      aria-describedby={zeroSelection ? batchHintId : undefined}
+      endIcon={hasOptions ? <ArrowDropDownIcon /> : undefined}
+      onClick={(e) => {
+        if (disabled) return;
+        if (hasOptions) {
+          setAnchor(e.currentTarget);
+          return;
+        }
+        if (
+          (action.confirm || action.destructive) &&
+          typeof window !== 'undefined' &&
+          !window.confirm(`${action.label} ${count} selected item(s)?`)
+        ) {
+          return;
+        }
+        onFire();
+      }}
+      sx={{ opacity: disabled ? 0.5 : 1 }}
+    >
+      {action.label}
+    </Button>
+  );
+  const wrapped = action.disabled && action.disabledReason ? <Tooltip title={action.disabledReason}>{btn}</Tooltip> : btn;
+  if (!hasOptions) return wrapped;
+  return (
+    <>
+      {wrapped}
+      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ list: { dense: true } }}>
+        {action.options!.map((opt) => (
+          <MenuItem key={opt.id} onClick={() => { setAnchor(null); onFire(opt.id); }}>{opt.label}</MenuItem>
+        ))}
+      </Menu>
+    </>
+  );
 }
 
 /**
@@ -406,47 +491,21 @@ export function BeamDataTable<Row>({
             selection; confirm/destructive actions confirm. */}
         {resolvedBulkActions.length > 0 && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: 48, borderBottom: 1, borderColor: 'divider' }}>
-          {resolvedBulkActions.map((a) => {
-            // Zero selection always disables; a page-supplied `disabled` adds eligibility on top.
-            const zeroSelection = selectedCount === 0;
-            const disabled = zeroSelection || Boolean(a.disabled);
-            const btn = (
-              <Button
-                key={a.id}
-                size="small"
-                color={a.destructive ? 'error' : 'primary'}
-                // aria-disabled (not `disabled`) keeps the button focusable and
-                // announced, so a screen-reader user discovers the action and,
-                // via the hint/tooltip, learns why it's inert. The handler no-ops
-                // when disabled; enablement is also conveyed visually (opacity).
-                aria-disabled={disabled}
-                // Zero-selection uses the shared visually-hidden hint; a page-supplied
-                // eligibility reason uses a tooltip (wrapped below) — the BeamRowMenu doctrine.
-                aria-describedby={zeroSelection ? batchHintId : undefined}
-                onClick={() => {
-                  if (disabled) return;
-                  if (
-                    (a.confirm || a.destructive) &&
-                    typeof window !== 'undefined' &&
-                    !window.confirm(`${a.label} ${selectedCount} selected item(s)?`)
-                  ) {
-                    return;
-                  }
-                  onBulkAction?.(a.id, selectedIds);
-                  table.resetRowSelection();
-                }}
-                sx={{ opacity: disabled ? 0.5 : 1 }}
-              >
-                {a.label}
-              </Button>
-            );
-            // Eligibility reason → tooltip (only when the page disabled it AND gave a reason).
-            return a.disabled && a.disabledReason ? (
-              <Tooltip key={a.id} title={a.disabledReason}>{btn}</Tooltip>
-            ) : (
-              btn
-            );
-          })}
+          {resolvedBulkActions.map((a) => (
+            <BulkActionButton
+              key={a.id}
+              action={a}
+              // Zero selection always disables; a page-supplied `disabled` adds eligibility on top.
+              zeroSelection={selectedCount === 0}
+              disabled={selectedCount === 0 || Boolean(a.disabled)}
+              batchHintId={batchHintId}
+              count={selectedCount}
+              onFire={(optionId) => {
+                onBulkAction?.(a.id, selectedIds, optionId);
+                table.resetRowSelection();
+              }}
+            />
+          ))}
           {/* Why the actions are disabled — referenced by each disabled button. */}
           <Box
             component="span"
