@@ -1,5 +1,15 @@
 import { createTheme, type Theme } from '@mui/material/styles';
 import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, type BrandName, type ProductName } from './tokens';
+
+// Surface-ramp named stops (docs/surface-grammar.md). `default`/`paper` are MUI's; `paper0` (Paper
+// elevation 0) and `overlay` (all menus/popovers) are the two extra ramp levels, typed here so the
+// theme + consumers reference names, not `--beam-surface-N` magic strings.
+declare module '@mui/material/styles' {
+  interface TypeBackground {
+    paper0: string;
+    overlay: string;
+  }
+}
 import { starMaskUri } from './starGeometry';
 import { meta } from './textStyles';
 
@@ -128,11 +138,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // (emitted per scheme below); the ramp derives from it, so a live anchor change
             // re-derives the whole surface chain. Byte-identical: ramp-0 = anchor, ramp-1 = the
             // old paper formula.
-            default: 'var(--beam-ramp-0)', // surface 0 — the page
-            paper: 'var(--beam-ramp-1)', // surface 1 — one step up
+            default: 'var(--beam-ramp--1)', // surface -1 — the page (sunk below paper0; Figma ramp)
+            paper: 'var(--beam-ramp-1)', // surface 1 — the default working surface
+            paper0: 'var(--beam-surface-0)', // surface 0 — Paper elevation 0
+            overlay: 'var(--beam-surface-2)', // surface 2 — ALL menus / popovers
             // Both are var() refs MUI can't extract a channel from; skip channel-gen (nothing
             // reads *Channel — verified). Same trick paper already used.
-            ...({ defaultChannel: undefined, paperChannel: undefined } as object),
+            ...({ defaultChannel: undefined, paperChannel: undefined, paper0Channel: undefined, overlayChannel: undefined } as object),
           },
         },
       },
@@ -157,10 +169,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           background: {
             // Aliases to the registered ramp (see the light block). Anchor lives in
             // --beam-surface-anchor; ramp-0 = anchor, ramp-1 = the old paper formula.
-            default: 'var(--beam-ramp-0)', // surface 0 — the page
-            paper: 'var(--beam-ramp-1)', // surface 1 — one step up
+            default: 'var(--beam-ramp--1)', // surface -1 — the page (sunk below paper0; Figma ramp)
+            paper: 'var(--beam-ramp-1)', // surface 1 — the default working surface
+            paper0: 'var(--beam-surface-0)', // surface 0 — Paper elevation 0
+            overlay: 'var(--beam-surface-2)', // surface 2 — ALL menus / popovers
             // Both are var() refs MUI can't channel-extract; skip channel-gen (nothing reads it).
-            ...({ defaultChannel: undefined, paperChannel: undefined } as object),
+            ...({ defaultChannel: undefined, paperChannel: undefined, paper0Channel: undefined, overlayChannel: undefined } as object),
           },
         },
       },
@@ -260,10 +274,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-ramp-1': derived.ramp.paper,
             '--beam-ramp-2': derived.ramp.raised,
             '--beam-ramp-3': derived.ramp.top,
-            // Elevation aliases — point at the ramp, never repeat the formula. Roles:
-            // 0 = background.default, 1 = background.paper, 2 = Menu/Popover, 3 = Dialog.
-            // `--beam-surface--1` (sunken) reserved — no consumer this pass.
+            // Elevation aliases — point at the ramp, never repeat the formula. Roles (Figma ramp,
+            // 2026-09-10): -1 = background.default (page), 0 = paper0 (Paper elevation 0), 1 =
+            // background.paper (default working surface), 2 = overlay (menus/popovers + Dialog's
+            // headroom), 3 = DELIBERATELY UNUSED headroom (Dialog now sits at paper/1, so anything
+            // above a dialog — a menu opened from it — still has level 2 to live on; see surface-grammar).
             '--beam-surface--1': 'var(--beam-ramp--1)',
+            '--beam-surface-0': 'var(--beam-ramp-0)',
             '--beam-surface-1': 'var(--beam-ramp-1)',
             '--beam-surface-2': 'var(--beam-ramp-2)',
             '--beam-surface-3': 'var(--beam-ramp-3)',
@@ -574,6 +591,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // One decision here restyles every instance everywhere: zero component edits.
       MuiPaper: {
         styleOverrides: {
+          // Kill MUI's procedural dark-elevation veil (the white background-image that lightens
+          // surfaces as elevation rises) — the ramp is the ONLY elevation signal (surface-grammar).
+          root: { backgroundImage: 'none' },
           rounded: {
             // "Operational surfaces are soft" — rounder radius plus squircle
             // corner geometry (CSS Borders L5, Chrome 139+; progressive
@@ -581,21 +601,22 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             borderRadius: 24,
             cornerShape: 'squircle',
           },
+          // Elevation → ramp: 0 = paper0, 2 = overlay. 1 (default) stays background.paper (ramp-1) with
+          // no override; `variant="outlined"` gets no elevation class, so it also stays background.paper.
+          elevation0: ({ theme }) => ({ backgroundColor: (theme.vars ?? theme).palette.background.paper0 }),
+          elevation2: ({ theme }) => ({ backgroundColor: (theme.vars ?? theme).palette.background.overlay }),
         },
       },
-      // Overlay surfaces sit ABOVE cards on the ramp: a menu/popover is surface 2,
-      // a dialog surface 3 (the top position — the reserved slot, taken here). This
-      // corrects the old ordering bug where paper rendered lighter than nothing
-      // above it: today a menu opened over a card was DARKER than that card
-      // (paper L 0.228 sat above overlay L 0.210). Now arithmetic guarantees the
-      // order. Menu renders its Paper through Popover, so MuiPopover covers both.
-      // Drawer is shell chrome, NOT an overlay — deliberately left as-is (a
-      // persistent nav sits alongside content, not above it; shell pass owns it).
+      // Overlay surfaces sit ABOVE working surfaces on the ramp: menus/popovers = overlay (surface 2).
+      // Menu renders its Paper through Popover, so MuiPopover covers both. Dialog now sits at PAPER
+      // (surface 1) — its backdrop provides separation, and keeping it below overlay leaves headroom
+      // for menus opened FROM a dialog (they render at overlay/2, above it). Drawer is shell chrome,
+      // NOT an overlay — deliberately left as-is (persistent nav sits alongside content; shell owns it).
       MuiPopover: {
-        styleOverrides: { paper: { backgroundColor: 'var(--beam-surface-2)' } },
+        styleOverrides: { paper: ({ theme }) => ({ backgroundColor: (theme.vars ?? theme).palette.background.overlay }) },
       },
       MuiDialog: {
-        styleOverrides: { paper: { backgroundColor: 'var(--beam-surface-3)' } },
+        styleOverrides: { paper: ({ theme }) => ({ backgroundColor: (theme.vars ?? theme).palette.background.paper }) },
       },
       // The `meta` category rule (detail-page §3): keys everywhere speak one
       // caps voice. One definition (theme/textStyles), several bindings.
