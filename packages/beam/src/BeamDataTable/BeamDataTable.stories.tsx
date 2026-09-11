@@ -519,9 +519,11 @@ const benchColumns: BeamColumn<BenchRow>[] = [
  * identical to a non-sticky grid). Flip to **250 / 500** and watch the chrome engage on its own. Anything
  * rendering stuck at 10 rows is a real bug, not a nit.
  */
-export const StickyChromeBench: Story = {
-  parameters: { layout: 'fullscreen' },
-  render: () => (
+// Shared bench render — `fancyBackdrop` drops the scroll-owner's flat `background.default` so the theme's
+// FIXED page backdrop (mesh + star, body::before/after) shows through, proving the chrome ceiling/floor
+// outers are transparent (they reveal the backdrop, not a color). Both variants otherwise identical.
+function renderStickyBench(fancyBackdrop: boolean) {
+  return (
     // Mimics AppShell `main`: the scroll owner, carrying CONTENT_TOP/BOTTOM/INLINE as its padding and
     // honoring the FLOOR half of the contract (gives up its bottom padding to the footer floor via :has).
     <Box
@@ -531,7 +533,9 @@ export const StickyChromeBench: Story = {
         px: CONTENT_INLINE,
         pt: CONTENT_TOP,
         pb: CONTENT_BOTTOM,
-        bgcolor: 'background.default',
+        // Flat variant paints `background.default`; the fancy variant leaves it transparent so the theme's
+        // fixed mesh/star backdrop shows — the ceiling/floor outers must reveal it seamlessly.
+        ...(fancyBackdrop ? {} : { bgcolor: 'background.default' }),
         // Mirror the shell contract: donate BOTH top + bottom padding to the sticky grid's ceiling/floor
         // (the Stack re-adopts the top via stickyChromeGapSx).
         '&:has([data-beam-sticky-chrome])': { pt: 0, pb: 0 },
@@ -540,38 +544,55 @@ export const StickyChromeBench: Story = {
       {/* The page's section container — the CEILING half: spacing from the shared token + the gap-surgery
           sx, so the heading→grid seam is donated to the bucket ceiling when the grid is sticky. */}
       <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
-        <Typography variant="h6">Sticky-chrome bench — 1,200 rows · page size 500</Typography>
+        <Typography variant="h6">Sticky-chrome bench — 1,200 rows · page size 500{fancyBackdrop ? ' · fancy backdrop' : ''}</Typography>
         <BeamDataTable<BenchRow>
           columns={benchColumns}
-        rows={benchRows}
-        getRowId={(r) => r.id}
-        paginated
-        defaultPageSize={500}
-        // Includes the small end (10) so the INERT state is demonstrable: at 10 rows the grid is shorter
-        // than the viewport and NO chrome pins — the "short grid = zero change" line exercised, not
-        // asserted. Flip to 250/500 and the chrome engages on its own. (Bench-only; Gaspar's set differs.)
-        pageSizeOptions={[10, 50, 100, 250, 500]}
-        jumpToPage
-        stickyChrome
-        selectable
-        // Bulk actions mirror Gaspar's shape (Export · Complete · Decline; disabled/destructive/confirm)
-        // so the bucket exercises its real composition — the strip pins ABOVE the header clone.
-        bulkActions={(selectedRows) => {
-          const noEligible = selectedRows.every((r) => r.status !== 'scheduled');
-          return [
-            { id: 'export', label: 'Export' },
-            { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: 'Only Scheduled rows can be completed (bench).' },
-            { id: 'decline', label: 'Decline', destructive: true, disabled: noEligible, disabledReason: 'Only Scheduled rows can be declined (bench).' },
-          ];
-        }}
-        onBulkAction={() => {}}
-        rowAccent={(r) => (r.status === 'expired' ? 'danger' : undefined)}
-        rowActions={() => [{ id: 'view', label: 'View', onSelect: () => {} }]}
-        renderExpanded={(r) => <Box sx={{ py: 1 }}>Transaction {r.id} — {r.type} {r.amount.toFixed(2)} via {r.provider}</Box>}
-        columnManager={{ storageKey: 'bench.sticky', catalog: [] }}
+          rows={benchRows}
+          getRowId={(r) => r.id}
+          paginated
+          defaultPageSize={500}
+          // Includes the small end (10) so the INERT state is demonstrable: at 10 rows the grid is shorter
+          // than the viewport and NO chrome pins — the "short grid = zero change" line exercised, not
+          // asserted. Flip to 250/500 and the chrome engages on its own. (Bench-only; Gaspar's set differs.)
+          pageSizeOptions={[10, 50, 100, 250, 500]}
+          jumpToPage
+          stickyChrome
+          selectable
+          // Bulk actions mirror Gaspar's shape (Export · Complete · Decline; disabled/destructive/confirm)
+          // so the bucket exercises its real composition — the strip pins ABOVE the header clone.
+          bulkActions={(selectedRows) => {
+            const noEligible = selectedRows.every((r) => r.status !== 'scheduled');
+            return [
+              { id: 'export', label: 'Export' },
+              { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: 'Only Scheduled rows can be completed (bench).' },
+              { id: 'decline', label: 'Decline', destructive: true, disabled: noEligible, disabledReason: 'Only Scheduled rows can be declined (bench).' },
+            ];
+          }}
+          onBulkAction={() => {}}
+          rowAccent={(r) => (r.status === 'expired' ? 'danger' : undefined)}
+          rowActions={() => [{ id: 'view', label: 'View', onSelect: () => {} }]}
+          renderExpanded={(r) => <Box sx={{ py: 1 }}>Transaction {r.id} — {r.type} {r.amount.toFixed(2)} via {r.provider}</Box>}
+          columnManager={{ storageKey: 'bench.sticky', catalog: [] }}
           aria-label="Sticky-chrome bench"
         />
       </Stack>
     </Box>
-  ),
+  );
+}
+
+export const StickyChromeBench: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => renderStickyBench(false),
+};
+
+/**
+ * Sticky-chrome over the FANCY page backdrop — the scroll owner is transparent so the theme's FIXED mesh
+ * + Betty-star backdrop (body::before/after) shows through. The ceiling/floor outers are transparent, so
+ * the pinned bucket/footer bands must reveal the backdrop **seamlessly** — identical to the section gaps,
+ * no flat-color patch, no ghosting (the opaque paper inners occlude the rows). Guards against regressing
+ * the transparent-outer fix back to a flat `background.default`.
+ */
+export const StickyChromeFancyBackdrop: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => renderStickyBench(true),
 };

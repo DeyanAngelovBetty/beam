@@ -88,6 +88,17 @@ the three regions that travel with the pins:
   `visible` creates a scroll container), the `TableContainer` clips its own horizontal scroll, and the
   bands stay within their regions — nothing overflows the Paper needing a clip. Not left as a mystery.
 - `data-beam-sticky-chrome` stays on the Paper — the shell contract is untouched.
+- **Chrome wears the page backdrop, not a color (2026-09-12).** The ceiling/floor outers are
+  **transparent** (were flat `background.default`), so the page's FIXED backdrop (`body::before/after` mesh
+  + star) shows through them — seamless over any product/theme, no color impersonating the page. This
+  **completes the surface-ownership deconstruction**: the Paper already ceded its BORDER to the three
+  regions; here it cedes its BACKGROUND too (transparent in sticky mode) so the transparent outers reveal
+  the backdrop past it. The **rows region (wrapper) takes over `background.paper`** (rows still sit on
+  paper); the bucket/footer **inners stay opaque paper** (they occlude the scrolling rows — the
+  transparent bands are the page-bg gaps above/below the chrome, where no rows are, so no ghosting). The
+  Paper in sticky mode is now **pure structure** — positioning context + `timeline-scope` host, zero
+  paint. Bench: the **StickyChromeFancyBackdrop** story (transparent scroll-owner → the fixed mesh shows)
+  guards this against regressing to flat-background testing. See surface-grammar.md.
 
 *Eyeball nuance (bench): verify the side lines are continuous while pinned mid-scroll and at both
 extremes; the bucket + footer corners round into the page ceiling/floor; and at rest the three owners

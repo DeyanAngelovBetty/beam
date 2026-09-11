@@ -49,6 +49,12 @@ veil** (`--Paper-overlay`). That is a *second*, uncontrolled elevation signal fi
 - **Components inherit; don't hardcode surfaces.** A surface color never appears as a literal in a
   component — it comes from `background.*` (or the elevation the Paper declares). Explicit background
   fixes are only for a component that already hardcodes one.
+- **Chrome wears the page's backdrop, not a color.** A pinned surface that stands in for the *page*
+  background — the sticky-chrome ceiling/floor outers (BeamDataTable) — is **transparent**, revealing the
+  page's fixed backdrop (the `body::before/after` mesh + star), NOT painted a flat `background.default`.
+  The page backdrop is viewport-fixed, so a transparent band samples it seamlessly, correct for any
+  product/theme forever; a flat color would impersonate the page and mismatch the gradient. (This un-baked
+  the original chrome design's flat-`default` assumption — 2026-09-12.)
 
 ## Open question — light mode (Vasco)
 

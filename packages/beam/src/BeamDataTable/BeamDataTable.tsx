@@ -888,10 +888,11 @@ export function BeamDataTable<Row>({
   // scrolls under, so the handoff reads seamless.
   const bucketEl = stickyChrome ? (
     // OUTER = the page CEILING (mirror of the footer floor): pins flush to the scrollport top (top: 0),
-    // painted in the PAGE background, carrying the donated section gap as its own padding-top
-    // (PAGE_SECTION_GAP, the one shared source — the shell gives it up via stickyChromeGapSx). Rows scroll
-    // up under the header and sink into this page surface; released, the header sits where it does today.
-    <Box ref={bucketRef} sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, bgcolor: 'background.default', pt: PAGE_SECTION_GAP, ...containerTypeScrollState }}>
+    // TRANSPARENT so the page's fixed backdrop (mesh + star, body::before/after) shows through it — the
+    // chrome reveals the page rather than impersonating it with a flat color. Carries the donated section
+    // gap as its own padding-top (PAGE_SECTION_GAP, the one shared source — the shell gives it up via
+    // stickyChromeGapSx). Rows scroll up under the opaque paper INNER (the occluder), never into this band.
+    <Box ref={bucketRef} sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, pt: PAGE_SECTION_GAP, ...containerTypeScrollState }}>
       <Box
         className="beam-bucket-inner"
         // Frame region: top + sides + top-radius — the card's ceiling edge, traveling with the pin. Opaque
@@ -952,13 +953,14 @@ export function BeamDataTable<Row>({
     );
 
   const footerEl = stickyChrome ? (
-    // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), painted in the PAGE
-    // background, and carrying the page's bottom spacing as its own padding — the spacing the shell gave
-    // up (CONTENT_BOTTOM, the one shared source). Rows scrolling under sink into this page surface;
-    // released at scroll-end the footer sits where it does today (the spacing merely changed owners).
+    // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), TRANSPARENT so the page's
+    // fixed backdrop shows through it (see the ceiling outer), carrying the page's bottom spacing as its
+    // own padding — the spacing the shell gave up (CONTENT_BOTTOM, the one shared source). Rows scroll
+    // under the opaque paper INNER (the occluder), never into this band; released, the footer sits where
+    // it does today (the spacing merely changed owners).
     <Box
       ref={footerRef}
-      sx={{ position: 'sticky', bottom: 0, zIndex: Z_CHROME, bgcolor: 'background.default', pb: CONTENT_BOTTOM, ...containerTypeScrollState }}
+      sx={{ position: 'sticky', bottom: 0, zIndex: Z_CHROME, pb: CONTENT_BOTTOM, ...containerTypeScrollState }}
     >
       {/* INNER = the bordered paper footer — opaque paper (reads as the card footer over the page-bg
           floor). Frame region: sides + bottom + bottom-radius — the card's floor edge, traveling with
@@ -1008,6 +1010,12 @@ export function BeamDataTable<Row>({
             ? ({
                 border: 'none',
                 borderRadius: 0,
+                // SURFACE cession completing the deconstruction: the Paper already ceded its BORDER to the
+                // three regions; here it cedes its BACKGROUND to the rows region (below). In sticky mode
+                // the Paper is pure STRUCTURE — positioning context + timeline-scope host — with zero
+                // paint, so the transparent ceiling/floor outers reveal the page's fixed backdrop through
+                // it (the mesh, not a color).
+                backgroundColor: 'transparent',
                 // timeline-scope: expose the body's named scroll-timeline (defined on the TableContainer)
                 // to the sibling header clone. The Paper is the common ancestor of both.
                 'timeline-scope': '--beam-body-scroll',
@@ -1053,8 +1061,9 @@ export function BeamDataTable<Row>({
           position: 'relative',
           containerType: 'inline-size',
           // Rows region of the deconstructed frame (sticky only): SIDE borders only — the continuous
-          // vertical lines between the bucket's top and the footer's bottom.
-          ...(stickyChrome ? SIDE_BORDER : {}),
+          // vertical lines between the bucket's top and the footer's bottom — AND the paper SURFACE the
+          // Paper ceded (so rows still sit on paper now that the Paper paints nothing).
+          ...(stickyChrome ? { ...SIDE_BORDER, bgcolor: 'background.paper' } : {}),
           '& .beam-edge-right': { opacity: 0, transition: 'opacity var(--beam-motion-quick)' },
           '&[data-overflow-end="true"] .beam-edge-right': { opacity: 1 },
         }}
