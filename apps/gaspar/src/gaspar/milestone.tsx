@@ -37,6 +37,8 @@ export interface MilestoneCaps {
   advancedFilters: boolean;
   /** Column show/hide + reorder manager. (v1.2) */
   columnManager: boolean;
+  /** Heavy page sizes (up to 500) + jump-to-page. (v1.2 — Ruslan's pagination-at-500 feedback) */
+  paginationAt500: boolean;
   /** Complete / Decline — bulk-strip options AND the row kebab. (Beyond) */
   actions: boolean;
 }
@@ -50,6 +52,7 @@ export const capsFor = (m: Milestone): MilestoneCaps => ({
   selection: RANK[m] >= RANK.v1_1,
   advancedFilters: RANK[m] >= RANK.v1_2,
   columnManager: RANK[m] >= RANK.v1_2,
+  paginationAt500: RANK[m] >= RANK.v1_2,
   actions: RANK[m] >= RANK.beyond,
 });
 

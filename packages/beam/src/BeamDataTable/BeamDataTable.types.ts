@@ -124,6 +124,19 @@ export interface BeamDataTableProps<Row> {
   paginated?: boolean;
   /** Initial rows per page (paginated only). Default 10; added to the options. */
   defaultPageSize?: number;
+  /**
+   * Rows-per-page choices (paginated only). PER-GRID OVERRIDE — omitted, the select derives its light
+   * default `[5, 10, 25, defaultPageSize]`, so no grid silently gains heavy sizes (500 is opt-in). When
+   * given, these are the choices (with `defaultPageSize` merged in, deduped + sorted). Gaspar passes the
+   * heavy set at v1.2+.
+   */
+  pageSizeOptions?: number[];
+  /**
+   * Jump-to-page control in the footer (paginated only). A compact "Page N of M" input beside the
+   * arrows: Enter commits (clamped to `[1, M]` — out-of-range is rejected in the UI, never an error),
+   * Esc reverts, disabled at a single page. Opt-in (Gaspar's v1.2 pagination-at-500 beat).
+   */
+  jumpToPage?: boolean;
   /** Enables per-row expansion — progressive disclosure (Yoda §2.4) */
   renderExpanded?: (row: Row) => ReactNode;
   /**

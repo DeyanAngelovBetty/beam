@@ -110,7 +110,10 @@ interface PaymentRow {
 const CURRENCIES = ['USD', 'EUR', 'CAD'] as const;
 const AMOUNT_MAGNITUDES = [12.5, 47.99, 149, 320, 899.5, 1200, 2450, 4800, 75, 18.25];
 const FAILED_MTI = ['0400', '0100', '0200', '0210', '0230', '0800', '0120', '0330']; // distinct observed codes
-const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 40 }, (_, i) => {
+// ~1,200 rows (was 40) so 500-per-page and jump-to-page demo across multiple pages (Ruslan's v1.2
+// pagination feedback). Same generator, same enum discipline — NO new vocabulary; stageForDemo still
+// leads page one with the severity story at the default size.
+const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 1200 }, (_, i) => {
   // Real vocabulary (phase-3 reseed): completed 0–3 · pending 4–5 · processing 6 · created 7 · failed
   // 8–9 → mostly-completed, pending prominent (the loud/actionable one), 8 failed rows (distinct codes).
   const bucket = i % 10;
@@ -740,6 +743,11 @@ export function TransactionsPage() {
         rows={rows}
         getRowId={(r) => r.id}
         paginated
+        // Pagination-at-500 (v1.2+, Ruslan's feedback): heavy page sizes + jump-to-page are opt-in and
+        // milestone-gated. v1.0/v1.1 keep the organism's light default ([5,10,25]); default size stays
+        // 10 so the severity story leads page one.
+        pageSizeOptions={caps.paginationAt500 ? [10, 25, 50, 100, 250, 500] : undefined}
+        jumpToPage={caps.paginationAt500}
         // MILESTONE GATE — existence, not disablement. selection (checkboxes + bulk strip) is v1.1+;
         // the row kebab (rowActions: Complete/Decline + per-row Export folded in) is Beyond-only; the
         // column manager is v1.2+. Beyond = every cap true = today's full behavior.

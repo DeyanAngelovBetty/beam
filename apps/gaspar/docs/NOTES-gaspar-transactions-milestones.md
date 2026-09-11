@@ -61,6 +61,7 @@ The **sidenav** gates by milestone too, per the release phasing + Deyan's ruling
 | `selection` → `selectable` + `bulkActions` + the bulk **Export** menu | – | ✓ | ✓ | ✓ |
 | `columnManager` → `columnManager` (show/hide + reorder) | – | – | ✓ | ✓ |
 | `advancedFilters` → filter bar `advanced` (`[+]` addable fields) | – | – | ✓ | ✓ |
+| `paginationAt500` → `pageSizeOptions` (up to 500) + `jumpToPage` | – | – | ✓ | ✓ |
 | `actions` → Complete/Decline in the bulk strip **and** the row kebab (`rowActions`) | – | – | – | ✓ |
 
 Two composition rules the table doesn't show on its own:
@@ -71,6 +72,38 @@ Two composition rules the table doesn't show on its own:
   **per-row Export folds in there too** — the spec's export scope is "entire filtered result set, or
   the selection" (bulk), so there is no per-row export at v1.1/v1.2. This is deliberately more
   doc-faithful than the pre-switcher page, which offered a per-row Export from v1.
+
+## Pagination at 500 (2026-09-11 — Ruslan's v1.2 feedback)
+
+- **Organism API (opt-in, per-grid):** `pageSizeOptions?: number[]` (override; omitted → the light
+  derived default `[5,10,25,defaultPageSize]`, so no grid silently gains 500) + `jumpToPage?: boolean`
+  (a "Page N of M" input: Enter commits clamped to `[1,M]`, Esc/blur revert, disabled at one page,
+  tooltip hint while out-of-range — **rejected in the UI, never an error state**). Default size stays 10.
+- **Gaspar wiring:** at **v1.2+** (`caps.paginationAt500`) → `pageSizeOptions={[10,25,50,100,250,500]}`
+  + `jumpToPage`. v1.0/v1.1 keep the light default. Mock grew to **~1,200 rows** (same generator, same
+  enums, no new vocabulary; `stageForDemo` still leads page one).
+- **Performance — measured, not assumed.**
+  - *Instrument:* `BeamDataTable` logs `rows × cols → ms (render→commit)` to the console behind a
+    **`perf=1` URL token** (works on **dev and prod** — the token can ride the hash, e.g.
+    `#/transactions?milestone=v1_2&perf=1`; off by default). Open at 500/page and read the number.
+  - *First-principles estimate:* 500 rows × 14 cols ≈ 7k cells + ~1.5k copy-button / badge / accent
+    nodes; expandable panels mount **only when expanded**; no per-row listeners beyond the row. Expect
+    **500 static DOM rows to be comfortable in Chrome** — but this is an estimate.
+  - *Definitive number:* to be captured in-browser on the **prod** build and pasted here. **If it proves
+    slow, STOP** — virtualization is a separate project (collides with rail / expandable / pinned panel),
+    not this pass.
+
+    > PROD measurement (Chrome, 500/page): _pending — paste `[BeamDataTable perf]` console line here._
+
+## Ledger — pagination contract questions (record, don't build)
+
+Konstantin/backend, per Boryana's v1.2 phasing. The mock's counts stay **exact**; these are real-service
+concerns only:
+- **Response-time budget** for 500-row pages across the full column set (a backend load requirement, not
+  a client setting — the client renders what the endpoint serves within budget).
+- **Approximate count at scale:** if an exact total becomes expensive, an approximate count is acceptable
+  **provided the interface says it is approximate** (a label the count cell would carry). Not built — the
+  mock counts are exact, so there is nothing to hedge yet.
 
 ## v-spec gap list (agenda material — recorded, NOT built this pass)
 

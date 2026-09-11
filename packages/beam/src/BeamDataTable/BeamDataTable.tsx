@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useMemo, useRef, useState, type ComponentType, type MouseEvent } from 'react';
+import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type MouseEvent } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -260,6 +260,8 @@ export function BeamDataTable<Row>({
   searchable = false,
   paginated = false,
   defaultPageSize = 10,
+  pageSizeOptions,
+  jumpToPage = false,
   renderExpanded,
   rowActions,
   onRowClick,
@@ -387,6 +389,18 @@ export function BeamDataTable<Row>({
   const batchHintId = useId();
   const visibleRows = table.getRowModel().rows;
 
+  // Perf instrument (point 4): behind a `perf=1` URL token so it works on BOTH dev and PROD builds
+  // (HashRouter puts the token in the hash — we test the whole href). Logs render→commit ms for the
+  // mounted page, the honest number for the 500-rows-without-virtualization question. Off by default.
+  const perfStartRef = useRef(0);
+  perfStartRef.current = paginated ? performance.now() : 0;
+  useLayoutEffect(() => {
+    if (!paginated || typeof window === 'undefined' || !/[?&#]perf=1\b/.test(window.location.href)) return;
+    const ms = performance.now() - perfStartRef.current;
+    // eslint-disable-next-line no-console
+    console.info(`[BeamDataTable perf] ${visibleRows.length} rows × ${leafColumns.length} cols → ${ms.toFixed(1)}ms (render→commit)`);
+  });
+
   // Scroll-affordance edges. `data-overflow-start` / `data-overflow-end` on the WRAPPER drive both
   // shadows: the rail-left shadow (start) and the container-right overlay (end). The rail ALSO has a
   // pure-CSS scroll-state enhancement (Chrome) that needs no JS; this passive, rAF-throttled listener
@@ -480,16 +494,29 @@ export function BeamDataTable<Row>({
     '[data-overflow-start="true"] &::after': { opacity: 1 },
   };
 
+  // Rows-per-page choices: the per-grid override when given (with defaultPageSize merged), else the
+  // light derived default — so no grid silently gains heavy sizes.
+  const rowsPerPageOptions = [...new Set([...(pageSizeOptions ?? [5, 10, 25]), defaultPageSize])].sort((a, b) => a - b);
+  const pageCount = table.getPageCount();
   const paginationEl = paginated ? (
-    <TablePagination
-      component="div"
-      count={table.getFilteredRowModel().rows.length}
-      page={table.getState().pagination.pageIndex}
-      onPageChange={(_, p) => table.setPageIndex(p)}
-      rowsPerPage={table.getState().pagination.pageSize}
-      onRowsPerPageChange={(e) => table.setPageSize(parseInt(e.target.value, 10))}
-      rowsPerPageOptions={[...new Set([5, 10, 25, defaultPageSize])].sort((a, b) => a - b)}
-    />
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+      {jumpToPage && (
+        <JumpToPage
+          pageIndex={table.getState().pagination.pageIndex}
+          pageCount={pageCount}
+          onJump={(p) => table.setPageIndex(p)}
+        />
+      )}
+      <TablePagination
+        component="div"
+        count={table.getFilteredRowModel().rows.length}
+        page={table.getState().pagination.pageIndex}
+        onPageChange={(_, p) => table.setPageIndex(p)}
+        rowsPerPage={table.getState().pagination.pageSize}
+        onRowsPerPageChange={(e) => table.setPageSize(parseInt(e.target.value, 10))}
+        rowsPerPageOptions={rowsPerPageOptions}
+      />
+    </Box>
   ) : null;
 
   return (
@@ -829,5 +856,64 @@ export function BeamDataTable<Row>({
       )}
       </Paper>
     </>
+  );
+}
+
+/**
+ * JumpToPage — the footer's "Page N of M" control (opt-in via `jumpToPage`). Enter commits, Esc reverts,
+ * blur reverts (only Enter navigates). Out-of-range is REJECTED IN THE UI: the value clamps to `[1, M]`
+ * on commit — never an error state, never a server-style failure. A tooltip hints the valid range while
+ * the typed value is out of range. Disabled at a single page. Stays in sync with the arrows / size select.
+ */
+function JumpToPage({ pageIndex, pageCount, onJump }: { pageIndex: number; pageCount: number; onJump: (p: number) => void }) {
+  const current = pageIndex + 1; // 1-based for humans
+  const [value, setValue] = useState(String(current));
+  const [outOfRange, setOutOfRange] = useState(false);
+  const disabled = pageCount <= 1;
+
+  // Re-sync when the page changes elsewhere (arrows, rows-per-page change resetting to page 1).
+  useEffect(() => {
+    setValue(String(current));
+    setOutOfRange(false);
+  }, [current]);
+
+  const revert = () => {
+    setValue(String(current));
+    setOutOfRange(false);
+  };
+  const commit = () => {
+    const n = parseInt(value, 10);
+    if (Number.isNaN(n)) return revert();
+    const clamped = Math.min(Math.max(n, 1), pageCount); // clamp — the in-UI rejection of out-of-range
+    onJump(clamped - 1);
+    setValue(String(clamped));
+    setOutOfRange(false);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, pr: 1, whiteSpace: 'nowrap' }}>
+      <Typography variant="body2" color="text.secondary">Page</Typography>
+      <Tooltip title={`Enter 1–${pageCount}`} open={outOfRange && !disabled} arrow>
+        <TextField
+          size="small"
+          value={value}
+          disabled={disabled}
+          onChange={(e) => {
+            const v = e.target.value.replace(/[^0-9]/g, '');
+            setValue(v);
+            const n = parseInt(v, 10);
+            setOutOfRange(v !== '' && (Number.isNaN(n) || n < 1 || n > pageCount));
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); revert(); }
+          }}
+          onBlur={revert}
+          aria-label={`Page number, 1 to ${pageCount}`}
+          slotProps={{ htmlInput: { inputMode: 'numeric', style: { width: 44, textAlign: 'center' } } }}
+        />
+      </Tooltip>
+      <Typography variant="body2" color="text.secondary">of {pageCount}</Typography>
+    </Box>
   );
 }
