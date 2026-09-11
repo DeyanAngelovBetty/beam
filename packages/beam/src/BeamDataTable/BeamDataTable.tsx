@@ -45,6 +45,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
+import { CONTENT_VERTICAL } from '../theme/tokens';
 import { isWhiteSpaceLike } from 'typescript';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -785,10 +786,19 @@ export function BeamDataTable<Row>({
     );
 
   const footerEl = stickyChrome ? (
-    <Box ref={footerRef} sx={{ position: 'sticky', bottom: STICKY_OFFSET, zIndex: 2, ...containerTypeScrollState }}>
+    // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), painted in the PAGE
+    // background, and carrying the page's bottom spacing as its own padding — the spacing the shell gave
+    // up (CONTENT_VERTICAL, the one shared source). Rows scrolling under sink into this page surface;
+    // released at scroll-end the footer sits where it does today (the spacing merely changed owners).
+    <Box
+      ref={footerRef}
+      sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.default', pb: CONTENT_VERTICAL, ...containerTypeScrollState }}
+    >
+      {/* INNER = the bordered paper footer — opaque paper both modes (so it reads as the card footer over
+          the page-bg floor), with the stuck up-band dressing while pinned. */}
       <Box
         className="beam-footer-inner"
-        sx={{ position: 'relative', '[data-stuck="bottom"] &': footerStuckSx, '@container scroll-state(stuck: bottom)': footerStuckSx }}
+        sx={{ position: 'relative', bgcolor: 'background.paper', '[data-stuck="bottom"] &': footerStuckSx, '@container scroll-state(stuck: bottom)': footerStuckSx }}
       >
         {footerContent}
       </Box>
@@ -801,6 +811,9 @@ export function BeamDataTable<Row>({
     <>
       <Paper
         variant="outlined"
+        // CONTRACT: published when stickyChrome is on. BeamAppShell's `main:has([data-beam-sticky-chrome])`
+        // gives up its bottom padding so this grid's footer floor takes it over (see BeamAppShell notes).
+        data-beam-sticky-chrome={stickyChrome ? '' : undefined}
         sx={{
           overflow: stickyChrome ? 'clip' : 'hidden',
           // timeline-scope: expose the body's named scroll-timeline (defined on the TableContainer) to

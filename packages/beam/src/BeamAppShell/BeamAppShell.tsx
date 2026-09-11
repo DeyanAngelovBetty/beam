@@ -22,6 +22,7 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { BeamAppShellProps, BeamNavItem } from './BeamAppShell.types';
+import { CONTENT_VERTICAL } from '../theme/tokens';
 
 const DRAWER_WIDTH = 264;
 const STRIP_HEIGHT = 56;
@@ -39,9 +40,8 @@ const DEFAULT_PERSIST_KEY = 'beam.shell.locked';
 // stable; ultrawide is a content max-width job, not an ever-widening gutter.
 const DEFAULT_CONTENT_GUTTER = { xs: 2, sm: 4, md: 7 }; // 16 / 32 / 56px — gutter steps: Deyan tunes on the bench
 
-// Vertical rhythm is NOT the gutter. Parked on the shell provisionally; it
-// migrates to BeamPageHeader's rhythm once that organism leaves placeholder.
-const CONTENT_VERTICAL = { xs: 2, md: 10 };
+// Vertical rhythm is NOT the gutter — now SHARED from tokens so the sticky footer floor can take over
+// the bottom padding without drift (imported below).
 
 // View-transition names — the "layer names" the ignition matches on (grammar
 // §4). Each names exactly one element per state so the browser can morph
@@ -506,6 +506,10 @@ export function BeamAppShell({
         px: contentGutter,
         pb: CONTENT_VERTICAL,
         pt: CONTENT_VERTICAL,
+        // STICKY-CHROME CONTRACT: a grid with `stickyChrome` publishes `data-beam-sticky-chrome`; it
+        // takes over the page's BOTTOM spacing as its footer floor, so main gives up its bottom padding
+        // (bottom only — top/side rhythm untouched). `:has()` is Baseline; no fallback needed.
+        '&:has([data-beam-sticky-chrome])': { pb: 0 },
         // Page mesh moved to a fixed body::before layer (createBeamTheme MuiCssBaseline) — off
         // this tall scrolling element so it doesn't repaint on scroll, behind opaque surfaces.
       }}

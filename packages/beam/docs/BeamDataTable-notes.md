@@ -38,6 +38,29 @@ Gaspar wiring.
 - **Rejected for this:** `scroll-target-group` / `:target-current` — that's **scrollspy** (tracking which
   target is in view), not position coupling; it can't drive a continuous translate. **Scroll-driven
   animation** is the right primitive here.
+
+### Footer as the page floor (amendment 2, 2026-09-12)
+
+When pinned, the footer becomes the page floor rather than floating with an offset:
+- The footer's **outer** box pins flush (`bottom: 0`), painted in the **page background**
+  (`background.default`, ramp −1), and carries the page's bottom spacing as its own `padding-bottom`
+  (**`CONTENT_VERTICAL`**). The **inner** box stays the bordered paper footer (opaque `background.paper` +
+  the stuck up-band). Rows scroll under and sink into the page surface; released at scroll-end the
+  footer sits where it does today — **the spacing merely changed owners** (from the shell's `pb` to the
+  footer floor's).
+- **`data-beam-sticky-chrome` is a documented CONTRACT** (published on the grid `Paper` when
+  `stickyChrome`): the page's scroll owner drops its bottom padding for it. See **BeamAppShell-notes**.
+- **The shared spacing value:** `CONTENT_VERTICAL` (`{ xs: 2, md: 10 }`) now lives in `theme/tokens.ts`
+  and is read by BOTH `BeamAppShell` (its `main` padding) and this footer floor — one source, no drift.
+  It was a magic const in the shell; promoted to a token so the two sides can't disagree.
+
+*Eyeball nuance (bench):* at rest the page-floor padding + the `Paper`'s bottom border/radius now sit
+BELOW the footer inside the card (the footer's POSITION is pixel-equal to today; the card's bottom edge
+shifts down by `CONTENT_VERTICAL`). If that reads wrong, the follow-up is dropping the `Paper` bottom
+border+radius when sticky so the card dissolves into the floor — flagged, not built.
+
+*Mirrored treatment for the top bucket (page-ceiling) is the likely NEXT amendment — NOT built here;
+Deyan is iterating the top separately.*
 - **Layering:** the scroll-affordance wrapper already establishes a stacking context (`container-type:
   inline-size`), so every rail/accent/edge/expanded z-index is sealed inside it. The pinned bucket +
   footer sit at the Paper level with `z-index: 2` — above the whole wrapper context, no z-index war.

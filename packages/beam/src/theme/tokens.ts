@@ -51,6 +51,15 @@ const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, ou
  * 1-line height = `fieldPaddingY` 13 + value 18 + `fieldPaddingY` 13 = 44 — the same floor. Multiline
  * puts that 13 on the field ROOT (textarea padding 0), so 3-line = 13 + 3×18 + 13 = 80.
  */
+/**
+ * CONTENT_VERTICAL — the page's top/bottom rhythm, as an sx spacing value. SHARED so it can't drift:
+ * `BeamAppShell`'s `main` owns it as padding by default, and `BeamDataTable`'s sticky footer FLOOR takes
+ * it over as its own `padding-bottom` when the shell gives up its bottom padding (the sticky-chrome
+ * contract — see the notes). One source; both sides read this. (Provisional home — migrates to
+ * BeamPageHeader's rhythm once that organism leaves placeholder.)
+ */
+export const CONTENT_VERTICAL = { xs: 2, md: 10 };
+
 export const FIELD_GEOMETRY = {
   height: 44, // the floor (single-line) — the twin datum
   paddingY: 6, // BeamStat top/bottom padding
