@@ -73,6 +73,9 @@ interface PaymentRow {
   paymentMethodId: string;
   amount: number;
   currency: string;
+  // PROPOSED column — card brand lives on the payment-methods resource, NOT the payments list response
+  // today (rides the embedded-card-summary ask; see SPEC ledger). Rendered proposal with real data TBD.
+  cardType: 'Visa' | 'Mastercard';
   direction: string;
   psp: string;
   status: string;
@@ -102,12 +105,11 @@ interface PaymentRow {
  * threeDsSessionReference (detail material).
  */
 
-// Mock of the server-paginated payments response (no real endpoint reachable in this app). Generated
-// (~40 rows) — real status vocabulary (phase-3 reseed): created/processing/pending/failed/completed;
-// providers Nuvei/Adyen; currencies USD/EUR/CAD. Mostly-completed; created/pending carry a null
-// pspTransactionId (pre-submit); failed rows carry distinct MTI errorCodes; amounts span magnitudes;
-// createdAt spreads across ~3 weeks.
-const CURRENCIES = ['USD', 'EUR', 'CAD'] as const;
+// Mock of the server-paginated payments response (no real endpoint reachable in this app). Real status
+// vocabulary (phase-3 reseed): created/processing/pending/failed/completed; providers Nuvei/Adyen.
+// Currency is CAD everywhere — Boryana's MCP is single-currency CAD (spec §2.4). Mostly-completed;
+// created/pending carry a null pspTransactionId (pre-submit); failed rows carry distinct MTI errorCodes;
+// amounts span magnitudes; createdAt spreads across ~3 weeks.
 const AMOUNT_MAGNITUDES = [12.5, 47.99, 149, 320, 899.5, 1200, 2450, 4800, 75, 18.25];
 const FAILED_MTI = ['0400', '0100', '0200', '0210', '0230', '0800', '0120', '0330']; // distinct observed codes
 // ~1,200 rows (was 40) so 500-per-page and jump-to-page demo across multiple pages (Ruslan's v1.2
@@ -124,7 +126,8 @@ const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 1200 }, 
     : bucket === 7 ? 'created'
     : 'failed';
   const psp = i % 2 === 0 ? 'Nuvei' : 'Adyen';
-  const currency = CURRENCIES[i % 3];
+  const currency = 'CAD'; // single-currency CAD (spec §2.4); the filter/[+] selects collapse to one option
+  const cardType: 'Visa' | 'Mastercard' = i % 2 === 0 ? 'Visa' : 'Mastercard'; // ~half/half, stable per row
   const direction = i % 3 === 0 ? 'Withdrawal' : 'Deposit';
   const amount = Number((AMOUNT_MAGNITUDES[i % AMOUNT_MAGNITUDES.length] + (i % 5) * 3.5).toFixed(2));
   const created = new Date(Date.UTC(2026, 7, 20, 8, 0, 0) + ((i * 13) % 21) * 86_400_000 + (i % 24) * 3_600_000);
@@ -142,6 +145,7 @@ const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 1200 }, 
     paymentMethodId: `pm_${token}`,
     amount,
     currency,
+    cardType,
     direction,
     psp,
     status,
@@ -427,6 +431,7 @@ const CSV_FIELDS: { header: string; get: (r: PaymentRow) => string | number }[] 
   { header: 'PSP Transaction ID', get: (r) => r.pspTransactionId ?? '' },
   { header: 'Payment method', get: (r) => r.paymentMethodId },
   { header: 'Currency', get: (r) => r.currency },
+  { header: 'Card Type', get: (r) => r.cardType },
   { header: 'Error Code', get: (r) => r.errorCode ?? '' },
   { header: 'Provider', get: (r) => r.psp },
   { header: '3DS Status', get: (r) => r.threeDsStatus },
@@ -666,6 +671,11 @@ export function TransactionsPage() {
     { key: 'pspTransactionId', header: 'PSP Transaction ID', getValue: (r) => r.pspTransactionId ?? '', width: 184, render: (r) => <TruncateCopyCell value={r.pspTransactionId} mono onCopied={onCopied} /> },
     { key: 'paymentMethodId', header: 'Payment method', getValue: (r) => r.paymentMethodId, width: 168, render: (r) => <PaymentMethodCell row={r} onCopied={onCopied} /> },
     { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
+    // Card Type is a CATEGORY, not a state — plain text, no badge (Direction/3DS grammar ruling).
+    // PROPOSED column — card brand lives on payment-methods, not the payments list (SPEC ledger). Persisted
+    // column arrangements gain it AT THIS POSITION via the manager's merge rule; nothing else moves, so no
+    // Reset needed (Reset only to adopt a changed default ORDER — unchanged here).
+    { key: 'cardType', header: 'Card Type', getValue: (r) => r.cardType, width: 120, render: (r) => r.cardType },
     // PROPOSED column — errorCode has no data source in the payments API yet (see SPEC build-notes).
     { key: 'errorCode', header: 'Error Code', getValue: (r) => r.errorCode ?? '', width: 110, render: (r) => <ErrorCodeCell code={r.errorCode} /> },
     { key: 'psp', header: 'Provider', getValue: (r) => r.psp, width: 110, render: (r) => r.psp },

@@ -129,9 +129,15 @@ Added a page-local **Error Code** column (after Status), driven by `PaymentRow.e
 - **New column: Customer Email** (`PaymentRow.customerEmail`, seeded stable per customer id). Copy-able like the ID cells (`TruncateCopyCell`) but in the **normal text face** via a new `mode="auto"` — full value in tooltip, click-to-copy, and **ellipsis only when the column is too narrow** (CSS end-ellipsis; true pixel-measured *middle*-truncation would need per-cell measurement — not built, char-based `mode="middle"` stays for the ID cells). CSV serialization gains the field in the new order (13 → 14); JSON picks it up automatically.
 - **Search predicate** gains `customerEmail` (search-by-email ops flow); placeholder updated to "Search ID, PSP ID, customer, email".
 
+### Column + currency update — 2026-09-12
+
+- **New column: Card Type** (`PaymentRow.cardType: 'Visa' | 'Mastercard'`, seeded ~half/half stable per row), inserted **after Currency**. Plain-text categorical cell — **no badge, no hue** (the Direction/3DS grammar ruling: semantic hues are for states, not categories). Joins the declared order, the CSV serialization **in position** (14 → 15 fields), and the column manager — a persisted arrangement gains it **at its declared position (after Currency)** via the merge rule; **nothing else moves, so no Reset is needed** (Reset only adopts a changed default ORDER, unchanged here). **PROPOSED column** — see the ledger below.
+- **Currency → CAD everywhere** (spec §2.4: Boryana's MCP is single-currency CAD). All mock rows reseed to CAD; amounts unchanged; CSV/JSON exports pick it up automatically. **The Currency filter select and the `[+]` addable currency field are DERIVED from the data, so both collapse to a single CAD option — that is spec-faithful, not broken.** They repopulate themselves when multi-currency arrives in the API (never a hardcoded vocabulary). Same honesty rule as every other derived select on the page.
+
 ### Backend ledger (open questions for the payments team)
 
 - **errorCode field + vocabulary** — MTI vs response/decline vs PSP codes (from the Error Code column, above).
+- **Card Type / card brand** — the **Card Type** column is a rendered proposal; card brand lives on the **payment-methods resource, NOT the payments list response**. It rides the existing **embedded-card-summary ask** (the Phase B card cell, §"Payment method column") — now with a concrete consumer. Real vocabulary is part of that ask: **casing (`Visa`/`visa`/`VISA`?) and which brands beyond Visa/Mastercard** (Amex, Interac, Apple Pay carry no brand/last-4). Until the list response embeds a card summary, the values are seeded, not sourced.
 - **Complete / Decline endpoints + eligibility rules** — the actions are stubs; **eligibility = `pending` rows only** is our assumption (restated for the real vocabulary).
 - **Failure event vocabulary** — what event type(s) mark a `failed` payment in `events[]`; today none is observed, so a `failed` timeline stops mid-flow (at `SubmittedToProvider`).
 
