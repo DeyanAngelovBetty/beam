@@ -46,6 +46,7 @@ import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAct
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
 import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP } from '../theme/tokens';
+import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
 // under an edge. BOTH edges are the same soft gradient: a 24px band of the theme tint
@@ -101,22 +102,14 @@ const CARD_RADIUS = 24; // mirrors createBeamTheme MuiPaper.rounded.borderRadius
 const SQUIRCLE = { 'corner-shape': 'squircle' } as object; // CSS Borders L5 (Chrome 139+), progressive
 
 /**
- * headerCellSx — the ONE header-cell text treatment, mirroring MUI's `TableCell` head (size small): body2
- * type + head weight/line-height/color + small padding, single-line. Consumed by BOTH the real `th` (in
- * sticky mode) AND the header clone cells, so the clone is a SHARED SOURCE of the real header, not an
- * approximation — same face, baseline, and line-breaking (the measured widths already match). Applying it
- * to the real th in sticky mode is visually neutral (it restates MUI's head values) apart from `nowrap`.
+ * headerCellSx — the header clone's cell treatment, sourced from the SAME `meta` caps style the theme's
+ * `MuiTableCell.head` override applies to the real `th` (uppercase + 0.1em + 12px/300 + text.secondary,
+ * textStyles.ts). One source, two consumers (the theme override + this clone) — the clone is NOT an
+ * approximation; "LAST UPDATED" reads identically over the real header. Padding mirrors the real head cell
+ * (12px vertical from the head override + 16px horizontal from size-small); white-space is left at the
+ * table default (the real th doesn't force nowrap either), so line-breaking matches at equal widths.
  */
-export const headerCellSx = {
-  fontSize: '0.875rem', // body2
-  fontWeight: 500, // MUI head (fontWeightMedium)
-  lineHeight: '1.5rem', // MUI head (pxToRem 24)
-  letterSpacing: '0.01071em', // body2
-  color: 'text.primary', // MUI head
-  py: 0.75, // 6px — size small
-  px: 2, // 16px — size small
-  whiteSpace: 'nowrap' as const,
-};
+export const headerCellSx = { ...meta, py: 1.5, px: 2 };
 
 /** Nearest scrollable ancestor (overflow y auto/scroll) — the sticky scroll owner. null ⇒ the viewport
  *  (document scroll), the correct IntersectionObserver root in that case. */
@@ -1074,9 +1067,10 @@ export function BeamDataTable<Row>({
                   <TableCell
                     key={c.key}
                     align={c.align}
-                    // Sticky grids apply the SHARED headerCellSx so the clone matches the real header
-                    // exactly (task 2). Non-sticky grids keep MUI's head defaults (byte-identical).
-                    sx={{ ...(stickyChrome ? headerCellSx : {}), width: c.width }}
+                    // The real header's text style is the theme's `MuiTableCell.head` (= `meta`); the clone
+                    // sources the SAME `meta` via headerCellSx. So the th needs no per-cell style here —
+                    // one source, and the earlier headerCellSx-on-th (a body2 approximation) is removed.
+                    sx={{ width: c.width }}
                     sortDirection={sortDir || false}
                   >
                     {col.getCanSort() ? (

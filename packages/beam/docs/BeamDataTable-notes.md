@@ -165,12 +165,18 @@ SHARED SOURCE, so face/baseline/line-breaking match and the measured widths land
   - *Height parity:* the real header row is taller than its text cells (the checkbox drives it), so the
     clone measures the real row **height** too (`cloneHeight`) and matches it (centered cells) — the
     crossover doesn't jump vertically.
-- **Style-parity sweep (the deferred type flag, closed).** `headerCellSx` uses MUI's real `TableCell`-head
-  values (the theme doesn't customise `body2`), so it's a genuine shared source, not an approximation:
-  font size/weight/family (inherited `bodyFont`) · letter-spacing · padding · alignment (incl. right-
-  aligned Amount via `textAlign`) · `nowrap`. The header-row background (`background.paper`) and its bottom
-  divider (1px `divider` = `derived.tableBorder`) match the real thead; the rail overlay's divider +
-  gradient match the body rail's stuck-left dressing (`EDGE_TINT`/`EDGE_WIDTH`).
+- **Style-parity sweep — the caps/meta text layer (closed 2026-09-12).** The real header text is the
+  estate's **`meta`** caps voice (uppercase + `0.1em` + `12px`/`300` + `text.secondary`, `lineHeight 1`),
+  applied by the theme's `MuiTableCell.head` override (`{ ...meta, paddingTop/Bottom: 12 }`) — NOT MUI
+  body2. An earlier `headerCellSx` re-declared body2-ish values (title case, 14px/500) and, worse, was
+  spread onto the real `th` in sticky mode, degrading it. **Fixed:** `headerCellSx = { ...meta, py: 1.5,
+  px: 2 }` — sourced from the same `meta` (one source, two consumers: the theme override + the clone), so
+  "LAST UPDATED" reads identically; and the `th` no longer carries any per-cell override (the theme's
+  `meta` stands). Padding mirrors the real head cell (12px vertical + 16px size-small horizontal);
+  white-space left at the table default (the `th` doesn't force nowrap), so line-breaking matches at equal
+  widths; alignment via `textAlign` (incl. right-aligned Amount). Header-row background (`background.paper`)
+  + bottom divider (1px `divider` = `derived.tableBorder`) and the rail overlay's divider/gradient match
+  the body.
 - **z-index — named, not adjacent magic.** `Z_ACCENT 1 · Z_RAIL_BODY/Z_EDGE/Z_CLONE_RAIL 2 · Z_RAIL_HEADER
   3 · Z_CHROME 4`. The rail/accent/edge live inside the wrapper's stacking context (its `container-type`
   seals them); the pinned chrome sits at the Paper level and is bumped to `Z_CHROME 4` — **above** the
