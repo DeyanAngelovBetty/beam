@@ -559,7 +559,7 @@ export function BeamDataTable<Row>({
       window.removeEventListener('resize', measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stickyChrome, cm.columnOrder, cm.columnVisibility, table.getState().pagination.pageSize, visibleRows.length, leafColumns.length]);
+  }, [stickyChrome, cm.columnOrder, cm.columnVisibility, table.getState().sorting, table.getState().pagination.pageSize, visibleRows.length, leafColumns.length]);
 
   // STUCK DETECTION — the estate's progressive posture: `@container scroll-state(stuck)` drives the
   // dressing + clone on Chrome (pure CSS, below), and this IntersectionObserver fallback sets a
@@ -755,10 +755,11 @@ export function BeamDataTable<Row>({
         )}
         {leafColumns.map((col, i) => {
           const c = columnByKey.get(col.id);
+          const sortDir = col.getIsSorted();
           return (
             <Box
               key={col.id}
-              // SHARED SOURCE with the real th — same headerCellSx (task 2), so face/baseline/line-breaking
+              // SHARED SOURCE with the real th — same headerCellSx (meta), so face/baseline/line-breaking
               // are identical and the measured width lands the text on the same line. No approximation.
               sx={{
                 ...headerCellSx,
@@ -768,7 +769,22 @@ export function BeamDataTable<Row>({
                 textAlign: c?.align ?? 'left',
               }}
             >
-              {c?.header}
+              {/* Same sort affordance as the real th (same TableSortLabel, same state from the table), so
+                  the indicator + its reserved space match. Wired for POINTER only — tabIndex -1 under the
+                  clone's aria-hidden, so it never duplicates the real header's sort control in the a11y/tab
+                  tree (keyboard/AT sort from the real header). Non-sortable columns: plain text, no cursor. */}
+              {col.getCanSort() ? (
+                <TableSortLabel
+                  active={Boolean(sortDir)}
+                  direction={sortDir || 'asc'}
+                  onClick={col.getToggleSortingHandler()}
+                  tabIndex={-1}
+                >
+                  {c?.header}
+                </TableSortLabel>
+              ) : (
+                c?.header
+              )}
             </Box>
           );
         })}
