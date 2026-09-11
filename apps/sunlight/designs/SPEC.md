@@ -81,11 +81,17 @@ Intent deltas the grammar and the frames don't fully carry. Governs `TokenCampai
 - **Submit is the SAME stub — NO in-memory push.** Chosen for CR-inversion fidelity over demo
   continuity (the mock *is* mutable, but a direct write would model the apply the doctrine forbids). The
   notice is the honest demo of the model. Stays on-page (a navigate would unmount the notice).
+- **Create-mode header actions = Cancel + Submit ONLY (ruling).** No Edit door (already in edit), no
+  Delete (nothing to delete), and **View Winners is ABSENT, not disabled** — winners don't exist as a
+  concept for an unsaved campaign, so absence is the honest rendering (existence-vs-disabled, same logic
+  as the milestone gating; *disabled* is for an action that exists but can't fire right now, which View
+  Winners is in **edit** of a saved campaign). **The next create route (Wall Stage, in flight) inherits
+  this ruling.**
 - **Wall Stages LOCKED** — renders the frame's verbatim message *"You must create your token campaign
   first in order to unlock wall configurations."* (sessions never nest — no child before the parent).
 - **FRAME DIVERGENCES (for the Figma side, not applied):**
   1. The Add frame's header shows **"cveti campaign" + the date subtitle** — Edit-frame residue; code
      uses a create title with no subtitle.
-  2. The Add frame shows **VIEW WINNERS active**; code **disables** it in create (nothing to view yet),
-     consistent with the View-Winners-disabled-in-edit ruling.
+  2. The Add frame shows **VIEW WINNERS active**; code **omits** it in create (nothing to view yet) —
+     see the create-mode header-actions ruling above.
   3. Frame toggle reads **"Active"** — the already-logged Enabled/Active label inconsistency.

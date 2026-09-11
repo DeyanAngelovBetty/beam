@@ -201,9 +201,11 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
         back={backTo(navigate, BASE, 'Token Campaigns')}
         subtitle={create ? undefined : `${fmtDateTimeET(cc.startDate)} ↔ ${fmtDateTimeET(cc.endDate)}`}
         // Actions swap by mode, constant geometry: [Delete · View Winners · Edit] ↔
-        // [Cancel · View Winners · Submit for Approval]. View Winners is DISABLED in edit AND create
-        // (navigating away from a draft would discard it — SPEC.md ruling; create has no winners yet.
-        // The Add frame shows it active — logged as a frame divergence for the Figma side).
+        // [Cancel · View Winners · Submit for Approval]. In EDIT, View Winners is DISABLED (navigating
+        // away from a draft would discard it — SPEC.md ruling). In CREATE it is ABSENT, not disabled:
+        // winners don't exist as a concept for an unsaved campaign, so absence is the honest rendering
+        // (existence-vs-disabled, same as the milestone gating). The Add frame shows it active — logged
+        // as a frame divergence for the Figma side.
         action={
           isEdit ? (
             <Button variant="contained" onClick={submitForApproval}>Submit for Approval</Button>
@@ -215,7 +217,7 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
           isEdit ? (
             <>
               <Button variant="text" onClick={cancelEdit}>Cancel</Button>
-              <Button variant="outlined" startIcon={<EmojiEventsIcon />} disabled>View Winners</Button>
+              {!create && <Button variant="outlined" startIcon={<EmojiEventsIcon />} disabled>View Winners</Button>}
             </>
           ) : (
             <>
