@@ -61,6 +61,36 @@ border+radius when sticky so the card dissolves into the floor — flagged, not 
 
 *Mirrored treatment for the top bucket (page-ceiling) is the likely NEXT amendment — NOT built here;
 Deyan is iterating the top separately.*
+
+### Border deconstruction (amendment 3, 2026-09-12) — sticky mode only
+
+Non-sticky grids keep today's single-`Paper` outlined frame, **byte-identical** (everything below is
+gated on `stickyChrome`). In sticky mode the **Paper drops border + radius** and the frame is redrawn by
+the three regions that travel with the pins:
+- **Bucket** (top): top + side borders + **top-radius**. *(INTERIM — the header pass finalizes the top;
+  marked as such in code.)*
+- **Rows region** (the affordance wrapper): **side borders only**.
+- **Footer inner** (the card floor edge): side + bottom borders + **bottom-radius** — rounds into the
+  page floor, traveling with the pin.
+
+- **Seam guarantee (not hoped):** all three apply the identical `SIDE_BORDER` (`1px solid`, `divider`),
+  and all three are **full-bleed children of the now-frame-less Paper**, so their left/right borders sit
+  at the same x (0 and full width) — one continuous vertical line at every scroll position. At a region
+  junction neither side adds a horizontal border, so **no double-line and no gap**, pinned or released.
+  `CARD_RADIUS` (24) + `corner-shape: squircle` mirror the `MuiPaper.rounded` override so the
+  deconstructed corners match the card (kept in step by a comment, not a second literal).
+- **No overflow-clip on the regions:** border-radius clips each region's OWN background, and the region
+  content is inset, so the corners read clean **without** `overflow: clip` — which is deliberate, because
+  the stuck bands (`::after` down-band, `::before` up-band) must extend *beyond* their region.
+- **Paper `overflow: clip` RETIRED for the mode → `visible`:** with the radius gone from the Paper its
+  only job (corner-clipping) is gone; sticky still escapes to the scroll owner (neither `clip` nor
+  `visible` creates a scroll container), the `TableContainer` clips its own horizontal scroll, and the
+  bands stay within their regions — nothing overflows the Paper needing a clip. Not left as a mystery.
+- `data-beam-sticky-chrome` stays on the Paper — the shell contract is untouched.
+
+*Eyeball nuance (bench): the top is INTERIM (bucket carries top+sides+top-radius pending the header
+pass). Verify the side lines are continuous while pinned mid-scroll and at both extremes; the footer
+corners round into the page floor; and at rest the three owners read as ONE coherent card.*
 - **Layering:** the scroll-affordance wrapper already establishes a stacking context (`container-type:
   inline-size`), so every rail/accent/edge/expanded z-index is sealed inside it. The pinned bucket +
   footer sit at the Paper level with `z-index: 2` — above the whole wrapper context, no z-index war.

@@ -52,13 +52,16 @@ const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, ou
  * puts that 13 on the field ROOT (textarea padding 0), so 3-line = 13 + 3×18 + 13 = 80.
  */
 /**
- * CONTENT_VERTICAL — the page's top/bottom rhythm, as an sx spacing value. SHARED so it can't drift:
- * `BeamAppShell`'s `main` owns it as padding by default, and `BeamDataTable`'s sticky footer FLOOR takes
- * it over as its own `padding-bottom` when the shell gives up its bottom padding (the sticky-chrome
- * contract — see the notes). One source; both sides read this. (Provisional home — migrates to
- * BeamPageHeader's rhythm once that organism leaves placeholder.)
+ * Page content rhythm — ONE source per edge, as sx spacing values, so the shell and the sticky footer
+ * floor can't drift (retune 2026-09-12: inline 7→5, bottom 10→3, top stays 10 to preserve the nav
+ * dock/undock shift). `BeamAppShell`'s `main` owns TOP/BOTTOM/INLINE as its padding; `BeamDataTable`'s
+ * sticky footer FLOOR takes over **CONTENT_BOTTOM** when the shell gives up its bottom padding (the
+ * sticky-chrome contract — see the notes). Split from the former single `CONTENT_VERTICAL`.
+ * (Provisional home — migrates to BeamPageHeader's rhythm once that organism leaves placeholder.)
  */
-export const CONTENT_VERTICAL = { xs: 2, md: 10 };
+export const CONTENT_TOP = { xs: 2, md: 10 };
+export const CONTENT_BOTTOM = { xs: 2, md: 3 };
+export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
 
 export const FIELD_GEOMETRY = {
   height: 44, // the floor (single-line) — the twin datum

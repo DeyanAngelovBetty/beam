@@ -22,11 +22,12 @@ const SCALE: Spec[] = [
   { name: 'spacing(1)', px: 8, note: 'default gap (~15×)' },
   { name: 'spacing(1.5)', px: 12, note: 'control-group gap' },
   { name: 'spacing(2)', px: 16, note: 'section-internal · p:2' },
-  { name: 'spacing(3)', px: 24, note: 'the PAGE section gap' },
+  { name: 'spacing(3)', px: 24, note: 'PAGE section gap · CONTENT_BOTTOM md' },
   { name: 'spacing(4)', px: 32, note: 'nav inset · gutter sm' },
+  { name: 'spacing(5)', px: 40, note: 'CONTENT_INLINE (gutter) md — retuned from 7' },
   { name: 'spacing(6)', px: 48, note: 'datagrid empty py' },
-  { name: 'spacing(7)', px: 56, note: 'gutter md · = STRIP_HEIGHT' },
-  { name: 'spacing(10)', px: 80, note: 'CONTENT_VERTICAL · empty state' },
+  { name: 'spacing(7)', px: 56, note: '= STRIP_HEIGHT' },
+  { name: 'spacing(10)', px: 80, note: 'CONTENT_TOP md · page top rhythm' },
 ];
 
 const LAYOUT: Spec[] = [
@@ -36,9 +37,9 @@ const LAYOUT: Spec[] = [
   { name: 'contentGutter xs', px: 16 },
   { name: 'radius (soft)', px: 24, note: 'MuiPaper rounded / squircle' },
   { name: 'contentGutter sm', px: 32 },
+  { name: 'contentGutter md', px: 40, note: 'CONTENT_INLINE · retuned 56→40 (spacing 5)' },
   { name: 'STRIP_HEIGHT', px: 56, note: 'literal = spacing(7)' },
-  { name: 'contentGutter md', px: 56, note: 'collides w/ STRIP_HEIGHT' },
-  { name: 'CONTENT_VERTICAL md', px: 80 },
+  { name: 'CONTENT_TOP md', px: 80, note: 'page top' },
   { name: 'DRAWER_WIDTH', px: 264, note: 'literal' },
 ];
 

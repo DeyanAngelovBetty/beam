@@ -45,8 +45,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_VERTICAL } from '../theme/tokens';
-import { isWhiteSpaceLike } from 'typescript';
+import { CONTENT_BOTTOM } from '../theme/tokens';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
 // under an edge. BOTH edges are the same soft gradient: a 24px band of the theme tint
@@ -61,6 +60,16 @@ const STICKY_OFFSET = 20;
 // the tokenised tint; if a distinct stuck-elevation recipe ever emerges, promote it to `derived` then.
 const STUCK_BAND_DOWN = `linear-gradient(to bottom, ${EDGE_TINT}, transparent)`;
 const STUCK_BAND_UP = `linear-gradient(to top, ${EDGE_TINT}, transparent)`;
+
+// Border deconstruction (stickyChrome only) — the Paper drops its frame; three regions redraw it (bucket
+// top+sides+top-radius · rows sides · footer sides+bottom+bottom-radius). The SIDE line reads as ONE
+// continuous 1px `divider` because all three are FULL-BLEED children of the frame-less Paper and apply
+// this IDENTICAL spec (same token, same width, same x) — alignment is guaranteed, not hoped. Neither
+// side of a region junction adds a horizontal border, so no double-line and no gap. CARD_RADIUS +
+// squircle mirror the MuiPaper `rounded` override (createBeamTheme) so the deconstructed corners match.
+const SIDE_BORDER = { borderLeft: '1px solid', borderRight: '1px solid', borderColor: 'divider' };
+const CARD_RADIUS = 24; // mirrors createBeamTheme MuiPaper.rounded.borderRadius — keep in step if it moves
+const SQUIRCLE = { 'corner-shape': 'squircle' } as object; // CSS Borders L5 (Chrome 139+), progressive
 
 /** Nearest scrollable ancestor (overflow y auto/scroll) — the sticky scroll owner. null ⇒ the viewport
  *  (document scroll), the correct IntersectionObserver root in that case. */
@@ -746,7 +755,19 @@ export function BeamDataTable<Row>({
     <Box ref={bucketRef} sx={{ position: 'sticky', top: STICKY_OFFSET, zIndex: 2, ...containerTypeScrollState }}>
       <Box
         className="beam-bucket-inner"
-        sx={{ position: 'relative', '[data-stuck="top"] &': bucketStuckSx, '@container scroll-state(stuck: top)': bucketStuckSx }}
+        // Frame region (INTERIM — the header pass finalizes the top): top + sides + top-radius. Own bg
+        // (when stuck) + border follow the radius; the down-band ::after (in the stuck dressing) extends
+        // BELOW, so no overflow-clip here. Rounded corners squircled to match the card.
+        sx={{
+          position: 'relative',
+          ...SIDE_BORDER,
+          borderTop: '1px solid',
+          borderTopLeftRadius: CARD_RADIUS,
+          borderTopRightRadius: CARD_RADIUS,
+          ...SQUIRCLE,
+          '[data-stuck="top"] &': bucketStuckSx,
+          '@container scroll-state(stuck: top)': bucketStuckSx,
+        }}
       >
         {stripEl}
         {cloneEl}
@@ -788,17 +809,28 @@ export function BeamDataTable<Row>({
   const footerEl = stickyChrome ? (
     // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), painted in the PAGE
     // background, and carrying the page's bottom spacing as its own padding — the spacing the shell gave
-    // up (CONTENT_VERTICAL, the one shared source). Rows scrolling under sink into this page surface;
+    // up (CONTENT_BOTTOM, the one shared source). Rows scrolling under sink into this page surface;
     // released at scroll-end the footer sits where it does today (the spacing merely changed owners).
     <Box
       ref={footerRef}
-      sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.default', pb: CONTENT_VERTICAL, ...containerTypeScrollState }}
+      sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.default', pb: CONTENT_BOTTOM, ...containerTypeScrollState }}
     >
-      {/* INNER = the bordered paper footer — opaque paper both modes (so it reads as the card footer over
-          the page-bg floor), with the stuck up-band dressing while pinned. */}
+      {/* INNER = the bordered paper footer — opaque paper (reads as the card footer over the page-bg
+          floor). Frame region: sides + bottom + bottom-radius — the card's floor edge, traveling with
+          the pin (the up-band ::before extends ABOVE, so no overflow-clip here). Squircled corners. */}
       <Box
         className="beam-footer-inner"
-        sx={{ position: 'relative', bgcolor: 'background.paper', '[data-stuck="bottom"] &': footerStuckSx, '@container scroll-state(stuck: bottom)': footerStuckSx }}
+        sx={{
+          position: 'relative',
+          bgcolor: 'background.paper',
+          ...SIDE_BORDER,
+          borderBottom: '1px solid',
+          borderBottomLeftRadius: CARD_RADIUS,
+          borderBottomRightRadius: CARD_RADIUS,
+          ...SQUIRCLE,
+          '[data-stuck="bottom"] &': footerStuckSx,
+          '@container scroll-state(stuck: bottom)': footerStuckSx,
+        }}
       >
         {footerContent}
       </Box>
@@ -815,11 +847,22 @@ export function BeamDataTable<Row>({
         // gives up its bottom padding so this grid's footer floor takes it over (see BeamAppShell notes).
         data-beam-sticky-chrome={stickyChrome ? '' : undefined}
         sx={{
-          overflow: stickyChrome ? 'clip' : 'hidden',
-          // timeline-scope: expose the body's named scroll-timeline (defined on the TableContainer) to
-          // the sibling header clone. The Paper is the common ancestor of both — the clone lives in the
-          // bucket, NOT inside the affordance wrapper — so the scope host is the Paper, not the wrapper.
-          ...(stickyChrome ? ({ 'timeline-scope': '--beam-body-scroll' } as object) : {}),
+          // Non-sticky keeps the single-Paper frame (outlined border + radius) and clips to it. Sticky
+          // DECONSTRUCTS the frame onto the three regions, so the Paper drops border + radius — and with
+          // the radius gone, `overflow: clip`'s only job (corner-clipping) is gone too. It's RETIRED for
+          // the mode → `visible`: sticky escapes to the scroll owner either way (neither clip nor visible
+          // creates a scroll container), the TableContainer clips its own horizontal scroll, and the
+          // stuck bands stay within their regions — nothing overflows the Paper needing a clip.
+          overflow: stickyChrome ? 'visible' : 'hidden',
+          ...(stickyChrome
+            ? ({
+                border: 'none',
+                borderRadius: 0,
+                // timeline-scope: expose the body's named scroll-timeline (defined on the TableContainer)
+                // to the sibling header clone. The Paper is the common ancestor of both.
+                'timeline-scope': '--beam-body-scroll',
+              } as object)
+            : {}),
         }}
       >
         {stickyChrome && <Box ref={topSentinelRef} aria-hidden sx={{ height: 0 }} />}
@@ -859,6 +902,9 @@ export function BeamDataTable<Row>({
         sx={{
           position: 'relative',
           containerType: 'inline-size',
+          // Rows region of the deconstructed frame (sticky only): SIDE borders only — the continuous
+          // vertical lines between the bucket's top and the footer's bottom.
+          ...(stickyChrome ? SIDE_BORDER : {}),
           '& .beam-edge-right': { opacity: 0, transition: 'opacity var(--beam-motion-quick)' },
           '&[data-overflow-end="true"] .beam-edge-right': { opacity: 1 },
         }}

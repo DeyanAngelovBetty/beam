@@ -2,6 +2,20 @@
 
 Decisions and additive changes to the shell, newest first.
 
+## Content gutter retune — estate-wide *(2026-09-12)*
+
+Deliberate rhythm retune, applied through the shared tokens (no magic numbers reintroduced):
+- **`padding-inline` 7 → 5** (`CONTENT_INLINE`, `{ xs: 2, sm: 4, md: 5 }`) — `DEFAULT_CONTENT_GUTTER`
+  now sources it.
+- **`padding-bottom` 10 → 3** (`CONTENT_BOTTOM`, `{ xs: 2, md: 3 }`).
+- **`padding-top` STAYS 10** (`CONTENT_TOP`, `{ xs: 2, md: 10 }`) — preserves the nav dock/undock visual
+  shift.
+- The former single `CONTENT_VERTICAL` **differentiated** into `CONTENT_TOP` / `CONTENT_BOTTOM` /
+  `CONTENT_INLINE` in `theme/tokens.ts` — one source per edge; the shell (`main` padding) and the sticky
+  footer floor (`CONTENT_BOTTOM`) still read the same value each, so they can't drift.
+- **Estate-wide:** every app on the default gutter reshapes — **Sunlight and Midnight included** — which
+  is intended (one rhythm across the estate), not a Gaspar-only change.
+
 ## Sticky-chrome contract — `main` yields its bottom padding *(2026-09-12)*
 
 `main` is the page's **scroll owner** (`overflow-y: auto`), and it owns the page's vertical rhythm

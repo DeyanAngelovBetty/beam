@@ -6,7 +6,7 @@ import type { BeamStatus } from '../BeamStatusBadge/BeamStatusBadge.types';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { CONTENT_VERTICAL } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE } from '../theme/tokens';
 
 /** Realistic Sunlight shape: perks management list (Beam candidate page) */
 interface Perk {
@@ -516,15 +516,15 @@ const benchColumns: BeamColumn<BenchRow>[] = [
 export const StickyChromeBench: Story = {
   parameters: { layout: 'fullscreen' },
   render: () => (
-    // Mimics AppShell `main`: the scroll owner, carrying CONTENT_VERTICAL as its padding and honoring the
+    // Mimics AppShell `main`: the scroll owner, carrying CONTENT_TOP/BOTTOM/INLINE as its padding and honoring the
     // sticky-chrome contract (gives up its bottom padding to the footer floor via :has).
     <Box
       sx={{
         height: '100vh',
         overflowY: 'auto',
-        px: 3,
-        pt: 3,
-        pb: CONTENT_VERTICAL,
+        px: CONTENT_INLINE,
+        pt: CONTENT_TOP,
+        pb: CONTENT_BOTTOM,
         bgcolor: 'background.default',
         '&:has([data-beam-sticky-chrome])': { pb: 0 },
       }}
