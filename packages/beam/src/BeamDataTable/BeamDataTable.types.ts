@@ -137,6 +137,16 @@ export interface BeamDataTableProps<Row> {
    * Esc reverts, disabled at a single page. Opt-in (Gaspar's v1.2 pagination-at-500 beat).
    */
   jumpToPage?: boolean;
+  /**
+   * Pin the grid's chrome to the scrollport while the grid crosses it: the TOP BUCKET (batch strip +
+   * a presentation clone of the header row) sticks to the top, the FOOTER to the bottom; rows scroll as
+   * page content between them. The PAGE stays the scroll owner (no internal scroll region) — short grids
+   * are byte-identical at every scroll position. Opt-in; absent = unchanged. Not milestone-gated (layout
+   * is baseline UX). The header clone mirrors the real thead by MEASURED widths + scrollLeft (the real
+   * thead can't page-stick from inside the overflow-x scroller). Dressing (surface/border/edge shadow)
+   * appears only while stuck, via `@container scroll-state(stuck)` on Chrome + a `data-stuck` fallback.
+   */
+  stickyChrome?: boolean;
   /** Enables per-row expansion — progressive disclosure (Yoda §2.4) */
   renderExpanded?: (row: Row) => ReactNode;
   /**

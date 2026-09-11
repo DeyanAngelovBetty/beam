@@ -3,6 +3,49 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Sticky chrome — pinned bucket + footer (`stickyChrome`) *(2026-09-12, BENCH)*
+
+The PAGE stays the scroll owner; the grid grows to content height; its chrome pins to the scrollport
+edges only while crossing them (sticky's natural content-height-when-short for free). No `maxBodyHeight`,
+no internal scroll region, no virtualization. Opt-in (`stickyChrome`); absent = byte-identical. **Story
+`Organisms/BeamDataTable → StickyChromeBench` (1,200 rows / page 500) is the bench** — eyeballed before
+Gaspar wiring.
+
+- **The one overflow trap:** the grid `Paper`'s `overflow: hidden` → **`overflow: clip`** when
+  `stickyChrome` (clips to the radius, does NOT create a scroll container, so the bucket escapes to the
+  real scroll owner — AppShell `main` / the document). Nothing else in the organism traps (the wrapper is
+  `overflow: visible`; the `TableContainer` stays the horizontal scroller — and the reason the real thead
+  can't page-stick, hence the clone).
+- **Header clone (measured widths — the anti-drift guarantee):** the bucket carries an `aria-hidden`
+  presentation clone of the header, rendered from the same `leafColumns`. It **owns no width** — a
+  `ResizeObserver` + structural effect (columnOrder / visibility / pageSize / row-count) measures the
+  REAL header cells and the clone copies those px (the rail-width precedent: measure the layout, never
+  hold a parallel belief). Horizontal scroll is mirrored by `translateX(-scrollLeft)` on the clone track
+  (composited, no reflow). Shown only while stuck. The real thead keeps semantics + sort controls.
+- **Layering:** the scroll-affordance wrapper already establishes a stacking context (`container-type:
+  inline-size`), so every rail/accent/edge/expanded z-index is sealed inside it. The pinned bucket +
+  footer sit at the Paper level with `z-index: 2` — above the whole wrapper context, no z-index war.
+- **Stuck detection + dressing:** JS base (`IntersectionObserver` on 0-height sentinels bracketing the
+  chrome → `data-stuck` attr; scroll root found by walking to the nearest `overflow-y: auto` ancestor) +
+  a Chrome `@container scroll-state(stuck: top/bottom)` enhancement — same progressive posture as the
+  edge gradients, both driving the same dressing. Dressing = paper surface + an occlusion band reusing
+  the edge-affordance recipe (`EDGE_TINT` + `EDGE_WIDTH`), rotated horizontal (bucket casts down, footer
+  up) — no new token; promote to `derived` if a distinct stuck-elevation recipe emerges.
+
+**Eyeball-tuning candidates (flagged for the bench):** (1) the clone's cell font/padding is an
+approximation of the real `th` (widths are exact; typography is `13px/600 + px:2` — nudge to match); (2)
+the stuck→unstuck **crossover smoothness** (clone lands where the real header scrolls under — the #1
+thing to watch); (3) the paint-flashing pass (DevTools) given the Collapse-hover history.
+
+**Known caveat (recorded):** on a tall grid mid-scroll, the horizontal **drag-scrollbar** (bottom of the
+`TableContainer`) is off-screen below — trackpad/wheel horizontal works throughout, and the clone keeps
+orientation; the scrollbar is reachable (adjacent to the released footer) at the true bottom, no overlap.
+
+**NAMED ENDGAME (not built):** restructure so the sticky bucket IS the horizontal scroller (header/body
+split, or a CSS-grid table) — retires the clone AND fixes the mid-scroll horizontal-scrollbar reach. The
+clone is the bridge to it; this is the parked table-layout question. (Applied-filters summary in the
+bucket: also parked, a later installment.)
+
 ## Column manager — pointer drag-and-drop reorder *(2026-09-10)*
 
 The manager's reorder gained a **pointer drag handle** alongside the existing ▲/▼ arrows (which stay —

@@ -441,3 +441,98 @@ export const SeverityAccent: StoryObj = {
     </div>
   ),
 };
+
+// ── Sticky-chrome bench ─────────────────────────────────────────────────────────────────────────────
+// The acceptance harness for `stickyChrome`: 1,200 rows, page size 500, the full column set (mono/copy
+// cells, badges, rowAccent, rail via selectable+rowActions+renderExpanded), jumpToPage + columnManager.
+// The wrapper is a 100vh overflow:auto Box — mimicking the AppShell `main` scroll owner, so the page
+// (this Box) owns the scroll and the grid chrome pins to ITS edges.
+interface BenchRow {
+  id: string;
+  created: string;
+  updated: string;
+  type: string;
+  amount: number;
+  status: BeamStatus;
+  customer: string;
+  email: string;
+  pspId: string;
+  provider: string;
+  threeDs: string;
+  errorCode: string;
+}
+
+const BENCH_STATUSES: BeamStatus[] = ['active', 'scheduled', 'paused', 'expired', 'draft'];
+const BENCH_PROVIDERS = ['Nuvei', 'Adyen'];
+const BENCH_TYPES = ['Deposit', 'Withdrawal'];
+const BENCH_3DS = ['Authenticated', 'NotRequired'];
+const BENCH_MTI = ['0100', '0200', '0210', '0400', '0800'];
+const benchRows: BenchRow[] = Array.from({ length: 1200 }, (_, i) => {
+  const bucket = i % 10;
+  const status = bucket <= 3 ? 'active' : bucket <= 5 ? 'scheduled' : bucket === 6 ? 'paused' : bucket === 7 ? 'draft' : 'expired';
+  const token = (100000 + i * 37).toString(36).toUpperCase().padStart(10, '0');
+  const created = new Date(Date.UTC(2026, 7, 20, 8, 0, 0) + ((i * 13) % 40) * 86_400_000 + (i % 24) * 3_600_000);
+  return {
+    id: `pay_${token}`,
+    created: created.toISOString().slice(0, 16).replace('T', ' '),
+    updated: new Date(created.getTime() + 3_600_000).toISOString().slice(0, 16).replace('T', ' '),
+    type: BENCH_TYPES[i % 2],
+    amount: Number((12.5 + (i % 50) * 7.25).toFixed(2)),
+    status: status as BeamStatus,
+    customer: `cus_${74120 + i}`,
+    email: `player${74120 + i}@example.com`,
+    pspId: `${BENCH_PROVIDERS[i % 2].toLowerCase()}_txn_${88213400 + i * 7}`,
+    provider: BENCH_PROVIDERS[i % 2],
+    threeDs: BENCH_3DS[i % 6 === 0 ? 0 : 1],
+    errorCode: status === 'expired' ? BENCH_MTI[i % BENCH_MTI.length] : '—',
+  };
+});
+
+const mono = { fontFamily: 'monospace', whiteSpace: 'nowrap' } as const;
+const benchColumns: BeamColumn<BenchRow>[] = [
+  { key: 'created', header: 'Created At', align: 'right', width: 160, getValue: (r) => r.created, render: (r) => <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{r.created}</Box> },
+  { key: 'updated', header: 'Last Updated', align: 'right', width: 160, getValue: (r) => r.updated, render: (r) => <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{r.updated}</Box> },
+  { key: 'id', header: 'Transaction ID', width: 168, getValue: (r) => r.id, render: (r) => <Box component="span" sx={mono}>{r.id}</Box> },
+  { key: 'type', header: 'Direction', width: 124, getValue: (r) => r.type, render: (r) => r.type },
+  { key: 'amount', header: 'Amount', align: 'right', width: 110, getValue: (r) => r.amount, render: (r) => r.amount.toFixed(2) },
+  { key: 'status', header: 'Status', width: 132, getValue: (r) => r.status, render: (r) => <BeamStatusBadge status={r.status} size="small" /> },
+  { key: 'customer', header: 'Customer', width: 130, getValue: (r) => r.customer, render: (r) => r.customer },
+  { key: 'email', header: 'Customer Email', width: 220, getValue: (r) => r.email, render: (r) => <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{r.email}</Box> },
+  { key: 'pspId', header: 'PSP Transaction ID', width: 200, getValue: (r) => r.pspId, render: (r) => <Box component="span" sx={mono}>{r.pspId}</Box> },
+  { key: 'provider', header: 'Provider', width: 110, getValue: (r) => r.provider, render: (r) => r.provider },
+  { key: 'threeDs', header: '3DS Status', width: 140, getValue: (r) => r.threeDs, render: (r) => r.threeDs },
+  { key: 'errorCode', header: 'Error Code', width: 120, getValue: (r) => r.errorCode, render: (r) => <Box component="span" sx={mono}>{r.errorCode}</Box> },
+];
+
+/**
+ * Sticky-chrome bench — the eyeball harness (organism gate). Scroll the 100vh page: the top BUCKET
+ * (batch strip + header clone) pins to the top with dressing, the FOOTER pins to the bottom, rows
+ * scroll between. Verify: clone/body columns stay width-identical through resize / column show-hide /
+ * reorder / page-size; the clone tracks horizontal scroll with no lag; jump-to-page + manager work
+ * while pinned; accents / edge gradients / expanded panels are unaffected; no stale paint (DevTools
+ * paint-flashing). Toggle `stickyChrome` off in Controls to confirm byte-identity.
+ */
+export const StickyChromeBench: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => (
+    <Box sx={{ height: '100vh', overflowY: 'auto', p: 3, bgcolor: 'background.default' }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>Sticky-chrome bench — 1,200 rows · page size 500</Typography>
+      <BeamDataTable<BenchRow>
+        columns={benchColumns}
+        rows={benchRows}
+        getRowId={(r) => r.id}
+        paginated
+        defaultPageSize={500}
+        pageSizeOptions={[50, 100, 250, 500]}
+        jumpToPage
+        stickyChrome
+        selectable
+        rowAccent={(r) => (r.status === 'expired' ? 'danger' : undefined)}
+        rowActions={() => [{ id: 'view', label: 'View', onSelect: () => {} }]}
+        renderExpanded={(r) => <Box sx={{ py: 1 }}>Transaction {r.id} — {r.type} {r.amount.toFixed(2)} via {r.provider}</Box>}
+        columnManager={{ storageKey: 'bench.sticky', catalog: [] }}
+        aria-label="Sticky-chrome bench"
+      />
+    </Box>
+  ),
+};

@@ -53,6 +53,26 @@ import { isWhiteSpaceLike } from 'typescript';
 const EDGE_TINT = 'var(--beam-edge-shadow)';
 const EDGE_WIDTH = 24; // px band width, shared by both edges so they read as siblings
 
+// Sticky-chrome (opt-in) — the pinned bucket/footer offset from the scrollport edge (the mock's ~20px).
+const STICKY_OFFSET = 20;
+// The stuck-side occlusion band: the SAME edge-affordance recipe as the rail/right edges (EDGE_TINT +
+// EDGE_WIDTH), rotated to the horizontal — the top bucket casts DOWN, the bottom footer casts UP. Reuses
+// the tokenised tint; if a distinct stuck-elevation recipe ever emerges, promote it to `derived` then.
+const STUCK_BAND_DOWN = `linear-gradient(to bottom, ${EDGE_TINT}, transparent)`;
+const STUCK_BAND_UP = `linear-gradient(to top, ${EDGE_TINT}, transparent)`;
+
+/** Nearest scrollable ancestor (overflow y auto/scroll) — the sticky scroll owner. null ⇒ the viewport
+ *  (document scroll), the correct IntersectionObserver root in that case. */
+function getScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node) {
+    const oy = getComputedStyle(node).overflowY;
+    if (oy === 'auto' || oy === 'scroll') return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
 // Severity accent (rowAccent): grammar hue → theme semantic palette key (theme picks the hex; no
 // literals). The accent is status-truth — always visible, independent of the scroll affordance.
 const ACCENT_PALETTE: Record<string, string> = { danger: 'error', warning: 'warning', success: 'success', 'in-progress': 'info' };
@@ -262,6 +282,7 @@ export function BeamDataTable<Row>({
   defaultPageSize = 10,
   pageSizeOptions,
   jumpToPage = false,
+  stickyChrome = false,
   renderExpanded,
   rowActions,
   onRowClick,
@@ -408,6 +429,17 @@ export function BeamDataTable<Row>({
   // fallback for the left. Recomputes on scroll AND resize (columns/viewport change overflow).
   const scrollRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  // Sticky-chrome machinery (opt-in). The header clone is a PRESENTATION mirror of the real thead: it
+  // never computes its own widths — it copies the measured real-header widths (the rail-width precedent:
+  // measure the layout, never hold a parallel belief), and mirrors the body's scrollLeft via translateX.
+  const theadRowRef = useRef<HTMLTableRowElement>(null);
+  const cloneTrackRef = useRef<HTMLDivElement>(null);
+  const bucketRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const [cloneWidths, setCloneWidths] = useState<number[]>([]);
+
   useEffect(() => {
     const el = scrollRef.current;
     const wrap = wrapperRef.current;
@@ -419,6 +451,8 @@ export function BeamDataTable<Row>({
       wrap.dataset.overflowStart = el.scrollLeft > 0 ? 'true' : 'false';
       // 1px slack so sub-pixel widths don't leave a ghost shadow at the true end.
       wrap.dataset.overflowEnd = el.scrollLeft < maxScroll - 1 ? 'true' : 'false';
+      // Scroll-sync the header clone to the body (no reflow — a composited translate).
+      if (cloneTrackRef.current) cloneTrackRef.current.style.transform = `translateX(${-el.scrollLeft}px)`;
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(apply);
@@ -435,6 +469,58 @@ export function BeamDataTable<Row>({
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
+
+  // WIDTH SYNC — the review's center of gravity. Measure the REAL header cells' rendered widths and
+  // hand them to the clone; re-measure on every event that can move column widths (container resize via
+  // RO, and structurally: show/hide, reorder, page-size, row-count). Drift is structurally impossible
+  // because the clone owns no width of its own.
+  useLayoutEffect(() => {
+    if (!stickyChrome) return;
+    const measure = () => {
+      const rowEl = theadRowRef.current;
+      if (!rowEl) return;
+      const ws = Array.from(rowEl.children).map((c) => (c as HTMLElement).getBoundingClientRect().width);
+      setCloneWidths((prev) =>
+        prev.length === ws.length && prev.every((w, i) => Math.abs(w - ws[i]) < 0.5) ? prev : ws,
+      );
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (theadRowRef.current) ro?.observe(theadRowRef.current);
+    if (wrapperRef.current) ro?.observe(wrapperRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stickyChrome, cm.columnOrder, cm.columnVisibility, table.getState().pagination.pageSize, visibleRows.length, leafColumns.length]);
+
+  // STUCK DETECTION — the estate's progressive posture: `@container scroll-state(stuck)` drives the
+  // dressing + clone on Chrome (pure CSS, below), and this IntersectionObserver fallback sets a
+  // `data-stuck` attr everywhere else. Sentinels bracket the pinned chrome; the scroll root is found by
+  // walking to the nearest scrollable ancestor (AppShell `main` in Gaspar, the document in Storybook).
+  useEffect(() => {
+    if (!stickyChrome || typeof IntersectionObserver === 'undefined') return;
+    const root = getScrollParent(bucketRef.current);
+    const observe = (sentinel: HTMLDivElement | null, target: HTMLDivElement | null, edge: 'top' | 'bottom', rootMargin: string) => {
+      if (!sentinel || !target) return null;
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          target.dataset.stuck = entry.isIntersecting ? '' : edge; // off-screen sentinel ⇒ chrome is stuck
+        },
+        { root, rootMargin, threshold: 0 },
+      );
+      io.observe(sentinel);
+      return io;
+    };
+    const top = observe(topSentinelRef.current, bucketRef.current, 'top', `-${STICKY_OFFSET}px 0px 0px 0px`);
+    const bottom = observe(bottomSentinelRef.current, footerRef.current, 'bottom', `0px 0px -${STICKY_OFFSET}px 0px`);
+    return () => {
+      top?.disconnect();
+      bottom?.disconnect();
+    };
+  }, [stickyChrome]);
 
   // One pinned rail column holds all row controls, in fixed order
   // [select][kebab][expand] — each rendered only if enabled (grammar §3):
@@ -519,50 +605,170 @@ export function BeamDataTable<Row>({
     </Box>
   ) : null;
 
+  // Stuck dressing — surface + occlusion band, applied to the inner wrappers while pinned, via BOTH the
+  // JS `data-stuck` attr (base, all engines) AND `@container scroll-state(stuck)` (Chrome enhancement).
+  const containerTypeScrollState = { containerType: 'scroll-state' as 'normal' };
+  const bucketStuckSx = {
+    bgcolor: 'background.paper',
+    '&::after': {
+      content: '""', position: 'absolute', left: 0, right: 0, top: '100%', height: EDGE_WIDTH,
+      background: STUCK_BAND_DOWN, pointerEvents: 'none',
+    },
+  };
+  const footerStuckSx = {
+    bgcolor: 'background.paper',
+    '&::before': {
+      content: '""', position: 'absolute', left: 0, right: 0, bottom: '100%', height: EDGE_WIDTH,
+      background: STUCK_BAND_UP, pointerEvents: 'none',
+    },
+  };
+
+  // Header CLONE — presentation mirror of the real thead: measured widths, scrollLeft-synced (translate
+  // on the track), shown only while stuck. aria-hidden (the real thead keeps semantics + sort controls).
+  const railOffset = railEnabled ? 1 : 0;
+  const cloneEl = stickyChrome ? (
+    <Box
+      className="beam-header-clone"
+      aria-hidden
+      sx={{
+        display: 'none',
+        '[data-stuck="top"] &': { display: 'block' },
+        '@container scroll-state(stuck: top)': { display: 'block' },
+        overflow: 'hidden',
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider',
+      }}
+    >
+      <Box ref={cloneTrackRef} sx={{ display: 'flex', width: 'max-content', willChange: 'transform' }}>
+        {railEnabled && (
+          // Rail region of the clone — mirrors the pinned rail styling (opaque base + right divider).
+          <Box sx={{ flex: '0 0 auto', width: cloneWidths[0] ?? 0, boxSizing: 'border-box', bgcolor: 'background.paper', borderRight: 1, borderColor: 'divider' }} />
+        )}
+        {leafColumns.map((col, i) => {
+          const c = columnByKey.get(col.id);
+          return (
+            <Box
+              key={col.id}
+              sx={{
+                flex: '0 0 auto',
+                width: cloneWidths[railOffset + i] ?? 0,
+                boxSizing: 'border-box',
+                px: 2,
+                py: 0.75,
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: 'text.primary',
+                textAlign: c?.align ?? 'left',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {c?.header}
+            </Box>
+          );
+        })}
+      </Box>
+    </Box>
+  ) : null;
+
+  // Batch actions — a top SECTION of the grid surface (moved inside the Paper 2026-09-08, the
+  // BeamPaper-sectioning pattern; DetailsPanel/PrizeWall precedent). Persistent when bulkActions is set;
+  // constant geometry, variable enablement — every action renders, disabled at zero selection.
+  const stripEl = resolvedBulkActions.length > 0 ? (
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: 48, borderBottom: 1, borderColor: 'divider' }}>
+      {resolvedBulkActions.map((a) => (
+        <BulkActionButton
+          key={a.id}
+          action={a}
+          // Zero selection always disables; a page-supplied `disabled` adds eligibility on top.
+          zeroSelection={selectedCount === 0}
+          disabled={selectedCount === 0 || Boolean(a.disabled)}
+          batchHintId={batchHintId}
+          count={selectedCount}
+          onFire={(optionId) => {
+            onBulkAction?.(a.id, selectedIds, optionId);
+            table.resetRowSelection();
+          }}
+        />
+      ))}
+      {/* Why the actions are disabled — referenced by each disabled button. */}
+      <Box
+        component="span"
+        id={batchHintId}
+        sx={{ position: 'absolute', width: 1, height: 1, p: 0, m: -1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0 }}
+      >
+        Select one or more rows to enable batch actions.
+      </Box>
+    </Stack>
+  ) : null;
+
+  // The TOP BUCKET: strip + header clone, pinned to the scrollport top when stickyChrome. When off, the
+  // strip renders bare (byte-identical). The inner carries the stuck dressing (both data-stuck + Chrome
+  // scroll-state paths). The clone appears only while stuck, landing exactly where the real header
+  // scrolls under, so the handoff reads seamless.
+  const bucketEl = stickyChrome ? (
+    <Box ref={bucketRef} sx={{ position: 'sticky', top: STICKY_OFFSET, zIndex: 2, ...containerTypeScrollState }}>
+      <Box
+        className="beam-bucket-inner"
+        sx={{ position: 'relative', '[data-stuck="top"] &': bucketStuckSx, '@container scroll-state(stuck: top)': bucketStuckSx }}
+      >
+        {stripEl}
+        {cloneEl}
+      </Box>
+    </Box>
+  ) : (
+    stripEl
+  );
+
+  // Footer content (manager + count + pagination) — unchanged; wrapped in a sticky positioner below when
+  // stickyChrome so it pins to the scrollport bottom.
+  const footerContent =
+    selectable || cm.enabled ? (
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
+          {cm.enabled && (
+            <BeamColumnManager
+              columns={managerColumns}
+              catalog={cm.catalog}
+              onToggle={toggleColumn}
+              onMove={moveColumn}
+              onReorder={reorderColumn}
+              onReset={cm.reset}
+            />
+          )}
+          {selectable && (
+            // aria-live preserved across the move — the count still announces on change.
+            <Typography variant="body2" aria-live="polite" sx={{ pl: cm.enabled ? 0 : 1.5, color: 'text.secondary' }}>
+              {selectedCount === 0 ? '' : `${selectedCount} selected`}
+            </Typography>
+          )}
+        </Box>
+        {paginationEl ?? <Box />}
+      </Box>
+    ) : (
+      paginationEl
+    );
+
+  const footerEl = stickyChrome ? (
+    <Box ref={footerRef} sx={{ position: 'sticky', bottom: STICKY_OFFSET, zIndex: 2, ...containerTypeScrollState }}>
+      <Box
+        className="beam-footer-inner"
+        sx={{ position: 'relative', '[data-stuck="bottom"] &': footerStuckSx, '@container scroll-state(stuck: bottom)': footerStuckSx }}
+      >
+        {footerContent}
+      </Box>
+    </Box>
+  ) : (
+    footerContent
+  );
+
   return (
     <>
-      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-        {/* Batch actions — a top SECTION of the grid surface (moved inside the Paper 2026-09-08, the
-            BeamPaper-sectioning pattern; DetailsPanel/PrizeWall precedent). Persistent when bulkActions
-            is set; constant geometry, variable enablement — every action renders, disabled at zero
-            selection; confirm/destructive actions confirm. */}
-        {resolvedBulkActions.length > 0 && (
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: 48, borderBottom: 1, borderColor: 'divider' }}>
-          {resolvedBulkActions.map((a) => (
-            <BulkActionButton
-              key={a.id}
-              action={a}
-              // Zero selection always disables; a page-supplied `disabled` adds eligibility on top.
-              zeroSelection={selectedCount === 0}
-              disabled={selectedCount === 0 || Boolean(a.disabled)}
-              batchHintId={batchHintId}
-              count={selectedCount}
-              onFire={(optionId) => {
-                onBulkAction?.(a.id, selectedIds, optionId);
-                table.resetRowSelection();
-              }}
-            />
-          ))}
-          {/* Why the actions are disabled — referenced by each disabled button. */}
-          <Box
-            component="span"
-            id={batchHintId}
-            sx={{
-              position: 'absolute',
-              width: 1,
-              height: 1,
-              p: 0,
-              m: -1,
-              overflow: 'hidden',
-              clip: 'rect(0 0 0 0)',
-              whiteSpace: 'nowrap',
-              border: 0,
-            }}
-          >
-            Select one or more rows to enable batch actions.
-          </Box>
-        </Stack>
-      )}
+      <Paper variant="outlined" sx={{ overflow: stickyChrome ? 'clip' : 'hidden' }}>
+        {stickyChrome && <Box ref={topSentinelRef} aria-hidden sx={{ height: 0 }} />}
+        {bucketEl}
 
         {/* Toolbar region: the internal search field ONLY (for lists with no page-level filter bar).
             The column-manager trigger moved to the footer (2026-09-08). So the toolbar now renders
@@ -607,7 +813,7 @@ export function BeamDataTable<Row>({
         <TableContainer ref={scrollRef} sx={{ containerType: 'scroll-state' as 'normal' }}>
           <Table size="small" aria-label={ariaLabel}>
           <TableHead>
-            <TableRow>
+            <TableRow ref={theadRowRef}>
               {railEnabled && (
                 // Header sits above the body rail cells if stickyHeader is ever
                 // enabled, and above its own row's data cells now.
@@ -825,35 +1031,10 @@ export function BeamDataTable<Row>({
       </Box>
 
       {/* Footer: a left cluster — column-manager trigger (leftmost), then the aria-live selection
-          count — and pagination on the right (grammar §4). The count is always present when selectable
-          (constant geometry, zero-state included) and aria-live so its changes are announced. Grids
-          with neither `selectable` nor `columnManager` keep the bare pagination path — byte-identical.
-          // styling: pending design pass */}
-      {selectable || cm.enabled ? (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
-            {cm.enabled && (
-              <BeamColumnManager
-                columns={managerColumns}
-                catalog={cm.catalog}
-                onToggle={toggleColumn}
-                onMove={moveColumn}
-                onReorder={reorderColumn}
-                onReset={cm.reset}
-              />
-            )}
-            {selectable && (
-              // aria-live preserved across the move — the count still announces on change.
-              <Typography variant="body2" aria-live="polite" sx={{ pl: cm.enabled ? 0 : 1.5, color: 'text.secondary' }}>
-                {selectedCount === 0 ? '' : `${selectedCount} selected`}
-              </Typography>
-            )}
-          </Box>
-          {paginationEl ?? <Box />}
-        </Box>
-      ) : (
-        paginationEl
-      )}
+          count — and pagination on the right (grammar §4). Wrapped in a sticky positioner (footerEl)
+          when stickyChrome; otherwise byte-identical. */}
+      {footerEl}
+      {stickyChrome && <Box ref={bottomSentinelRef} aria-hidden sx={{ height: 0 }} />}
       </Paper>
     </>
   );
