@@ -757,6 +757,10 @@ export function TransactionsPage() {
         rows={rows}
         getRowId={(r) => r.id}
         paginated
+        // Sticky chrome — the header bucket pins to the top, the footer to the bottom, the page owns the
+        // scroll. NOT milestone-gated (layout is baseline UX). The Stack's stickyChromeGapSx + the shell's
+        // main:has() contract are already in place and activate off this grid's data-beam-sticky-chrome.
+        stickyChrome
         // Pagination-at-500 (v1.2+, Ruslan's feedback): heavy page sizes + jump-to-page are opt-in and
         // milestone-gated. v1.0/v1.1 keep the organism's light default ([5,10,25]); default size stays
         // 10 so the severity story leads page one.
