@@ -496,6 +496,7 @@ export function BeamDataTable<Row>({
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
   const [cloneWidths, setCloneWidths] = useState<number[]>([]);
+  const [cloneHeight, setCloneHeight] = useState(0); // real header ROW height — the clone matches it so the crossover doesn't jump (the select-all checkbox makes the real header taller than the text cells)
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -552,6 +553,8 @@ export function BeamDataTable<Row>({
       setCloneWidths((prev) =>
         prev.length === ws.length && prev.every((w, i) => Math.abs(w - ws[i]) < 0.5) ? prev : ws,
       );
+      const h = rowEl.getBoundingClientRect().height; // match the real header row's height (checkbox etc.)
+      setCloneHeight((prev) => (Math.abs(prev - h) < 0.5 ? prev : h));
     };
     measure();
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
@@ -712,6 +715,10 @@ export function BeamDataTable<Row>({
         '[data-stuck="top"] &': { display: 'block' },
         '@container scroll-state(stuck: top)': { display: 'block' },
         overflow: 'hidden',
+        // position: relative makes the clone the containing block for the rail overlay, so the overlay is
+        // scoped to the CLONE region (the header row), NOT the bucket — the actions strip, a sibling
+        // above, never enters its coordinate space (no strip-height measuring needed).
+        position: 'relative',
         containerType: 'inline-size',
         bgcolor: 'background.paper',
         borderBottom: 1,
@@ -722,6 +729,10 @@ export function BeamDataTable<Row>({
         ref={cloneTrackRef}
         sx={{
           display: 'flex',
+          // Match the real header ROW height (the select-all checkbox makes it taller than the text
+          // cells) and center the cells, so the crossover doesn't jump vertically.
+          minHeight: cloneHeight,
+          alignItems: 'center',
           width: 'max-content',
           willChange: 'transform',
           '@keyframes beam-clone-scroll-sync': {
@@ -771,10 +782,13 @@ export function BeamDataTable<Row>({
       </Box>
       {railEnabled && (
         // STATIC rail overlay — NOT animated: sits fixed at the clone's left exactly like the body's
-        // sticky rail, columns sliding beneath it (occluded by its opaque paper). Dressing mirrors the
-        // body rail's stuck-left look: a 1px `divider` right edge (::before) + the occlusion gradient
-        // (::after), shown on horizontal scroll via `data-overflow-start` — propagated onto the bucket
-        // by the rAF listener (the clone isn't a wrapper descendant). Width tracks the measured rail.
+        // sticky rail, columns sliding beneath it (occluded by its opaque paper). Mirrors the real HEADER
+        // rail cell's contents — the select-all checkbox (when selectable) at the rail's left inset —
+        // plus the body rail's stuck-left dressing: a 1px `divider` right edge (::before) + the occlusion
+        // gradient (::after), shown on horizontal scroll via `data-overflow-start` (propagated onto the
+        // bucket by the rAF listener). Width tracks the measured rail. aria-hidden overall (the real thead
+        // keeps the semantic select-all); the checkbox is wired for POINTER only — non-focusable, so ops
+        // gets genuine select-all from the pinned header while keyboard/AT use the real header (scroll up).
         <Box
           aria-hidden
           sx={{
@@ -785,6 +799,9 @@ export function BeamDataTable<Row>({
             width: cloneWidths[0] ?? 0,
             zIndex: Z_CLONE_RAIL,
             bgcolor: 'background.paper',
+            display: 'flex',
+            alignItems: 'center',
+            pl: 0.5, // mirrors railStickySx's left inset
             '&::before': {
               content: '""', position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px',
               backgroundColor: 'divider', opacity: 0, transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
@@ -797,7 +814,18 @@ export function BeamDataTable<Row>({
             '[data-overflow-start="true"] &::before': { opacity: 1 },
             '[data-overflow-start="true"] &::after': { opacity: 1 },
           }}
-        />
+        >
+          {selectable && (
+            <Checkbox
+              checked={table.getIsAllRowsSelected()}
+              indeterminate={table.getIsSomeRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+              // Pointer-only: aria-hidden (parent) + non-focusable, so it never duplicates the real
+              // header's select-all in the a11y/tab tree.
+              slotProps={{ input: { tabIndex: -1, 'aria-hidden': true } }}
+            />
+          )}
+        </Box>
       )}
     </Box>
   ) : null;

@@ -513,6 +513,11 @@ const benchColumns: BeamColumn<BenchRow>[] = [
  * reorder / page-size; the clone tracks horizontal scroll with no lag; jump-to-page + manager work
  * while pinned; accents / edge gradients / expanded panels are unaffected; no stale paint (DevTools
  * paint-flashing). Toggle `stickyChrome` off in Controls to confirm byte-identity.
+ *
+ * THE SIZE FLIP IS THE DEMO of sticky's conditional nature: set rows-per-page to **10** — the grid is
+ * shorter than the viewport, so NO chrome pins (no bucket, no footer, no ceiling/floor dressing; spacing
+ * identical to a non-sticky grid). Flip to **250 / 500** and watch the chrome engage on its own. Anything
+ * rendering stuck at 10 rows is a real bug, not a nit.
  */
 export const StickyChromeBench: Story = {
   parameters: { layout: 'fullscreen' },
@@ -542,7 +547,10 @@ export const StickyChromeBench: Story = {
         getRowId={(r) => r.id}
         paginated
         defaultPageSize={500}
-        pageSizeOptions={[50, 100, 250, 500]}
+        // Includes the small end (10) so the INERT state is demonstrable: at 10 rows the grid is shorter
+        // than the viewport and NO chrome pins — the "short grid = zero change" line exercised, not
+        // asserted. Flip to 250/500 and the chrome engages on its own. (Bench-only; Gaspar's set differs.)
+        pageSizeOptions={[10, 50, 100, 250, 500]}
         jumpToPage
         stickyChrome
         selectable

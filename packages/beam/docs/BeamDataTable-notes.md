@@ -153,6 +153,24 @@ SHARED SOURCE, so face/baseline/line-breaking match and the measured widths land
   `cloneWidths[0]` (re-measures on control-composition changes). Its scroll-conditional dressing reads
   `data-overflow-start`, **propagated onto the bucket** by the existing rAF listener (the clone isn't a
   wrapper descendant). The offset is exact by the spacer construction, not tuned.
+- **Clone rail — anatomy + parity (last polish, 2026-09-12).**
+  - *Geometry:* the overlay is scoped to the CLONE region, not the bucket — `position: relative` on
+    `.beam-header-clone` makes it the containing block, so the actions strip (a sibling above) never enters
+    the overlay's coordinate space. No strip-height measuring.
+  - *Contents:* the overlay mirrors the real HEADER rail cell — the **select-all checkbox** (when
+    `selectable`) at the rail's left inset, **wired for real** (`table.getToggle/IsAll…`) so ops gets
+    genuine select-all from the pinned header. It's **pointer-only**: `aria-hidden` (the clone is
+    presentational; the real thead keeps the semantic control) + non-focusable, so it never duplicates the
+    real select-all in the a11y/tab tree; keyboard/AT scroll up to the real header.
+  - *Height parity:* the real header row is taller than its text cells (the checkbox drives it), so the
+    clone measures the real row **height** too (`cloneHeight`) and matches it (centered cells) — the
+    crossover doesn't jump vertically.
+- **Style-parity sweep (the deferred type flag, closed).** `headerCellSx` uses MUI's real `TableCell`-head
+  values (the theme doesn't customise `body2`), so it's a genuine shared source, not an approximation:
+  font size/weight/family (inherited `bodyFont`) · letter-spacing · padding · alignment (incl. right-
+  aligned Amount via `textAlign`) · `nowrap`. The header-row background (`background.paper`) and its bottom
+  divider (1px `divider` = `derived.tableBorder`) match the real thead; the rail overlay's divider +
+  gradient match the body rail's stuck-left dressing (`EDGE_TINT`/`EDGE_WIDTH`).
 - **z-index — named, not adjacent magic.** `Z_ACCENT 1 · Z_RAIL_BODY/Z_EDGE/Z_CLONE_RAIL 2 · Z_RAIL_HEADER
   3 · Z_CHROME 4`. The rail/accent/edge live inside the wrapper's stacking context (its `container-type`
   seals them); the pinned chrome sits at the Paper level and is bumped to `Z_CHROME 4` — **above** the
