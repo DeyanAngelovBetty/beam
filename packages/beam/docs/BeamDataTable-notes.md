@@ -91,6 +91,18 @@ the three regions that travel with the pins:
 *Eyeball nuance (bench): the top is INTERIM (bucket carries top+sides+top-radius pending the header
 pass). Verify the side lines are continuous while pinned mid-scroll and at both extremes; the footer
 corners round into the page floor; and at rest the three owners read as ONE coherent card.*
+
+**Two footer fixes (2026-09-12):**
+1. The footer inner carries `background.paper` **always** (not stuck-gated) — paper-on-paper at rest
+   (invisible), the opacity that stops rows ghosting through when pinned. The stuck-gated bg it
+   superseded was removed from `footerStuckSx` (now the up-band only).
+2. **White 1px bottom line — root cause: a `border-{edge}: 1px solid` SHORTHAND resets that edge's COLOR
+   to `currentColor`** (white on dark) because it lands *after* `SIDE_BORDER`'s `border-color: divider`.
+   It was NOT the squircle (hypothesis a — ruled out: colouring the border changed it). Fix uses the
+   existing token: **width/style longhands** (`borderBottomStyle`/`borderBottomWidth`) so `divider` stands.
+   *Platform edge for the next partial-corner element:* declare the top/bottom edge with longhands, never
+   the `border-top`/`border-bottom` shorthand — **the bucket's top edge has the identical latent issue,
+   fixed the same way in the header pass.***
 - **Layering:** the scroll-affordance wrapper already establishes a stacking context (`container-type:
   inline-size`), so every rail/accent/edge/expanded z-index is sealed inside it. The pinned bucket +
   footer sit at the Paper level with `z-index: 2` — above the whole wrapper context, no z-index war.

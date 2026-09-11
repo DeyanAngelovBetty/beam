@@ -629,8 +629,10 @@ export function BeamDataTable<Row>({
       background: STUCK_BAND_DOWN, pointerEvents: 'none',
     },
   };
+  // Stuck footer dressing = the up-band only. The paper background is carried by the inner ALWAYS (below,
+  // not gated on stuck) — paper-on-paper at rest (invisible), the opacity that stops rows ghosting when
+  // pinned. So no bgcolor here; the base bg supersedes it.
   const footerStuckSx = {
-    bgcolor: 'background.paper',
     '&::before': {
       content: '""', position: 'absolute', left: 0, right: 0, bottom: '100%', height: EDGE_WIDTH,
       background: STUCK_BAND_UP, pointerEvents: 'none',
@@ -824,7 +826,12 @@ export function BeamDataTable<Row>({
           position: 'relative',
           bgcolor: 'background.paper',
           ...SIDE_BORDER,
-          borderBottom: '1px solid',
+          // WIDTH/STYLE longhands, NOT the `border-bottom` shorthand: the shorthand would reset
+          // border-bottom-COLOR to currentColor (white on dark) since it'd land after SIDE_BORDER's
+          // `border-color: divider`. Longhands leave the token color standing. (Same trap awaits any
+          // partial-corner region — see notes; the bucket's top edge fixes the same way in the header pass.)
+          borderBottomStyle: 'solid',
+          borderBottomWidth: '1px',
           borderBottomLeftRadius: CARD_RADIUS,
           borderBottomRightRadius: CARD_RADIUS,
           ...SQUIRCLE,
