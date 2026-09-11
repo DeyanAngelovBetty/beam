@@ -177,15 +177,21 @@ SHARED SOURCE, so face/baseline/line-breaking match and the measured widths land
   widths; alignment via `textAlign` (incl. right-aligned Amount). Header-row background (`background.paper`)
   + bottom divider (1px `divider` = `derived.tableBorder`) and the rail overlay's divider/gradient match
   the body.
-- **Sort parity (last clone item, 2026-09-12).** Sortable clone cells render the SAME `TableSortLabel` as
-  the real `th`, driven by the SAME table state (`column.getIsSorted()`) — same icon, active/inactive
-  treatment, and side of the label (its reserved space matters: it's why a label-only clone sat wrong).
-  **Wired for real** (`column.getToggleSortingHandler()`), **pointer-only** (`tabIndex: -1` under the
-  clone's `aria-hidden`), so it never duplicates the real header's sort control in the a11y/tab tree —
-  keyboard/AT sort from the real header. Non-sortable columns stay plain text, no cursor, matching the real
-  header. **Measurement:** the sort state (`table.getState().sorting`) is now a re-measure dep, so if
-  toggling an indicator shifts a column's width the clone tracks it (belt-and-suspenders — MUI reserves the
-  arrow's space, so the width is usually constant).
+- **Sort parity (last clone item, 2026-09-12).** Both headers consume ONE shared composition
+  (`sortableHeaderContent`) — same `TableSortLabel`, same table state (`column.getIsSorted()`), so icon +
+  active/inactive treatment match. **Wired for real** (`getToggleSortingHandler`), **pointer-only** on the
+  clone (`tabIndex: -1` under `aria-hidden`), so it never duplicates the real sort control in the a11y/tab
+  tree; non-sortable columns stay plain text, no cursor.
+  - *Icon SIDE (the residue):* `TableSortLabel` has `flex-direction: inherit`, so a right-aligned column's
+    arrow flips to **icon-first** ONLY because the cell sets `flex-direction: row-reverse` — MUI's
+    `TableCell align="right"` does that for the th; the clone cell **mirrors it** (`flexDirection:
+    'row-reverse'` when `align === 'right'`). So "↓ AMOUNT" reads the same in both. The composition is
+    shared; the side is inherited from the cell, matched on both.
+  - *Live-sync:* clicking sort in the clone updates the real header's indicator the same frame — the
+    header is rendered inline (no `React.memo`), so the sort state change re-renders both. (If it were
+    memoised, `sorting` would need to be in its deps — it isn't memoised, so nothing to add.)
+  - *Measurement:* `table.getState().sorting` is a re-measure dep, so a width shift from an indicator is
+    tracked (belt-and-suspenders — MUI reserves the arrow's space, so width is usually constant).
 - **z-index — named, not adjacent magic.** `Z_ACCENT 1 · Z_RAIL_BODY/Z_EDGE/Z_CLONE_RAIL 2 · Z_RAIL_HEADER
   3 · Z_CHROME 4`. The rail/accent/edge live inside the wrapper's stacking context (its `container-type`
   seals them); the pinned chrome sits at the Paper level and is bumped to `Z_CHROME 4` — **above** the

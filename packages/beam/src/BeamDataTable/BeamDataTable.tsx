@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type MouseEvent } from 'react';
+import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type MouseEvent, type ReactNode } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -6,6 +6,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getExpandedRowModel,
+  type Column,
   type ColumnDef,
   type SortingState,
   type RowSelectionState,
@@ -110,6 +111,29 @@ const SQUIRCLE = { 'corner-shape': 'squircle' } as object; // CSS Borders L5 (Ch
  * table default (the real th doesn't force nowrap either), so line-breaking matches at equal widths.
  */
 export const headerCellSx = { ...meta, py: 1.5, px: 2 };
+
+/**
+ * The header's sort affordance — the ONE composition BOTH the real `th` and the clone consume, so they
+ * can't diverge. The icon SIDE is NOT decided here: `TableSortLabel` has `flex-direction: inherit`, so it
+ * flips for a right-aligned column ONLY because the cell sets `flex-direction: row-reverse` — MUI's
+ * `TableCell align="right"` does that for the real th; the clone cell mirrors it (see the clone cell). The
+ * label render is identical; `interactive: false` makes it POINTER-ONLY (`tabIndex: -1`) for the clone's
+ * aria-hidden layer, so it never duplicates the real header's sort control in the a11y/tab tree.
+ */
+function sortableHeaderContent<Row>(col: Column<Row, unknown>, header: ReactNode, interactive: boolean): ReactNode {
+  if (!col.getCanSort()) return header;
+  const sortDir = col.getIsSorted();
+  return (
+    <TableSortLabel
+      active={Boolean(sortDir)}
+      direction={sortDir || 'asc'}
+      onClick={col.getToggleSortingHandler()}
+      {...(interactive ? {} : { tabIndex: -1 })}
+    >
+      {header}
+    </TableSortLabel>
+  );
+}
 
 /** Nearest scrollable ancestor (overflow y auto/scroll) — the sticky scroll owner. null ⇒ the viewport
  *  (document scroll), the correct IntersectionObserver root in that case. */
@@ -755,36 +779,24 @@ export function BeamDataTable<Row>({
         )}
         {leafColumns.map((col, i) => {
           const c = columnByKey.get(col.id);
-          const sortDir = col.getIsSorted();
           return (
             <Box
               key={col.id}
-              // SHARED SOURCE with the real th — same headerCellSx (meta), so face/baseline/line-breaking
-              // are identical and the measured width lands the text on the same line. No approximation.
+              // SHARED SOURCE with the real th — same headerCellSx (meta) + the same sort composition
+              // (sortableHeaderContent), so face/baseline/line-breaking AND the sort indicator match. The
+              // one alignment subtlety MUI's TableCell handles for the th, mirrored here: a right-aligned
+              // column sets `flex-direction: row-reverse`, which the TableSortLabel inherits — so the arrow
+              // sits on the SAME side (icon-first) as the real header, not after the label.
               sx={{
                 ...headerCellSx,
                 flex: '0 0 auto',
                 width: cloneWidths[railOffset + i] ?? 0,
                 boxSizing: 'border-box',
                 textAlign: c?.align ?? 'left',
+                ...(c?.align === 'right' ? { flexDirection: 'row-reverse' } : {}),
               }}
             >
-              {/* Same sort affordance as the real th (same TableSortLabel, same state from the table), so
-                  the indicator + its reserved space match. Wired for POINTER only — tabIndex -1 under the
-                  clone's aria-hidden, so it never duplicates the real header's sort control in the a11y/tab
-                  tree (keyboard/AT sort from the real header). Non-sortable columns: plain text, no cursor. */}
-              {col.getCanSort() ? (
-                <TableSortLabel
-                  active={Boolean(sortDir)}
-                  direction={sortDir || 'asc'}
-                  onClick={col.getToggleSortingHandler()}
-                  tabIndex={-1}
-                >
-                  {c?.header}
-                </TableSortLabel>
-              ) : (
-                c?.header
-              )}
+              {sortableHeaderContent(col, c?.header, false)}
             </Box>
           );
         })}
@@ -1089,17 +1101,7 @@ export function BeamDataTable<Row>({
                     sx={{ width: c.width }}
                     sortDirection={sortDir || false}
                   >
-                    {col.getCanSort() ? (
-                      <TableSortLabel
-                        active={Boolean(sortDir)}
-                        direction={sortDir || 'asc'}
-                        onClick={col.getToggleSortingHandler()}
-                      >
-                        {c.header}
-                      </TableSortLabel>
-                    ) : (
-                      c.header
-                    )}
+                    {sortableHeaderContent(col, c.header, true)}
                   </TableCell>
                 );
               })}
