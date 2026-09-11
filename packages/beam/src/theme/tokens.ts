@@ -63,6 +63,14 @@ export const CONTENT_TOP = { xs: 2, md: 10 };
 export const CONTENT_BOTTOM = { xs: 2, md: 3 };
 export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
 
+/**
+ * PAGE_SECTION_GAP — the gap between a page's stacked sections (an sx spacing value). SHARED so the
+ * sticky-chrome CEILING can't drift: the page's section `Stack` uses it as `spacing`, the gap-surgery
+ * `:has` rule re-adds it as the sections' `margin-bottom`, and the sticky bucket's ceiling takes it over
+ * as its own `padding-top` (the donated seam) — one source per the CONTENT_BOTTOM lesson.
+ */
+export const PAGE_SECTION_GAP = 3;
+
 export const FIELD_GEOMETRY = {
   height: 44, // the floor (single-line) — the twin datum
   paddingY: 6, // BeamStat top/bottom padding

@@ -12,6 +12,8 @@ import {
   BeamFilterBar,
   BeamDataTable,
   BeamPageHeader,
+  stickyChromeGapSx,
+  PAGE_SECTION_GAP,
 } from '@betty/beam';
 import type { BeamColumn, AddableField, BeamBadgeProps } from '@betty/beam';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
@@ -683,8 +685,10 @@ export function TransactionsPage() {
     { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => r.threeDsStatus },
   ];
 
+  // Section gap from the shared token; the gap-surgery sx is inert until this grid opts into stickyChrome
+  // (then it donates the pre-grid seam to the header ceiling).
   return (
-    <Stack spacing={3}>
+    <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
       <BeamPageHeader title="Transactions" />
 
       {/* Filters — BeamFilterBar's designed apply model (bar v1; UsersPage is the reference): the bar

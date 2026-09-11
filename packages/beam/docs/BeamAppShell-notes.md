@@ -39,3 +39,7 @@ main:has([data-beam-sticky-chrome]) { padding-bottom: 0 }
 - **Scope note:** the contract is page-level — if a page held both a sticky-chrome grid and other content
   below it, the shell would still drop its bottom padding (the sticky grid claims the floor). Acceptable
   for the intended one-primary-grid page; revisit if a real layout stacks them.
+- **Two halves (2026-09-12):** this `main:has(...) { pb: 0 }` is the **FLOOR** half (bottom). The **CEILING**
+  half lives on the page's **section container** (not the shell): `BeamDataTable`'s exported
+  `stickyChromeGapSx` (`:has`-gated on the same attr) collapses the section gap and donates the pre-grid
+  seam to the bucket ceiling — see BeamDataTable-notes. Same declarative `:has` posture, different owner.

@@ -6,7 +6,8 @@ import type { BeamStatus } from '../BeamStatusBadge/BeamStatusBadge.types';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE, PAGE_SECTION_GAP } from '../theme/tokens';
+import { stickyChromeGapSx } from './BeamDataTable';
 
 /** Realistic Sunlight shape: perks management list (Beam candidate page) */
 interface Perk {
@@ -516,8 +517,8 @@ const benchColumns: BeamColumn<BenchRow>[] = [
 export const StickyChromeBench: Story = {
   parameters: { layout: 'fullscreen' },
   render: () => (
-    // Mimics AppShell `main`: the scroll owner, carrying CONTENT_TOP/BOTTOM/INLINE as its padding and honoring the
-    // sticky-chrome contract (gives up its bottom padding to the footer floor via :has).
+    // Mimics AppShell `main`: the scroll owner, carrying CONTENT_TOP/BOTTOM/INLINE as its padding and
+    // honoring the FLOOR half of the contract (gives up its bottom padding to the footer floor via :has).
     <Box
       sx={{
         height: '100vh',
@@ -529,9 +530,12 @@ export const StickyChromeBench: Story = {
         '&:has([data-beam-sticky-chrome])': { pb: 0 },
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2 }}>Sticky-chrome bench — 1,200 rows · page size 500</Typography>
-      <BeamDataTable<BenchRow>
-        columns={benchColumns}
+      {/* The page's section container — the CEILING half: spacing from the shared token + the gap-surgery
+          sx, so the heading→grid seam is donated to the bucket ceiling when the grid is sticky. */}
+      <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
+        <Typography variant="h6">Sticky-chrome bench — 1,200 rows · page size 500</Typography>
+        <BeamDataTable<BenchRow>
+          columns={benchColumns}
         rows={benchRows}
         getRowId={(r) => r.id}
         paginated
@@ -555,8 +559,9 @@ export const StickyChromeBench: Story = {
         rowActions={() => [{ id: 'view', label: 'View', onSelect: () => {} }]}
         renderExpanded={(r) => <Box sx={{ py: 1 }}>Transaction {r.id} — {r.type} {r.amount.toFixed(2)} via {r.provider}</Box>}
         columnManager={{ storageKey: 'bench.sticky', catalog: [] }}
-        aria-label="Sticky-chrome bench"
-      />
+          aria-label="Sticky-chrome bench"
+        />
+      </Stack>
     </Box>
   ),
 };

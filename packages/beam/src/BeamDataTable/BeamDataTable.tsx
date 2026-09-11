@@ -45,7 +45,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_BOTTOM } from '../theme/tokens';
+import { CONTENT_BOTTOM, PAGE_SECTION_GAP } from '../theme/tokens';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
 // under an edge. BOTH edges are the same soft gradient: a 24px band of the theme tint
@@ -53,8 +53,33 @@ import { CONTENT_BOTTOM } from '../theme/tokens';
 const EDGE_TINT = 'var(--beam-edge-shadow)';
 const EDGE_WIDTH = 24; // px band width, shared by both edges so they read as siblings
 
-// Sticky-chrome (opt-in) — the pinned bucket/footer offset from the scrollport edge (the mock's ~20px).
-const STICKY_OFFSET = 20;
+/**
+ * stickyChromeGapSx — the CEILING half of the sticky-chrome contract, applied to a page's section
+ * container (the `Stack` that holds the grid). Mirrors the FLOOR's `main:has(...)` on the shell: when the
+ * container directly holds a `[data-beam-sticky-chrome]` grid, its `gap` collapses to 0 and every section
+ * EXCEPT the one immediately before the grid (whose seam the bucket's ceiling padding takes over) and the
+ * last re-gains the spacing as `margin-bottom` — so at rest the layout is pixel-identical, and pinned the
+ * bucket sits flush at the top with its own ceiling. `:has`-gated → inert until a sticky grid is present,
+ * and it wins on natural specificity (the container's own class + `:has` beats its `spacing` gap, no
+ * `!important`, unlike a global CSS rule). Spread it onto the section Stack alongside `spacing={PAGE_SECTION_GAP}`.
+ */
+export const stickyChromeGapSx = {
+  '&:has(> [data-beam-sticky-chrome])': {
+    gap: 0,
+    '& > *:not(:has(+ [data-beam-sticky-chrome])):not(:last-child)': { mb: PAGE_SECTION_GAP },
+  },
+};
+
+// z-index scale for the grid's layered surfaces — NAMED, not adjacent magic. The rail cells live INSIDE
+// the affordance wrapper's stacking context (its container-type seals them), and the accent/edge live
+// there too; the pinned CHROME (bucket + footer) sits at the Paper level ABOVE that whole context, and is
+// additionally bumped above the rail's own z (defense-in-depth if containment ever fails to seal).
+const Z_ACCENT = 1; // severity accent bar, inside the rail cell
+const Z_RAIL_BODY = 2; // body rail cell
+const Z_EDGE = 2; // right-edge scroll overlay (inside the wrapper)
+const Z_CLONE_RAIL = 2; // clone's static rail overlay, above its animated track
+const Z_RAIL_HEADER = 3; // header rail cell
+const Z_CHROME = 4; // pinned bucket + footer — above the rail (Paper level)
 // The stuck-side occlusion band: the SAME edge-affordance recipe as the rail/right edges (EDGE_TINT +
 // EDGE_WIDTH), rotated to the horizontal — the top bucket casts DOWN, the bottom footer casts UP. Reuses
 // the tokenised tint; if a distinct stuck-elevation recipe ever emerges, promote it to `derived` then.
@@ -480,9 +505,17 @@ export function BeamDataTable<Row>({
     const apply = () => {
       raf = 0;
       const maxScroll = el.scrollWidth - el.clientWidth;
-      wrap.dataset.overflowStart = el.scrollLeft > 0 ? 'true' : 'false';
+      const start = el.scrollLeft > 0 ? 'true' : 'false';
       // 1px slack so sub-pixel widths don't leave a ghost shadow at the true end.
-      wrap.dataset.overflowEnd = el.scrollLeft < maxScroll - 1 ? 'true' : 'false';
+      const end = el.scrollLeft < maxScroll - 1 ? 'true' : 'false';
+      wrap.dataset.overflowStart = start;
+      wrap.dataset.overflowEnd = end;
+      // Propagate the same flags onto the bucket so the CLONE's rail overlay (not a wrapper descendant)
+      // shows its divider/gradient on scroll, exactly as the body rail does.
+      if (bucketRef.current) {
+        bucketRef.current.dataset.overflowStart = start;
+        bucketRef.current.dataset.overflowEnd = end;
+      }
       // Fallback scroll-sync of the header clone (composited translate) — only where the CSS path is absent.
       if (!cssScrollSync && cloneTrackRef.current) cloneTrackRef.current.style.transform = `translateX(${-el.scrollLeft}px)`;
     };
@@ -546,8 +579,9 @@ export function BeamDataTable<Row>({
       io.observe(sentinel);
       return io;
     };
-    const top = observe(topSentinelRef.current, bucketRef.current, 'top', `-${STICKY_OFFSET}px 0px 0px 0px`);
-    const bottom = observe(bottomSentinelRef.current, footerRef.current, 'bottom', `0px 0px -${STICKY_OFFSET}px 0px`);
+    // The chrome pins flush (top: 0 / bottom: 0), so the sentinels trip stuck at the scrollport edges.
+    const top = observe(topSentinelRef.current, bucketRef.current, 'top', '0px 0px 0px 0px');
+    const bottom = observe(bottomSentinelRef.current, footerRef.current, 'bottom', '0px 0px 0px 0px');
     return () => {
       top?.disconnect();
       bottom?.disconnect();
@@ -706,8 +740,10 @@ export function BeamDataTable<Row>({
         }}
       >
         {railEnabled && (
-          // Rail region of the clone — mirrors the pinned rail styling (opaque base + right divider).
-          <Box sx={{ flex: '0 0 auto', width: cloneWidths[0] ?? 0, boxSizing: 'border-box', bgcolor: 'background.paper', borderRight: 1, borderColor: 'divider' }} />
+          // Rail SPACER (transparent): occupies the rail width so each column's track-offset equals the
+          // body's table-offset (both from the same measured widths) — the column x-positions stay
+          // aligned with the body. The VISIBLE rail is the static overlay below (outside the track).
+          <Box sx={{ flex: '0 0 auto', width: cloneWidths[0] ?? 0 }} />
         )}
         {leafColumns.map((col, i) => {
           const c = columnByKey.get(col.id);
@@ -729,6 +765,36 @@ export function BeamDataTable<Row>({
           );
         })}
       </Box>
+      {railEnabled && (
+        // STATIC rail overlay — NOT animated: sits fixed at the clone's left exactly like the body's
+        // sticky rail, columns sliding beneath it (occluded by its opaque paper). Dressing mirrors the
+        // body rail's stuck-left look: a 1px `divider` right edge (::before) + the occlusion gradient
+        // (::after), shown on horizontal scroll via `data-overflow-start` — propagated onto the bucket
+        // by the rAF listener (the clone isn't a wrapper descendant). Width tracks the measured rail.
+        <Box
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: cloneWidths[0] ?? 0,
+            zIndex: Z_CLONE_RAIL,
+            bgcolor: 'background.paper',
+            '&::before': {
+              content: '""', position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px',
+              backgroundColor: 'divider', opacity: 0, transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
+            },
+            '&::after': {
+              content: '""', position: 'absolute', left: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
+              background: `linear-gradient(to right, ${EDGE_TINT}, transparent)`, opacity: 0,
+              transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
+            },
+            '[data-overflow-start="true"] &::before': { opacity: 1 },
+            '[data-overflow-start="true"] &::after': { opacity: 1 },
+          }}
+        />
+      )}
     </Box>
   ) : null;
 
@@ -768,7 +834,11 @@ export function BeamDataTable<Row>({
   // scroll-state paths). The clone appears only while stuck, landing exactly where the real header
   // scrolls under, so the handoff reads seamless.
   const bucketEl = stickyChrome ? (
-    <Box ref={bucketRef} sx={{ position: 'sticky', top: STICKY_OFFSET, zIndex: 2, ...containerTypeScrollState }}>
+    // OUTER = the page CEILING (mirror of the footer floor): pins flush to the scrollport top (top: 0),
+    // painted in the PAGE background, carrying the donated section gap as its own padding-top
+    // (PAGE_SECTION_GAP, the one shared source — the shell gives it up via stickyChromeGapSx). Rows scroll
+    // up under the header and sink into this page surface; released, the header sits where it does today.
+    <Box ref={bucketRef} sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, bgcolor: 'background.default', pt: PAGE_SECTION_GAP, ...containerTypeScrollState }}>
       <Box
         className="beam-bucket-inner"
         // Frame region: top + sides + top-radius — the card's ceiling edge, traveling with the pin. Opaque
@@ -835,7 +905,7 @@ export function BeamDataTable<Row>({
     // released at scroll-end the footer sits where it does today (the spacing merely changed owners).
     <Box
       ref={footerRef}
-      sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.default', pb: CONTENT_BOTTOM, ...containerTypeScrollState }}
+      sx={{ position: 'sticky', bottom: 0, zIndex: Z_CHROME, bgcolor: 'background.default', pb: CONTENT_BOTTOM, ...containerTypeScrollState }}
     >
       {/* INNER = the bordered paper footer — opaque paper (reads as the card footer over the page-bg
           floor). Frame region: sides + bottom + bottom-radius — the card's floor edge, traveling with
@@ -953,7 +1023,7 @@ export function BeamDataTable<Row>({
               {railEnabled && (
                 // Header sits above the body rail cells if stickyHeader is ever
                 // enabled, and above its own row's data cells now.
-                <TableCell sx={{ ...railStickySx, zIndex: 3 }}>
+                <TableCell sx={{ ...railStickySx, zIndex: Z_RAIL_HEADER }}>
                   {selectable && (
                     <Checkbox
                       checked={table.getIsAllRowsSelected()}
@@ -1041,7 +1111,7 @@ export function BeamDataTable<Row>({
                       className="beam-rail"
                       // padding="checkbox"
                       onClick={(e) => e.stopPropagation()}
-                      sx={{ ...railStickySx, zIndex: 2, whiteSpace: 'nowrap' }}
+                      sx={{ ...railStickySx, zIndex: Z_RAIL_BODY, whiteSpace: 'nowrap' }}
                     >
                       {accentHue && (
                         // Severity accent — a thin bar at the row's LEADING edge, status-truth, ALWAYS
@@ -1056,7 +1126,7 @@ export function BeamDataTable<Row>({
                             bottom: 0,
                             width: `${ACCENT_WIDTH}px`,
                             pointerEvents: 'none',
-                            zIndex: 1,
+                            zIndex: Z_ACCENT,
                             bgcolor: `${ACCENT_PALETTE[accentHue]}.main`,
                           }}
                         />
@@ -1162,7 +1232,7 @@ export function BeamDataTable<Row>({
             right: 0,
             width: EDGE_WIDTH,
             pointerEvents: 'none',
-            zIndex: 2,
+            zIndex: Z_EDGE,
             background: `linear-gradient(to left, ${EDGE_TINT}, transparent)`,
           }}
         />

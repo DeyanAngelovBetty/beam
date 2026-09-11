@@ -124,6 +124,35 @@ SHARED SOURCE, so face/baseline/line-breaking match and the measured widths land
 (clone lands where the real header scrolls under — the #1 thing to watch); (2) the paint-flashing pass
 (DevTools) given the Collapse-hover history.
 
+### Header pass (2026-09-12) — ceiling, clone rail, z-index
+
+- **Bucket becomes the page CEILING** (mirror of the footer floor): pins flush at `top: 0`, outer painted
+  `background.default`, carrying the donated section gap as its own `padding-top` (`PAGE_SECTION_GAP`);
+  inner stays the bordered paper bucket. `STICKY_OFFSET` retired — both edges pin flush now.
+- **Gap surgery — the CEILING contract (`stickyChromeGapSx`, exported).** The page's section `Stack` gets
+  `spacing={PAGE_SECTION_GAP}` + `sx={stickyChromeGapSx}`. When it directly holds a
+  `[data-beam-sticky-chrome]` grid, `:has` collapses the `gap` to 0 and every section except the pre-grid
+  one (donated to the ceiling) and the last re-gains it as `margin-bottom` → rest is pixel-identical,
+  pinned the bucket sits flush with its ceiling. **Home = the section container's own sx** (a documented
+  page pattern via the shared const), NOT a global CSS rule: it mirrors the floor's `main:has(...)` and
+  wins on **natural specificity** (the container's own class + `:has` beats its `spacing` gap, no
+  `!important` — a global CssBaseline rule loses to the Stack's emotion class at equal specificity).
+  `PAGE_SECTION_GAP` (tokens.ts) is the one shared value — Stack spacing, the re-added margin, and the
+  bucket ceiling padding all read it. First consumers: the bench + Gaspar transactions (inert until Gaspar
+  opts into `stickyChrome`).
+- **Clone rail — layered (task 3).** `position: sticky` can't hold a rail inside the transform-animated
+  track, so the rail is split: a **transparent spacer** in the track (keeps column x-offsets equal to the
+  body — both from the same measured widths) + a **static overlay** absolutely pinned at the clone's left
+  (opaque paper + the body rail's divider/gradient dressing), columns sliding beneath it. Width = measured
+  `cloneWidths[0]` (re-measures on control-composition changes). Its scroll-conditional dressing reads
+  `data-overflow-start`, **propagated onto the bucket** by the existing rAF listener (the clone isn't a
+  wrapper descendant). The offset is exact by the spacer construction, not tuned.
+- **z-index — named, not adjacent magic.** `Z_ACCENT 1 · Z_RAIL_BODY/Z_EDGE/Z_CLONE_RAIL 2 · Z_RAIL_HEADER
+  3 · Z_CHROME 4`. The rail/accent/edge live inside the wrapper's stacking context (its `container-type`
+  seals them); the pinned chrome sits at the Paper level and is bumped to `Z_CHROME 4` — **above** the
+  rail's own z (defense-in-depth if containment ever fails to seal), verified against the expanded-panel
+  (no z, sealed in the wrapper) and edge-gradient (`Z_EDGE`, in the wrapper) layers.
+
 **Known caveat (recorded):** on a tall grid mid-scroll, the horizontal **drag-scrollbar** (bottom of the
 `TableContainer`) is off-screen below — trackpad/wheel horizontal works throughout, and the clone keeps
 orientation; the scrollbar is reachable (adjacent to the released footer) at the true bottom, no overlap.
