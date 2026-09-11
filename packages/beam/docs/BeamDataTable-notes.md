@@ -20,8 +20,24 @@ Gaspar wiring.
   presentation clone of the header, rendered from the same `leafColumns`. It **owns no width** — a
   `ResizeObserver` + structural effect (columnOrder / visibility / pageSize / row-count) measures the
   REAL header cells and the clone copies those px (the rail-width precedent: measure the layout, never
-  hold a parallel belief). Horizontal scroll is mirrored by `translateX(-scrollLeft)` on the clone track
-  (composited, no reflow). Shown only while stuck. The real thead keeps semantics + sort controls.
+  hold a parallel belief). Shown only while stuck. The real thead keeps semantics + sort controls.
+- **Clone horizontal sync — CSS scroll-driven where supported (amendment 2026-09-12):** a **named
+  scroll-timeline** (`--beam-body-scroll`, inline axis) on the `TableContainer`, `timeline-scope` on the
+  **Paper** (the common ancestor of the scroller and the clone — the clone lives in the bucket, NOT
+  inside the affordance wrapper, so the wrapper can't be the scope host), and the clone track animates
+  `translateX(0 → calc(-100% + 100cqw))` along it (`container-type: inline-size` on the clone outer makes
+  `100cqw` the visible width). The measured-width design makes both endpoints exact: `-100%` = the track's
+  measured column-sum width, `100cqw` = the visible width, so the far end is `-(fullWidth − visibleWidth)`
+  = the scroll range. **Progressive:** gated in `@supports (animation-timeline: scroll())`; JS detects the
+  same via `CSS.supports('animation-timeline','scroll()')` and **skips the clone transform** (an inline
+  transform would freeze the animation). Elsewhere the existing **rAF `translateX(-scrollLeft)` mirror**
+  stands. The rAF listener keeps its other jobs (the overflow attrs) on every engine. A column-width
+  re-measure changes the track width, so `-100%`'s basis and the timeline range **recompute natively** —
+  no JS realignment. *(Verify on the bench: sync fidelity at fast flick + rubber-band extremes; and that
+  the re-measure and the animation don't fight on column show/hide/reorder.)*
+- **Rejected for this:** `scroll-target-group` / `:target-current` — that's **scrollspy** (tracking which
+  target is in view), not position coupling; it can't drive a continuous translate. **Scroll-driven
+  animation** is the right primitive here.
 - **Layering:** the scroll-affordance wrapper already establishes a stacking context (`container-type:
   inline-size`), so every rail/accent/edge/expanded z-index is sealed inside it. The pinned bucket +
   footer sit at the Paper level with `z-index: 2` — above the whole wrapper context, no z-index war.

@@ -444,6 +444,10 @@ export function BeamDataTable<Row>({
     const el = scrollRef.current;
     const wrap = wrapperRef.current;
     if (!el || !wrap) return;
+    // Where CSS scroll-driven animation is supported, the clone binds to a named scroll-timeline and the
+    // JS mirror steps back for it (setting an inline transform here would freeze the animation). The rAF
+    // listener keeps its OTHER jobs — the overflow attrs — everywhere.
+    const cssScrollSync = typeof CSS !== 'undefined' && CSS.supports?.('animation-timeline', 'scroll()');
     let raf = 0;
     const apply = () => {
       raf = 0;
@@ -451,8 +455,8 @@ export function BeamDataTable<Row>({
       wrap.dataset.overflowStart = el.scrollLeft > 0 ? 'true' : 'false';
       // 1px slack so sub-pixel widths don't leave a ghost shadow at the true end.
       wrap.dataset.overflowEnd = el.scrollLeft < maxScroll - 1 ? 'true' : 'false';
-      // Scroll-sync the header clone to the body (no reflow — a composited translate).
-      if (cloneTrackRef.current) cloneTrackRef.current.style.transform = `translateX(${-el.scrollLeft}px)`;
+      // Fallback scroll-sync of the header clone (composited translate) — only where the CSS path is absent.
+      if (!cssScrollSync && cloneTrackRef.current) cloneTrackRef.current.style.transform = `translateX(${-el.scrollLeft}px)`;
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(apply);
@@ -623,8 +627,12 @@ export function BeamDataTable<Row>({
     },
   };
 
-  // Header CLONE — presentation mirror of the real thead: measured widths, scrollLeft-synced (translate
-  // on the track), shown only while stuck. aria-hidden (the real thead keeps semantics + sort controls).
+  // Header CLONE — presentation mirror of the real thead: measured widths, shown only while stuck.
+  // aria-hidden (the real thead keeps semantics + sort controls). Horizontal scroll-sync: a CSS
+  // scroll-driven animation binds the track to the body's named scroll-timeline where supported (below);
+  // the rAF mirror is the fallback. `container-type: inline-size` on the outer makes `100cqw` the visible
+  // width — the far endpoint `translateX(calc(-100% + 100cqw))` = -(fullWidth - visibleWidth), exact
+  // because the track's width is the measured column sum.
   const railOffset = railEnabled ? 1 : 0;
   const cloneEl = stickyChrome ? (
     <Box
@@ -635,12 +643,37 @@ export function BeamDataTable<Row>({
         '[data-stuck="top"] &': { display: 'block' },
         '@container scroll-state(stuck: top)': { display: 'block' },
         overflow: 'hidden',
+        containerType: 'inline-size',
         bgcolor: 'background.paper',
         borderBottom: 1,
         borderColor: 'divider',
       }}
     >
-      <Box ref={cloneTrackRef} sx={{ display: 'flex', width: 'max-content', willChange: 'transform' }}>
+      <Box
+        ref={cloneTrackRef}
+        sx={{
+          display: 'flex',
+          width: 'max-content',
+          willChange: 'transform',
+          '@keyframes beam-clone-scroll-sync': {
+            from: { transform: 'translateX(0)' },
+            to: { transform: 'translateX(calc(-100% + 100cqw))' },
+          },
+          // Scroll-driven sync where supported — progress along the body's scroll-timeline maps linearly
+          // to the translate. Longhands (not the `animation` shorthand, which would reset animation-
+          // timeline). Re-measuring column widths changes the track width, so `-100%`'s basis and the
+          // timeline range recompute natively — no JS needed to keep it aligned on column changes.
+          '@supports (animation-timeline: scroll())': {
+            ...({
+              'animation-name': 'beam-clone-scroll-sync',
+              'animation-timing-function': 'linear',
+              'animation-duration': 'auto',
+              'animation-fill-mode': 'both',
+              'animation-timeline': '--beam-body-scroll',
+            } as object),
+          },
+        }}
+      >
         {railEnabled && (
           // Rail region of the clone — mirrors the pinned rail styling (opaque base + right divider).
           <Box sx={{ flex: '0 0 auto', width: cloneWidths[0] ?? 0, boxSizing: 'border-box', bgcolor: 'background.paper', borderRight: 1, borderColor: 'divider' }} />
@@ -766,7 +799,16 @@ export function BeamDataTable<Row>({
 
   return (
     <>
-      <Paper variant="outlined" sx={{ overflow: stickyChrome ? 'clip' : 'hidden' }}>
+      <Paper
+        variant="outlined"
+        sx={{
+          overflow: stickyChrome ? 'clip' : 'hidden',
+          // timeline-scope: expose the body's named scroll-timeline (defined on the TableContainer) to
+          // the sibling header clone. The Paper is the common ancestor of both — the clone lives in the
+          // bucket, NOT inside the affordance wrapper — so the scope host is the Paper, not the wrapper.
+          ...(stickyChrome ? ({ 'timeline-scope': '--beam-body-scroll' } as object) : {}),
+        }}
+      >
         {stickyChrome && <Box ref={topSentinelRef} aria-hidden sx={{ height: 0 }} />}
         {bucketEl}
 
@@ -810,7 +852,15 @@ export function BeamDataTable<Row>({
       >
         {/* The scroll container also queries its own scroll state (enhancement).
             The cast: 'scroll-state' is newer than csstype's container-type union. */}
-        <TableContainer ref={scrollRef} sx={{ containerType: 'scroll-state' as 'normal' }}>
+        <TableContainer
+          ref={scrollRef}
+          sx={{
+            containerType: 'scroll-state' as 'normal',
+            // Define the body's inline-axis scroll-timeline; the header clone animates along it (see the
+            // clone track). Scoped to the Paper (timeline-scope) so the sibling clone can bind by name.
+            ...(stickyChrome ? ({ 'scroll-timeline-name': '--beam-body-scroll', 'scroll-timeline-axis': 'inline' } as object) : {}),
+          }}
+        >
           <Table size="small" aria-label={ariaLabel}>
           <TableHead>
             <TableRow ref={theadRowRef}>
