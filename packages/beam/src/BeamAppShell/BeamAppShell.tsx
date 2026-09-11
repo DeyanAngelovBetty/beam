@@ -507,10 +507,12 @@ export function BeamAppShell({
         px: contentGutter,
         pb: CONTENT_BOTTOM,
         pt: CONTENT_TOP,
-        // STICKY-CHROME CONTRACT: a grid with `stickyChrome` publishes `data-beam-sticky-chrome`; it
-        // takes over the page's BOTTOM spacing as its footer floor, so main gives up its bottom padding
-        // (bottom only — top/side rhythm untouched). `:has()` is Baseline; no fallback needed.
-        '&:has([data-beam-sticky-chrome])': { pb: 0 },
+        // STICKY-CHROME CONTRACT: a grid with `stickyChrome` publishes `data-beam-sticky-chrome`; it takes
+        // over the page's TOP + BOTTOM spacing (footer floor, header ceiling), so main gives up BOTH its
+        // top and bottom padding (side rhythm untouched). Padding on the SCROLL OWNER is fixed under a
+        // sticky element (an 80px top shelf) — donating it to the page Stack (which scrolls) lets the
+        // bucket pin flush at the true viewport top. `:has()` is Baseline; no fallback needed.
+        '&:has([data-beam-sticky-chrome])': { pt: 0, pb: 0 },
         // Page mesh moved to a fixed body::before layer (createBeamTheme MuiCssBaseline) — off
         // this tall scrolling element so it doesn't repaint on scroll, behind opaque surfaces.
       }}

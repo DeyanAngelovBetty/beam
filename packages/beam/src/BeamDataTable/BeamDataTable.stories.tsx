@@ -527,7 +527,9 @@ export const StickyChromeBench: Story = {
         pt: CONTENT_TOP,
         pb: CONTENT_BOTTOM,
         bgcolor: 'background.default',
-        '&:has([data-beam-sticky-chrome])': { pb: 0 },
+        // Mirror the shell contract: donate BOTH top + bottom padding to the sticky grid's ceiling/floor
+        // (the Stack re-adopts the top via stickyChromeGapSx).
+        '&:has([data-beam-sticky-chrome])': { pt: 0, pb: 0 },
       }}
     >
       {/* The page's section container — the CEILING half: spacing from the shared token + the gap-surgery

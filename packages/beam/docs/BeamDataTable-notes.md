@@ -140,6 +140,12 @@ SHARED SOURCE, so face/baseline/line-breaking match and the measured widths land
   `PAGE_SECTION_GAP` (tokens.ts) is the one shared value — Stack spacing, the re-added margin, and the
   bucket ceiling padding all read it. First consumers: the bench + Gaspar transactions (inert until Gaspar
   opts into `stickyChrome`).
+- **Top-padding delegation (2026-09-12).** The shell's `main:has(...)` now zeroes its **top** padding too
+  (was bottom only), and `stickyChromeGapSx` **re-adopts `CONTENT_TOP` as the Stack's `padding-top`**.
+  Padding on the SCROLL OWNER is fixed under a sticky element (an ~80px shelf); moved onto the Stack it
+  *scrolls with the content*, so the bucket pins flush at the true viewport top. At rest the top space is
+  identical (incl. the nav dock/undock shift) — it just changed owners. (`CONTENT_TOP` = the same shared
+  token the shell reads; the bucket's own ceiling padding stays `PAGE_SECTION_GAP` — a distinct gap.)
 - **Clone rail — layered (task 3).** `position: sticky` can't hold a rail inside the transform-animated
   track, so the rail is split: a **transparent spacer** in the track (keeps column x-offsets equal to the
   body — both from the same measured widths) + a **static overlay** absolutely pinned at the clone's left

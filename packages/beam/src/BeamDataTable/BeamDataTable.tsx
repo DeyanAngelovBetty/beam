@@ -45,7 +45,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_BOTTOM, PAGE_SECTION_GAP } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP } from '../theme/tokens';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
 // under an edge. BOTH edges are the same soft gradient: a 24px band of the theme tint
@@ -65,6 +65,10 @@ const EDGE_WIDTH = 24; // px band width, shared by both edges so they read as si
  */
 export const stickyChromeGapSx = {
   '&:has(> [data-beam-sticky-chrome])': {
+    // Adopt the TOP padding the shell donated (CONTENT_TOP — one shared source, like the floor's
+    // CONTENT_BOTTOM). Owned by the Stack it now SCROLLS with the content, so the bucket pins flush at
+    // the true viewport top; at rest the space is identical (incl. the nav dock/undock shift).
+    pt: CONTENT_TOP,
     gap: 0,
     '& > *:not(:has(+ [data-beam-sticky-chrome])):not(:last-child)': { mb: PAGE_SECTION_GAP },
   },
