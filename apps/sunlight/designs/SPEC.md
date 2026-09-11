@@ -57,22 +57,19 @@ Intent deltas the grammar and the frames don't fully carry. Governs `TokenCampai
   nature); the band uses `alignItems: stretch` so the three columns track the tallest either way. No
   residual per-row jump observed against the Edit frame; no min-height corrections were needed.
 
-## Edit — Wall Stages "+ ADD WALL STAGE" (2026-09-11)
+## Wall Stages "+ ADD WALL STAGE" (2026-09-11, reconciled)
 
-- **Smallest faithful behavior.** In edit mode the Wall Stages section gains **"+ ADD WALL STAGE"**
-  (per the Edit frame). It appends a **draft-only** stage row (`"Wall Stage {n}"`) to a page-local
-  `addedStages` list; it appears immediately, is **non-navigable** (no page until saved; submit is a
-  stub that discards), and is dropped on Cancel/Submit. Real stage authoring (fields, renaming) is the
-  Wall Stage **route-level create session** (sessions never nest) — out of this pass's fence.
-- **Organism limitation → page-local edit composition.** `BeamChildList` has only a `title` (no
-  header-action slot) and links every identity row. To host the add action *and* render unsaved rows
-  non-navigable without an organism change, the Wall Stages section is **composed page-locally in edit
-  mode** (BeamPaper + a light table matching the child-list markup); **view mode keeps `BeamChildList`**.
-- **PROMOTION CANDIDATE (logged, not built):** a `BeamChildList` `headerAction`/`action` slot (+ an
-  optional non-link row) would let both modes share the organism and delete the page-local table. **This
-  page is its motivating consumer.**
-- **Stage rows now show full ET datetime** for Start / Final Open (was date-only) — faithful-port to
-  the Edit frame (frame wins on formatting). Identity header is **"Name"** (frame), was "Stage".
+- **Behavior: NAVIGATES** to the Wall Stage create route (`…/stages/new`), from **view and edit alike**.
+  *(Superseded the 2026-09-10 draft-row append — with a real create route, one add path, no competing
+  mechanisms. `addedStages` / `makeDraftStage` / the unsaved-row rendering retired.)* Drilling from edit
+  leaves (discards) the campaign draft per the no-confirm cancel semantics — the sanctioned drill,
+  distinct from View-Winners (a blocked peek).
+- **Page-local composition (both modes).** `BeamChildList` has only a `title` (no header-action slot), so
+  the section is composed page-locally (BeamPaper + a light table) to host the button; every row is a real
+  drill link. **PROMOTION CANDIDATE (logged, not built):** a `BeamChildList` `headerAction` slot would
+  reclaim this section for the organism — this page its motivating consumer.
+- **Stage rows show full ET datetime** for Start / Final Open (was date-only) — faithful-port to the Edit
+  frame (frame wins on formatting). Identity header is **"Name"** (frame), was "Stage".
 
 ## Create route — `TokenCampaign-Add.png` (2026-09-11)
 

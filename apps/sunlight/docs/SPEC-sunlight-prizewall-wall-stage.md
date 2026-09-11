@@ -121,12 +121,39 @@ as view reps (BeamStat, mirroring the page's own view-twins), title "Reward Item
 inspectable without entering an edit session. Cards carry a proper button affordance in both modes
 (pointer, focus ring, Enter/Space opens) — View was previously inert.
 
+*Scope extension (2026-09-11): **the same surface gains an ADD flavor** — three flavors total (view /
+edit / add).* The reward grid is a **fixed 12-slot grid** (frame + mock: 12/stage); a filled slot is a
+card, an empty slot is a **"+ ADD" tile in a session** and an **inert placeholder in view** (no add
+outside a session — the leaf inherits the parent's mode, creation included). Clicking "+ ADD" opens the
+dialog with **empty fields, title "Add Reward Item", CTA "Add"** → appends to the stage draft, tile
+becomes a card; Cancel discards. No 13th slot (hard cap — Deyan).
+
 ### Ambiguities resolved by asking (not invented)
 - **Reward card caption** (frame `×5` / `100 × $100`): confirmed **badge = `×{quantity}`, caption =
   `{coins} × ${cashValue}`** (design intent, not a guess). Mock seeds quantity 5, coins 100, cash 100.
 - **Opening-window duration:** `durationMin` **derived** (end − open) in View; an editable field in Edit;
   **no recompute coupling** this pass. Real duration semantics stay on the Radi/Tzeno flag.
 - **`RewardItem` additions:** `type` / `cashValue` / `quantity` added; `coins` / `quality` retained.
+
+### Create route + reconciliation (2026-09-11)
+
+- **`…/stages/new`** (`WallStagePage`, `create` prop) — a create route = an edit session with no view
+  (drill-down-grammar; Wall Stage is its **second consumer**). Empty stage draft: one empty opening
+  window + the existing "+ New opening window"; **3 empty Quick + 3 empty Info** rule rows (mock counts);
+  the 2 fixed Image rows; a 12-slot reward grid of "+ ADD" tiles. Title **"Create Wall Stage"**, breadcrumb
+  `← {campaign}`. Header **[Cancel · Submit]**, no Delete (nothing to delete). Submit is the same stub
+  (stays on page). The frame's "Wall Stage 1" title + Delete/Edit chrome is View/Edit residue — not copied.
+- **Reconciliation — "+ ADD WALL STAGE" now NAVIGATES.** With a real create route, the campaign Edit's
+  draft-row append (2026-09-10) **retires** — one add path, no competing mechanisms. The button navigates
+  to `…/stages/new` from **view and edit alike**; drilling from edit leaves (discards) the campaign draft
+  per the no-confirm cancel semantics — the sanctioned drill (distinct from View-Winners, a blocked peek).
+  The campaign Wall Stages section is now one page-local table (both modes), rows are real drill links.
+- **Rule names editable in-session.** The Add frame shows editable rule NAME fields; `RulesTable` names
+  become an editable field whenever in a session (create + **existing-stage edit** — a consistency change
+  flowing from the frame). No add/remove of rule rows (frame has none — fixed 3, the mock count).
+- **Frame divergences (recorded, not applied):** editable image NAME in the frame — Header/Background are
+  **fixed structural slots**, kept fixed-name with empty URLs. Empty **numeric** fields render `0`, not
+  blank (a blank-vs-0 empty-number treatment is the shared deferred item across the create screens).
 
 ### Later flags (parked improvement temptations — PrizeWall done, not improved)
 - **Shared page-local components duplicated** — `MediaCell` / `CopyUrlButton`(now inline) / `Thumb` /

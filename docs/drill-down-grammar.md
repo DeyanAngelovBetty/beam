@@ -59,8 +59,10 @@ onward.** A `/new` route (e.g. `token-campaigns/new`) lands *directly in edit* �
 view yet, so there is no view mode and no Edit door. Cancel returns to the **list** (no parent view to
 fall back to); Submit is the same change-request stub as edit. A child route level a create page would
 contain is **locked** until the parent exists — you cannot open a child session before the parent has
-been created (sessions never nest). First consumer: the Token Campaign create page (`TokenCampaignDetailPage`,
-`create` prop), whose Wall Stages section renders the locked message in place of the child list.
+been created (sessions never nest). Consumers: the Token Campaign create page (`TokenCampaignDetailPage`,
+`create` prop), whose Wall Stages section renders the locked message in place of the child list; and —
+**now generalized to a second consumer** — the Wall Stage create page (`WallStagePage`, `create` prop) at
+`…/stages/new`, reached from the campaign's "+ ADD WALL STAGE" (which navigates, one level down).
 
 ## Open question — recorded, not resolved
 

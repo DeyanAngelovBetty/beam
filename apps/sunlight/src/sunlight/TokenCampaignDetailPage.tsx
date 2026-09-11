@@ -21,7 +21,6 @@ import {
   BeamField,
   BeamSwitchField,
   BeamPaper,
-  BeamChildList,
   fieldGeometrySx,
   meta,
 } from '@betty/beam';
@@ -125,33 +124,8 @@ const makeEmptyDraft = (): Draft => ({
   sounds: SOUND_SLOTS.map((slot) => ({ slot, url: '' })),
 });
 
-// A minimal draft-only wall stage appended by "+ ADD WALL STAGE". Named "Wall Stage {n}" (frame
-// naming); NON-navigable until the campaign is saved (it has no page yet, and submit is a stub that
-// discards). Full stage authoring is the Wall Stage route-level create session — out of this fence.
-const makeDraftStage = (campaignId: string, n: number, startDate: string, endDate: string): WallStage => ({
-  id: `${campaignId}-draft-s${n}`,
-  name: `Wall Stage ${n}`,
-  order: n,
-  enabled: true,
-  startDate,
-  finalOpenDate: endDate,
-  openingWindows: [],
-  headerImageDesktop: '',
-  headerImageMobile: '',
-  backgroundImageDesktop: '',
-  backgroundImageMobile: '',
-  winProbabilityPct: 0,
-  lossProbabilityPct: 0,
-  costOfPlay: 0,
-  rewardItems: [],
-  quickRules: [],
-  infoPageTitle: '',
-  infoRules: [],
-});
-
-// Wall-stage vital-sign columns — shared by the view BeamChildList and the edit page-local table.
-// START / FINAL OPEN are full ET datetime per the Edit frame (faithful-port pass; frame wins on
-// formatting). Header for the identity column is "Name" (frame), set where these are consumed.
+// Wall-stage vital-sign columns for the Wall Stages section table. START / FINAL OPEN are full ET
+// datetime per the Edit frame (faithful-port; frame wins on formatting). Identity header is "Name".
 const stageColumns = [
   { key: 'enabled', header: 'Enabled', align: 'center' as const, width: 100, render: (s: WallStage) => <BeamBool value={s.enabled} /> },
   { key: 'windows', header: 'Additional Windows', align: 'right' as const, width: 160, render: (s: WallStage) => s.openingWindows.length },
@@ -170,9 +144,6 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
   const [draft, setDraft] = useState<Draft | null>(() =>
     create ? makeEmptyDraft() : navState?.edit && campaign ? makeDraft(campaign) : null,
   );
-  // Draft-only wall stages appended in edit mode (page-local; not part of the CR-payload Draft, and
-  // discarded on cancel/submit like everything else). Empty in view + create.
-  const [addedStages, setAddedStages] = useState<WallStage[]>([]);
   const [notice, setNotice] = useState<Notice>(null);
   const [copied, setCopied] = useState(false);
   const copyUrl = (url: string) => {
@@ -184,14 +155,12 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
     if (!campaign) return;
     setNotice(null);
     setDraft(makeDraft(campaign));
-    setAddedStages([]);
     setMode('edit');
   };
   const cancelEdit = () => {
     // No-confirm discard (matches the Loyalty Levels ruling; the discard-guard question is a shared
     // open item — see SPEC.md / doctrine). In create there is no view to return to → back to the list.
     setDraft(create ? makeEmptyDraft() : null);
-    setAddedStages([]);
     if (create) navigate(BASE);
     else setMode('view');
   };
@@ -200,7 +169,6 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
     // identical: NO in-memory push (CR-inversion fidelity over demo continuity) — the notice IS the
     // honest demo of the model. We stay on-page and surface the notice (same as edit); create keeps its
     // draft so the notice survives (a navigate here would unmount it), and the user leaves via Cancel.
-    setAddedStages([]);
     if (!create) {
       setDraft(null);
       setMode('view');
@@ -208,12 +176,6 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
     setNotice({ severity: 'info', msg: 'Submit for Approval — stub. No pipeline yet; nothing was applied. (Future: creates a campaign change request in Pending Approvals.)' });
   };
   const patch = (p: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...p } : d));
-  const addStage = () => {
-    if (!campaign) return;
-    const start = draft?.startDate || campaign.startDate;
-    const end = draft?.endDate || campaign.endDate;
-    setAddedStages((prev) => [...prev, makeDraftStage(campaign.id, campaign.wallStages.length + prev.length + 1, start, end)]);
-  };
 
   if (!campaign && !create) {
     return (
@@ -383,76 +345,61 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
         </Box>
       </Stack>
 
-      {/* Wall stages — three renderings:
+      {/* Wall stages —
           • CREATE → LOCKED. You can't author a child before the parent exists (sessions never nest).
-          • EDIT (non-create) → page-local composition hosting "+ ADD WALL STAGE". BeamChildList has no
-            header-action slot (logged promotion candidate, this its motivating consumer), so the edit
-            case is composed here; persisted stages keep their drill link, unsaved draft rows render
-            NON-navigable (no page until saved; submit is a stub that discards).
-          • VIEW → the BeamChildList summary (unchanged; borderless — no field ever). */}
+          • VIEW / EDIT → one page-local composition. "+ ADD WALL STAGE" NAVIGATES to the stage create
+            route (…/stages/new) — from view and edit alike; drilling from edit leaves (discards) the
+            campaign draft per the no-confirm cancel semantics (the sanctioned drill, distinct from
+            View-Winners which is a blocked peek). Every stage row is a real drill link. (The retired
+            draft-row append: with a real create route, one add path — RECONCILED 2026-09-11.)
+          BeamChildList has no header-action slot to host the button, so this is composed page-locally;
+          reclaimed when the organism gains that slot — the logged promotion candidate. */}
       {create ? (
         <BeamPaper title="Wall Stages">
           <Typography variant="body2" color="text.secondary">
             You must create your token campaign first in order to unlock wall configurations.
           </Typography>
         </BeamPaper>
-      ) : isEdit ? (
+      ) : (
         <BeamPaper title="Wall Stages" bleed>
           <Box sx={{ px: 2, pb: 0.5 }}>
-            <Button variant="text" size="small" startIcon={<AddIcon />} onClick={addStage}>Add wall stage</Button>
+            <Button variant="text" size="small" startIcon={<AddIcon />} onClick={() => navigate(`${BASE}/${cc.id}/stages/new`)}>
+              Add wall stage
+            </Button>
           </Box>
-          <Table size="small" aria-label="Wall stages">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ ...meta }}>Name</TableCell>
-                {stageColumns.map((c) => (
-                  <TableCell key={c.key} align={c.align} sx={{ ...meta, width: c.width }}>{c.header}</TableCell>
-                ))}
-                <TableCell aria-hidden sx={{ width: 40 }} />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {[
-                ...cc.wallStages.map((s) => ({ stage: s, unsaved: false })),
-                ...addedStages.map((s) => ({ stage: s, unsaved: true })),
-              ].map(({ stage: s, unsaved }) => (
-                <TableRow key={s.id} hover>
-                  <TableCell component="th" scope="row">
-                    {unsaved ? (
-                      <Stack>
-                        <Typography variant="body2">{stageLabel(s)}</Typography>
-                        <Typography variant="caption" color="text.secondary">unsaved — saved stages are navigable</Typography>
-                      </Stack>
-                    ) : (
+          {cc.wallStages.length === 0 ? (
+            <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No stages.</Typography></Box>
+          ) : (
+            <Table size="small" aria-label="Wall stages">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ ...meta }}>Name</TableCell>
+                  {stageColumns.map((c) => (
+                    <TableCell key={c.key} align={c.align} sx={{ ...meta, width: c.width }}>{c.header}</TableCell>
+                  ))}
+                  <TableCell aria-hidden sx={{ width: 40 }} />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {cc.wallStages.map((s) => (
+                  <TableRow key={s.id} hover>
+                    <TableCell component="th" scope="row">
                       <RouterIdentityLink href={`${import.meta.env.BASE_URL}${BASE.replace(/^\//, '')}/${cc.id}/stages/${s.id}`}>
                         {stageLabel(s)}
                       </RouterIdentityLink>
-                    )}
-                  </TableCell>
-                  {stageColumns.map((c) => (
-                    <TableCell key={c.key} align={c.align}>{c.render(s)}</TableCell>
-                  ))}
-                  <TableCell align="right" sx={{ color: 'text.secondary' }}>
-                    {!unsaved && <ChevronRightIcon fontSize="small" aria-hidden sx={{ display: 'block' }} />}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    {stageColumns.map((c) => (
+                      <TableCell key={c.key} align={c.align}>{c.render(s)}</TableCell>
+                    ))}
+                    <TableCell align="right" sx={{ color: 'text.secondary' }}>
+                      <ChevronRightIcon fontSize="small" aria-hidden sx={{ display: 'block' }} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </BeamPaper>
-      ) : (
-        <BeamChildList<WallStage>
-          aria-label="Wall stages"
-          title="Wall stages"
-          rows={cc.wallStages}
-          getRowId={(s) => s.id}
-          identityHeader="Name"
-          getIdentityLabel={(s) => stageLabel(s)}
-          getHref={(s) => `${import.meta.env.BASE_URL}${BASE.replace(/^\//, '')}/${cc.id}/stages/${s.id}`}
-          LinkComponent={RouterIdentityLink}
-          emptyMessage="No stages."
-          columns={stageColumns}
-        />
       )}
 
       <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)} message="URL copied to clipboard" />

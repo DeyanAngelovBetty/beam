@@ -128,6 +128,7 @@ const router = createBrowserRouter(
         { path: 'prize-wall/token-campaigns', element: <TokenCampaignsPage /> },
         { path: 'prize-wall/token-campaigns/new', element: <TokenCampaignDetailPage create /> },
         { path: 'prize-wall/token-campaigns/:id', element: <TokenCampaignDetailPage /> },
+        { path: 'prize-wall/token-campaigns/:id/stages/new', element: <WallStagePage create /> },
         { path: 'prize-wall/token-campaigns/:id/stages/:sid', element: <WallStagePage /> },
         { path: 'prize-wall/token-campaigns/:id/winners', element: <CampaignWinnersPage /> },
         { path: 'users', element: <UsersPage /> },

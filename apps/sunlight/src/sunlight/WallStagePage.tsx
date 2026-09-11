@@ -48,20 +48,28 @@ import {
 } from './tokenCampaigns';
 
 /**
- * WallStagePage — /prize-wall/token-campaigns/:id/stages/:sid. The final drill level of PrizeWall
- * (Token Campaigns → Campaign → Wall Stage → Reward Item dialog). VIEW ↔ EDIT, inheriting the Campaign
- * detail edit pattern one level down (mode/draft, Cancel discards, Submit for Approval is the same STUB
- * — no CR wiring this pass). Composition + fields are a FAITHFUL PORT of the Figma frames
- * (designs/WallStage-{View,Edit}.png, RewardItem-Edit.png). See SPEC-sunlight-prizewall-wall-stage.md.
+ * WallStagePage — /prize-wall/token-campaigns/:id/stages/:sid (view↔edit) AND …/stages/new (create,
+ * `create` prop). The final drill level of PrizeWall (Token Campaigns → Campaign → Wall Stage → Reward
+ * Item dialog). Inherits the Campaign detail edit pattern one level down (mode/draft, Cancel discards,
+ * Submit is the same STUB — no CR wiring). Composition + fields are a FAITHFUL PORT of the Figma frames
+ * (designs/WallStage-{View,Edit,Add}.png, RewardItem-{Edit,Add}.png). See
+ * SPEC-sunlight-prizewall-wall-stage.md.
  *
- * INTENT DELTA (handoff convention): the WallStage-Edit frame's header still shows DELETE/EDIT — that's
+ * CREATE (`create`): a create route is an EDIT SESSION WITH NO VIEW (drill-down-grammar; Wall Stage is
+ * its second consumer). Lands straight in edit with an empty stage draft — one empty opening window, 3
+ * empty Quick / Info rule rows, the 2 fixed Image rows, and a 12-slot reward grid of "+ ADD" tiles.
+ * Cancel → back to the campaign; Submit → the same stub (stays on page); Delete absent.
+ *
+ * INTENT DELTA (handoff convention): the WallStage frames' headers still show DELETE/EDIT — that's
  * un-redrawn view chrome; per the spec we inherit the campaign edit-session semantics, so the header
- * swaps to [Cancel · Submit for Approval] in edit. Deliberate divergence, recorded.
+ * swaps to [Cancel · Submit for Approval] in edit and [Cancel · Submit] in create. Recorded.
  */
 
 const BASE = '/prize-wall/token-campaigns';
 const MEDIA = 34; // fixed media-in-cell container (px), object-fit contain — established ruling
 const REWARD_TIERS: RewardTier[] = ['none', 'low', 'medium', 'high'];
+const REWARD_SLOTS = 12; // fixed reward grid (WallStage-Add frame + mock: 12/stage). Filled = card,
+//                          empty = "+ ADD" (in-session) / inert (view). No 13th — hard cap (Deyan).
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const fmtDateTimeET = (iso: string) => {
@@ -86,21 +94,68 @@ const makeDraft = (s: WallStage): Draft => ({
   rewardItems: s.rewardItems.map((r) => ({ ...r })),
 });
 
+// Create draft — empty stage. One empty opening window + 3 empty Quick / 3 empty Info rows per the
+// Add frame (mock counts). Numeric fields seed 0 (a blank-vs-0 empty-number treatment is deferred —
+// the same open item across the create screens). Image rows are the 2 fixed structural slots.
+const emptyRule = (id: string) => ({ id, name: '', desktopUrl: '', mobileUrl: '' });
+const makeEmptyStage = (campaignId: string, order: number): Draft => {
+  const draftId = `${campaignId}-draft-s${order}`;
+  return {
+    id: draftId,
+    name: '',
+    order,
+    enabled: false,
+    startDate: '',
+    finalOpenDate: '',
+    openingWindows: [{ id: `${draftId}-w1`, openDate: '', endDate: '', durationMin: 0 }],
+    headerImageDesktop: '',
+    headerImageMobile: '',
+    backgroundImageDesktop: '',
+    backgroundImageMobile: '',
+    winProbabilityPct: 0,
+    lossProbabilityPct: 0,
+    costOfPlay: 0,
+    rewardItems: [],
+    quickRules: [emptyRule(`${draftId}-qr1`), emptyRule(`${draftId}-qr2`), emptyRule(`${draftId}-qr3`)],
+    infoPageTitle: '',
+    infoRules: [emptyRule(`${draftId}-ir1`), emptyRule(`${draftId}-ir2`), emptyRule(`${draftId}-ir3`)],
+  };
+};
+
+// A blank reward for the dialog's ADD flavor. Appended to the stage draft on "Add".
+const makeEmptyReward = (stageId: string, order: number): RewardItem => ({
+  id: `${stageId}-r-new-${Date.now()}`,
+  name: '',
+  description: '',
+  type: REWARD_TYPES[0],
+  cashValue: 0,
+  quantity: 0,
+  coins: 0,
+  tier: 'none',
+  imgUrl: '',
+  quality: '',
+  rewardAmount: 0,
+  order,
+});
+
 type Notice = { severity: 'success' | 'info' | 'warning' | 'error'; msg: string } | null;
 
-export function WallStagePage() {
+export function WallStagePage({ create = false }: { create?: boolean } = {}) {
   const { id = '', sid = '' } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const campaign = getTokenCampaign(id);
-  const stage = getWallStage(id, sid);
+  const stage = create ? undefined : getWallStage(id, sid);
   const navState = location.state as { edit?: boolean } | null;
 
-  const [mode, setMode] = useState<'view' | 'edit'>(navState?.edit && stage ? 'edit' : 'view');
-  const [draft, setDraft] = useState<Draft | null>(() => (navState?.edit && stage ? makeDraft(stage) : null));
+  const [mode, setMode] = useState<'view' | 'edit'>(create || (navState?.edit && stage) ? 'edit' : 'view');
+  const [draft, setDraft] = useState<Draft | null>(() =>
+    create ? makeEmptyStage(id, (campaign?.wallStages.length ?? 0) + 1) : navState?.edit && stage ? makeDraft(stage) : null,
+  );
   const [notice, setNotice] = useState<Notice>(null);
   const [snack, setSnack] = useState<string | null>(null);
   const [rewardDraft, setRewardDraft] = useState<RewardItem | null>(null); // Reward Item dialog
+  const [rewardIsNew, setRewardIsNew] = useState(false); // ADD flavor vs edit an existing card
 
   const copyUrl = (url: string) => {
     void navigator.clipboard?.writeText(url);
@@ -113,18 +168,26 @@ export function WallStagePage() {
     setMode('edit');
   };
   const cancelEdit = () => {
+    // In create there is no view to return to → back to the campaign (leave the session).
+    if (create) {
+      navigate(`${BASE}/${id}`);
+      return;
+    }
     setDraft(null);
     setMode('view');
   };
   const submitForApproval = () => {
-    // STUB — same as Campaign detail: applies nothing, discards (save-model inversion).
-    setDraft(null);
-    setMode('view');
+    // STUB — same as Campaign detail: applies nothing (save-model inversion). Create is identical
+    // (no in-memory push); stays on-page so the notice survives (a navigate would unmount it).
+    if (!create) {
+      setDraft(null);
+      setMode('view');
+    }
     setNotice({ severity: 'info', msg: 'Submit for Approval — stub. No pipeline yet; nothing was applied. (Future: creates a change request in Pending Approvals.)' });
   };
   const patch = (p: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...p } : d));
 
-  if (!campaign || !stage) {
+  if (!campaign || (!stage && !create)) {
     return (
       <Stack spacing={3}>
         <BeamPageHeader title={`Stage ${sid}`} back={backTo(navigate, `${BASE}/${id}`, campaign?.name ?? 'Campaign')} />
@@ -133,27 +196,35 @@ export function WallStagePage() {
     );
   }
 
-  const isEdit = mode === 'edit' && draft !== null;
+  const isEdit = create || (mode === 'edit' && draft !== null);
   const d = draft;
-  const s = isEdit && d ? d : stage;
+  // stage is defined whenever !create (guard above); create never reaches a `st`/view branch.
+  const st = stage as WallStage;
+  const s: WallStage = isEdit && d ? d : st;
 
   // Reward dialog ------------------------------------------------------------------------------------
-  const openReward = (item: RewardItem) => setRewardDraft({ ...item });
+  const openReward = (item: RewardItem) => { setRewardIsNew(false); setRewardDraft({ ...item }); };
+  const openAddReward = () => { setRewardIsNew(true); setRewardDraft(makeEmptyReward(s.id, (d?.rewardItems.length ?? 0) + 1)); };
+  const closeReward = () => { setRewardDraft(null); setRewardIsNew(false); };
   const saveReward = () => {
     if (!rewardDraft || !d) return;
-    patch({ rewardItems: d.rewardItems.map((r) => (r.id === rewardDraft.id ? rewardDraft : r)) });
-    setRewardDraft(null);
+    // ADD → append the new item to the stage draft; EDIT → replace by id. (Tile → card either way.)
+    patch({ rewardItems: rewardIsNew ? [...d.rewardItems, rewardDraft] : d.rewardItems.map((r) => (r.id === rewardDraft.id ? rewardDraft : r)) });
+    closeReward();
   };
   const rp = (p: Partial<RewardItem>) => setRewardDraft((r) => (r ? { ...r, ...p } : r));
 
   return (
     <Stack spacing={3}>
       <BeamPageHeader
-        title={stageLabel(stage)}
+        // Create has no stage yet → a create title. (The Add frame's "Wall Stage 1" + Delete/Edit
+        // chrome is View/Edit-frame residue — NOT copied.)
+        title={create ? 'Create Wall Stage' : stageLabel(st)}
         back={backTo(navigate, `${BASE}/${id}`, campaign.name)}
         // Subline = the campaign's date range (per the frame).
         subtitle={`${fmtDateTimeET(campaign.startDate)} ↔ ${fmtDateTimeET(campaign.endDate)}`}
-        // INTENT DELTA: inherit the campaign edit header — [Delete · Edit] ⇄ [Cancel · Submit for Approval].
+        // INTENT DELTA: inherit the campaign edit header — [Delete · Edit] ⇄ [Cancel · Submit for Approval];
+        // create is [Cancel · Submit] with no Delete (nothing to delete yet).
         action={
           isEdit ? (
             <Button variant="contained" onClick={submitForApproval}>Submit for Approval</Button>
@@ -165,7 +236,7 @@ export function WallStagePage() {
           isEdit ? (
             <Button variant="text" onClick={cancelEdit}>Cancel</Button>
           ) : (
-            <Button variant="outlined" color="inherit" startIcon={<DeleteIcon />} onClick={() => setNotice({ severity: 'warning', msg: `Delete "${stageLabel(stage)}" — stub. No delete pipeline yet. Nothing was removed.` })}>
+            <Button variant="outlined" color="inherit" startIcon={<DeleteIcon />} onClick={() => setNotice({ severity: 'warning', msg: `Delete "${stageLabel(st)}" — stub. No delete pipeline yet. Nothing was removed.` })}>
               Delete
             </Button>
           )
@@ -187,10 +258,10 @@ export function WallStagePage() {
           </>
         ) : (
           <>
-            <BeamStat label="Win probability" value={`${stage.winProbabilityPct}%`} />
-            <BeamStat label="Loss probability" value={`${stage.lossProbabilityPct}%`} />
-            <BeamStat label="Cost of play" value={String(stage.costOfPlay)} />
-            <BeamStat label="Enabled" value={<BeamBool value={stage.enabled} />} />
+            <BeamStat label="Win probability" value={`${st.winProbabilityPct}%`} />
+            <BeamStat label="Loss probability" value={`${st.lossProbabilityPct}%`} />
+            <BeamStat label="Cost of play" value={String(st.costOfPlay)} />
+            <BeamStat label="Enabled" value={<BeamBool value={st.enabled} />} />
           </>
         )}
       </DetailsPanel>
@@ -211,7 +282,7 @@ export function WallStagePage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(isEdit && d ? d.openingWindows : stage.openingWindows).map((w, i) => (
+                {(isEdit && d ? d.openingWindows : st.openingWindows).map((w, i) => (
                   <TableRow key={w.id} hover>
                     {isEdit && d ? (
                       <>
@@ -254,12 +325,17 @@ export function WallStagePage() {
             )}
           </BeamPaper>
 
-          {/* Reward items — card grid; Edit → cards open the Reward Item dialog. */}
+          {/* Reward items — a FIXED 12-slot grid (frame + mock). Filled slot = card (opens the dialog in
+              both modes). Empty slot: in-session = "+ ADD" tile (opens the dialog's ADD flavor); in view
+              = inert placeholder (no add outside a session — the leaf inherits the parent's mode). */}
           <BeamPaper title="Reward items">
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-              {(isEdit && d ? d.rewardItems : stage.rewardItems).map((item) => (
-                <RewardCard key={item.id} item={item} onOpen={() => openReward(item)} />
-              ))}
+              {Array.from({ length: REWARD_SLOTS }, (_, i) => {
+                const items = isEdit && d ? d.rewardItems : st.rewardItems;
+                const item = items[i];
+                if (item) return <RewardCard key={item.id} item={item} onOpen={() => openReward(item)} />;
+                return isEdit ? <AddRewardTile key={`add-${i}`} onAdd={openAddReward} /> : <EmptyRewardTile key={`empty-${i}`} />;
+              })}
             </Box>
           </BeamPaper>
         </Stack>
@@ -269,7 +345,7 @@ export function WallStagePage() {
           {/* Quick Rules */}
           <BeamPaper title="Quick Rules" bleed>
             <RulesTable
-              rows={isEdit && d ? d.quickRules : stage.quickRules}
+              rows={isEdit && d ? d.quickRules : st.quickRules}
               edit={isEdit}
               onCopy={copyUrl}
               onChange={(next) => patch({ quickRules: next })}
@@ -282,11 +358,11 @@ export function WallStagePage() {
               {isEdit && d ? (
                 <BeamField label="Info page title" value={d.infoPageTitle} onChange={(e) => patch({ infoPageTitle: e.target.value })} fullWidth />
               ) : (
-                <BeamStat label="Info page title" value={stage.infoPageTitle} />
+                <BeamStat label="Info page title" value={st.infoPageTitle} />
               )}
             </Box>
             <RulesTable
-              rows={isEdit && d ? d.infoRules : stage.infoRules}
+              rows={isEdit && d ? d.infoRules : st.infoRules}
               edit={isEdit}
               onCopy={copyUrl}
               onChange={(next) => patch({ infoRules: next })}
@@ -320,11 +396,12 @@ export function WallStagePage() {
         </Stack>
       </Stack>
 
-      {/* Reward Item dialog — the estate's FIRST sanctioned dialog. Edit: a leaf sub-record edited inside
-          the parent (wall stage) edit session. View: the SAME surface read-only (View-first extended to
-          the leaf — every drill level inspectable without entering an edit session). */}
-      <Dialog open={rewardDraft !== null} onClose={() => setRewardDraft(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>{isEdit ? 'Edit Reward Item' : 'Reward Item'}</DialogTitle>
+      {/* Reward Item dialog — the estate's FIRST sanctioned dialog, THREE flavors (view / edit / add).
+          Edit: a leaf sub-record edited inside the parent (wall stage) edit session. Add: a "+ ADD" tile
+          opens the same surface with empty fields → appends to the stage draft. View: the SAME surface
+          read-only (View-first extended to the leaf — inspectable without entering a session). */}
+      <Dialog open={rewardDraft !== null} onClose={closeReward} maxWidth="sm" fullWidth>
+        <DialogTitle>{rewardIsNew ? 'Add Reward Item' : isEdit ? 'Edit Reward Item' : 'Reward Item'}</DialogTitle>
         <DialogContent>
           {rewardDraft && (
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, pt: 1 }}>
@@ -374,11 +451,11 @@ export function WallStagePage() {
         <DialogActions>
           {isEdit ? (
             <>
-              <Button variant="text" onClick={() => setRewardDraft(null)}>Cancel</Button>
-              <Button variant="contained" onClick={saveReward}>Save</Button>
+              <Button variant="text" onClick={closeReward}>Cancel</Button>
+              <Button variant="contained" onClick={saveReward}>{rewardIsNew ? 'Add' : 'Save'}</Button>
             </>
           ) : (
-            <Button variant="text" onClick={() => setRewardDraft(null)}>Close</Button>
+            <Button variant="text" onClick={closeReward}>Close</Button>
           )}
         </DialogActions>
       </Dialog>
@@ -388,8 +465,10 @@ export function WallStagePage() {
   );
 }
 
-/** A quick-rule / info-rule table: NAME · DESKTOP · MOBILE. Name is static; media cells copy (view) or
- *  become URL fields (edit). */
+/** A quick-rule / info-rule table: NAME · DESKTOP · MOBILE. Name is a static label in view and an
+ *  EDITABLE field in-session (the Add frame shows editable rule names — seeded rows must be nameable;
+ *  this also makes existing-stage edit rule-names editable, a consistency change flowing from the frame).
+ *  Media cells copy (view) or become URL fields (edit). */
 function RulesTable({ rows, edit, onCopy, onChange }: { rows: QuickRule[]; edit: boolean; onCopy: (url: string) => void; onChange: (next: QuickRule[]) => void }) {
   return (
     <Table size="small" aria-label="Rules">
@@ -403,7 +482,15 @@ function RulesTable({ rows, edit, onCopy, onChange }: { rows: QuickRule[]; edit:
       <TableBody>
         {rows.map((r, i) => (
           <TableRow key={r.id} hover>
-            <TableCell>{r.name}</TableCell>
+            <TableCell>
+              {edit ? (
+                <Box sx={{ ...fieldGeometrySx }}>
+                  <BeamField aria-label="Name" value={r.name} onChange={(e) => onChange(rows.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} fullWidth />
+                </Box>
+              ) : (
+                r.name
+              )}
+            </TableCell>
             <TableCell><MediaCell url={r.desktopUrl} edit={edit} onCopy={onCopy} onChange={(url) => onChange(rows.map((x, j) => (j === i ? { ...x, desktopUrl: url } : x)))} /></TableCell>
             <TableCell><MediaCell url={r.mobileUrl} edit={edit} onCopy={onCopy} onChange={(url) => onChange(rows.map((x, j) => (j === i ? { ...x, mobileUrl: url } : x)))} /></TableCell>
           </TableRow>
@@ -411,6 +498,36 @@ function RulesTable({ rows, edit, onCopy, onChange }: { rows: QuickRule[]; edit:
       </TableBody>
     </Table>
   );
+}
+
+/** Empty reward slot in a SESSION → a "+ ADD" tile (opens the dialog's Add flavor). Same footprint as a
+ *  RewardCard so the 12-slot grid stays uniform. Keyboard: Enter/Space adds. */
+function AddRewardTile({ onAdd }: { onAdd: () => void }) {
+  return (
+    <Box
+      role="button"
+      tabIndex={0}
+      aria-label="Add reward item"
+      onClick={onAdd}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAdd(); } }}
+      sx={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
+        minHeight: 152, border: '1px dashed', borderColor: 'divider', borderRadius: 1,
+        color: 'primary.main', cursor: 'pointer',
+        transition: 'border-color var(--beam-motion-move), background-color var(--beam-motion-move)',
+        '&:hover, &:focus-visible': { borderColor: 'primary.main', bgcolor: 'action.hover' },
+      }}
+    >
+      <AddIcon fontSize="small" />
+      <Typography variant="button">Add</Typography>
+    </Box>
+  );
+}
+
+/** Empty reward slot in VIEW → inert placeholder (no add affordance outside a session — the leaf
+ *  inherits the parent's mode). Holds the 12-slot grid shape without inviting interaction. */
+function EmptyRewardTile() {
+  return <Box aria-hidden sx={{ minHeight: 152, border: '1px solid', borderColor: 'divider', borderRadius: 1, opacity: 0.4 }} />;
 }
 
 /** A reward card: ×{quantity} badge, image, {coins} × ${cashValue} caption. Clickable in BOTH modes —
