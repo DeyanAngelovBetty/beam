@@ -71,6 +71,24 @@ const SIDE_BORDER = { borderLeft: '1px solid', borderRight: '1px solid', borderC
 const CARD_RADIUS = 24; // mirrors createBeamTheme MuiPaper.rounded.borderRadius — keep in step if it moves
 const SQUIRCLE = { 'corner-shape': 'squircle' } as object; // CSS Borders L5 (Chrome 139+), progressive
 
+/**
+ * headerCellSx — the ONE header-cell text treatment, mirroring MUI's `TableCell` head (size small): body2
+ * type + head weight/line-height/color + small padding, single-line. Consumed by BOTH the real `th` (in
+ * sticky mode) AND the header clone cells, so the clone is a SHARED SOURCE of the real header, not an
+ * approximation — same face, baseline, and line-breaking (the measured widths already match). Applying it
+ * to the real th in sticky mode is visually neutral (it restates MUI's head values) apart from `nowrap`.
+ */
+export const headerCellSx = {
+  fontSize: '0.875rem', // body2
+  fontWeight: 500, // MUI head (fontWeightMedium)
+  lineHeight: '1.5rem', // MUI head (pxToRem 24)
+  letterSpacing: '0.01071em', // body2
+  color: 'text.primary', // MUI head
+  py: 0.75, // 6px — size small
+  px: 2, // 16px — size small
+  whiteSpace: 'nowrap' as const,
+};
+
 /** Nearest scrollable ancestor (overflow y auto/scroll) — the sticky scroll owner. null ⇒ the viewport
  *  (document scroll), the correct IntersectionObserver root in that case. */
 function getScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -619,11 +637,12 @@ export function BeamDataTable<Row>({
     </Box>
   ) : null;
 
-  // Stuck dressing — surface + occlusion band, applied to the inner wrappers while pinned, via BOTH the
+  // Stuck dressing — the occlusion band only, applied to the inner wrappers while pinned, via BOTH the
   // JS `data-stuck` attr (base, all engines) AND `@container scroll-state(stuck)` (Chrome enhancement).
+  // Paper background is carried by the inners ALWAYS (not gated on stuck) — paper-on-paper at rest
+  // (invisible), the opacity that stops rows ghosting when pinned (same rationale as the footer).
   const containerTypeScrollState = { containerType: 'scroll-state' as 'normal' };
   const bucketStuckSx = {
-    bgcolor: 'background.paper',
     '&::after': {
       content: '""', position: 'absolute', left: 0, right: 0, top: '100%', height: EDGE_WIDTH,
       background: STUCK_BAND_DOWN, pointerEvents: 'none',
@@ -695,19 +714,14 @@ export function BeamDataTable<Row>({
           return (
             <Box
               key={col.id}
+              // SHARED SOURCE with the real th — same headerCellSx (task 2), so face/baseline/line-breaking
+              // are identical and the measured width lands the text on the same line. No approximation.
               sx={{
+                ...headerCellSx,
                 flex: '0 0 auto',
                 width: cloneWidths[railOffset + i] ?? 0,
                 boxSizing: 'border-box',
-                px: 2,
-                py: 0.75,
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: 'text.primary',
                 textAlign: c?.align ?? 'left',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
               }}
             >
               {c?.header}
@@ -757,13 +771,19 @@ export function BeamDataTable<Row>({
     <Box ref={bucketRef} sx={{ position: 'sticky', top: STICKY_OFFSET, zIndex: 2, ...containerTypeScrollState }}>
       <Box
         className="beam-bucket-inner"
-        // Frame region (INTERIM — the header pass finalizes the top): top + sides + top-radius. Own bg
-        // (when stuck) + border follow the radius; the down-band ::after (in the stuck dressing) extends
-        // BELOW, so no overflow-clip here. Rounded corners squircled to match the card.
+        // Frame region: top + sides + top-radius — the card's ceiling edge, traveling with the pin. Opaque
+        // paper ALWAYS (paper-on-paper at rest; the opacity that stops rows ghosting when pinned). Own bg +
+        // border follow the radius; the down-band ::after (stuck dressing) extends BELOW, so no
+        // overflow-clip here. Squircled corners to match the card floor.
         sx={{
           position: 'relative',
+          bgcolor: 'background.paper',
           ...SIDE_BORDER,
-          borderTop: '1px solid',
+          // WIDTH/STYLE longhands, NOT the `border-top` shorthand — the shorthand would reset border-top-
+          // COLOR to currentColor (white on dark) landing after SIDE_BORDER's `border-color: divider`. The
+          // footer's white-line lesson (notes' platform edge) applied to the ceiling.
+          borderTopStyle: 'solid',
+          borderTopWidth: '1px',
           borderTopLeftRadius: CARD_RADIUS,
           borderTopRightRadius: CARD_RADIUS,
           ...SQUIRCLE,
@@ -952,7 +972,9 @@ export function BeamDataTable<Row>({
                   <TableCell
                     key={c.key}
                     align={c.align}
-                    sx={{ width: c.width }}
+                    // Sticky grids apply the SHARED headerCellSx so the clone matches the real header
+                    // exactly (task 2). Non-sticky grids keep MUI's head defaults (byte-identical).
+                    sx={{ ...(stickyChrome ? headerCellSx : {}), width: c.width }}
                     sortDirection={sortDir || false}
                   >
                     {col.getCanSort() ? (

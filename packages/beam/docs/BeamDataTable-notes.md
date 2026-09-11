@@ -67,8 +67,9 @@ Deyan is iterating the top separately.*
 Non-sticky grids keep today's single-`Paper` outlined frame, **byte-identical** (everything below is
 gated on `stickyChrome`). In sticky mode the **Paper drops border + radius** and the frame is redrawn by
 the three regions that travel with the pins:
-- **Bucket** (top): top + side borders + **top-radius**. *(INTERIM — the header pass finalizes the top;
-  marked as such in code.)*
+- **Bucket** (top): top + side borders + **top-radius** — the card's ceiling edge, traveling with the
+  pin (FINALIZED in the header pass, 2026-09-12: opaque paper always + border-top width/style longhands,
+  the same fixes the footer took).
 - **Rows region** (the affordance wrapper): **side borders only**.
 - **Footer inner** (the card floor edge): side + bottom borders + **bottom-radius** — rounds into the
   page floor, traveling with the pin.
@@ -88,9 +89,9 @@ the three regions that travel with the pins:
   bands stay within their regions — nothing overflows the Paper needing a clip. Not left as a mystery.
 - `data-beam-sticky-chrome` stays on the Paper — the shell contract is untouched.
 
-*Eyeball nuance (bench): the top is INTERIM (bucket carries top+sides+top-radius pending the header
-pass). Verify the side lines are continuous while pinned mid-scroll and at both extremes; the footer
-corners round into the page floor; and at rest the three owners read as ONE coherent card.*
+*Eyeball nuance (bench): verify the side lines are continuous while pinned mid-scroll and at both
+extremes; the bucket + footer corners round into the page ceiling/floor; and at rest the three owners
+read as ONE coherent card.*
 
 **Two footer fixes (2026-09-12):**
 1. The footer inner carries `background.paper` **always** (not stuck-gated) — paper-on-paper at rest
@@ -101,8 +102,8 @@ corners round into the page floor; and at rest the three owners read as ONE cohe
    It was NOT the squircle (hypothesis a — ruled out: colouring the border changed it). Fix uses the
    existing token: **width/style longhands** (`borderBottomStyle`/`borderBottomWidth`) so `divider` stands.
    *Platform edge for the next partial-corner element:* declare the top/bottom edge with longhands, never
-   the `border-top`/`border-bottom` shorthand — **the bucket's top edge has the identical latent issue,
-   fixed the same way in the header pass.***
+   the `border-top`/`border-bottom` shorthand. **The bucket's top edge took the identical fix in the
+   header pass (2026-09-12).***
 - **Layering:** the scroll-affordance wrapper already establishes a stacking context (`container-type:
   inline-size`), so every rail/accent/edge/expanded z-index is sealed inside it. The pinned bucket +
   footer sit at the Paper level with `z-index: 2` — above the whole wrapper context, no z-index war.
@@ -113,10 +114,15 @@ corners round into the page floor; and at rest the three owners read as ONE cohe
   the edge-affordance recipe (`EDGE_TINT` + `EDGE_WIDTH`), rotated horizontal (bucket casts down, footer
   up) — no new token; promote to `derived` if a distinct stuck-elevation recipe emerges.
 
-**Eyeball-tuning candidates (flagged for the bench):** (1) the clone's cell font/padding is an
-approximation of the real `th` (widths are exact; typography is `13px/600 + px:2` — nudge to match); (2)
-the stuck→unstuck **crossover smoothness** (clone lands where the real header scrolls under — the #1
-thing to watch); (3) the paint-flashing pass (DevTools) given the Collapse-hover history.
+**Clone type parity — RESOLVED (header pass, 2026-09-12):** the approximation (`13px/600`) is gone. One
+exported **`headerCellSx`** (mirrors MUI's `TableCell` head — body2 type + head weight/line-height/color
++ small padding, `nowrap`) is consumed by BOTH the real `th` (in sticky mode) AND the clone cells — a
+SHARED SOURCE, so face/baseline/line-breaking match and the measured widths land text on the same line
+(no clone-only wraps). Non-sticky grids keep MUI's head defaults (byte-identical).
+
+**Eyeball-tuning candidates (flagged for the bench):** (1) the stuck→unstuck **crossover smoothness**
+(clone lands where the real header scrolls under — the #1 thing to watch); (2) the paint-flashing pass
+(DevTools) given the Collapse-hover history.
 
 **Known caveat (recorded):** on a tall grid mid-scroll, the horizontal **drag-scrollbar** (bottom of the
 `TableContainer`) is off-screen below — trackpad/wheel horizontal works throughout, and the clone keeps

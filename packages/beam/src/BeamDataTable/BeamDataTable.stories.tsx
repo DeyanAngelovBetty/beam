@@ -540,6 +540,17 @@ export const StickyChromeBench: Story = {
         jumpToPage
         stickyChrome
         selectable
+        // Bulk actions mirror Gaspar's shape (Export · Complete · Decline; disabled/destructive/confirm)
+        // so the bucket exercises its real composition — the strip pins ABOVE the header clone.
+        bulkActions={(selectedRows) => {
+          const noEligible = selectedRows.every((r) => r.status !== 'scheduled');
+          return [
+            { id: 'export', label: 'Export' },
+            { id: 'complete', label: 'Complete', confirm: true, disabled: noEligible, disabledReason: 'Only Scheduled rows can be completed (bench).' },
+            { id: 'decline', label: 'Decline', destructive: true, disabled: noEligible, disabledReason: 'Only Scheduled rows can be declined (bench).' },
+          ];
+        }}
+        onBulkAction={() => {}}
         rowAccent={(r) => (r.status === 'expired' ? 'danger' : undefined)}
         rowActions={() => [{ id: 'view', label: 'View', onSelect: () => {} }]}
         renderExpanded={(r) => <Box sx={{ py: 1 }}>Transaction {r.id} — {r.type} {r.amount.toFixed(2)} via {r.provider}</Box>}
