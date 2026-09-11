@@ -71,6 +71,28 @@ export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
  */
 export const PAGE_SECTION_GAP = 3;
 
+/**
+ * pageBackdropSx — the page's FIXED backdrop as a shared source, ONE definition two consumers: the
+ * `body::before` layer (base + mesh) AND the sticky-chrome ceiling/floor bands (BeamDataTable). Both paint
+ * `background.default` + the mesh with `background-attachment: fixed`, so a band samples the SAME function
+ * of viewport position as the body around it — the seam disappears by construction, and the opaque base
+ * kills the ghosting that killed the transparent-outer route. Raw CSS vars (not MUI shorthands) so it
+ * drops into both a theme `styleOverrides` object and an `sx`.
+ *
+ * NOTE — the Betty STAR (`body::after`) is a MASK, not an image layer, so it has no `background-attachment`
+ * analog and can't be viewport-aligned on a non-fixed band; it is deliberately NOT in this source. The
+ * mesh (the visible gradient) is what a band must match; the star is imperceptible in the thin bands. If a
+ * star seam ever reads, the recorded plan B is a simplified gradient (solid centre, gradient at the
+ * margins) — no redesign.
+ */
+export const pageBackdropSx = {
+  backgroundColor: 'var(--mui-palette-background-default)',
+  backgroundImage: 'var(--beam-page-mesh)',
+  backgroundSize: 'auto',
+  backgroundRepeat: 'no-repeat',
+  backgroundAttachment: 'fixed',
+} as const;
+
 export const FIELD_GEOMETRY = {
   height: 44, // the floor (single-line) — the twin datum
   paddingY: 6, // BeamStat top/bottom padding

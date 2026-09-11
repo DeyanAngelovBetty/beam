@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -888,11 +888,11 @@ export function BeamDataTable<Row>({
   // scrolls under, so the handoff reads seamless.
   const bucketEl = stickyChrome ? (
     // OUTER = the page CEILING (mirror of the footer floor): pins flush to the scrollport top (top: 0),
-    // TRANSPARENT so the page's fixed backdrop (mesh + star, body::before/after) shows through it — the
-    // chrome reveals the page rather than impersonating it with a flat color. Carries the donated section
-    // gap as its own padding-top (PAGE_SECTION_GAP, the one shared source — the shell gives it up via
-    // stickyChromeGapSx). Rows scroll up under the opaque paper INNER (the occluder), never into this band.
-    <Box ref={bucketRef} sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, pt: PAGE_SECTION_GAP, ...containerTypeScrollState }}>
+    // and PAINTS the page's own backdrop (pageBackdropSx — base + mesh, background-attachment: fixed) so
+    // it's opaque (occludes rows transiting the band as they scroll off — transparency was falsified) AND
+    // seamless (samples the same viewport-fixed mesh as the body backdrop around it). Carries the donated
+    // section gap as its padding-top (PAGE_SECTION_GAP; the shell gives it up via stickyChromeGapSx).
+    <Box ref={bucketRef} sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, pt: PAGE_SECTION_GAP, ...pageBackdropSx, ...containerTypeScrollState }}>
       <Box
         className="beam-bucket-inner"
         // Frame region: top + sides + top-radius — the card's ceiling edge, traveling with the pin. Opaque
@@ -953,14 +953,13 @@ export function BeamDataTable<Row>({
     );
 
   const footerEl = stickyChrome ? (
-    // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), TRANSPARENT so the page's
-    // fixed backdrop shows through it (see the ceiling outer), carrying the page's bottom spacing as its
-    // own padding — the spacing the shell gave up (CONTENT_BOTTOM, the one shared source). Rows scroll
-    // under the opaque paper INNER (the occluder), never into this band; released, the footer sits where
-    // it does today (the spacing merely changed owners).
+    // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), and PAINTS the page's own
+    // backdrop (pageBackdropSx, fixed attachment — see the ceiling outer) so it's opaque + seamless,
+    // carrying the page's bottom spacing as its padding (CONTENT_BOTTOM, the shell gave it up). Rows
+    // transiting the band are occluded; released, the footer sits where it does today.
     <Box
       ref={footerRef}
-      sx={{ position: 'sticky', bottom: 0, zIndex: Z_CHROME, pb: CONTENT_BOTTOM, ...containerTypeScrollState }}
+      sx={{ position: 'sticky', bottom: 0, zIndex: Z_CHROME, pb: CONTENT_BOTTOM, ...pageBackdropSx, ...containerTypeScrollState }}
     >
       {/* INNER = the bordered paper footer — opaque paper (reads as the card footer over the page-bg
           floor). Frame region: sides + bottom + bottom-radius — the card's floor edge, traveling with

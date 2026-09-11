@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, pageBackdropSx, type BrandName, type ProductName } from './tokens';
 
 // Surface-ramp named stops (docs/surface-grammar.md). `default`/`paper` are MUI's; `paper0` (Paper
 // elevation 0) and `overlay` (all menus/popovers) are the two extra ramp levels, typed here so the
@@ -394,13 +394,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inset: 0,
             zIndex: -1,
             pointerEvents: 'none',
-            backgroundColor: 'var(--mui-palette-background-default)',
-            backgroundImage: 'var(--beam-page-mesh)',
-            // 3 radial layers now (the dot tile was removed → the Betty star mask on
-            // body::after). No tiled layer remains, so size/repeat are single-valued and apply
-            // to all three: fill (auto), no repeat. (This is the 4-value coupling, retired.)
-            backgroundSize: 'auto',
-            backgroundRepeat: 'no-repeat',
+            // Base + mesh from the SHARED source (pageBackdropSx) — the sticky-chrome ceiling/floor bands
+            // consume the identical object with background-attachment: fixed, so a band samples the same
+            // viewport-fixed mesh as this layer and reads seamlessly. (3 radial layers; size/repeat
+            // single-valued — auto, no-repeat — the retired 4-value coupling.)
+            ...pageBackdropSx,
             '@media print': { display: 'none' },
           },
           // Betty STAR layer — brand geometry, ABOVE the mesh radials (::after paints after

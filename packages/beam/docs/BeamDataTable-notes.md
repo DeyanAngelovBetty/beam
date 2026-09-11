@@ -88,17 +88,29 @@ the three regions that travel with the pins:
   `visible` creates a scroll container), the `TableContainer` clips its own horizontal scroll, and the
   bands stay within their regions — nothing overflows the Paper needing a clip. Not left as a mystery.
 - `data-beam-sticky-chrome` stays on the Paper — the shell contract is untouched.
-- **Chrome wears the page backdrop, not a color (2026-09-12).** The ceiling/floor outers are
-  **transparent** (were flat `background.default`), so the page's FIXED backdrop (`body::before/after` mesh
-  + star) shows through them — seamless over any product/theme, no color impersonating the page. This
-  **completes the surface-ownership deconstruction**: the Paper already ceded its BORDER to the three
-  regions; here it cedes its BACKGROUND too (transparent in sticky mode) so the transparent outers reveal
-  the backdrop past it. The **rows region (wrapper) takes over `background.paper`** (rows still sit on
-  paper); the bucket/footer **inners stay opaque paper** (they occlude the scrolling rows — the
-  transparent bands are the page-bg gaps above/below the chrome, where no rows are, so no ghosting). The
-  Paper in sticky mode is now **pure structure** — positioning context + `timeline-scope` host, zero
-  paint. Bench: the **StickyChromeFancyBackdrop** story (transparent scroll-owner → the fixed mesh shows)
-  guards this against regressing to flat-background testing. See surface-grammar.md.
+- **Chrome wears the page backdrop — via fixed-attachment copies of the shared source, not a color, not
+  transparency (2026-09-11).** The ceiling/floor outers **paint a copy of the page backdrop**: the shared
+  `pageBackdropSx` (base `background.default` + mesh, `background-attachment: fixed`), the same object
+  `body::before` spreads — one source, two consumers. Because the mesh is viewport-fixed, the band draws the
+  same function of viewport position as the body backdrop around it, so it reads **seamlessly** (band
+  indistinguishable from the section gaps), while the opaque base makes it **occlude** rows.
+  - **Transparency was tried and falsified.** Route (a) made the outers transparent to reveal the fixed
+    backdrop directly — but a pinned band sits OVER content that transits it: as a row scrolls off, it
+    passes through the band region (between the paper inner and the viewport edge) and **ghosted through**
+    the transparent band. The fix is opaque-by-composition (paint the backdrop base) + seamless-by-
+    construction (fixed attachment). The **StickyChromeFancyBackdrop** story exists as the proof surface for
+    exactly this: bands indistinguishable from the gaps AND no ghosting.
+  - This still **completes the surface-ownership deconstruction**: the Paper ceded its BORDER to the three
+    regions and its BACKGROUND too (`transparent` in sticky mode — pure structure, positioning context +
+    `timeline-scope` host). The **rows region (wrapper) owns `background.paper`**; the bucket/footer
+    **inners stay opaque paper**. The bands now carry their OWN paint (the backdrop copy) rather than
+    relying on transparency past the Paper.
+  - **Star finding + plan B.** The Betty star (`body::after`) is a **mask** (`fill='%23000'`, recolored at
+    runtime via `--beam-star-color`), not a fixed-attachable background image — it can't be replicated as a
+    fixed layer in the bands, so `pageBackdropSx` is base + mesh only. Imperceptible at band height (~a
+    section gap). `background-attachment: fixed` has historic mobile-Safari quirks; fine for the desktop
+    back-office target. If it ever misbehaves, plan B is a **simplified gradient** (solid center, gradient at
+    the margins) — no redesign. See surface-grammar.md.
 
 *Eyeball nuance (bench): verify the side lines are continuous while pinned mid-scroll and at both
 extremes; the bucket + footer corners round into the page ceiling/floor; and at rest the three owners

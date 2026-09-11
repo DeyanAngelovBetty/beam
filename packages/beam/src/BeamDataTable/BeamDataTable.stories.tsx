@@ -586,11 +586,18 @@ export const StickyChromeBench: Story = {
 };
 
 /**
- * Sticky-chrome over the FANCY page backdrop — the scroll owner is transparent so the theme's FIXED mesh
- * + Betty-star backdrop (body::before/after) shows through. The ceiling/floor outers are transparent, so
- * the pinned bucket/footer bands must reveal the backdrop **seamlessly** — identical to the section gaps,
- * no flat-color patch, no ghosting (the opaque paper inners occlude the rows). Guards against regressing
- * the transparent-outer fix back to a flat `background.default`.
+ * Sticky-chrome over the FANCY page backdrop — the PROOF SURFACE. The scroll owner is transparent so the
+ * theme's FIXED mesh + Betty-star backdrop (body::before/after) shows. The ceiling/floor bands PAINT a
+ * copy of that backdrop (base + mesh, background-attachment: fixed), so scrolling through the pins must
+ * show: (1) the bands **indistinguishable from the section gaps** — same viewport-fixed mesh, no seam; AND
+ * (2) **no ghosting** — rows scroll under the pinned chrome and nothing shows through (the opaque painted
+ * band + the paper inners occlude them).
+ *
+ * This story exists because TRANSPARENCY WAS TRIED AND FALSIFIED: transparent bands sit over content that
+ * transits them as it scrolls off, so rows ghosted through. The fix is opaque-by-composition (paint the
+ * backdrop), seamless-by-construction (fixed attachment samples the same viewport pixels). (The Betty star
+ * is a mask, not a fixed-attachable image, so it isn't in the bands — imperceptible at band height; see
+ * pageBackdropSx.)
  */
 export const StickyChromeFancyBackdrop: Story = {
   parameters: { layout: 'fullscreen' },

@@ -49,12 +49,18 @@ veil** (`--Paper-overlay`). That is a *second*, uncontrolled elevation signal fi
 - **Components inherit; don't hardcode surfaces.** A surface color never appears as a literal in a
   component — it comes from `background.*` (or the elevation the Paper declares). Explicit background
   fixes are only for a component that already hardcodes one.
-- **Chrome wears the page's backdrop, not a color.** A pinned surface that stands in for the *page*
-  background — the sticky-chrome ceiling/floor outers (BeamDataTable) — is **transparent**, revealing the
-  page's fixed backdrop (the `body::before/after` mesh + star), NOT painted a flat `background.default`.
-  The page backdrop is viewport-fixed, so a transparent band samples it seamlessly, correct for any
-  product/theme forever; a flat color would impersonate the page and mismatch the gradient. (This un-baked
-  the original chrome design's flat-`default` assumption — 2026-09-12.)
+- **Chrome wears the page's backdrop — literally, via fixed-attachment copies of the shared backdrop
+  source — not a flat color.** A pinned surface that stands in for the *page* background — the
+  sticky-chrome ceiling/floor outers (BeamDataTable) — **paints a copy of the page backdrop** (the shared
+  `pageBackdropSx`: `background.default` base + mesh, `background-attachment: fixed`), NOT a flat
+  `background.default`, and NOT transparency. One source, two consumers: `body::before` and the bands spread
+  the same object, so the band samples the same viewport-fixed mesh and reads seamlessly with the backdrop
+  around it. Opaque-by-composition (the base kills ghosting — rows transit the band as they scroll off and
+  must be occluded), seamless-by-construction (fixed attachment draws the same function of viewport
+  position). Transparency was tried first and **falsified** (rows ghosted through the transparent bands);
+  a flat color would impersonate the page and mismatch the gradient. (The Betty star is a mask, not a
+  fixed-attachable image layer, so it's absent from the bands — imperceptible at band height; plan B if
+  fixed-attachment ever misbehaves is a simplified gradient. — 2026-09-11.)
 
 ## Open question — light mode (Vasco)
 
