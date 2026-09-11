@@ -4,7 +4,7 @@ Intent deltas the grammar and the frames don't fully carry. Governs `TokenCampai
 
 - **Figma node:** https://www.figma.com/design/erQ1X8e91k6YwRsKgnzXDY/Sunlight?node-id=376-61792
 - **Frames:** `TokenCampaign-View.png` (composition truth — view mode); `TokenCampaign-Edit.png`
-  (composition + geometry truth — edit mode, built in prompt B).
+  (composition + geometry truth — edit mode); `TokenCampaign-Add.png` (create route).
 
 ## Rulings (promoted to doctrine 2026-09-04 — see detail-page-grammar)
 
@@ -56,3 +56,39 @@ Intent deltas the grammar and the frames don't fully carry. Governs `TokenCampai
   twins already morph at 44px. The T&C surface is not row-stabilized (text ⇄ textarea change height by
   nature); the band uses `alignItems: stretch` so the three columns track the tallest either way. No
   residual per-row jump observed against the Edit frame; no min-height corrections were needed.
+
+## Edit — Wall Stages "+ ADD WALL STAGE" (2026-09-11)
+
+- **Smallest faithful behavior.** In edit mode the Wall Stages section gains **"+ ADD WALL STAGE"**
+  (per the Edit frame). It appends a **draft-only** stage row (`"Wall Stage {n}"`) to a page-local
+  `addedStages` list; it appears immediately, is **non-navigable** (no page until saved; submit is a
+  stub that discards), and is dropped on Cancel/Submit. Real stage authoring (fields, renaming) is the
+  Wall Stage **route-level create session** (sessions never nest) — out of this pass's fence.
+- **Organism limitation → page-local edit composition.** `BeamChildList` has only a `title` (no
+  header-action slot) and links every identity row. To host the add action *and* render unsaved rows
+  non-navigable without an organism change, the Wall Stages section is **composed page-locally in edit
+  mode** (BeamPaper + a light table matching the child-list markup); **view mode keeps `BeamChildList`**.
+- **PROMOTION CANDIDATE (logged, not built):** a `BeamChildList` `headerAction`/`action` slot (+ an
+  optional non-link row) would let both modes share the organism and delete the page-local table. **This
+  page is its motivating consumer.**
+- **Stage rows now show full ET datetime** for Start / Final Open (was date-only) — faithful-port to
+  the Edit frame (frame wins on formatting). Identity header is **"Name"** (frame), was "Stage".
+
+## Create route — `TokenCampaign-Add.png` (2026-09-11)
+
+- **Route** `prize-wall/token-campaigns/new` → `TokenCampaignDetailPage` with the `create` prop; the
+  list's "+ New Token Campaign" button navigates there. **Lands directly in edit** (a create route is
+  an edit session with no view — drill-down-grammar). Title **"Create Token Campaign"**, no date
+  subtitle. Empty draft, **Enabled defaults false**, all named image/sound slots pre-seeded empty so
+  the tables render every row.
+- **Submit is the SAME stub — NO in-memory push.** Chosen for CR-inversion fidelity over demo
+  continuity (the mock *is* mutable, but a direct write would model the apply the doctrine forbids). The
+  notice is the honest demo of the model. Stays on-page (a navigate would unmount the notice).
+- **Wall Stages LOCKED** — renders the frame's verbatim message *"You must create your token campaign
+  first in order to unlock wall configurations."* (sessions never nest — no child before the parent).
+- **FRAME DIVERGENCES (for the Figma side, not applied):**
+  1. The Add frame's header shows **"cveti campaign" + the date subtitle** — Edit-frame residue; code
+     uses a create title with no subtitle.
+  2. The Add frame shows **VIEW WINNERS active**; code **disables** it in create (nothing to view yet),
+     consistent with the View-Winners-disabled-in-edit ruling.
+  3. Frame toggle reads **"Active"** — the already-logged Enabled/Active label inconsistency.

@@ -126,6 +126,7 @@ const router = createBrowserRouter(
         { path: 'meta-game-presets/new', element: <MetaGamePresetEditor /> },
         { path: 'meta-game-presets/:id', element: <MetaGamePresetEditor /> },
         { path: 'prize-wall/token-campaigns', element: <TokenCampaignsPage /> },
+        { path: 'prize-wall/token-campaigns/new', element: <TokenCampaignDetailPage create /> },
         { path: 'prize-wall/token-campaigns/:id', element: <TokenCampaignDetailPage /> },
         { path: 'prize-wall/token-campaigns/:id/stages/:sid', element: <WallStagePage /> },
         { path: 'prize-wall/token-campaigns/:id/winners', element: <CampaignWinnersPage /> },

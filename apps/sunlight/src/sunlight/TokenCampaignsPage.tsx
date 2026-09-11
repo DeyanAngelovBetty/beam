@@ -152,7 +152,7 @@ export function TokenCampaignsPage() {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setNotice({ severity: 'info', msg: 'New Token Campaign — stub. The create flow lands in a later prompt.' })}
+            onClick={() => navigate(`${BASE}/new`)}
           >
             New Token Campaign
           </Button>

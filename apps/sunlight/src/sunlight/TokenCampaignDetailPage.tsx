@@ -30,11 +30,15 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEventsOutlined';
 import EditIcon from '@mui/icons-material/EditRounded';
 import PlayArrowIcon from '@mui/icons-material/PlayArrowRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
+import AddIcon from '@mui/icons-material/Add';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { backTo } from './backTo';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import {
   getTokenCampaign,
   stageLabel,
+  PROMO_IMAGE_SLOTS,
+  SOUND_SLOTS,
   PROMO_IMAGE_SLOT_LABEL,
   SOUND_SLOT_LABEL,
   type TokenCampaign,
@@ -44,14 +48,21 @@ import {
 } from './tokenCampaigns';
 
 /**
- * TokenCampaignDetailPage — /prize-wall/token-campaigns/:id. VIEW ↔ EDIT (prompt B). Mode mechanics
- * per detail-page grammar (header action swap, constant geometry, field twins, editability border);
- * composition + geometry follow designs/TokenCampaign-{View,Edit}.png (+ designs/SPEC.md).
+ * TokenCampaignDetailPage — /prize-wall/token-campaigns/:id (view↔edit) AND /new (create, `create`
+ * prop). Mode mechanics per detail-page grammar (header action swap, constant geometry, field twins,
+ * editability border); composition + geometry follow designs/TokenCampaign-{View,Edit,Add}.png
+ * (+ designs/SPEC.md).
  *
  * DRAFT SEMANTICS: edits are held in a local draft. Submit for Approval is a STUB that applies
  * NOTHING and discards the draft — consistent with the save-model inversion (save creates a CR, never
  * applies). Cancel also discards. (SPEC.md: the stub's future shape is "create the campaign CR,
  * visible in Pending Approvals" — never an apply.)
+ *
+ * CREATE (`create`): a create route is an EDIT SESSION WITH NO VIEW (drill-down-grammar) — it lands
+ * straight in edit with an empty draft (named slots pre-seeded empty so the tables render). Submit is
+ * the SAME stub (CR-inversion — it does NOT push the campaign into the in-memory list; the notice is
+ * the honest demo of the model). Wall Stages is LOCKED — you can't author a child before the parent
+ * exists (sessions never nest).
  */
 
 const BASE = '/prize-wall/token-campaigns';
@@ -74,7 +85,6 @@ const fmtDateTimeET = (iso: string) => {
     .reduce<Record<string, string>>((a, part) => ((a[part.type] = part.value), a), {});
   return `${p.day}-${p.month}-${p.year} ${p.hour}:${p.minute}:${p.second} ${p.dayPeriod} ET`;
 };
-const fmtDate = (iso: string) => iso.slice(0, 10);
 
 // datetime-local twin round-trip (timezone-naive demo — real ET picker deferred).
 const toLocalInput = (iso: string) => iso.slice(0, 16); // YYYY-MM-DDTHH:mm
@@ -102,15 +112,67 @@ const makeDraft = (c: TokenCampaign): Draft => ({
   sounds: c.sounds.map((sn) => ({ ...sn })),
 });
 
-export function TokenCampaignDetailPage() {
+// Create draft — empty fields, ALL named slots pre-seeded with empty URLs so the Promotional Images /
+// Sounds tables render every row (per the Add frame). Enabled defaults FALSE (the frame's Active
+// toggle is off; matches the estate's "new records are Disabled" convention).
+const makeEmptyDraft = (): Draft => ({
+  name: '',
+  startDate: '',
+  endDate: '',
+  enabled: false,
+  tAndC: '',
+  promotionalImages: PROMO_IMAGE_SLOTS.map((slot) => ({ slot, desktopUrl: '', mobileUrl: '' })),
+  sounds: SOUND_SLOTS.map((slot) => ({ slot, url: '' })),
+});
+
+// A minimal draft-only wall stage appended by "+ ADD WALL STAGE". Named "Wall Stage {n}" (frame
+// naming); NON-navigable until the campaign is saved (it has no page yet, and submit is a stub that
+// discards). Full stage authoring is the Wall Stage route-level create session — out of this fence.
+const makeDraftStage = (campaignId: string, n: number, startDate: string, endDate: string): WallStage => ({
+  id: `${campaignId}-draft-s${n}`,
+  name: `Wall Stage ${n}`,
+  order: n,
+  enabled: true,
+  startDate,
+  finalOpenDate: endDate,
+  openingWindows: [],
+  headerImageDesktop: '',
+  headerImageMobile: '',
+  backgroundImageDesktop: '',
+  backgroundImageMobile: '',
+  winProbabilityPct: 0,
+  lossProbabilityPct: 0,
+  costOfPlay: 0,
+  rewardItems: [],
+  quickRules: [],
+  infoPageTitle: '',
+  infoRules: [],
+});
+
+// Wall-stage vital-sign columns — shared by the view BeamChildList and the edit page-local table.
+// START / FINAL OPEN are full ET datetime per the Edit frame (faithful-port pass; frame wins on
+// formatting). Header for the identity column is "Name" (frame), set where these are consumed.
+const stageColumns = [
+  { key: 'enabled', header: 'Enabled', align: 'center' as const, width: 100, render: (s: WallStage) => <BeamBool value={s.enabled} /> },
+  { key: 'windows', header: 'Additional Windows', align: 'right' as const, width: 160, render: (s: WallStage) => s.openingWindows.length },
+  { key: 'start', header: 'Start', align: 'right' as const, width: 190, render: (s: WallStage) => fmtDateTimeET(s.startDate) },
+  { key: 'finalOpen', header: 'Final Open', align: 'right' as const, width: 190, render: (s: WallStage) => fmtDateTimeET(s.finalOpenDate) },
+];
+
+export function TokenCampaignDetailPage({ create = false }: { create?: boolean } = {}) {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const campaign = getTokenCampaign(id);
+  const campaign = create ? undefined : getTokenCampaign(id);
   const navState = location.state as { edit?: boolean } | null;
 
-  const [mode, setMode] = useState<'view' | 'edit'>(navState?.edit && campaign ? 'edit' : 'view');
-  const [draft, setDraft] = useState<Draft | null>(() => (navState?.edit && campaign ? makeDraft(campaign) : null));
+  const [mode, setMode] = useState<'view' | 'edit'>(create || (navState?.edit && campaign) ? 'edit' : 'view');
+  const [draft, setDraft] = useState<Draft | null>(() =>
+    create ? makeEmptyDraft() : navState?.edit && campaign ? makeDraft(campaign) : null,
+  );
+  // Draft-only wall stages appended in edit mode (page-local; not part of the CR-payload Draft, and
+  // discarded on cancel/submit like everything else). Empty in view + create.
+  const [addedStages, setAddedStages] = useState<WallStage[]>([]);
   const [notice, setNotice] = useState<Notice>(null);
   const [copied, setCopied] = useState(false);
   const copyUrl = (url: string) => {
@@ -122,23 +184,38 @@ export function TokenCampaignDetailPage() {
     if (!campaign) return;
     setNotice(null);
     setDraft(makeDraft(campaign));
+    setAddedStages([]);
     setMode('edit');
   };
   const cancelEdit = () => {
     // No-confirm discard (matches the Loyalty Levels ruling; the discard-guard question is a shared
-    // open item — see SPEC.md / doctrine).
-    setDraft(null);
-    setMode('view');
+    // open item — see SPEC.md / doctrine). In create there is no view to return to → back to the list.
+    setDraft(create ? makeEmptyDraft() : null);
+    setAddedStages([]);
+    if (create) navigate(BASE);
+    else setMode('view');
   };
   const submitForApproval = () => {
-    // STUB — applies nothing, discards (save-model inversion). Future: create the campaign CR.
-    setDraft(null);
-    setMode('view');
+    // STUB — applies nothing (save-model inversion). Future: create the campaign CR. Create is
+    // identical: NO in-memory push (CR-inversion fidelity over demo continuity) — the notice IS the
+    // honest demo of the model. We stay on-page and surface the notice (same as edit); create keeps its
+    // draft so the notice survives (a navigate here would unmount it), and the user leaves via Cancel.
+    setAddedStages([]);
+    if (!create) {
+      setDraft(null);
+      setMode('view');
+    }
     setNotice({ severity: 'info', msg: 'Submit for Approval — stub. No pipeline yet; nothing was applied. (Future: creates a campaign change request in Pending Approvals.)' });
   };
   const patch = (p: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...p } : d));
+  const addStage = () => {
+    if (!campaign) return;
+    const start = draft?.startDate || campaign.startDate;
+    const end = draft?.endDate || campaign.endDate;
+    setAddedStages((prev) => [...prev, makeDraftStage(campaign.id, campaign.wallStages.length + prev.length + 1, start, end)]);
+  };
 
-  if (!campaign) {
+  if (!campaign && !create) {
     return (
       <Stack spacing={3}>
         <BeamPageHeader title={`Campaign ${id}`} back={backTo(navigate, BASE, 'Token Campaigns')} />
@@ -147,19 +224,24 @@ export function TokenCampaignDetailPage() {
     );
   }
 
-  const isEdit = mode === 'edit' && draft !== null;
+  // campaign is defined whenever !create (guard above); create never reaches a campaign-reading branch.
+  const cc = campaign as TokenCampaign;
+  const isEdit = create || (mode === 'edit' && draft !== null);
   const d = draft;
 
   return (
     // Page-body section gap = spacing(3) = 24px on BOTH axes (the band uses 3 too — see below).
     <Stack spacing={3}>
       <BeamPageHeader
-        title={campaign.name}
+        // Create has no entity yet → a create title, no date subtitle. (The Add frame's "cveti
+        // campaign" + dates are Edit-frame residue — deliberately NOT copied.)
+        title={create ? 'Create Token Campaign' : cc.name}
         back={backTo(navigate, BASE, 'Token Campaigns')}
-        subtitle={`${fmtDateTimeET(campaign.startDate)} ↔ ${fmtDateTimeET(campaign.endDate)}`}
+        subtitle={create ? undefined : `${fmtDateTimeET(cc.startDate)} ↔ ${fmtDateTimeET(cc.endDate)}`}
         // Actions swap by mode, constant geometry: [Delete · View Winners · Edit] ↔
-        // [Cancel · View Winners · Submit for Approval]. View Winners is DISABLED in edit (navigating
-        // away from an active draft would silently discard it — SPEC.md ruling).
+        // [Cancel · View Winners · Submit for Approval]. View Winners is DISABLED in edit AND create
+        // (navigating away from a draft would discard it — SPEC.md ruling; create has no winners yet.
+        // The Add frame shows it active — logged as a frame divergence for the Figma side).
         action={
           isEdit ? (
             <Button variant="contained" onClick={submitForApproval}>Submit for Approval</Button>
@@ -175,10 +257,10 @@ export function TokenCampaignDetailPage() {
             </>
           ) : (
             <>
-              <Button variant="outlined" color="inherit" startIcon={<DeleteIcon />} onClick={() => setNotice({ severity: 'warning', msg: `Delete "${campaign.name}" — stub. No delete pipeline yet (hangs on the CR-granularity ruling). Nothing was removed.` })}>
+              <Button variant="outlined" color="inherit" startIcon={<DeleteIcon />} onClick={() => setNotice({ severity: 'warning', msg: `Delete "${cc.name}" — stub. No delete pipeline yet (hangs on the CR-granularity ruling). Nothing was removed.` })}>
                 Delete
               </Button>
-              <Button variant="outlined" startIcon={<EmojiEventsIcon />} onClick={() => navigate(`${BASE}/${campaign.id}/winners`)}>
+              <Button variant="outlined" startIcon={<EmojiEventsIcon />} onClick={() => navigate(`${BASE}/${cc.id}/winners`)}>
                 View Winners
               </Button>
             </>
@@ -204,10 +286,10 @@ export function TokenCampaignDetailPage() {
           </>
         ) : (
           <>
-            <BeamStat label="Name" value={campaign.name} />
-            <BeamStat label="Start date" value={fmtDateTimeET(campaign.startDate)} />
-            <BeamStat label="End date" value={fmtDateTimeET(campaign.endDate)} />
-            <BeamStat label="Enabled" value={<BeamBool value={campaign.enabled} />} />
+            <BeamStat label="Name" value={cc.name} />
+            <BeamStat label="Start date" value={fmtDateTimeET(cc.startDate)} />
+            <BeamStat label="End date" value={fmtDateTimeET(cc.endDate)} />
+            <BeamStat label="Enabled" value={<BeamBool value={cc.enabled} />} />
           </>
         )}
       </DetailsPanel>
@@ -222,8 +304,8 @@ export function TokenCampaignDetailPage() {
               <BeamField label="Terms &amp; conditions" value={d.tAndC} onChange={(e) => patch({ tAndC: e.target.value })} multiline minRows={10} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
             ) : (
               <Box sx={{ maxHeight: 320, overflowY: 'auto' }}>
-                <Typography variant="body2" color={campaign.tAndC ? 'text.primary' : 'text.disabled'} sx={{ whiteSpace: 'pre-wrap' }}>
-                  {campaign.tAndC || 'No terms provided.'}
+                <Typography variant="body2" color={cc.tAndC ? 'text.primary' : 'text.disabled'} sx={{ whiteSpace: 'pre-wrap' }}>
+                  {cc.tAndC || 'No terms provided.'}
                 </Typography>
               </Box>
             )}
@@ -233,7 +315,7 @@ export function TokenCampaignDetailPage() {
         {/* Promotional Images — full-bleed table: NAME · DESKTOP · MOBILE (thumbnail + Copy URL ⇄ URL field). */}
         <Box sx={{ flex: { md: '3 1 0' }, minWidth: 0 }}>
           <BeamPaper title="Promotional Images" bleed>
-            {(isEdit && d ? d.promotionalImages : campaign.promotionalImages).length === 0 ? (
+            {(isEdit && d ? d.promotionalImages : cc.promotionalImages).length === 0 ? (
               <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No images.</Typography></Box>
             ) : (
               <Table size="small" aria-label="Promotional images">
@@ -245,7 +327,7 @@ export function TokenCampaignDetailPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(isEdit && d ? d.promotionalImages : campaign.promotionalImages).map((im, i) => (
+                  {(isEdit && d ? d.promotionalImages : cc.promotionalImages).map((im, i) => (
                     <TableRow key={im.slot} hover>
                       <TableCell>{PROMO_IMAGE_SLOT_LABEL[im.slot]}</TableCell>
                       <TableCell>
@@ -265,7 +347,7 @@ export function TokenCampaignDetailPage() {
         {/* Sounds — full-bleed table: NAME · URL (play affordance + Copy URL ⇄ URL field). */}
         <Box sx={{ flex: { md: '1.4 1 0' }, minWidth: 0 }}>
           <BeamPaper title="Sounds" bleed>
-            {(isEdit && d ? d.sounds : campaign.sounds).length === 0 ? (
+            {(isEdit && d ? d.sounds : cc.sounds).length === 0 ? (
               <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No sounds.</Typography></Box>
             ) : (
               <Table size="small" aria-label="Sounds">
@@ -276,7 +358,7 @@ export function TokenCampaignDetailPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(isEdit && d ? d.sounds : campaign.sounds).map((sn, i) => (
+                  {(isEdit && d ? d.sounds : cc.sounds).map((sn, i) => (
                     <TableRow key={sn.slot} hover>
                       <TableCell>{SOUND_SLOT_LABEL[sn.slot]}</TableCell>
                       <TableCell>
@@ -301,27 +383,77 @@ export function TokenCampaignDetailPage() {
         </Box>
       </Stack>
 
-      {/* Wall stages — view-only child summary (BeamChildList → BeamPaper). NO field ever, so it stays
-          BORDERLESS even in edit mode while the surfaces above grow their editability borders — the
-          ruling proving itself with zero mode wiring here. */}
-      <BeamChildList<WallStage>
-        aria-label="Wall stages"
-        title="Wall stages"
-        rows={campaign.wallStages}
-        getRowId={(s) => s.id}
-        identityHeader="Stage"
-        getIdentityLabel={(s) => stageLabel(s)}
-        getHref={(s) => `${import.meta.env.BASE_URL}${BASE.replace(/^\//, '')}/${campaign.id}/stages/${s.id}`}
-        LinkComponent={RouterIdentityLink}
-        emptyMessage="No stages."
-        columns={[
-          { key: 'enabled', header: 'Enabled', align: 'center', width: 100, render: (s) => <BeamBool value={s.enabled} /> },
-          // Additional Windows = total openingWindows (IA: windows are additive to finalOpenDate).
-          { key: 'windows', header: 'Additional Windows', align: 'right', width: 170, render: (s) => s.openingWindows.length },
-          { key: 'start', header: 'Start', align: 'right', width: 120, render: (s) => fmtDate(s.startDate) },
-          { key: 'finalOpen', header: 'Final Open', align: 'right', width: 130, render: (s) => fmtDate(s.finalOpenDate) },
-        ]}
-      />
+      {/* Wall stages — three renderings:
+          • CREATE → LOCKED. You can't author a child before the parent exists (sessions never nest).
+          • EDIT (non-create) → page-local composition hosting "+ ADD WALL STAGE". BeamChildList has no
+            header-action slot (logged promotion candidate, this its motivating consumer), so the edit
+            case is composed here; persisted stages keep their drill link, unsaved draft rows render
+            NON-navigable (no page until saved; submit is a stub that discards).
+          • VIEW → the BeamChildList summary (unchanged; borderless — no field ever). */}
+      {create ? (
+        <BeamPaper title="Wall Stages">
+          <Typography variant="body2" color="text.secondary">
+            You must create your token campaign first in order to unlock wall configurations.
+          </Typography>
+        </BeamPaper>
+      ) : isEdit ? (
+        <BeamPaper title="Wall Stages" bleed>
+          <Box sx={{ px: 2, pb: 0.5 }}>
+            <Button variant="text" size="small" startIcon={<AddIcon />} onClick={addStage}>Add wall stage</Button>
+          </Box>
+          <Table size="small" aria-label="Wall stages">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ ...meta }}>Name</TableCell>
+                {stageColumns.map((c) => (
+                  <TableCell key={c.key} align={c.align} sx={{ ...meta, width: c.width }}>{c.header}</TableCell>
+                ))}
+                <TableCell aria-hidden sx={{ width: 40 }} />
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[
+                ...cc.wallStages.map((s) => ({ stage: s, unsaved: false })),
+                ...addedStages.map((s) => ({ stage: s, unsaved: true })),
+              ].map(({ stage: s, unsaved }) => (
+                <TableRow key={s.id} hover>
+                  <TableCell component="th" scope="row">
+                    {unsaved ? (
+                      <Stack>
+                        <Typography variant="body2">{stageLabel(s)}</Typography>
+                        <Typography variant="caption" color="text.secondary">unsaved — saved stages are navigable</Typography>
+                      </Stack>
+                    ) : (
+                      <RouterIdentityLink href={`${import.meta.env.BASE_URL}${BASE.replace(/^\//, '')}/${cc.id}/stages/${s.id}`}>
+                        {stageLabel(s)}
+                      </RouterIdentityLink>
+                    )}
+                  </TableCell>
+                  {stageColumns.map((c) => (
+                    <TableCell key={c.key} align={c.align}>{c.render(s)}</TableCell>
+                  ))}
+                  <TableCell align="right" sx={{ color: 'text.secondary' }}>
+                    {!unsaved && <ChevronRightIcon fontSize="small" aria-hidden sx={{ display: 'block' }} />}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </BeamPaper>
+      ) : (
+        <BeamChildList<WallStage>
+          aria-label="Wall stages"
+          title="Wall stages"
+          rows={cc.wallStages}
+          getRowId={(s) => s.id}
+          identityHeader="Name"
+          getIdentityLabel={(s) => stageLabel(s)}
+          getHref={(s) => `${import.meta.env.BASE_URL}${BASE.replace(/^\//, '')}/${cc.id}/stages/${s.id}`}
+          LinkComponent={RouterIdentityLink}
+          emptyMessage="No stages."
+          columns={stageColumns}
+        />
+      )}
 
       <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)} message="URL copied to clipboard" />
     </Stack>
