@@ -64,10 +64,37 @@ been created (sessions never nest). Consumers: the Token Campaign create page (`
 **now generalized to a second consumer** — the Wall Stage create page (`WallStagePage`, `create` prop) at
 `…/stages/new`, reached from the campaign's "+ ADD WALL STAGE" (which navigates, one level down).
 
-## Open question — recorded, not resolved
+## Creation grammar — NEW vs ADD
 
-**CR granularity.** When a Wall Stage's *Submit for Approval* fires, does it create a **stage-level**
-change request, or **roll up** into the parent campaign's CR? Today **both route levels stub their own
-Submit**, which quietly asserts **stage-level** granularity. That is a placeholder, not a decision — it
-is backend-ledger material (Tzeno's change-request model), and it interacts with the delta-rendering of
-nested lists (approval-grammar) and Delete's pipeline. **Flagged, not chosen here.**
+Two verbs, two meanings. The word on the button is a claim about **what gets created and who approves it**.
+
+### NEW — creates a route-level, approval-bearing entity
+- **Where:** a **list page**'s primary action — **"+ NEW &lt;entity&gt;"** (New Token Campaign, New Config,
+  New Preset).
+- **What:** a standalone entity with **its own page and its own change request**. The create route is an
+  **edit session with no view** (see above); its primary CTA is **Submit for Approval** (a stub until the
+  pipeline lands). **The entity is the CR unit.**
+
+### ADD — composes a child into an existing parent
+- **Where:** inside a parent's edit/create session — **"+ ADD &lt;child&gt;"** (Add Wall Stage), or a bare
+  **ADD** where a **dialog title** already carries the context (Add Reward Item).
+- **What:** a child folded into the parent. It has **no approval of its own — the parent's approval covers
+  its children.** So an ADD **commits directly into the parent** (into its draft when the parent is mid-edit,
+  or into the parent record when the child is authored on its own page); there is no child-level Submit.
+- **Route-level ≠ NEW.** A child may still be a *route level* (its own page — a Wall Stage is) and still be
+  an **ADD**: the NEW/ADD split is about **the CR unit**, not about depth. A Wall Stage has its own page yet
+  rolls up into the campaign's CR, so its create page's CTA is **"ADD WALL STAGE"**, not Submit for Approval.
+
+### This resolves CR granularity (design answer, pending backend confirmation)
+
+The old open question — does a Wall Stage's Submit create a stage-level CR or roll up into the campaign's?
+— is **answered by this grammar as the design's claim: the campaign is the CR unit; stages, opening
+windows, and rewards roll up into it.** Only NEW mints a change request; every ADD is covered by the
+parent's. This is **design-answer-pending-backend-confirmation** — it needs Tzeno's change-request ledger
+to confirm the model supports campaign-grained CRs with nested child deltas (it interacts with the
+delta-rendering of nested lists in approval-grammar, and with Delete's pipeline). **Claimed here, awaiting
+backend sign-off — no longer open.**
+
+*(Consequence still open: Wall Stage **EDIT** currently inherits a "Submit for Approval" CTA, which under
+this grammar should become a **Save-to-campaign** — a stage edit rolls up too. Flagged for a separate
+ruling; not changed with the grammar.)*

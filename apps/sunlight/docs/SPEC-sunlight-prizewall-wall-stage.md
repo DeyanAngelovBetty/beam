@@ -139,10 +139,20 @@ becomes a card; Cancel discards. No 13th slot (hard cap — Deyan).
 
 - **`…/stages/new`** (`WallStagePage`, `create` prop) — a create route = an edit session with no view
   (drill-down-grammar; Wall Stage is its **second consumer**). Empty stage draft: one empty opening
-  window + the existing "+ New opening window"; **3 empty Quick + 3 empty Info** rule rows (mock counts);
-  the 2 fixed Image rows; a 12-slot reward grid of "+ ADD" tiles. Title **"Create Wall Stage"**, breadcrumb
-  `← {campaign}`. Header **[Cancel · Submit]**, no Delete (nothing to delete). Submit is the same stub
-  (stays on page). The frame's "Wall Stage 1" title + Delete/Edit chrome is View/Edit residue — not copied.
+  window + "+ Add opening window"; **3 empty Quick + 3 empty Info** rule rows (mock counts); the 2 fixed
+  Image rows; a 12-slot reward grid of "+ ADD" tiles. Title **"Create Wall Stage"**, breadcrumb
+  `← {campaign}`. The frame's "Wall Stage 1" title + Delete/Edit chrome is View/Edit residue — not copied.
+- **A Wall Stage is an ADD, not a NEW (creation grammar, 2026-09-11).** It rolls up into the campaign's
+  CR, so the primary CTA is **"ADD WALL STAGE"** and it **commits the stage straight into the campaign's
+  `wallStages` (in-memory, `addWallStage`)** — NOT a Submit-for-Approval stub (that governs campaign
+  CREATE, a NEW). No Submit, no Delete (create-mode ruling). **Contrast the campaign-create stub, which
+  stands for NEW** — a NEW mints a CR, an ADD is covered by the parent's.
+  - **Landing (argued): back to the campaign, not the new stage's view.** Under the grammar you *added a
+    child to the campaign*, so returning to the parent — now showing the stage in its Wall Stages list —
+    is the coherent continuity (immediate proof the add landed; add another, or continue). It also mirrors
+    Cancel's destination, the only difference being that ADD committed the stage. Landing on the new stage
+    would be a NEW-shaped "land on the thing you made"; and the stage is already fully authored in the
+    form before ADD, so its view would be mere confirmation. Campaign wins.
 - **Reconciliation — "+ ADD WALL STAGE" now NAVIGATES.** With a real create route, the campaign Edit's
   draft-row append (2026-09-10) **retires** — one add path, no competing mechanisms. The button navigates
   to `…/stages/new` from **view and edit alike**; drilling from edit leaves (discards) the campaign draft
@@ -154,6 +164,29 @@ becomes a card; Cancel discards. No 13th slot (hard cap — Deyan).
 - **Frame divergences (recorded, not applied):** editable image NAME in the frame — Header/Background are
   **fixed structural slots**, kept fixed-name with empty URLs. Empty **numeric** fields render `0`, not
   blank (a blank-vs-0 empty-number treatment is the shared deferred item across the create screens).
+
+### FLAG — Wall Stage EDIT's CTA is now grammar-inconsistent (Deyan rules separately)
+
+Under the NEW/ADD creation grammar, a stage EDIT rolls up into the campaign too — so the inherited
+**"Submit for Approval"** CTA on Wall Stage edit should become a **Save-to-campaign** (write into the
+campaign, no stage-level CR). **Flagged, not changed** — the edit-CTA question waits for Deyan's ruling;
+the grammar pass only reworded/reworked CREATE. (The stub comment in `submitForApproval` carries the same
+flag.)
+
+### Vocabulary sweep (2026-09-11, report + label-only fixes)
+
+Audited create/add actions estate-wide against the grammar (list → NEW, child → ADD):
+- **Correct NEW (list pages):** New Token Campaign · New Config (game) · New config (payout) · New Preset.
+- **Correct ADD (children):** Add Wall Stage · Add reward (Loyalty) · Add Reward (Payout) · Add Row ·
+  Add Sector · Add Condition · Add else (Gaspar rule node) · reward "+ ADD" tiles · Add Reward Item (dialog).
+- **FIXED (label-only):** WallStage "**New opening window**" → "**Add opening window**" — an opening window
+  is a child (ADD).
+- **FLAGGED (structural — not fixed):** UsersPage "**Add user**" and RolesPage "**Add role**" are
+  list-page primary actions for standalone route-level entities, so the list→NEW convention would make them
+  "New user" / "New role" (matching the four config/campaign list pages). But the grammar defines NEW as
+  *approval-bearing*, and users/roles aren't CR-gated — so whether this grammar governs them is a
+  **scope question for the team**, not an unambiguous relabel. Recommend "New user"/"New role" for
+  list-page consistency if NEW is extended to non-approval standalone entities.
 
 ### Later flags (parked improvement temptations — PrizeWall done, not improved)
 - **Shared page-local components duplicated** — `MediaCell` / `CopyUrlButton`(now inline) / `Thumb` /

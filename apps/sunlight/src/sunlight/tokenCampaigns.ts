@@ -326,3 +326,19 @@ export function getTokenCampaign(id: string): TokenCampaign | undefined {
 export function getWallStage(campaignId: string, stageId: string): WallStage | undefined {
   return getTokenCampaign(campaignId)?.wallStages.find((s) => s.id === stageId);
 }
+
+/**
+ * Commit a new wall stage into its campaign, IN-MEMORY. This is the ADD verb of the creation grammar
+ * (drill-down-grammar "NEW vs ADD"): a child folds into its parent with no approval of its own — the
+ * campaign's approval covers it — so the add writes directly, unlike the CR-inversion stub that governs
+ * campaign CREATE (NEW). Assigns a real (non-draft) id + order from the current stage count. Demo mock
+ * mutation; a real backend would persist via the campaign's change request.
+ */
+export function addWallStage(campaignId: string, stage: WallStage): WallStage | undefined {
+  const c = getTokenCampaign(campaignId);
+  if (!c) return undefined;
+  const order = c.wallStages.length + 1;
+  const committed: WallStage = { ...stage, id: `${campaignId}-s${order}-${Date.now().toString(36)}`, order };
+  c.wallStages.push(committed);
+  return committed;
+}

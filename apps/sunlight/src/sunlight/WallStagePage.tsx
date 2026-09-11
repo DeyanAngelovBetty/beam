@@ -38,6 +38,7 @@ import { backTo } from './backTo';
 import {
   getTokenCampaign,
   getWallStage,
+  addWallStage,
   stageLabel,
   REWARD_TYPES,
   type WallStage,
@@ -57,8 +58,10 @@ import {
  *
  * CREATE (`create`): a create route is an EDIT SESSION WITH NO VIEW (drill-down-grammar; Wall Stage is
  * its second consumer). Lands straight in edit with an empty stage draft — one empty opening window, 3
- * empty Quick / Info rule rows, the 2 fixed Image rows, and a 12-slot reward grid of "+ ADD" tiles.
- * Cancel → back to the campaign; Submit → the same stub (stays on page); Delete absent.
+ * empty Quick / Info rule rows, the 2 fixed Image rows, and a 12-slot reward grid of "+ ADD" tiles. A
+ * Wall Stage is an ADD, not a NEW (creation grammar): it rolls up into the campaign's CR, so the primary
+ * CTA is "ADD WALL STAGE" — it COMMITS the stage straight into the campaign's wallStages (in-memory),
+ * NOT a Submit-for-Approval stub (that governs campaign CREATE, a NEW). Cancel → campaign; Delete absent.
  *
  * INTENT DELTA (handoff convention): the WallStage frames' headers still show DELETE/EDIT — that's
  * un-redrawn view chrome; per the spec we inherit the campaign edit-session semantics, so the header
@@ -177,13 +180,20 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
     setMode('view');
   };
   const submitForApproval = () => {
-    // STUB — same as Campaign detail: applies nothing (save-model inversion). Create is identical
-    // (no in-memory push); stays on-page so the notice survives (a navigate would unmount it).
-    if (!create) {
-      setDraft(null);
-      setMode('view');
-    }
+    // EDIT stub — applies nothing (save-model inversion), returns to view. (FLAGGED: under the NEW/ADD
+    // grammar a stage edit rolls up into the campaign, so this CTA should become Save-to-campaign — a
+    // separate ruling; not changed here.)
+    setDraft(null);
+    setMode('view');
     setNotice({ severity: 'info', msg: 'Submit for Approval — stub. No pipeline yet; nothing was applied. (Future: creates a change request in Pending Approvals.)' });
+  };
+  // CREATE = ADD (creation grammar): commit the stage straight into the campaign (no CR of its own —
+  // the campaign's approval covers it), then land back on the campaign so the add is visible in its
+  // Wall Stages list (see below for the landing argument).
+  const addWallStageAndReturn = () => {
+    if (!campaign || !d) return;
+    addWallStage(campaign.id, d);
+    navigate(`${BASE}/${id}`);
   };
   const patch = (p: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...p } : d));
 
@@ -223,10 +233,13 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
         back={backTo(navigate, `${BASE}/${id}`, campaign.name)}
         // Subline = the campaign's date range (per the frame).
         subtitle={`${fmtDateTimeET(campaign.startDate)} ↔ ${fmtDateTimeET(campaign.endDate)}`}
-        // INTENT DELTA: inherit the campaign edit header — [Delete · Edit] ⇄ [Cancel · Submit for Approval];
-        // create is [Cancel · Submit] with no Delete (nothing to delete yet).
+        // INTENT DELTA: inherit the campaign edit header — [Delete · Edit] ⇄ [Cancel · Submit for Approval].
+        // CREATE is an ADD: [Cancel · ADD WALL STAGE], no Delete (create-mode ruling), no Submit — the
+        // add commits into the campaign (creation grammar).
         action={
-          isEdit ? (
+          create ? (
+            <Button variant="contained" onClick={addWallStageAndReturn}>Add Wall Stage</Button>
+          ) : isEdit ? (
             <Button variant="contained" onClick={submitForApproval}>Submit for Approval</Button>
           ) : (
             <Button variant="contained" startIcon={<EditIcon />} onClick={enterEdit}>Edit</Button>
@@ -319,7 +332,8 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
                   startIcon={<AddIcon />}
                   onClick={() => patch({ openingWindows: [...d.openingWindows, { id: `${d.id}-w${d.openingWindows.length + 1}-${Date.now()}`, openDate: '', endDate: '', durationMin: 5 }] })}
                 >
-                  New opening window
+                  {/* ADD, not New — an opening window is a child of the stage (creation grammar). */}
+                  Add opening window
                 </Button>
               </Box>
             )}
