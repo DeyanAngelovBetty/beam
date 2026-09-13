@@ -66,7 +66,11 @@ veil** (`--Paper-overlay`). That is a *second*, uncontrolled elevation signal fi
   exiting under the ceiling simply fades under it (a `view()` exit animation, `stickyChromeExitSx`). Frost was
   tried TWICE — first a fully-translucent ceiling, then a glass sheen `::before` over the opaque base — and
   retired both times by the containment ruling: the ceiling never exposes rows, so it is page. The ceiling
-  also pins at a top OFFSET (`CHROME_TOP_OFFSET`) so it clears the floating brand strip.
+  pins at `top: 0` ALWAYS (sticky's contract is constant geometry — no jump); logo clearance is the CONSTANT
+  band height (`CHROME_CEILING_BAND`, the ceiling `padding-top`), and the extra over the section gap is
+  absorbed at rest by the pre-grid section's negative margin (against `PAGE_SECTION_GAP`). The band paints
+  transparent at rest (it overlaps that section) and opaque only when stuck, via a fixed-attachment
+  `::before` whose opacity fades in — an identical-pixel dissolve.
 
 ## Open question — light mode (Vasco)
 

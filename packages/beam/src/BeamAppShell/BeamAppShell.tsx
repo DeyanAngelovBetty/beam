@@ -26,7 +26,8 @@ import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT } from '..
 
 const DRAWER_WIDTH = 264;
 // ONE source with the sticky-chrome ceiling: a grid derives its top offset from this same height so the
-// pinned bucket clears the strip (tokens.ts LOGO_BAR_HEIGHT → CHROME_TOP_OFFSET). Kept as the local name.
+// pinned bucket's ceiling band clears the strip (tokens.ts LOGO_BAR_HEIGHT → CHROME_CEILING_BAND). Kept as
+// the local name.
 const STRIP_HEIGHT = LOGO_BAR_HEIGHT;
 
 // timing: Deyan tunes on the bench

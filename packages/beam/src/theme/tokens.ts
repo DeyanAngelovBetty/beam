@@ -74,18 +74,20 @@ export const PAGE_SECTION_GAP = 3;
 /**
  * LOGO_BAR_HEIGHT — the floating brand strip's height (BeamAppShell's `STRIP_HEIGHT`), promoted here as
  * the ONE source so a sticky-chrome grid can clear it without the shell and the grid drifting apart. The
- * shell imports it as `STRIP_HEIGHT`; the grid derives `CHROME_TOP_OFFSET` from it.
+ * shell imports it as `STRIP_HEIGHT`; the grid derives `CHROME_CEILING_BAND` from it.
  */
 export const LOGO_BAR_HEIGHT = 56;
 
 /**
- * CHROME_TOP_OFFSET — the sticky bucket's `top` when pinned (px). The floating brand strip overlays the
- * scroll owner's top-left; the bucket must pin BELOW it, so its top offset = the strip's height + an 8px
- * breath. Applied via `top:` (not padding) so it bites ONLY when stuck — at rest the grid is in flow and
- * pixel-identical, and the crossover stays jump-free (top-based pinning). The FROSTED ceiling `::before`
- * fills this offset (viewport top → card top); see BeamDataTable.
+ * CHROME_CEILING_BAND — the height (px) of the sticky bucket's painted ceiling band: the page the logo
+ * floats over when the chrome is pinned. = the brand strip's height + an 8px breath, so the card (batch
+ * strip + header) sits clear BELOW the floating logo. The bucket pins at `top: 0` ALWAYS (sticky's contract
+ * is CONSTANT geometry through the pin — no jump); this band is a CONSTANT `padding-top`, and its extra
+ * height over the section gap is absorbed at rest by the pre-grid section's negative margin (against
+ * PAGE_SECTION_GAP — NOT CONTENT_TOP, whose nav-shift duty disqualifies it), keeping the rest gap
+ * pixel-identical. See BeamDataTable's ceiling paint + stickyChromeGapSx.
  */
-export const CHROME_TOP_OFFSET = LOGO_BAR_HEIGHT + 8;
+export const CHROME_CEILING_BAND = LOGO_BAR_HEIGHT + 8;
 
 /**
  * pageBackdropSx — the page's FIXED backdrop as a shared source, ONE definition two consumers: the

@@ -521,12 +521,13 @@ const benchColumns: BeamColumn<BenchRow>[] = [
  * identical to a non-sticky grid). Flip to **250 / 500** and watch the chrome engage on its own. Anything
  * rendering stuck at 10 rows is a real bug, not a nit.
  *
- * TASK-A eyeball (exit): the pinned bucket now sits at a top OFFSET (clearing where a brand strip would
- * float). Its ceiling paints the OPAQUE backdrop, identical to the floor — page, not glass (frost was tried
- * twice and retired; the exit animation is the treatment). The **Filters** panel above the grid scales +
- * fades + lifts as it slides under the bucket (a `view()` exit timeline, inset by the measured bucket
- * height). Judge the EXIT CURVE here. Reduced-motion: the exit stops (panel just scrolls under an opaque
- * band). Non-Chrome: no exit, same graceful scroll-under.
+ * TASK-A eyeball (exit): the bucket pins at top: 0 ALWAYS (constant geometry — no jump). Logo clearance is
+ * the CONSTANT ceiling band height (the card clears where a brand strip would float); at rest the extra is
+ * absorbed by the pre-grid section's negative margin, so the heading→grid gap is pixel-identical. The band
+ * paints opaque page only when stuck (a fixed-attachment ::before whose opacity fades in). The **Filters**
+ * panel above the grid scales + fades + lifts as it slides under the bucket (a `view()` exit timeline, inset
+ * by the measured bucket height → the true bucket bottom). Judge the EXIT CURVE + that the rest gap doesn't
+ * jump as the chrome pins. Reduced-motion: the exit stops (panel just scrolls under). Non-Chrome: no exit.
  */
 // Shared bench render — `fancyBackdrop` drops the scroll-owner's flat `background.default` so the theme's
 // FIXED page backdrop (mesh + star, body::before/after) shows through, proving the chrome ceiling/floor
@@ -607,10 +608,12 @@ export const StickyChromeBench: Story = {
 
 /**
  * Sticky-chrome over the FANCY page backdrop — the PROOF SURFACE. The scroll owner is transparent so the
- * theme's FIXED mesh + Betty-star backdrop (body::before/after) shows. BOTH bands paint an opaque copy of
- * the backdrop (pageBackdropSx: base + mesh, background-attachment: fixed) — seamless with the section gaps
- * AND no ghosting (rows are always occluded). The two edges are now IDENTICAL page bands; the ceiling's
- * exiting Filters panel simply fades under it (the exit animation is the treatment).
+ * theme's FIXED mesh + Betty-star backdrop (body::before/after) shows. Both edges read as opaque page bands
+ * (pageBackdropSx: base + mesh, background-attachment: fixed) — seamless with the section gaps AND no
+ * ghosting (rows always occluded). The FLOOR paints opaque always; the CEILING's band is a constant height
+ * with a stuck-gated opacity FADE (transparent at rest, where it overlaps the pre-grid section via the
+ * negative margin; opaque when stuck). Because it paints the fixed backdrop, the fade is an identical-pixel
+ * dissolve. The exiting Filters panel fades under it (the exit animation is the treatment).
  *
  * (History: transparent bands were tried and falsified — content transiting them ghosted through. A frosted
  * ceiling was then tried twice — fully translucent, then a glass sheen over the opaque base — and retired

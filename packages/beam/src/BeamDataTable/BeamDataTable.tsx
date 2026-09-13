@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_TOP_OFFSET, pageBackdropSx } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -73,6 +73,14 @@ export const stickyChromeGapSx = {
     pt: CONTENT_TOP,
     gap: 0,
     '& > *:not(:has(+ [data-beam-sticky-chrome])):not(:last-child)': { mb: PAGE_SECTION_GAP },
+    // The section immediately BEFORE the grid carries a NEGATIVE margin = PAGE_SECTION_GAP − the ceiling
+    // band, so the rest gap stays pixel-identical: the bucket's ceiling `pt` is a CONSTANT CHROME_CEILING_BAND
+    // (64) — taller than the 24px section gap — and this −40px pulls the bucket up to absorb the extra at
+    // rest (visible gap = −40 + 64 = 24). The band paints TRANSPARENT at rest (its ::before fades in only
+    // when stuck), so this overlap is invisible; the bucket is pointer-events:none over it. This is the
+    // budget the proposal settled on — PAGE_SECTION_GAP, NOT CONTENT_TOP (nav-shift duty). (px: the
+    // spacing×8 − band arithmetic can't be an sx spacing multiple.)
+    '& > *:has(+ [data-beam-sticky-chrome])': { mb: `${PAGE_SECTION_GAP * 8 - CHROME_CEILING_BAND}px` },
   },
 };
 
@@ -633,11 +641,9 @@ export function BeamDataTable<Row>({
       io.observe(sentinel);
       return io;
     };
-    // The footer pins flush (bottom: 0); the bucket pins at top: CHROME_TOP_OFFSET (clearing the brand
-    // strip). So the TOP sentinel's root margin is shrunk by that offset — it trips stuck at the exact pin
-    // moment (when the sentinel reaches y=CHROME_TOP_OFFSET), not 64px late. (Chrome's scroll-state path
-    // knows the offset natively; this is the JS fallback.)
-    const top = observe(topSentinelRef.current, bucketRef.current, 'top', `-${CHROME_TOP_OFFSET}px 0px 0px 0px`);
+    // Both edges pin flush (bucket top: 0, footer bottom: 0), so the sentinels trip stuck at the scrollport
+    // edges — no root-margin offset (logo clearance is now the band's height, not a pin offset).
+    const top = observe(topSentinelRef.current, bucketRef.current, 'top', '0px 0px 0px 0px');
     const bottom = observe(bottomSentinelRef.current, footerRef.current, 'bottom', '0px 0px 0px 0px');
     return () => {
       top?.disconnect();
@@ -647,8 +653,10 @@ export function BeamDataTable<Row>({
 
   // Publish the bucket's measured height as `--beam-bucket-height` on the SCROLL PARENT (the page owns the
   // scroll). A page section above the grid reads it via `stickyChromeExitSx` to inset its `view()` exit
-  // timeline to the CHROME edge (the bucket's height), not the viewport top. Measured, never assumed (the
-  // rail-width precedent) — RO tracks strip/header height changes (bulk-strip appearing, wrap, resize).
+  // timeline to the CHROME edge, not the viewport top. With the bucket pinned at top: 0, its measured height
+  // IS the occlusion edge from the viewport top, so the exit range lands exactly at the true bucket bottom
+  // (no offset term). Measured, never assumed (the rail-width precedent) — RO tracks strip/header height
+  // changes (bulk-strip appearing, wrap, resize).
   useEffect(() => {
     if (!stickyChrome) return;
     const bucket = bucketRef.current;
@@ -760,9 +768,29 @@ export function BeamDataTable<Row>({
       background: STUCK_BAND_DOWN, pointerEvents: 'none',
     },
   };
-  // (Frost RETIRED 2026-09-13 — tried twice, transparent then sheen-over-opaque, retired both times by the
-  // containment ruling: the ceiling never exposes rows. The exit animation is the treatment now; the band
-  // is opaque page, identical to the floor. See stickyChromeExitSx + BeamDataTable-notes.)
+  // CEILING PAINT — the opaque page band the logo floats over, stuck-gated with an opacity FADE. The band
+  // is a CONSTANT CHROME_CEILING_BAND tall (the bucket's `pt`), so the card sits a fixed distance below the
+  // bucket top — continuous through the pin, NO jump (sticky's contract IS constant geometry). At rest the
+  // band overlaps the pre-grid section (the negative margin keeping the rest gap pixel-identical), so it must
+  // paint TRANSPARENT there — hence a `::before` carrying pageBackdropSx at opacity 0, fading to 1 only when
+  // stuck. Because it paints the FIXED-attachment backdrop, the fade lands on identical pixels wherever only
+  // backdrop is behind; where the exiting panel is still behind, the fade cross-dissolves with the panel's
+  // exit — a paint transition, never a layout shift. Pointer-transparent (inherits the outer's none).
+  // (Frost RETIRED 2026-09-13 — tried twice, transparent then sheen-over-opaque; the exit animation is the
+  // treatment, the band is page. See stickyChromeExitSx + BeamDataTable-notes.)
+  const ceilingPaintSx = {
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      ...pageBackdropSx,
+      opacity: 0,
+      transition: 'opacity var(--beam-motion-quick)',
+    },
+    '&[data-stuck="top"]::before': { opacity: 1 },
+    // Chrome enhancement: the pseudo (a descendant of the outer container) queries the outer's stuck state.
+    '@container scroll-state(stuck: top)': { '&::before': { opacity: 1 } },
+  };
   // Stuck footer dressing = the up-band only. The paper background is carried by the inner ALWAYS (below,
   // not gated on stuck) — paper-on-paper at rest (invisible), the opacity that stops rows ghosting when
   // pinned. So no bgcolor here; the base bg supersedes it.
@@ -944,16 +972,18 @@ export function BeamDataTable<Row>({
   // scroll-state paths). The clone appears only while stuck, landing exactly where the real header
   // scrolls under, so the handoff reads seamless.
   const bucketEl = stickyChrome ? (
-    // OUTER = the page CEILING. Pins at `top: CHROME_TOP_OFFSET` (NOT 0) so it clears the floating brand
-    // strip (BeamAppShell) — the offset is the strip's height + a breath, applied via `top` so it bites
-    // only when stuck (at rest the grid is in flow, pixel-identical; the crossover stays jump-free). The
-    // ceiling is OPAQUE (pageBackdropSx, identical to the FLOOR) so rows can NEVER ghost through — the
-    // grid's containment story wins. It is PAGE, not glass: the exiting page section fades under it (the
-    // treatment is the exit animation, stickyChromeExitSx — frost was tried twice and retired). Carries the
-    // donated section gap as padding-top (PAGE_SECTION_GAP; the shell gives it up via stickyChromeGapSx).
+    // OUTER = the page CEILING. Pins at `top: 0` ALWAYS — sticky's contract is CONSTANT geometry through
+    // the pin, so the card sits a fixed distance below the bucket top at every scroll position: no jump.
+    // Logo clearance is the BAND HEIGHT, not a pin offset: `pt` is a constant CHROME_CEILING_BAND (strip
+    // height + breath), so the card clears the floating brand strip; the pre-grid section's negative margin
+    // (stickyChromeGapSx) absorbs the extra at rest, keeping the rest gap pixel-identical. The band paints
+    // via `ceilingPaintSx`'s stuck-gated ::before (opaque pageBackdropSx, opacity fade) — transparent at
+    // rest (so the negative-margin overlap is invisible), opaque page when stuck (logo over page, rows
+    // occluded). pointer-events:none so the transparent band doesn't eat clicks on the section beneath; the
+    // inner re-enables auto.
     <Box
       ref={bucketRef}
-      sx={{ position: 'sticky', top: `${CHROME_TOP_OFFSET}px`, zIndex: Z_CHROME, pt: PAGE_SECTION_GAP, ...pageBackdropSx, ...containerTypeScrollState }}
+      sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, pt: `${CHROME_CEILING_BAND}px`, pointerEvents: 'none', ...ceilingPaintSx, ...containerTypeScrollState }}
     >
       <Box
         className="beam-bucket-inner"
@@ -963,6 +993,9 @@ export function BeamDataTable<Row>({
         // overflow-clip here. Squircled corners to match the card floor.
         sx={{
           position: 'relative',
+          // Re-enable pointer events: the outer is pointer-events:none (so its transparent-at-rest ceiling
+          // band doesn't eat clicks on the section it overlaps); the inner is the interactive chrome.
+          pointerEvents: 'auto',
           bgcolor: 'background.paper',
           ...SIDE_BORDER,
           // WIDTH/STYLE longhands, NOT the `border-top` shorthand — the shorthand would reset border-top-

@@ -237,20 +237,33 @@ bucket: also parked, a later installment.)
 Three cosmetic passes. **A** (frosted ceiling + filter-panel exit) is BENCH-gated — the taste calls
 (frost density, exit curve) are eyeballed in Storybook before Gaspar. **B**/**C** (scrollbars) build direct.
 
-- **Top offset — the bucket clears the floating brand strip (A1).** The bucket pins at
-  `top: CHROME_TOP_OFFSET` (tokens.ts = `LOGO_BAR_HEIGHT 56` + an 8px breath), not `top: 0`. Applied via
-  `top` (not padding) so it bites ONLY when stuck — at rest the grid is in flow, pixel-identical, and the
-  crossover stays jump-free (top-based pinning). `LOGO_BAR_HEIGHT` is the ONE source with the shell's
-  `STRIP_HEIGHT` (BeamAppShell imports it). The JS stuck-sentinel's top `rootMargin` is shrunk by the offset
-  so `data-stuck` trips at the exact pin moment (Chrome's `scroll-state` path knows the offset natively).
-- **Ceiling — opaque page, NOT glass (A2, final 2026-09-13).** The ceiling outer paints `pageBackdropSx`
-  only — identical to the floor. Rows can NEVER ghost through; the grid's containment story wins. **Frost was
-  tried twice and RETIRED both times:** first fully translucent (rows ghosted through — the same failure as
-  the transparent bands), then a glass sheen `::before` layered over the opaque base (glass only where it
-  overlapped the top-offset gap, inert elsewhere). The ruling: the ceiling never exposes rows, so it is page,
-  and the EXIT ANIMATION alone carries the effect — the exiting page section fades under an opaque page band.
-  `ceilingFrostSx` and its `--beam-chrome-frost-*` tokens are deleted (not orphaned). `CHROME_TOP_OFFSET` (the
-  top offset) stays — that job is unrelated to the frost.
+- **Logo clearance — the CONSTANT band height, pinned at top: 0 (A1, final 2026-09-14).** The bucket pins at
+  `top: 0` ALWAYS — sticky's contract is CONSTANT geometry through the pin, so the card sits a fixed distance
+  below the bucket top at every scroll position: **no jump**. Logo clearance is the BAND HEIGHT, not a pin
+  offset: the ceiling `pt` is a constant `CHROME_CEILING_BAND` (tokens.ts = `LOGO_BAR_HEIGHT 56` + an 8px
+  breath = 64), so the card clears the floating brand strip. The extra height over the section gap is
+  absorbed AT REST by the pre-grid section's **negative margin** in `stickyChromeGapSx` (`PAGE_SECTION_GAP −
+  CHROME_CEILING_BAND` = −40px → visible rest gap = −40 + 64 = 24, pixel-identical). The budget is
+  `PAGE_SECTION_GAP`, NOT `CONTENT_TOP` (whose nav dock/undock duty disqualifies it; and md's 80 < the 88
+  it'd need). `LOGO_BAR_HEIGHT` is the ONE source with the shell's `STRIP_HEIGHT` (BeamAppShell imports it).
+  Sentinel `rootMargin` is plain `0px` again (flush pin). *Edge case:* a sticky grid with NO preceding
+  section has no negative margin to absorb the extra 40px, so its top gap is ~40px larger — acceptable, no
+  preceding seam to preserve there.
+  - *Why a constant band + negative margin, not state-dependent padding:* growing `pt` on `data-stuck` would
+    settle the card (and the header clone) down 40px on every pin — animating a BREACH of sticky's constant-
+    geometry contract. The constant band keeps the card continuous; only the PAINT toggles (below).
+- **Ceiling paint — opaque page, stuck-gated opacity FADE (A2, final 2026-09-14).** The band is opaque page,
+  NOT glass — rows can NEVER ghost through (the grid's containment story wins), and the EXIT ANIMATION alone
+  carries the effect (the exiting section fades under an opaque page band). But because the constant band
+  overlaps the pre-grid section at rest (the negative margin), it can't paint opaque there — so `ceilingPaintSx`
+  is a `::before` carrying `pageBackdropSx` at `opacity: 0`, fading to `1` only when stuck (`data-stuck` +
+  `@container scroll-state(stuck: top)`). Since it paints the FIXED-attachment backdrop, the fade lands on
+  identical pixels wherever only backdrop is behind; where the exiting panel is still behind, it cross-
+  dissolves with the panel's exit — a paint transition, never a layout shift. The outer is `pointer-events:
+  none` (so the transparent-at-rest band doesn't eat clicks on the overlapped section); the inner re-enables
+  `auto`. **Frost was tried twice and RETIRED** (transparent ceiling → rows ghosted; then a glass sheen over
+  an opaque base → the containment ruling: the ceiling never exposes rows). `ceilingFrostSx`, `CHROME_TOP_OFFSET`,
+  and the `--beam-chrome-frost-*` tokens are all gone — `CHROME_TOP_OFFSET` repurposed as `CHROME_CEILING_BAND`.
 - **Filter-panel exit (A3).** New exported `stickyChromeExitSx` (mirror of `stickyChromeGapSx`), spread onto
   a page section above the grid: it scales (0.96) + fades + lifts (-8px) as it slides under the bucket. A
   `view()` scroll-progress timeline over `animation-range: exit`, inset by `view(block var(--beam-bucket-height) auto)`
