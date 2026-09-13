@@ -13,6 +13,7 @@ import {
   BeamDataTable,
   BeamPageHeader,
   stickyChromeGapSx,
+  stickyChromeExitSx,
   PAGE_SECTION_GAP,
 } from '@betty/beam';
 import type { BeamColumn, AddableField, BeamBadgeProps } from '@betty/beam';
@@ -700,6 +701,12 @@ export function TransactionsPage() {
           built-in input with no key-event hook exposed, so Enter there cannot commit without a
           BeamFilterBar API addition — deliberately NOT done (no component change); the Filter CTA
           commits search. UsersPage, the reference, likewise has no Enter-to-apply. */}
+      {/* Exit treatment (bench→official promotion of the ratified sticky-chrome exit): the pre-grid section
+          scales + fades + lifts as it slides up under the pinned bucket. The bench attaches stickyChromeExitSx
+          directly on its filter panel's root Paper; BeamFilterBar (a placeholder organism) exposes no sx prop,
+          so the SAME sx rides a Box wrapper here — the wrapper is now the pre-grid section that stickyChromeGapSx
+          and the exit both key off. Progressive + reduced-motion gating lives inside the helper. */}
+      <Box sx={stickyChromeExitSx}>
       <BeamFilterBar
         aria-label="Transaction filters"
         searchValue={draft.q}
@@ -751,6 +758,7 @@ export function TransactionsPage() {
           ))}
         </BeamField>
       </BeamFilterBar>
+      </Box>
 
       <BeamDataTable
         columns={columns}
