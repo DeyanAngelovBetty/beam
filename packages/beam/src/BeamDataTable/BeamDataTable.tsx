@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, pageBackdropSx } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_TOP_OFFSET, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -75,6 +75,36 @@ export const stickyChromeGapSx = {
     '& > *:not(:has(+ [data-beam-sticky-chrome])):not(:last-child)': { mb: PAGE_SECTION_GAP },
   },
 };
+
+/**
+ * stickyChromeExitSx — spread onto a page section (a filter panel, a summary card) that sits ABOVE a
+ * sticky-chrome grid, so it scales + fades + lifts as it slides up UNDER the pinned bucket (the nerdy.dev
+ * scroll-axis treatment). Progress rides a `view()` scroll-progress timeline over `animation-range: exit`,
+ * inset by the bucket's measured height (`--beam-bucket-height`, published by the grid onto the scroll
+ * parent) so the exit line is the CHROME edge, not the viewport top. The keyframes (`beam-panel-exit`) live
+ * in the theme.
+ *
+ * PROGRESSIVE (grammar posture): the whole treatment is `@supports (animation-timeline: view())`-gated —
+ * Chrome-family only; elsewhere the panel just scrolls under, today's behavior. And it's nested under
+ * `prefers-reduced-motion: no-preference`, so reduced-motion disables the scale/fade (the frost, being
+ * static, stays). One helper, two gates, mirroring `stickyChromeGapSx`.
+ */
+export const stickyChromeExitSx = {
+  '@supports (animation-timeline: view())': {
+    '@media (prefers-reduced-motion: no-preference)': {
+      // view(block <start-inset> <end-inset>): inset the scrollport's TOP by the bucket's height so "exit"
+      // completes as the section reaches the chrome edge, not the viewport top. Longhands, not the
+      // `animation` shorthand (which would reset animation-timeline). `both` fill holds the end state while
+      // the section is gone and the identity start state before it enters exit.
+      animationName: 'beam-panel-exit',
+      animationTimeline: 'view(block var(--beam-bucket-height, 0px) auto)',
+      animationRange: 'exit',
+      animationFillMode: 'both',
+      animationTimingFunction: 'linear',
+      willChange: 'transform, opacity',
+    },
+  },
+} as object;
 
 // z-index scale for the grid's layered surfaces — NAMED, not adjacent magic. The rail cells live INSIDE
 // the affordance wrapper's stacking context (its container-type seals them), and the accent/edge live
@@ -603,12 +633,36 @@ export function BeamDataTable<Row>({
       io.observe(sentinel);
       return io;
     };
-    // The chrome pins flush (top: 0 / bottom: 0), so the sentinels trip stuck at the scrollport edges.
-    const top = observe(topSentinelRef.current, bucketRef.current, 'top', '0px 0px 0px 0px');
+    // The footer pins flush (bottom: 0); the bucket pins at top: CHROME_TOP_OFFSET (clearing the brand
+    // strip). So the TOP sentinel's root margin is shrunk by that offset — it trips stuck at the exact pin
+    // moment (when the sentinel reaches y=CHROME_TOP_OFFSET), not 64px late. (Chrome's scroll-state path
+    // knows the offset natively; this is the JS fallback.)
+    const top = observe(topSentinelRef.current, bucketRef.current, 'top', `-${CHROME_TOP_OFFSET}px 0px 0px 0px`);
     const bottom = observe(bottomSentinelRef.current, footerRef.current, 'bottom', '0px 0px 0px 0px');
     return () => {
       top?.disconnect();
       bottom?.disconnect();
+    };
+  }, [stickyChrome]);
+
+  // Publish the bucket's measured height as `--beam-bucket-height` on the SCROLL PARENT (the page owns the
+  // scroll). A page section above the grid reads it via `stickyChromeExitSx` to inset its `view()` exit
+  // timeline to the CHROME edge (the bucket's height), not the viewport top. Measured, never assumed (the
+  // rail-width precedent) — RO tracks strip/header height changes (bulk-strip appearing, wrap, resize).
+  useEffect(() => {
+    if (!stickyChrome) return;
+    const bucket = bucketRef.current;
+    const host = getScrollParent(bucket);
+    if (!bucket || !host) return;
+    const publish = () => host.style.setProperty('--beam-bucket-height', `${Math.round(bucket.getBoundingClientRect().height)}px`);
+    publish();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(publish) : null;
+    ro?.observe(bucket);
+    window.addEventListener('resize', publish);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', publish);
+      host.style.removeProperty('--beam-bucket-height');
     };
   }, [stickyChrome]);
 
@@ -706,6 +760,9 @@ export function BeamDataTable<Row>({
       background: STUCK_BAND_DOWN, pointerEvents: 'none',
     },
   };
+  // (Frost RETIRED 2026-09-13 — tried twice, transparent then sheen-over-opaque, retired both times by the
+  // containment ruling: the ceiling never exposes rows. The exit animation is the treatment now; the band
+  // is opaque page, identical to the floor. See stickyChromeExitSx + BeamDataTable-notes.)
   // Stuck footer dressing = the up-band only. The paper background is carried by the inner ALWAYS (below,
   // not gated on stuck) — paper-on-paper at rest (invisible), the opacity that stops rows ghosting when
   // pinned. So no bgcolor here; the base bg supersedes it.
@@ -887,12 +944,17 @@ export function BeamDataTable<Row>({
   // scroll-state paths). The clone appears only while stuck, landing exactly where the real header
   // scrolls under, so the handoff reads seamless.
   const bucketEl = stickyChrome ? (
-    // OUTER = the page CEILING (mirror of the footer floor): pins flush to the scrollport top (top: 0),
-    // and PAINTS the page's own backdrop (pageBackdropSx — base + mesh, background-attachment: fixed) so
-    // it's opaque (occludes rows transiting the band as they scroll off — transparency was falsified) AND
-    // seamless (samples the same viewport-fixed mesh as the body backdrop around it). Carries the donated
-    // section gap as its padding-top (PAGE_SECTION_GAP; the shell gives it up via stickyChromeGapSx).
-    <Box ref={bucketRef} sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, pt: PAGE_SECTION_GAP, ...pageBackdropSx, ...containerTypeScrollState }}>
+    // OUTER = the page CEILING. Pins at `top: CHROME_TOP_OFFSET` (NOT 0) so it clears the floating brand
+    // strip (BeamAppShell) — the offset is the strip's height + a breath, applied via `top` so it bites
+    // only when stuck (at rest the grid is in flow, pixel-identical; the crossover stays jump-free). The
+    // ceiling is OPAQUE (pageBackdropSx, identical to the FLOOR) so rows can NEVER ghost through — the
+    // grid's containment story wins. It is PAGE, not glass: the exiting page section fades under it (the
+    // treatment is the exit animation, stickyChromeExitSx — frost was tried twice and retired). Carries the
+    // donated section gap as padding-top (PAGE_SECTION_GAP; the shell gives it up via stickyChromeGapSx).
+    <Box
+      ref={bucketRef}
+      sx={{ position: 'sticky', top: `${CHROME_TOP_OFFSET}px`, zIndex: Z_CHROME, pt: PAGE_SECTION_GAP, ...pageBackdropSx, ...containerTypeScrollState }}
+    >
       <Box
         className="beam-bucket-inner"
         // Frame region: top + sides + top-radius — the card's ceiling edge, traveling with the pin. Opaque
@@ -1076,6 +1138,20 @@ export function BeamDataTable<Row>({
             // Define the body's inline-axis scroll-timeline; the header clone animates along it (see the
             // clone track). Scoped to the Paper (timeline-scope) so the sibling clone can bind by name.
             ...(stickyChrome ? ({ 'scroll-timeline-name': '--beam-body-scroll', 'scroll-timeline-axis': 'inline' } as object) : {}),
+            // Scrollbar (Task B): this is an in-content scroller, so it goes THIN — slimmer than the primary
+            // page bar, themed by the estate-wide vars. The webkit override wins over the global `*` rule on
+            // specificity (a class beats `*`); Firefox honors `scrollbar-width`.
+            scrollbarWidth: 'thin',
+            '&::-webkit-scrollbar': { height: 8, width: 8 },
+            // Task C — DELIBERATE INTERIM: on sticky grids the horizontal bar would float mid-page (the grid
+            // grows to content height; the bar tracks the viewport, detached from any card edge), so it's
+            // HIDDEN. The affordance is carried by the edge gradients + the header clone's live tracking +
+            // trackpad/keyboard gestures. Keyboard panning survives (scrollbar-width:none/display:none hide
+            // only the visual bar, not the scroll behavior — focus + arrow keys still pan). The real fix
+            // remains a footer-proxy scrollbar (or the endgame restructure); recorded in the notes.
+            ...(stickyChrome
+              ? ({ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } } as object)
+              : {}),
           }}
         >
           <Table size="small" aria-label={ariaLabel}>

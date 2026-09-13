@@ -72,6 +72,22 @@ export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
 export const PAGE_SECTION_GAP = 3;
 
 /**
+ * LOGO_BAR_HEIGHT — the floating brand strip's height (BeamAppShell's `STRIP_HEIGHT`), promoted here as
+ * the ONE source so a sticky-chrome grid can clear it without the shell and the grid drifting apart. The
+ * shell imports it as `STRIP_HEIGHT`; the grid derives `CHROME_TOP_OFFSET` from it.
+ */
+export const LOGO_BAR_HEIGHT = 56;
+
+/**
+ * CHROME_TOP_OFFSET — the sticky bucket's `top` when pinned (px). The floating brand strip overlays the
+ * scroll owner's top-left; the bucket must pin BELOW it, so its top offset = the strip's height + an 8px
+ * breath. Applied via `top:` (not padding) so it bites ONLY when stuck — at rest the grid is in flow and
+ * pixel-identical, and the crossover stays jump-free (top-based pinning). The FROSTED ceiling `::before`
+ * fills this offset (viewport top → card top); see BeamDataTable.
+ */
+export const CHROME_TOP_OFFSET = LOGO_BAR_HEIGHT + 8;
+
+/**
  * pageBackdropSx — the page's FIXED backdrop as a shared source, ONE definition two consumers: the
  * `body::before` layer (base + mesh) AND the sticky-chrome ceiling/floor bands (BeamDataTable). Both paint
  * `background.default` + the mesh with `background-attachment: fixed`, so a band samples the SAME function

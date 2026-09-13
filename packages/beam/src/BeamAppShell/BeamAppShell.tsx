@@ -22,10 +22,12 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { BeamAppShellProps, BeamNavItem } from './BeamAppShell.types';
-import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT } from '../theme/tokens';
 
 const DRAWER_WIDTH = 264;
-const STRIP_HEIGHT = 56;
+// ONE source with the sticky-chrome ceiling: a grid derives its top offset from this same height so the
+// pinned bucket clears the strip (tokens.ts LOGO_BAR_HEIGHT → CHROME_TOP_OFFSET). Kept as the local name.
+const STRIP_HEIGHT = LOGO_BAR_HEIGHT;
 
 // timing: Deyan tunes on the bench
 const PEEK_OPEN_DELAY_MS = 250;

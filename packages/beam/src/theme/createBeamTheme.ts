@@ -11,6 +11,7 @@ declare module '@mui/material/styles' {
   }
 }
 import { starMaskUri } from './starGeometry';
+import { logoGradient } from './brandLogos';
 import { meta } from './textStyles';
 
 // Logo gradient stops — four registered <color> slots per scheme. A `logoStops` seed pins any
@@ -379,6 +380,14 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-mark-l': String(markLightness.dark),
             '--beam-title-tint': ti.tint.dark,
             '--beam-title-halo': ti.halo.dark,
+            // Scrollbar theming (estate-wide, both modes). The RESTING thumb/track mix text-primary, which
+            // flips per scheme, so these are scheme-INVARIANT — a light thumb on dark, dark on light, for
+            // free. The track is transparent so it reads as part of the surface, not a rail. Consumed by the
+            // standard `scrollbar-color` (Firefox + Chrome 121+) AND the `::-webkit-scrollbar` suite (below).
+            // Hover/active thumb states are the LOGO GRADIENT (webkit only — see the suite); Firefox's
+            // scrollbar-color has no hover state, so it stays this solid tone (graceful asymmetry, noted).
+            '--beam-scrollbar-thumb': 'color-mix(in oklch, var(--mui-palette-text-primary) 22%, transparent)',
+            '--beam-scrollbar-track': 'transparent',
           },
 
           // Page mesh — a FIXED paint layer behind the whole document. `position:
@@ -424,6 +433,45 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             transition: '--beam-star-pitch var(--beam-motion-fade)',
             '@media print': { display: 'none' },
           },
+
+          // ── Scrollbar theming, estate-wide (Task B) ─────────────────────────────
+          // Standard property (inherits): themes EVERY scrollbar in Firefox + Chrome 121+. `scrollbar-width`
+          // is left `auto` here so the primary (page/main) scrollbar keeps its OS width; in-content scrollers
+          // opt into `thin` themselves (the grid does). Set on `body` so it cascades to the whole tree.
+          body: {
+            scrollbarColor: 'var(--beam-scrollbar-thumb) var(--beam-scrollbar-track)',
+          },
+          // WebKit/Blink suite — the finer control the standard props can't express (radius, hover, inset).
+          // Chrome uses THIS model wherever an element matches a `::-webkit-scrollbar` rule (ignoring the
+          // standard `scrollbar-color` there — Firefox falls back to it above). One estate-wide appearance.
+          '*::-webkit-scrollbar': { width: 12, height: 12 },
+          '*::-webkit-scrollbar-track': { backgroundColor: 'var(--beam-scrollbar-track)' },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: 'var(--beam-scrollbar-thumb)',
+            borderRadius: 8,
+            // A transparent border + padding-box clip insets the thumb, so it reads as a floating pill with
+            // breathing room, not a bar filling the gutter. 2px each side → ~8px visible thumb in a 12px track.
+            border: '2px solid transparent',
+            backgroundClip: 'padding-box',
+          },
+          // HOVER = the brand LOGO GRADIENT, consumed from its one source (`logoGradient()` → the
+          // `--beam-logo-stop-*` slots), NOT a re-declared approximation — so the thumb lights up in each
+          // product's own gradient (Gaspar's in Gaspar, Sunlight's tone in Sunlight; the mechanism is the
+          // token, the value is the product's). Rotated `to bottom` — the stops sweep ALONG the vertical
+          // thumb's long axis, actually visible at thumb width (the logo's default 115deg would barely read
+          // on an ~8px pill; a future horizontal thumb would pass `to right`). `background` shorthand resets
+          // background-clip, so the padding-box inset (the floating-pill look) is re-declared. ACTIVE = a
+          // step brighter: the same gradient under a white wash. (Firefox can't gradient a scrollbar — it
+          // holds the solid tone.)
+          '*::-webkit-scrollbar-thumb:hover': {
+            background: logoGradient('to bottom'),
+            backgroundClip: 'padding-box',
+          },
+          '*::-webkit-scrollbar-thumb:active': {
+            background: `linear-gradient(color-mix(in oklch, white 22%, transparent), color-mix(in oklch, white 22%, transparent)), ${logoGradient('to bottom')}`,
+            backgroundClip: 'padding-box',
+          },
+          '*::-webkit-scrollbar-corner': { backgroundColor: 'transparent' },
 
           // Gradient-border angle (opt-in beamGradientBorder). Registered as an
           // @property so it's a typed <angle> and can be INTERPOLATED — an
@@ -501,6 +549,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           '@keyframes beam-title-underline-reveal': {
             from: { transform: 'scaleX(0)' },
             to: { transform: 'scaleX(1)' },
+          },
+          // Sticky-chrome EXIT (BeamDataTable `stickyChromeExitSx`). A page section (e.g. a filter panel)
+          // scaling + fading + lifting as it slides up UNDER the pinned bucket — the nerdy.dev scroll-axis
+          // treatment. Driven by a `view()` scroll-progress timeline over `animation-range: exit`, inset by
+          // the bucket's measured height so the exit line is the CHROME edge, not the viewport. Subtle by
+          // design (0.96 / -8px). Consumers gate it on @supports + prefers-reduced-motion (the helper does).
+          '@keyframes beam-panel-exit': {
+            from: { opacity: 1, transform: 'scale(1) translateY(0)' },
+            to: { opacity: 0, transform: 'scale(0.96) translateY(-8px)' },
           },
 
           // Estate-wide reduced-motion kill switch (shell-grammar §4): zero the

@@ -38,10 +38,12 @@ export const LOGO_WORDMARK_FRACTION = 120 / 264;
  * the three real stops at their original 0/50/100 with the collinear filler at 25%, so the
  * gradient is BYTE-IDENTICAL to the old 3-stop recipe before any override. The interpolation
  * space is left default (sRGB in Chrome) to match the old recipe + the filler's sRGB midpoint.
- * `angle` stays app-owned (per-product); default 115deg matches today's recipe.
+ * `direction` stays app-owned; the DEFAULT (115deg) is byte-identical to today's recipe, so the logo's
+ * own rendering is untouched. Other consumers rotate the SAME stops to their axis — the scrollbar thumb
+ * passes `to bottom` (vertical) / `to right` (horizontal) so the stops sweep visibly along a thin thumb.
  */
-export function logoGradient(angle = '115deg'): string {
-  return `linear-gradient(${angle}, var(--beam-logo-stop-1) 0%, var(--beam-logo-stop-2) 25%, var(--beam-logo-stop-3) 50%, var(--beam-logo-stop-4) 100%)`;
+export function logoGradient(direction = '115deg'): string {
+  return `linear-gradient(${direction}, var(--beam-logo-stop-1) 0%, var(--beam-logo-stop-2) 25%, var(--beam-logo-stop-3) 50%, var(--beam-logo-stop-4) 100%)`;
 }
 
 export function brandLogoMaskSx(logo: string, wordmarkPx: number) {

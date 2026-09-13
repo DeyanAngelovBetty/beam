@@ -104,7 +104,7 @@ export { BeamBadge } from './BeamBadge/BeamBadge';
 export type { BeamBadgeProps, BeamBadgeHue } from './BeamBadge/BeamBadge.types';
 export { BeamStatusBadge } from './BeamStatusBadge/BeamStatusBadge';
 export type { BeamStatusBadgeProps, BeamStatus } from './BeamStatusBadge/BeamStatusBadge.types';
-export { BeamDataTable, stickyChromeGapSx } from './BeamDataTable/BeamDataTable';
+export { BeamDataTable, stickyChromeGapSx, stickyChromeExitSx } from './BeamDataTable/BeamDataTable';
 export { PAGE_SECTION_GAP } from './theme/tokens';
 export { BeamChildList } from './BeamChildList/BeamChildList';
 export type { BeamChildListProps, BeamChildColumn } from './BeamChildList/BeamChildList.types';

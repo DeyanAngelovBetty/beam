@@ -61,6 +61,12 @@ veil** (`--Paper-overlay`). That is a *second*, uncontrolled elevation signal fi
   a flat color would impersonate the page and mismatch the gradient. (The Betty star is a mask, not a
   fixed-attachable image layer, so it's absent from the bands — imperceptible at band height; plan B if
   fixed-attachment ever misbehaves is a simplified gradient. — 2026-09-11.)
+  **Amendment (2026-09-13): the exit animation is the treatment; the band is page, not glass.** BOTH edges
+  wear the opaque backdrop (rows must never ghost — the grid's containment story wins), and a page section
+  exiting under the ceiling simply fades under it (a `view()` exit animation, `stickyChromeExitSx`). Frost was
+  tried TWICE — first a fully-translucent ceiling, then a glass sheen `::before` over the opaque base — and
+  retired both times by the containment ruling: the ceiling never exposes rows, so it is page. The ceiling
+  also pins at a top OFFSET (`CHROME_TOP_OFFSET`) so it clears the floating brand strip.
 
 ## Open question — light mode (Vasco)
 

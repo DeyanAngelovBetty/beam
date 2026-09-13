@@ -224,11 +224,66 @@ SHARED SOURCE, so face/baseline/line-breaking match and the measured widths land
 **Known caveat (recorded):** on a tall grid mid-scroll, the horizontal **drag-scrollbar** (bottom of the
 `TableContainer`) is off-screen below — trackpad/wheel horizontal works throughout, and the clone keeps
 orientation; the scrollbar is reachable (adjacent to the released footer) at the true bottom, no overlap.
+**Amended 2026-09-13 (Task C):** on sticky grids the bar is now HIDDEN outright, not merely off-screen —
+see the cherry batch below.
 
 **NAMED ENDGAME (not built):** restructure so the sticky bucket IS the horizontal scroller (header/body
 split, or a CSS-grid table) — retires the clone AND fixes the mid-scroll horizontal-scrollbar reach. The
 clone is the bridge to it; this is the parked table-layout question. (Applied-filters summary in the
 bucket: also parked, a later installment.)
+
+### Cherry batch — frosted ceiling, exit animation, scrollbars *(2026-09-13, BENCH for A)*
+
+Three cosmetic passes. **A** (frosted ceiling + filter-panel exit) is BENCH-gated — the taste calls
+(frost density, exit curve) are eyeballed in Storybook before Gaspar. **B**/**C** (scrollbars) build direct.
+
+- **Top offset — the bucket clears the floating brand strip (A1).** The bucket pins at
+  `top: CHROME_TOP_OFFSET` (tokens.ts = `LOGO_BAR_HEIGHT 56` + an 8px breath), not `top: 0`. Applied via
+  `top` (not padding) so it bites ONLY when stuck — at rest the grid is in flow, pixel-identical, and the
+  crossover stays jump-free (top-based pinning). `LOGO_BAR_HEIGHT` is the ONE source with the shell's
+  `STRIP_HEIGHT` (BeamAppShell imports it). The JS stuck-sentinel's top `rootMargin` is shrunk by the offset
+  so `data-stuck` trips at the exact pin moment (Chrome's `scroll-state` path knows the offset natively).
+- **Ceiling — opaque page, NOT glass (A2, final 2026-09-13).** The ceiling outer paints `pageBackdropSx`
+  only — identical to the floor. Rows can NEVER ghost through; the grid's containment story wins. **Frost was
+  tried twice and RETIRED both times:** first fully translucent (rows ghosted through — the same failure as
+  the transparent bands), then a glass sheen `::before` layered over the opaque base (glass only where it
+  overlapped the top-offset gap, inert elsewhere). The ruling: the ceiling never exposes rows, so it is page,
+  and the EXIT ANIMATION alone carries the effect — the exiting page section fades under an opaque page band.
+  `ceilingFrostSx` and its `--beam-chrome-frost-*` tokens are deleted (not orphaned). `CHROME_TOP_OFFSET` (the
+  top offset) stays — that job is unrelated to the frost.
+- **Filter-panel exit (A3).** New exported `stickyChromeExitSx` (mirror of `stickyChromeGapSx`), spread onto
+  a page section above the grid: it scales (0.96) + fades + lifts (-8px) as it slides under the bucket. A
+  `view()` scroll-progress timeline over `animation-range: exit`, inset by `view(block var(--beam-bucket-height) auto)`
+  so the exit line is the CHROME edge, not the viewport top. The grid PUBLISHES `--beam-bucket-height` (RO-
+  measured, never assumed — the rail-width precedent) onto the SCROLL PARENT, where the sibling panel reads
+  it. Keyframes `beam-panel-exit` live in the theme. **Progressive + reduced-motion:** the helper is
+  `@supports (animation-timeline: view())`-gated (Chrome-family; elsewhere the panel just scrolls under) and
+  nested under `prefers-reduced-motion: no-preference` (reduced motion disables the scale/fade; the frost,
+  being static, stays). A4/A5 satisfied by construction.
+- **Scrollbar theming, estate-wide (B).** createBeamTheme MuiCssBaseline: standard `scrollbar-color` on
+  `body` (inherits; Firefox + Chrome 121+) + the `*::-webkit-scrollbar` suite (radius, a padding-box inset
+  for a floating-pill thumb). Resting thumb/track vars mix `text-primary`, so they're scheme-invariant (light
+  thumb on dark, dark on light). `scrollbar-width` stays `auto` globally so the PRIMARY page bar keeps its OS
+  width; in-content scrollers opt into `thin` — the grid's `TableContainer` does (a class beats `*` on
+  specificity; Firefox honors the standard prop). All four apps inherit; no per-app overrides.
+- **Thumb hover/active states (B, 2026-09-13; ref: DigitalOcean's scrollbar hover pattern).** The webkit
+  thumb gains `:hover` = the brand LOGO GRADIENT and `:active` = a step brighter (that gradient under a white
+  wash). Parity doctrine: the gradient is consumed from its ONE source — `logoGradient()` → the
+  `--beam-logo-stop-*` slots (already per-product, per-scheme via `logoStopVars`/`gradientSeeds`) — not a
+  re-declared approximation, so the thumb lights up in each product's own gradient (mechanism = the token,
+  value = the product's). `logoGradient(direction?)` gained a direction param: the DEFAULT (115deg) is
+  byte-identical so the logo's own rendering is untouched, and the vertical thumb passes `to bottom` so the
+  stops sweep ALONG its long axis (visible at ~8px width; the 115deg diagonal would barely read). A future
+  horizontal thumb passes `to right`. `background` shorthand resets background-clip, so the padding-box inset
+  is re-declared on each state. **Graceful asymmetry:** Firefox's `scrollbar-color` can't take a gradient and
+  has no hover state, so there it holds the solid resting tone — noted, not fought.
+- **Hidden horizontal bar on sticky grids — DELIBERATE INTERIM (C).** On `stickyChrome` grids the
+  `TableContainer`'s bar is hidden (`scrollbar-width: none` + `::-webkit-scrollbar { display:none }`), gated
+  on `stickyChrome` only. Rationale: the grid grows to content height, so the horizontal bar would float
+  mid-page, detached from any card edge — worse than absent. Affordance carried by the edge gradients + the
+  header clone's live tracking + trackpad/keyboard gestures. **Keyboard panning survives** (hiding the visual
+  bar doesn't remove scroll behavior — focus a cell + arrow keys still pan). The footer-proxy scrollbar (or
+  the NAMED ENDGAME above) remains the real fix.
 
 ## Column manager — pointer drag-and-drop reorder *(2026-09-10)*
 

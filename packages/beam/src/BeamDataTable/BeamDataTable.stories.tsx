@@ -5,9 +5,11 @@ import { BeamStatusBadge } from '../BeamStatusBadge/BeamStatusBadge';
 import type { BeamStatus } from '../BeamStatusBadge/BeamStatusBadge.types';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE, PAGE_SECTION_GAP } from '../theme/tokens';
-import { stickyChromeGapSx } from './BeamDataTable';
+import { stickyChromeGapSx, stickyChromeExitSx } from './BeamDataTable';
 
 /** Realistic Sunlight shape: perks management list (Beam candidate page) */
 interface Perk {
@@ -518,6 +520,13 @@ const benchColumns: BeamColumn<BenchRow>[] = [
  * shorter than the viewport, so NO chrome pins (no bucket, no footer, no ceiling/floor dressing; spacing
  * identical to a non-sticky grid). Flip to **250 / 500** and watch the chrome engage on its own. Anything
  * rendering stuck at 10 rows is a real bug, not a nit.
+ *
+ * TASK-A eyeball (exit): the pinned bucket now sits at a top OFFSET (clearing where a brand strip would
+ * float). Its ceiling paints the OPAQUE backdrop, identical to the floor — page, not glass (frost was tried
+ * twice and retired; the exit animation is the treatment). The **Filters** panel above the grid scales +
+ * fades + lifts as it slides under the bucket (a `view()` exit timeline, inset by the measured bucket
+ * height). Judge the EXIT CURVE here. Reduced-motion: the exit stops (panel just scrolls under an opaque
+ * band). Non-Chrome: no exit, same graceful scroll-under.
  */
 // Shared bench render — `fancyBackdrop` drops the scroll-owner's flat `background.default` so the theme's
 // FIXED page backdrop (mesh + star, body::before/after) shows through, proving the chrome ceiling/floor
@@ -545,6 +554,17 @@ function renderStickyBench(fancyBackdrop: boolean) {
           sx, so the heading→grid seam is donated to the bucket ceiling when the grid is sticky. */}
       <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
         <Typography variant="h6">Sticky-chrome bench — 1,200 rows · page size 500{fancyBackdrop ? ' · fancy backdrop' : ''}</Typography>
+        {/* FILTER PANEL — a page section ABOVE the grid, wearing stickyChromeExitSx: it scales + fades +
+            lifts as it slides up UNDER the pinned bucket (the exit-curve eyeball target). Progressive:
+            no view()-timeline support / reduced-motion → it just scrolls under, no animation. */}
+        <Paper variant="outlined" sx={{ p: 2, ...stickyChromeExitSx }}>
+          <Typography variant="overline" sx={{ color: 'text.secondary' }}>Filters</Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
+            <TextField size="small" label="Provider" sx={{ width: 200 }} />
+            <TextField size="small" label="Status" sx={{ width: 200 }} />
+            <TextField size="small" label="Min amount" sx={{ width: 160 }} />
+          </Box>
+        </Paper>
         <BeamDataTable<BenchRow>
           columns={benchColumns}
           rows={benchRows}
@@ -587,16 +607,15 @@ export const StickyChromeBench: Story = {
 
 /**
  * Sticky-chrome over the FANCY page backdrop — the PROOF SURFACE. The scroll owner is transparent so the
- * theme's FIXED mesh + Betty-star backdrop (body::before/after) shows. The ceiling/floor bands PAINT a
- * copy of that backdrop (base + mesh, background-attachment: fixed), so scrolling through the pins must
- * show: (1) the bands **indistinguishable from the section gaps** — same viewport-fixed mesh, no seam; AND
- * (2) **no ghosting** — rows scroll under the pinned chrome and nothing shows through (the opaque painted
- * band + the paper inners occlude them).
+ * theme's FIXED mesh + Betty-star backdrop (body::before/after) shows. BOTH bands paint an opaque copy of
+ * the backdrop (pageBackdropSx: base + mesh, background-attachment: fixed) — seamless with the section gaps
+ * AND no ghosting (rows are always occluded). The two edges are now IDENTICAL page bands; the ceiling's
+ * exiting Filters panel simply fades under it (the exit animation is the treatment).
  *
- * This story exists because TRANSPARENCY WAS TRIED AND FALSIFIED: transparent bands sit over content that
- * transits them as it scrolls off, so rows ghosted through. The fix is opaque-by-composition (paint the
- * backdrop), seamless-by-construction (fixed attachment samples the same viewport pixels). (The Betty star
- * is a mask, not a fixed-attachable image, so it isn't in the bands — imperceptible at band height; see
+ * (History: transparent bands were tried and falsified — content transiting them ghosted through. A frosted
+ * ceiling was then tried twice — fully translucent, then a glass sheen over the opaque base — and retired
+ * both times by the containment ruling: the ceiling never exposes rows. The Betty star is a mask, not a
+ * fixed-attachable image, so it isn't replicated in the bands — imperceptible at band height; see
  * pageBackdropSx.)
  */
 export const StickyChromeFancyBackdrop: Story = {
