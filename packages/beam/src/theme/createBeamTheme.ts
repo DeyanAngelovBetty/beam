@@ -382,10 +382,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-title-halo': ti.halo.dark,
             // Scrollbar theming (estate-wide, both modes). The RESTING thumb/track mix text-primary, which
             // flips per scheme, so these are scheme-INVARIANT — a light thumb on dark, dark on light, for
-            // free. The track is transparent so it reads as part of the surface, not a rail. Consumed by the
-            // standard `scrollbar-color` (Firefox + Chrome 121+) AND the `::-webkit-scrollbar` suite (below).
-            // Hover/active thumb states are the LOGO GRADIENT (webkit only — see the suite); Firefox's
-            // scrollbar-color has no hover state, so it stays this solid tone (graceful asymmetry, noted).
+            // free. The track is transparent so it reads as part of the surface, not a rail. Consumed by BOTH
+            // the webkit suite (Chromium) and the GATED standard `scrollbar-color` (Firefox only, below) —
+            // one var pair, each engine reads it through its own model. Hover/active thumb states are the LOGO
+            // GRADIENT (webkit only); Firefox's scrollbar-color has no hover, so it holds this solid resting
+            // tone (graceful asymmetry, noted).
             '--beam-scrollbar-thumb': 'color-mix(in oklch, var(--mui-palette-text-primary) 22%, transparent)',
             '--beam-scrollbar-track': 'transparent',
           },
@@ -435,15 +436,20 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
 
           // ── Scrollbar theming, estate-wide (Task B) ─────────────────────────────
-          // Standard property (inherits): themes EVERY scrollbar in Firefox + Chrome 121+. `scrollbar-width`
-          // is left `auto` here so the primary (page/main) scrollbar keeps its OS width; in-content scrollers
-          // opt into `thin` themselves (the grid does). Set on `body` so it cascades to the whole tree.
-          body: {
-            scrollbarColor: 'var(--beam-scrollbar-thumb) var(--beam-scrollbar-track)',
+          // Standard property, GATED (hardening: standard-vs-webkit conflict). Chromium ≥121 disables ALL
+          // ::-webkit-scrollbar-* styling on any scroller whose (computed, inherited counts) scrollbar-color
+          // or scrollbar-width is non-auto — so shipping both unguarded let the standard prop on `body`
+          // cascade to `main` and KILL the logo-gradient thumb. `@supports not selector(::-webkit-scrollbar)`
+          // makes this apply ONLY where the webkit pseudos DON'T exist (Firefox); on Chromium the condition is
+          // false, the standard prop never applies, and the webkit suite below owns the scrollbar. One model
+          // per engine, by construction. (scrollbar-width stays auto here — in-content scrollers opt into thin,
+          // also gated; see BeamDataTable.) Inherits from `body`, so Firefox themes the whole tree.
+          '@supports not selector(::-webkit-scrollbar)': {
+            body: { scrollbarColor: 'var(--beam-scrollbar-thumb) var(--beam-scrollbar-track)' },
           },
-          // WebKit/Blink suite — the finer control the standard props can't express (radius, hover, inset).
-          // Chrome uses THIS model wherever an element matches a `::-webkit-scrollbar` rule (ignoring the
-          // standard `scrollbar-color` there — Firefox falls back to it above). One estate-wide appearance.
+          // WebKit/Blink suite — UNGATED (it simply doesn't match on Firefox). Chromium uses THIS model
+          // exclusively now that the standard prop is walled off above. Finer control the standard props
+          // can't express (radius, hover gradient, inset). One estate-wide appearance.
           '*::-webkit-scrollbar': { width: 12, height: 12 },
           '*::-webkit-scrollbar-track': { backgroundColor: 'var(--beam-scrollbar-track)' },
           '*::-webkit-scrollbar-thumb': {

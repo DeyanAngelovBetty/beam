@@ -1272,20 +1272,15 @@ export function BeamDataTable<Row>({
             // Define the body's inline-axis scroll-timeline; the header clone animates along it (see the
             // clone track). Scoped to the Paper (timeline-scope) so the sibling clone can bind by name.
             ...(effectiveSticky ? ({ 'scroll-timeline-name': '--beam-body-scroll', 'scroll-timeline-axis': 'inline' } as object) : {}),
-            // Scrollbar (Task B): this is an in-content scroller, so it goes THIN — slimmer than the primary
-            // page bar, themed by the estate-wide vars. The webkit override wins over the global `*` rule on
-            // specificity (a class beats `*`); Firefox honors `scrollbar-width`.
-            scrollbarWidth: 'thin',
-            '&::-webkit-scrollbar': { height: 8, width: 8 },
-            // Task C — DELIBERATE INTERIM: on sticky grids the horizontal bar would float mid-page (the grid
-            // grows to content height; the bar tracks the viewport, detached from any card edge), so it's
-            // HIDDEN. The affordance is carried by the edge gradients + the header clone's live tracking +
-            // trackpad/keyboard gestures. Keyboard panning survives (scrollbar-width:none/display:none hide
-            // only the visual bar, not the scroll behavior — focus + arrow keys still pan). The real fix
-            // remains a footer-proxy scrollbar (or the endgame restructure); recorded in the notes.
-            ...(effectiveSticky
-              ? ({ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } } as object)
-              : {}),
+            // Scrollbar (Task B, hardening): in-content scroller → THIN (slimmer than the primary page bar).
+            // Same standard-vs-webkit mutual exclusivity as `body`: the standard `scrollbar-width` is GATED to
+            // Firefox (@supports not selector(::-webkit-scrollbar)) so it never disables the webkit pseudos on
+            // Chromium, where the webkit rule owns the size. On sticky grids the bar is HIDDEN (Task C interim:
+            // it would otherwise float mid-page detached from any card edge; affordance carried by the edge
+            // gradients + clone tracking + gestures; keyboard panning survives — none/display:none hide only
+            // the visual bar). One value drives both engines' declarations.
+            '@supports not selector(::-webkit-scrollbar)': { scrollbarWidth: effectiveSticky ? 'none' : 'thin' } as object,
+            '&::-webkit-scrollbar': effectiveSticky ? { display: 'none' } : { height: 8, width: 8 },
           }}
         >
           <Table size="small" aria-label={ariaLabel}>

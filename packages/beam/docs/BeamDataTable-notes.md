@@ -343,12 +343,23 @@ Three cosmetic passes. **A** (frosted ceiling + filter-panel exit) is BENCH-gate
   `@supports (animation-timeline: view())`-gated (Chrome-family; elsewhere the panel just scrolls under) and
   nested under `prefers-reduced-motion: no-preference` (reduced motion disables the scale/fade; the frost,
   being static, stays). A4/A5 satisfied by construction.
-- **Scrollbar theming, estate-wide (B).** createBeamTheme MuiCssBaseline: standard `scrollbar-color` on
-  `body` (inherits; Firefox + Chrome 121+) + the `*::-webkit-scrollbar` suite (radius, a padding-box inset
-  for a floating-pill thumb). Resting thumb/track vars mix `text-primary`, so they're scheme-invariant (light
-  thumb on dark, dark on light). `scrollbar-width` stays `auto` globally so the PRIMARY page bar keeps its OS
-  width; in-content scrollers opt into `thin` — the grid's `TableContainer` does (a class beats `*` on
-  specificity; Firefox honors the standard prop). All four apps inherit; no per-app overrides.
+- **Scrollbar theming, estate-wide (B).** createBeamTheme MuiCssBaseline: the `*::-webkit-scrollbar` suite
+  (radius, a padding-box inset for a floating-pill thumb) for Chromium + a GATED standard `scrollbar-color`
+  on `body` for Firefox (see the gotcha). Resting thumb/track vars mix `text-primary`, so they're
+  scheme-invariant (light thumb on dark, dark on light); `--beam-scrollbar-track` is transparent (reads as
+  the surface, not a rail) and resolves on `:root` in every scope (app `main` AND the Storybook preview —
+  both render `<CssBaseline/>` and establish `data-beam-mode`). All four apps inherit; no per-app overrides.
+- **GOTCHA — standard scrollbar props and webkit scrollbar pseudos are MUTUALLY EXCLUSIVE per scroller in
+  Chromium ≥121 (never ship both unguarded; alongside the `theme.spacing`-NaN gotcha).** Chromium ≥121
+  disables ALL `::-webkit-scrollbar-*` styling on any scroller whose *computed* (inheritance counts!)
+  `scrollbar-color`/`scrollbar-width` is non-auto. We shipped both: the standard `scrollbar-color` on `body`
+  cascaded to `main` and killed the logo-gradient thumb on the app (the bench looked fine — a red herring;
+  both scopes actually load CssBaseline, so both were affected, the gate is what makes it reliable). **Fix:**
+  wrap the standard props in `@supports not selector(::-webkit-scrollbar) { … }` — they apply ONLY where the
+  webkit pseudos don't exist (Firefox); Chromium fails the `@supports`, never sees them, and uses the webkit
+  suite exclusively. Webkit pseudos stay ungated (they just don't match on Firefox). One model per engine, by
+  construction. Same gate on the grid `TableContainer`'s `scrollbar-width` (thin / none). Firefox smoke: a
+  flat themed scrollbar via the gated standard props — that path must survive.
 - **Thumb hover/active states (B, 2026-09-13; ref: DigitalOcean's scrollbar hover pattern).** The webkit
   thumb gains `:hover` = the brand LOGO GRADIENT and `:active` = a step brighter (that gradient under a white
   wash). Parity doctrine: the gradient is consumed from its ONE source — `logoGradient()` → the
