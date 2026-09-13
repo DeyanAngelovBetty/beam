@@ -232,6 +232,28 @@ split, or a CSS-grid table) — retires the clone AND fixes the mid-scroll horiz
 clone is the bridge to it; this is the parked table-layout question. (Applied-filters summary in the
 bucket: also parked, a later installment.)
 
+### stickyChrome hardening pass 2 — pin reachability + snap origin *(2026-09-14)*
+
+- **Snap point 1 → the TRUE page top (scroll 0), not the first section.** The old target was the Stack's
+  first child, which sits `CONTENT_TOP` below scroll 0 — so on a hard refresh, proximity yanked the page down
+  to it (an initial-snap-on-load jump). `scroll-snap-align: start` now lives on the Stack ITSELF: the shell
+  donates its `pt` (`main` pt:0) so the Stack's border-box top is at scroll 0, making 0 a snap position — at
+  rest the page is already there, nothing moves without input. Verify: hard refresh at 1440×900, no motion.
+- **PIN_REACHABLE — a new engagement term.** A grid shorter than the viewport never scrolls, so its chrome
+  pin is never reached; firing exit/snap/thin-scrollbar on it is theatre on a card that behaves plain. So:
+  `PIN_REACHABLE ⇔ FIELD_TWIN_HEIGHT·(3 + rowsOnPage) + CONTENT_BOTTOM.md·8 + CHROME_CEILING_BAND ≥ viewport`
+  (3 = strip + header + footer). Computed ARITHMETICALLY from **rows-on-page** (`visibleRows.length`), NEVER
+  measured element height — so **expanding a row can't toggle engagement** (same row count → same threshold →
+  no boundary flicker). Pure px (the `theme.spacing` NaN-under-`cssVariables` gotcha again — `CONTENT_BOTTOM.md·8`,
+  not `theme.spacing`); `aboveHeightQuery` (min-height + ε) detects the strict-`>` unreachable case, re-subscribed
+  when rows-on-page changes (page-size flip / filter re-evaluate). **`effectiveSticky = stickyChrome && !tooShort
+  && !pinReachable`'s negation** — unreachable behaves EXACTLY like tier 3: the attr drops and the `:has()`
+  cascade retires exit + snap + scrollbar treatment → plain card, no new layout. (10 → calm card; 500 → engages.)
+- **Doctrine dual:** *chrome whose pin is unreachable forfeits its transitions* — the reachability twin of the
+  tier doctrine below.
+
+---
+
 ### stickyChrome hardening — scroll-snap + tiered disengagement *(2026-09-14)*
 
 Two corner-case passes. **Doctrine:** *chrome that can't leave `MIN_MEANINGFUL_ROWS` (4) rows visible

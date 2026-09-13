@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, pageBackdropSx } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, aboveHeightQuery, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -81,9 +81,12 @@ export const stickyChromeGapSx = {
     // budget the proposal settled on — PAGE_SECTION_GAP, NOT CONTENT_TOP (nav-shift duty). (px: the
     // spacing×8 − band arithmetic can't be an sx spacing multiple.)
     '& > *:has(+ [data-beam-sticky-chrome])': { mb: `${PAGE_SECTION_GAP * 8 - CHROME_CEILING_BAND}px` },
-    // SNAP POINT 1 (A): the page's first section is a snap target (start), so the scroll snaps cleanly to
-    // page top. Scoped by the same :has contract, so it goes away with the pins at tier 3.
-    '& > *:first-child': { scrollSnapAlign: 'start' },
+    // SNAP POINT 1 (hardening #2): the TRUE page top (scroll 0) is the snap position, NOT the first section.
+    // The Stack's border-box top sits at scroll 0 (the shell donates its pt, so `main` pt:0; the Stack's own
+    // pt is INSIDE its border box), so snap-align on the Stack ITSELF makes scroll 0 a snap point — at rest
+    // the page is already there, no initial-snap-on-load jump. (The old first-child target sat CONTENT_TOP
+    // below 0, so proximity yanked the page down on load.) Scoped by the same :has contract → retires at tier 3.
+    scrollSnapAlign: 'start',
     // TIER 2 (ceiling collapses): the ceiling band → 0, so the pre-grid section reverts from its negative
     // absorb-margin to the NORMAL section gap (band no longer there to absorb). In step with the bucket's
     // `pt: 0` and the snap's scroll-margin-top: 0 — one threshold, three coordinated collapses.
@@ -442,7 +445,7 @@ export function BeamDataTable<Row>({
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, [stickyChrome]);
-  const effectiveSticky = stickyChrome && !tooShortForSticky;
+  // (`effectiveSticky` is derived below, once `visibleRows` is known — it also folds in PIN_REACHABLE.)
 
   // Suspend row hover WHILE a Collapse animates. Rows translating under a stationary cursor during
   // expand/collapse otherwise latch `:hover` — browsers recompute hover on pointermove, not on layout
@@ -553,6 +556,35 @@ export function BeamDataTable<Row>({
   const resolvedBulkActions = typeof bulkActions === 'function' ? bulkActions(selectedRows) : bulkActions;
   const batchHintId = useId();
   const visibleRows = table.getRowModel().rows;
+
+  // PIN REACHABILITY (hardening #2) — the engagement gate CSS can't express (it swaps the render path, and
+  // the threshold varies with rows-on-page). The grid's chrome only pins if the grid is TALLER than the
+  // viewport — otherwise it fits, never scrolls, and the pin is never reached, so the exit/snap/scrollbar
+  // treatments would fire on a card that behaves like plain. Computed ARITHMETICALLY from rows-on-page
+  // (visibleRows.length), never measured height — so expanding a row (measured taller, same row count) can
+  // NEVER toggle engagement (no flicker at the boundary). Pure px, same constants discipline as the tiers
+  // (NOT theme.spacing — cssVariables makes it return a calc() string → NaN; CONTENT_BOTTOM.md·8 instead):
+  //   PIN_REACHABLE ⇔ FIELD_TWIN_HEIGHT·(3 + rowsOnPage) + CONTENT_BOTTOM.md·8 + CHROME_CEILING_BAND ≥ vh
+  // where 3 = strip + header + footer. `aboveHeightQuery` (min-height + ε) detects the strict-`>` unreachable
+  // case; the threshold re-subscribes when rows-on-page changes (page-size flip / filter), so it re-evaluates.
+  const pinThreshold = FIELD_TWIN_HEIGHT * (3 + visibleRows.length) + CONTENT_BOTTOM.md * 8 + CHROME_CEILING_BAND;
+  const [pinUnreachable, setPinUnreachable] = useState(() =>
+    typeof window !== 'undefined' && stickyChrome
+      ? window.matchMedia(aboveHeightQuery(pinThreshold)).matches
+      : false,
+  );
+  useEffect(() => {
+    if (!stickyChrome || typeof window === 'undefined') return;
+    const mq = window.matchMedia(aboveHeightQuery(pinThreshold));
+    const sync = () => setPinUnreachable(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, [stickyChrome, pinThreshold]);
+  // The full engagement gate: opted-in AND tall enough to pin (tier 3) AND the grid overflows the viewport
+  // (reachable). Unreachable behaves EXACTLY like tier 3 — the attr drops and the :has() cascade retires the
+  // exit animation, snap, and scrollbar treatment (plain card, no new layout). Page-size flips re-evaluate.
+  const effectiveSticky = stickyChrome && !tooShortForSticky && !pinUnreachable;
 
   // Perf instrument (point 4): behind a `perf=1` URL token so it works on BOTH dev and PROD builds
   // (HashRouter puts the token in the hash — we test the whole href). Logs render→commit ms for the

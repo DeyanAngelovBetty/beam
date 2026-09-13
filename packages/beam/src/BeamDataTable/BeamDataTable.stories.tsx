@@ -640,6 +640,12 @@ export const StickyChromeFancyBackdrop: Story = {
  * Flip the footer page-size select between 10 and 500 inside each frame: at 10 the grid may be shorter than
  * the frame (inert, no pins) — a real state, not a bug; at 500 the tier engages. Doctrine: chrome that can't
  * leave MIN_MEANINGFUL_ROWS (4) rows visible forfeits its pins, cheapest first.
+ *
+ * The **normal-height** frame (900px) is the PIN_REACHABLE check (hardening #2): at page size 10 the grid
+ * fits the viewport, its pin is unreachable, so it renders as the PLAIN CARD (attr dropped, exit/snap/thin-
+ * scrollbar all retired via the :has() cascade — the doctrine dual: chrome whose pin is unreachable forfeits
+ * its transitions). Flip to 50/500 and the chrome engages. Expanding a row never toggles engagement — the
+ * gate is arithmetic from ROWS-ON-PAGE, not measured height — so no flicker at the boundary.
  */
 export const StickyChromeShortViewport: Story = {
   parameters: { layout: 'fullscreen' },
@@ -648,6 +654,7 @@ export const StickyChromeShortViewport: Story = {
     // relative `iframe.html?id=…` resolves the same in dev and the static gh-pages build.
     const src = 'iframe.html?id=organisms-beamdatatable--sticky-chrome-bench&viewMode=story';
     const tiers = [
+      { h: 900, label: 'Normal 900px — PIN_REACHABLE: page size 10 → plain card; 50/500 → chrome engages' },
       { h: 360, label: 'Tier 1 · frame 360px (328–396) — footer unsticks' },
       { h: 300, label: 'Tier 2 · frame 300px (264–328) — ceiling collapses to 0' },
       { h: 240, label: 'Tier 3 · frame 240px (<264) — sticky disengages → plain card' },
@@ -655,8 +662,9 @@ export const StickyChromeShortViewport: Story = {
     return (
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Each frame is its own viewport, so the viewport-height tiers fire per frame. Flip the footer
-          page-size select (10 ↔ 500) inside each. Thresholds (strict &lt;): T1 396 · T2 328 · T3 264px.
+          Each frame is its own viewport, so the viewport-height tiers + pin-reachability fire per frame. Flip
+          the footer page-size select (10 ↔ 50/500) inside each. Thresholds (strict &lt;): T1 396 · T2 328 · T3
+          264px; PIN_REACHABLE engages once the grid overflows the frame.
         </Typography>
         {tiers.map((t) => (
           <Box key={t.h}>

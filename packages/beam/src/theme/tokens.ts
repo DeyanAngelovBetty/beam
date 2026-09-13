@@ -164,6 +164,12 @@ export const SHORT_VP_TIER1 = SHORT_VP_TIER1_BASE + CONTENT_BOTTOM.md * 8; // 39
  */
 export const TIER_EPSILON = 0.02;
 export const belowHeightQuery = (px: number) => `(max-height: ${px - TIER_EPSILON}px)`;
+/**
+ * aboveHeightQuery — the strict-`>` counterpart (min-height + ε), for the PIN_REACHABLE gate: a grid whose
+ * total height is below the viewport never scrolls, so its chrome pin is unreachable. `min-height: px + ε`
+ * matches when the viewport is STRICTLY TALLER than the grid (px = the grid's arithmetic height).
+ */
+export const aboveHeightQuery = (px: number) => `(min-height: ${px + TIER_EPSILON}px)`;
 
 /**
  * fieldGeometrySx — the field-height mixin for CUSTOM inputs OUTSIDE the TextField family (a bespoke
