@@ -253,8 +253,12 @@ interpolated into the query strings (`belowHeightQuery`, one strict-`<` −0.02p
 - **(B) Tiered disengagement — viewport-height tiers, cheapest-pin-first.** Each fires when the viewport
   can no longer fit [what the previous tier keeps pinned] + `MIN_MEANINGFUL_ROWS` rows:
   - T1 = `CHROME_CEILING_BAND + FIELD_TWIN_HEIGHT×(3 + MIN_MEANINGFUL_ROWS) + floor` = **396** → footer
-    unsticks (pure CSS on the footer outer; floor = `CONTENT_BOTTOM.md` via `theme.spacing`, the one
-    width-dependent term, resolved in-component).
+    unsticks (pure CSS on the footer OUTER — the sticky-declaring node, not the inner). Floor =
+    `CONTENT_BOTTOM.md · 8` (the MUI spacing base, the same units→px idiom the absorb-margin uses). It is a
+    **pure-px module constant** (`SHORT_VP_TIER1`), NOT an in-component `theme.spacing()` computation: under
+    this theme's `cssVariables`, `spacing(3)` returns `calc(3 * var(--mui-spacing, 8px))`, so
+    `parseFloat` → NaN → `@media (max-height: NaNpx)` — a rule that emits but never matches, which is why the
+    first cut of T1 never unstuck the footer (fixed 2026-09-14).
   - T2 = `CHROME_CEILING_BAND + FIELD_TWIN_HEIGHT×(2 + MIN_MEANINGFUL_ROWS)` = **328** → ceiling band
     collapses to 0 (bucket `pt:0`); the pre-grid negative margin reverts to `PAGE_SECTION_GAP` and the snap
     offset collapses in step (pure CSS).

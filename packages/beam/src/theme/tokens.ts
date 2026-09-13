@@ -149,7 +149,13 @@ export const MIN_MEANINGFUL_ROWS = 4;
  */
 export const SHORT_VP_TIER2 = CHROME_CEILING_BAND + FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 328
 export const SHORT_VP_TIER3 = FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 264
-export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 372 (+ floor in-component = 396)
+export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 372 (before floor)
+// T1 = base + floor (CONTENT_BOTTOM.md). PURE-px module constant like T2/T3 — the earlier in-component
+// `parseFloat(theme.spacing(CONTENT_BOTTOM.md))` returned NaN under this theme's `cssVariables` (spacing()
+// yields `calc(3 * var(--mui-spacing, 8px))`, not `"24px"`), which made the media query `max-height: NaNpx`
+// — present but never matching, so the footer never unstuck. `* 8` = the MUI spacing base, the same units→px
+// idiom `stickyChromeGapSx` already uses for its absorb-margin. 372 + 3·8 = 396.
+export const SHORT_VP_TIER1 = SHORT_VP_TIER1_BASE + CONTENT_BOTTOM.md * 8; // 396
 
 /**
  * belowHeightQuery — the ONE strict-`<` boundary convention, shared by all three tier consumers (the CSS

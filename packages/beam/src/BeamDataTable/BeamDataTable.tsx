@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1_BASE, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, pageBackdropSx } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -443,9 +443,6 @@ export function BeamDataTable<Row>({
     return () => mq.removeEventListener('change', sync);
   }, [stickyChrome]);
   const effectiveSticky = stickyChrome && !tooShortForSticky;
-  // T1 (footer unsticks) = the pure-px base + the floor (CONTENT_BOTTOM.md), its one width-dependent term,
-  // resolved to px here via theme.spacing (no literal 8). T2/T3 are pure-px module constants.
-  const shortVpTier1 = SHORT_VP_TIER1_BASE + parseFloat(theme.spacing(CONTENT_BOTTOM.md));
 
   // Suspend row hover WHILE a Collapse animates. Rows translating under a stationary cursor during
   // expand/collapse otherwise latch `:hover` — browsers recompute hover on pointermove, not on layout
@@ -1112,10 +1109,11 @@ export function BeamDataTable<Row>({
         pb: CONTENT_BOTTOM,
         ...pageBackdropSx,
         ...containerTypeScrollState,
-        // TIER 1 (cheapest pin to drop): below shortVpTier1 the viewport can't hold the full chrome +
+        // TIER 1 (cheapest pin to drop): below SHORT_VP_TIER1 the viewport can't hold the full chrome +
         // MIN_MEANINGFUL_ROWS, so the footer unsticks — pagination scrolls with the content instead of
-        // pinning. Pure CSS; the pinned top (ceiling + bucket) stays until tier 2.
-        [`@media ${belowHeightQuery(shortVpTier1)}`]: { position: 'static' },
+        // pinning. Pure CSS; the pinned top (ceiling + bucket) stays until tier 2. (Pure-px module constant —
+        // an in-component theme.spacing() computation returned NaN under cssVariables; see tokens.ts.)
+        [`@media ${belowHeightQuery(SHORT_VP_TIER1)}`]: { position: 'static' },
       }}
     >
       {/* INNER = the bordered paper footer — opaque paper (reads as the card footer over the page-bg
