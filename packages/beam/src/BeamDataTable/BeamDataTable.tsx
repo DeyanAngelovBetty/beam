@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, pageBackdropSx } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -147,8 +147,10 @@ const SQUIRCLE = { 'corner-shape': 'squircle' } as object; // CSS Borders L5 (Ch
  * approximation; "LAST UPDATED" reads identically over the real header. Padding mirrors the real head cell
  * (12px vertical from the head override + 16px horizontal from size-small); white-space is left at the
  * table default (the real th doesn't force nowrap either), so line-breaking matches at equal widths.
+ * Density (#2): padding-block 0, mirroring the real head's new padding — the clone's ROW height comes from
+ * the measured `cloneHeight` (= the real 44px header), and the flex track centres these cells within it.
  */
-export const headerCellSx = { ...meta, py: 1.5, px: 2 };
+export const headerCellSx = { ...meta, py: 0, px: 2 };
 
 /**
  * The header's sort affordance — the ONE composition BOTH the real `th` and the clone consume, so they
@@ -686,7 +688,10 @@ export function BeamDataTable<Row>({
     left: 0,
     pl: 0.5,
     width: '1%',
-    verticalAlign: 'top',
+    // Density (#2): centre the rail controls in the 44px row (was 'top'). The controls (checkbox ~42,
+    // size-small IconButtons ~30) all fit inside 44, so the row height comes from the constant, not the
+    // rail — and the checkbox/kebab/caret sit centred against the centred data cells.
+    verticalAlign: 'middle',
     backgroundColor: 'background.paper',
     // Scroll-affordance on the rail's right edge — TWO layers, different jobs, appearing together:
     //  ::before = a crisp 1px divider (theme `divider` token) that DEFINES the rail boundary;
@@ -940,7 +945,7 @@ export function BeamDataTable<Row>({
   // BeamPaper-sectioning pattern; DetailsPanel/PrizeWall precedent). Persistent when bulkActions is set;
   // constant geometry, variable enablement — every action renders, disabled at zero selection.
   const stripEl = resolvedBulkActions.length > 0 ? (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: 48, borderBottom: 1, borderColor: 'divider' }}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: FIELD_TWIN_HEIGHT, borderBottom: 1, borderColor: 'divider' }}>
       {resolvedBulkActions.map((a) => (
         <BulkActionButton
           key={a.id}
@@ -1063,6 +1068,9 @@ export function BeamDataTable<Row>({
         className="beam-footer-inner"
         sx={{
           position: 'relative',
+          // Density (#2): the footer converges on the 44px field-twin datum. minHeight (a Box, not a cell),
+          // so a taller control still grows it; footerContent is already centre-aligned within.
+          minHeight: FIELD_TWIN_HEIGHT,
           bgcolor: 'background.paper',
           ...SIDE_BORDER,
           // WIDTH/STYLE longhands, NOT the `border-bottom` shorthand: the shorthand would reset
@@ -1253,6 +1261,13 @@ export function BeamDataTable<Row>({
                   sx={{
                     ...(onRowClick && { cursor: 'pointer' }),
                     ...(isHighlighted && { bgcolor: 'action.hover' }),
+                    // Density (#2): the row converges on the 44px field-twin datum. `height` on a row acts
+                    // as a MINIMUM; padding-block:0 on its data cells (below) drops the size-small vertical
+                    // padding so the height comes from THIS constant, not the tallest cell (border-box keeps
+                    // the 1px cell border inside 44 → 44, not 45). The rail controls all fit inside 44, so
+                    // they no longer own the height. Expanded/empty rows aren't touched (their own cells).
+                    height: FIELD_TWIN_HEIGHT,
+                    '& > .MuiTableCell-root': { paddingTop: 0, paddingBottom: 0 },
                     // Kebab: dim at rest, full on row hover and keyboard focus.
                     '& .beam-kebab': { opacity: 0.4, transition: 'opacity 120ms' },
                     '&:hover .beam-kebab, & .beam-kebab:focus-visible': { opacity: 1 },
@@ -1460,7 +1475,9 @@ function JumpToPage({ pageIndex, pageCount, onJump }: { pageIndex: number; pageC
           }}
           onBlur={revert}
           aria-label={`Page number, 1 to ${pageCount}`}
-          slotProps={{ htmlInput: { inputMode: 'numeric', style: { width: 44, textAlign: 'center' } } }}
+          // Density (#2): padding 6px 0 (overriding the theme's 13px field padding) so the input sits INSIDE
+          // the 44px footer with breathing room instead of filling it edge-to-edge. Width/centre unchanged.
+          slotProps={{ htmlInput: { inputMode: 'numeric', style: { width: 44, textAlign: 'center', padding: '6px 0' } } }}
         />
       </Tooltip>
       <Typography variant="body2" color="text.secondary">of {pageCount}</Typography>

@@ -121,6 +121,14 @@ export const FIELD_GEOMETRY = {
 } as const;
 
 /**
+ * FIELD_TWIN_HEIGHT — the 44px view↔edit datum (BeamStat / form-field geometry, `FIELD_GEOMETRY.height`),
+ * named for reuse as a ROW/CHROME height so the grid speaks the same number as the fields (Ruslan density
+ * ask, installment #2). Aliases the one source above — no second literal 44. BeamDataTable's bulk strip,
+ * header + body rows, and footer inner all converge on it; the field-twin doctrine, applied to the table.
+ */
+export const FIELD_TWIN_HEIGHT = FIELD_GEOMETRY.height;
+
+/**
  * fieldGeometrySx — the field-height mixin for CUSTOM inputs OUTSIDE the TextField family (a bespoke
  * bordered control that still wants to be a 44px field twin). Sugar over the same numbers, NOT the
  * mechanism (small outlined TextField/Select/multiline get 44px from the theme default). Spread into

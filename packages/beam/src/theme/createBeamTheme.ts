@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, pageBackdropSx, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, FIELD_TWIN_HEIGHT, pageBackdropSx, type BrandName, type ProductName } from './tokens';
 
 // Surface-ramp named stops (docs/surface-grammar.md). `default`/`paper` are MUI's; `paper0` (Paper
 // elevation 0) and `overlay` (all menus/popovers) are the two extra ramp levels, typed here so the
@@ -677,7 +677,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // caps voice. One definition (theme/textStyles), several bindings.
       MuiTableCell: {
         styleOverrides: {
-          head: { ...meta, paddingTop: 12, paddingBottom: 12 },
+          // Density (#2): header row converges on the 44px field-twin datum. `height` on a table cell acts
+          // as a MINIMUM (min-height doesn't apply to cells per spec), and box-sizing:border-box means the
+          // 1px bottom border sits INSIDE the 44 — so the header lands at 44, not 45. padding-block:0 so the
+          // caps text centres in the 44 rather than adding to it. (Body rows carry their height on the data
+          // TableRow in the organism, so the expanded/empty cells — which must grow or collapse — aren't
+          // pinned to 44 here.)
+          head: { ...meta, height: FIELD_TWIN_HEIGHT, paddingTop: 0, paddingBottom: 0 },
           footer: { ...meta },
         },
       },
