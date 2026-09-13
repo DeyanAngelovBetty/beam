@@ -406,6 +406,8 @@ export function BeamDataTable<Row>({
   searchable = false,
   paginated = false,
   defaultPageSize = 10,
+  pagination,
+  onPaginationChange,
   pageSizeOptions,
   jumpToPage = false,
   stickyChrome = false,
@@ -483,14 +485,18 @@ export function BeamDataTable<Row>({
     data: rows,
     columns: columnDefs,
     getRowId,
-    initialState: { pagination: { pageSize: defaultPageSize } },
+    // Uncontrolled default seeds pageSize; when `pagination` is supplied the grid is CONTROLLED (state
+    // below + onPaginationChange), so the URL can be the source of truth and pagination survives remount.
+    ...(pagination ? {} : { initialState: { pagination: { pageSize: defaultPageSize } } }),
     state: {
       sorting,
       rowSelection,
       expanded,
       globalFilter,
+      ...(pagination ? { pagination } : {}),
       ...(cm.enabled ? { columnVisibility: cm.columnVisibility, columnOrder: cm.columnOrder } : {}),
     },
+    ...(onPaginationChange ? { onPaginationChange } : {}),
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     onExpandedChange: setExpanded,
@@ -614,6 +620,8 @@ export function BeamDataTable<Row>({
   const footerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null); // the grid Paper top = the pinned re-anchor target
+  const didAnchorMount = useRef(false); // skip the re-anchor on first mount (only on page/size CHANGE)
   const [cloneWidths, setCloneWidths] = useState<number[]>([]);
   const [cloneHeight, setCloneHeight] = useState(0); // real header ROW height — the clone matches it so the crossover doesn't jump (the select-all checkbox makes the real header taller than the text cells)
 
@@ -737,6 +745,36 @@ export function BeamDataTable<Row>({
       host.style.removeProperty('--beam-bucket-height');
     };
   }, [effectiveSticky]);
+
+  // DETERMINISTIC RE-ANCHOR on page/size change (QoL): after the new layout commits (useLayoutEffect), scroll
+  // the page scroller INSTANTLY (never smooth) to a calm landing — the grid's snap-2 pinned position when the
+  // chrome will engage for the NEW rows-on-page, else page top. Reachability is recomputed SYNCHRONOUSLY from
+  // rows-on-page (fresh this render) via the SAME arithmetic as the gate — never the (async, one-render-late)
+  // pinUnreachable state, never measured height. The pinned target subtracts the Paper's active scroll-margin-
+  // top so it lands exactly where proximity-snap rests (else proximity would fight it) — inheriting whichever
+  // snap-2 offset constant is live (CHROME_CEILING_BAND, or 0 once the ceiling collapses at tier 2). Skips the
+  // first mount so a shared URL / refresh keeps its position.
+  useLayoutEffect(() => {
+    // Scoped to stickyChrome grids (the pin/snap machinery) — non-sticky grids keep their scroll position on
+    // page change, no rider. `stickyChrome` (the prop) covers the opted-in-but-currently-unreachable case too.
+    if (!paginated || !stickyChrome) return;
+    if (!didAnchorMount.current) {
+      didAnchorMount.current = true;
+      return;
+    }
+    const sp = getScrollParent(paperRef.current);
+    if (!sp || !paperRef.current) return;
+    const reachable =
+      FIELD_TWIN_HEIGHT * (3 + visibleRows.length) + CONTENT_BOTTOM.md * 8 + CHROME_CEILING_BAND >= window.innerHeight;
+    const willStick = stickyChrome && !tooShortForSticky && reachable;
+    // Match the Paper's scroll-margin-top (0 once the ceiling collapses at tier 2, else CHROME_CEILING_BAND).
+    const snapMargin = window.matchMedia(belowHeightQuery(SHORT_VP_TIER2)).matches ? 0 : CHROME_CEILING_BAND;
+    const target = willStick
+      ? sp.scrollTop + paperRef.current.getBoundingClientRect().top - sp.getBoundingClientRect().top - snapMargin
+      : 0;
+    sp.scrollTo({ top: target, behavior: 'instant' as ScrollBehavior });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table.getState().pagination.pageIndex, table.getState().pagination.pageSize]);
 
   // One pinned rail column holds all row controls, in fixed order
   // [select][kebab][expand] — each rendered only if enabled (grammar §3):
@@ -1183,6 +1221,7 @@ export function BeamDataTable<Row>({
   return (
     <>
       <Paper
+        ref={paperRef}
         variant="outlined"
         // CONTRACT: published when stickyChrome is on. BeamAppShell's `main:has([data-beam-sticky-chrome])`
         // gives up its bottom padding so this grid's footer floor takes it over (see BeamAppShell notes).

@@ -17,8 +17,15 @@ import {
   PAGE_SECTION_GAP,
 } from '@betty/beam';
 import type { BeamColumn, AddableField, BeamBadgeProps } from '@betty/beam';
+import type { PaginationState } from '@tanstack/react-table';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
+import { useSearchParams } from 'react-router-dom';
 import { useMilestone } from './milestone';
+
+// Pagination persisted in the URL (the source of truth) — survives the nav-toggle remount + refresh, and
+// back/forward + link-sharing work. Defaults stay OUT of the URL (clean URL at 10 / page 1). 1-based `page`
+// for humans; `pageSize` matches the grid's default. See BeamDataTable's controlled `pagination` prop.
+const DEFAULT_PAGE_SIZE = 10;
 
 /**
  * Gaspar Transactions — the payments list grid.
@@ -483,6 +490,28 @@ export function TransactionsPage() {
   // today's full behavior: every cap true.
   const { caps } = useMilestone();
 
+  // Pagination derives from the URL (source of truth). Grid state flows from `pagination`; changes write
+  // back via `onPaginationChange` (TanStack's updater signature, passed straight through). Push (not replace)
+  // so back/forward step through pages; defaults are omitted so the URL stays clean at 10 / page 1.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawSize = parseInt(searchParams.get('pageSize') ?? '', 10);
+  const rawPage = parseInt(searchParams.get('page') ?? '', 10);
+  const pagination: PaginationState = {
+    pageSize: Number.isFinite(rawSize) && rawSize > 0 ? rawSize : DEFAULT_PAGE_SIZE,
+    pageIndex: Number.isFinite(rawPage) && rawPage > 1 ? rawPage - 1 : 0,
+  };
+  const onPaginationChange = (updater: PaginationState | ((p: PaginationState) => PaginationState)) => {
+    const next = typeof updater === 'function' ? updater(pagination) : updater;
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      if (next.pageSize === DEFAULT_PAGE_SIZE) p.delete('pageSize');
+      else p.set('pageSize', String(next.pageSize));
+      if (next.pageIndex === 0) p.delete('page');
+      else p.set('page', String(next.pageIndex + 1));
+      return p;
+    });
+  };
+
   // One snackbar for all transient notices (copy confirmations + the action proposals).
   const [snack, setSnack] = useState<string | null>(null);
   const onCopied = () => setSnack('Copied to clipboard');
@@ -765,6 +794,10 @@ export function TransactionsPage() {
         rows={rows}
         getRowId={(r) => r.id}
         paginated
+        // Pagination is URL-controlled (source of truth) — survives the nav-toggle remount + refresh, and
+        // back/forward + link-sharing work. The grid derives its page/size from these.
+        pagination={pagination}
+        onPaginationChange={onPaginationChange}
         // Sticky chrome — the header bucket pins to the top, the footer to the bottom, the page owns the
         // scroll. NOT milestone-gated (layout is baseline UX). The Stack's stickyChromeGapSx + the shell's
         // main:has() contract are already in place and activate off this grid's data-beam-sticky-chrome.

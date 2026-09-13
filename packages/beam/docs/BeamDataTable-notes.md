@@ -3,6 +3,35 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Pagination persistence + deterministic re-anchor *(2026-09-14)*
+
+- **ROOT CAUSE of the "nav toggle resets rowsPerPage 50→10" symptom (shell remount — reported, fix deferred
+  as structural).** `BeamAppShell`'s `frameContent` is a ternary on `effectiveLocked` producing two
+  structurally different trees: locked = `<Box display:grid>{nav}{main}</Box>`, closed = a Fragment
+  `<>{strip}{hoverZone}{main}{peek}</>`. When the nav toggles, the appFrame's child changes root TYPE
+  (grid `<div>` ↔ Fragment, which flattens to a different child list), so React can't reconcile `{main}` to
+  the same position — it UNMOUNTS and remounts the whole content subtree. That wipes grid state (pageSize,
+  selection, expanded rows) and re-fires data fetches, then compounds into the scroll jump (remount → default
+  pageSize → clamp → reachability flip → re-snap). **Not cheaply fixable:** unifying the two branches so
+  `main`'s instance is preserved means making both a shared grid root with `main` at a stable index and the
+  closed chrome absolute/out-of-grid-flow — a shell restructure touching the view-transition morph +
+  absolute positioning + pointer-events, unverifiable headless. Reported for a decision; the persistence
+  below makes the pagination symptom survivable regardless (state re-derives from the URL after any remount).
+- **URL is the source of truth for pagination (transactions page).** New CONTROLLED `pagination` +
+  `onPaginationChange` props on the organism (TanStack's `PaginationState` / `OnChangeFn`, passed straight
+  through; omit both = the old uncontrolled `defaultPageSize` behavior, byte-identical). The page reads
+  `pageSize`/`page` (1-based) from `useSearchParams` and writes them back on change (push, so back/forward
+  step through pages); defaults stay OUT of the URL (clean at 10 / page 1). Survives the remount + refresh;
+  links share state.
+- **Deterministic re-anchor on page/size change (organism, `useLayoutEffect` keyed on pageIndex + pageSize,
+  skips first mount).** After the new layout commits, the page scroller is scrolled INSTANTLY (never smooth)
+  to a calm landing: the grid's snap-2 pinned position when the chrome will engage for the NEW rows-on-page,
+  else page top. Reachability is recomputed SYNCHRONOUSLY from rows-on-page via the SAME arithmetic as the
+  gate (never the async `pinUnreachable` state, never measured height). The pinned target subtracts the
+  Paper's active scroll-margin-top so it lands exactly where proximity-snap rests (else proximity would fight
+  the jump) — inheriting whichever snap-2 offset constant is live (`CHROME_CEILING_BAND`, or 0 once the
+  ceiling collapses at tier 2). **Snap-2 offset decision still pending — the anchor inherits it.**
+
 ## Sticky chrome — pinned bucket + footer (`stickyChrome`) *(2026-09-12, BENCH)*
 
 The PAGE stays the scroll owner; the grid grows to content height; its chrome pins to the scrollport

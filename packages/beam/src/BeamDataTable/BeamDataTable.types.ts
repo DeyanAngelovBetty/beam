@@ -1,4 +1,5 @@
 import type { ComponentType, MouseEventHandler, ReactNode } from 'react';
+import type { PaginationState, OnChangeFn } from '@tanstack/react-table';
 import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamBadgeHue } from '../BeamBadge/BeamBadge.types';
 
@@ -122,8 +123,18 @@ export interface BeamDataTableProps<Row> {
   searchable?: boolean;
   /** Built-in pagination footer */
   paginated?: boolean;
-  /** Initial rows per page (paginated only). Default 10; added to the options. */
+  /** Initial rows per page (paginated only). Default 10; added to the options. Seeds the UNCONTROLLED
+   *  internal pagination; ignored when `pagination` (controlled) is supplied. */
   defaultPageSize?: number;
+  /**
+   * CONTROLLED pagination (optional). Supply `{ pageIndex, pageSize }` and `onPaginationChange` to make an
+   * external source (e.g. URL search params) the source of truth — grid state derives from it, so it
+   * survives remounts (a nav toggle that remounts the page content) and refresh, and back/forward +
+   * link-sharing work. Omit both for the default uncontrolled behavior seeded by `defaultPageSize`.
+   * `onPaginationChange` is TanStack's updater signature, so it can be passed straight through.
+   */
+  pagination?: PaginationState;
+  onPaginationChange?: OnChangeFn<PaginationState>;
   /**
    * Rows-per-page choices (paginated only). PER-GRID OVERRIDE — omitted, the select derives its light
    * default `[5, 10, 25, defaultPageSize]`, so no grid silently gains heavy sizes (500 is opt-in). When
