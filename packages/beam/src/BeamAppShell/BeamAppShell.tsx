@@ -515,7 +515,11 @@ export function BeamAppShell({
         // top and bottom padding (side rhythm untouched). Padding on the SCROLL OWNER is fixed under a
         // sticky element (an 80px top shelf) — donating it to the page Stack (which scrolls) lets the
         // bucket pin flush at the true viewport top. `:has()` is Baseline; no fallback needed.
-        '&:has([data-beam-sticky-chrome])': { pt: 0, pb: 0 },
+        // SNAP (A): with a sticky grid present, the page scroller gets `y proximity` snap — NEVER mandatory
+        // (two snap points on a 500-row page would trap mid-row). Two targets: page top (the Stack's first
+        // section) and the pinned grid (the Paper), both declared where they live. Scoped to the sticky
+        // contract, so pages without a sticky grid are untouched, and at tier 3 (attr dropped) it goes away.
+        '&:has([data-beam-sticky-chrome])': { pt: 0, pb: 0, scrollSnapType: 'y proximity' },
         // Page mesh moved to a fixed body::before layer (createBeamTheme MuiCssBaseline) — off
         // this tall scrolling element so it doesn't repaint on scroll, behind opaque surfaces.
       }}

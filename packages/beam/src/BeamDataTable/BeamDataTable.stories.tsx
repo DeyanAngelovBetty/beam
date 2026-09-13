@@ -547,8 +547,8 @@ function renderStickyBench(fancyBackdrop: boolean) {
         // fixed mesh/star backdrop shows — the ceiling/floor outers must reveal it seamlessly.
         ...(fancyBackdrop ? {} : { bgcolor: 'background.default' }),
         // Mirror the shell contract: donate BOTH top + bottom padding to the sticky grid's ceiling/floor
-        // (the Stack re-adopts the top via stickyChromeGapSx).
-        '&:has([data-beam-sticky-chrome])': { pt: 0, pb: 0 },
+        // (the Stack re-adopts the top via stickyChromeGapSx), and the y-proximity snap (see the shell).
+        '&:has([data-beam-sticky-chrome])': { pt: 0, pb: 0, scrollSnapType: 'y proximity' },
       }}
     >
       {/* The page's section container — the CEILING half: spacing from the shared token + the gap-surgery
@@ -624,4 +624,49 @@ export const StickyChromeBench: Story = {
 export const StickyChromeFancyBackdrop: Story = {
   parameters: { layout: 'fullscreen' },
   render: () => renderStickyBench(true),
+};
+
+/**
+ * Tiered disengagement on SHORT viewports (stickyChrome hardening). The tiers are VIEWPORT-height media
+ * queries (+ a matchMedia for tier 3), so each frame below is a real `<iframe>` — its own viewport — loading
+ * the sticky bench. Thresholds (strict `<`, composed from constants, no literals): T1 396 · T2 328 · T3 264.
+ * Degrading cheapest-pin-first:
+ *   • Tier 1 (frame 360px, in 328–396): the FOOTER unsticks — pagination scrolls with content; ceiling +
+ *     bucket still pinned.
+ *   • Tier 2 (frame 300px, in 264–328): the CEILING band collapses to 0 — chrome pins at the true viewport
+ *     top (logo clearance forfeited; rows win). The pre-grid negative margin + snap offset collapse in step.
+ *   • Tier 3 (frame 240px, < 264): stickyChrome DISENGAGES — the grid renders as the plain card (the
+ *     existing non-sticky path; `data-beam-sticky-chrome` drops, snap + gap-surgery go with it).
+ * Flip the footer page-size select between 10 and 500 inside each frame: at 10 the grid may be shorter than
+ * the frame (inert, no pins) — a real state, not a bug; at 500 the tier engages. Doctrine: chrome that can't
+ * leave MIN_MEANINGFUL_ROWS (4) rows visible forfeits its pins, cheapest first.
+ */
+export const StickyChromeShortViewport: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => {
+    // Load the existing sticky bench in each frame — a real viewport per iframe, full theme + menus. The
+    // relative `iframe.html?id=…` resolves the same in dev and the static gh-pages build.
+    const src = 'iframe.html?id=organisms-beamdatatable--sticky-chrome-bench&viewMode=story';
+    const tiers = [
+      { h: 360, label: 'Tier 1 · frame 360px (328–396) — footer unsticks' },
+      { h: 300, label: 'Tier 2 · frame 300px (264–328) — ceiling collapses to 0' },
+      { h: 240, label: 'Tier 3 · frame 240px (<264) — sticky disengages → plain card' },
+    ];
+    return (
+      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Each frame is its own viewport, so the viewport-height tiers fire per frame. Flip the footer
+          page-size select (10 ↔ 500) inside each. Thresholds (strict &lt;): T1 396 · T2 328 · T3 264px.
+        </Typography>
+        {tiers.map((t) => (
+          <Box key={t.h}>
+            <Typography variant="overline" sx={{ color: 'text.secondary' }}>{t.label}</Typography>
+            <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden', mt: 0.5 }}>
+              <iframe src={src} title={t.label} style={{ display: 'block', width: '100%', height: t.h, border: 0 }} />
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    );
+  },
 };

@@ -232,6 +232,50 @@ split, or a CSS-grid table) — retires the clone AND fixes the mid-scroll horiz
 clone is the bridge to it; this is the parked table-layout question. (Applied-filters summary in the
 bucket: also parked, a later installment.)
 
+### stickyChrome hardening — scroll-snap + tiered disengagement *(2026-09-14)*
+
+Two corner-case passes. **Doctrine:** *chrome that can't leave `MIN_MEANINGFUL_ROWS` (4) rows visible
+forfeits its pins, cheapest first.* No literal pixels anywhere — every threshold/offset composes from
+existing constants (`CHROME_CEILING_BAND`, `FIELD_TWIN_HEIGHT`, `PAGE_SECTION_GAP`, `CONTENT_BOTTOM`) plus
+the one tunable `MIN_MEANINGFUL_ROWS`. Media queries can't read JS, so thresholds are computed in JS and
+interpolated into the query strings (`belowHeightQuery`, one strict-`<` −0.02px convention, three consumers).
+
+- **(A) Scroll-snap over the transition zone.** `scroll-snap-type: y proximity` on the page scroller —
+  NEVER mandatory (two snap points on a 500-row page would trap mid-row). Scoped via the existing
+  `main:has([data-beam-sticky-chrome])` shell contract (and the bench owner), so non-sticky pages are
+  untouched. Two targets: snap point 1 = the page's first section (`stickyChromeGapSx` `&>*:first-child`,
+  snap-align start); snap point 2 = the grid Paper (snap-align start + `scroll-margin-top:
+  CHROME_CEILING_BAND`, collapsing to 0 at tier 2 in step with the ceiling). **Known limitation (recorded,
+  not fixed):** proximity's capture radius is UA-defined; if the filter-panel exit range exceeds it, the
+  in-between stays reachable — the lever is shortening the exit range, a separate decision. **Bench decision
+  rule:** snap-2 must land pixel-identical to a slow-scroll pin; if `scroll-margin-top: 0` wins instead, also
+  delete the tier-2 collapse-in-step on the Paper AND the bucket coupling stays (dead sync otherwise).
+- **(B) Tiered disengagement — viewport-height tiers, cheapest-pin-first.** Each fires when the viewport
+  can no longer fit [what the previous tier keeps pinned] + `MIN_MEANINGFUL_ROWS` rows:
+  - T1 = `CHROME_CEILING_BAND + FIELD_TWIN_HEIGHT×(3 + MIN_MEANINGFUL_ROWS) + floor` = **396** → footer
+    unsticks (pure CSS on the footer outer; floor = `CONTENT_BOTTOM.md` via `theme.spacing`, the one
+    width-dependent term, resolved in-component).
+  - T2 = `CHROME_CEILING_BAND + FIELD_TWIN_HEIGHT×(2 + MIN_MEANINGFUL_ROWS)` = **328** → ceiling band
+    collapses to 0 (bucket `pt:0`); the pre-grid negative margin reverts to `PAGE_SECTION_GAP` and the snap
+    offset collapses in step (pure CSS).
+  - T3 = `FIELD_TWIN_HEIGHT×(2 + MIN_MEANINGFUL_ROWS)` = **264** → stickyChrome disengages: a `matchMedia`
+    listener (initial state read SYNCHRONOUSLY so a squashed first paint never flashes sticky) sets
+    `effectiveSticky = stickyChrome && !tooShort`, which drops `data-beam-sticky-chrome`. That one attr
+    removal cascades through the existing `:has()` contracts (shell padding restores, `stickyChromeGapSx`
+    deactivates, snap goes with it) → the existing non-sticky path IS the fallback, no new layout.
+  - **Why the thresholds can't be per-grid (and the bucket is conservatively strip + header = 2×FIELD_TWIN_HEIGHT):**
+    T2 has TWO consumers that must agree — the organism's ceiling collapse AND `stickyChromeGapSx`'s
+    margin-collapse (applied by the page). A per-grid T2 (accounting for whether a grid actually has a bulk
+    strip) couldn't be matched by the page-level `stickyChromeGapSx` const. So thresholds are shared module
+    constants, and the bucket assumes a strip (conservative): a strip-less grid disengages ~44px early —
+    only an earlier fall-back to the plain card, safe.
+  - **Not state-dependent padding:** growing/shrinking `pt` on a breakpoint would animate a BREACH of
+    sticky's constant-geometry contract; the tiers switch *which pins exist*, never the pinned geometry.
+- **Bench:** `StickyChromeShortViewport` — three real `<iframe>`s (own viewports; the tiers are
+  viewport-based and this Storybook has no viewport addon), 360/300/240px, one per tier, loading the sticky
+  bench; verify at page size 10 and 500. **Parked (fence):** the fast-scroll fade hiccup — observe whether
+  snap incidentally softens it, report, don't tune.
+
 ### Cherry batch — frosted ceiling, exit animation, scrollbars *(2026-09-13, BENCH for A)*
 
 Three cosmetic passes. **A** (frosted ceiling + filter-panel exit) is BENCH-gated — the taste calls

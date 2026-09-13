@@ -129,6 +129,37 @@ export const FIELD_GEOMETRY = {
 export const FIELD_TWIN_HEIGHT = FIELD_GEOMETRY.height;
 
 /**
+ * MIN_MEANINGFUL_ROWS — the one tunable for the tiered sticky-chrome disengagement (stickyChrome hardening).
+ * The doctrine: chrome that can't leave this many rows visible forfeits its pins, cheapest first. Everything
+ * else in the tiers is COMPOSED from existing constants — no literal pixels.
+ */
+export const MIN_MEANINGFUL_ROWS = 4;
+
+/**
+ * Short-viewport tier thresholds (px), degrading cheapest-pin-first. Each fires when the viewport can no
+ * longer fit [what the previous tier keeps pinned] + MIN_MEANINGFUL_ROWS rows:
+ *   T1 footer unsticks   = CEILING + strip + header + N·row + footer + floor
+ *   T2 ceiling collapses = CEILING + strip + header + N·row            (footer already gone)
+ *   T3 sticky disengages =           strip + header + N·row            (ceiling already gone)
+ * "strip + header" = 2·FIELD_TWIN_HEIGHT (the CONSERVATIVE bucket — see BeamDataTable notes for why the
+ * bucket can't be per-grid: T2 has two consumers that must agree). T2/T3 are pure-px so they can be shared
+ * module constants; T1 adds the floor (CONTENT_BOTTOM.md) in-component via `theme.spacing` (its one
+ * width-dependent term — an 8px xs/md swing, noise against a 44px row). `SHORT_VP_TIER1_BASE` is T1 minus
+ * that floor. All three fire STRICTLY BELOW their threshold (the −epsilon in `belowHeightQuery`).
+ */
+export const SHORT_VP_TIER2 = CHROME_CEILING_BAND + FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 328
+export const SHORT_VP_TIER3 = FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 264
+export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 372 (+ floor in-component = 396)
+
+/**
+ * belowHeightQuery — the ONE strict-`<` boundary convention, shared by all three tier consumers (the CSS
+ * media keys AND the tier-3 matchMedia string). The −0.02px makes a tier fire just below its threshold
+ * (viewport can NO LONGER fit), never at exactly-fits. Returns the bare condition; sx keys prepend `@media `.
+ */
+export const TIER_EPSILON = 0.02;
+export const belowHeightQuery = (px: number) => `(max-height: ${px - TIER_EPSILON}px)`;
+
+/**
  * fieldGeometrySx — the field-height mixin for CUSTOM inputs OUTSIDE the TextField family (a bespoke
  * bordered control that still wants to be a 44px field twin). Sugar over the same numbers, NOT the
  * mechanism (small outlined TextField/Select/multiline get 44px from the theme default). Spread into

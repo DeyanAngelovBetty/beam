@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
 import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, pageBackdropSx } from '../theme/tokens';
+import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1_BASE, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -81,6 +81,15 @@ export const stickyChromeGapSx = {
     // budget the proposal settled on — PAGE_SECTION_GAP, NOT CONTENT_TOP (nav-shift duty). (px: the
     // spacing×8 − band arithmetic can't be an sx spacing multiple.)
     '& > *:has(+ [data-beam-sticky-chrome])': { mb: `${PAGE_SECTION_GAP * 8 - CHROME_CEILING_BAND}px` },
+    // SNAP POINT 1 (A): the page's first section is a snap target (start), so the scroll snaps cleanly to
+    // page top. Scoped by the same :has contract, so it goes away with the pins at tier 3.
+    '& > *:first-child': { scrollSnapAlign: 'start' },
+    // TIER 2 (ceiling collapses): the ceiling band → 0, so the pre-grid section reverts from its negative
+    // absorb-margin to the NORMAL section gap (band no longer there to absorb). In step with the bucket's
+    // `pt: 0` and the snap's scroll-margin-top: 0 — one threshold, three coordinated collapses.
+    [`@media ${belowHeightQuery(SHORT_VP_TIER2)}`]: {
+      '& > *:has(+ [data-beam-sticky-chrome])': { mb: PAGE_SECTION_GAP },
+    },
   },
 };
 
@@ -414,6 +423,30 @@ export function BeamDataTable<Row>({
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [globalFilter, setGlobalFilter] = useState('');
 
+  // TIER 3 of the short-viewport disengagement — the one tier CSS can't do (it swaps the RENDER path to the
+  // plain card, not just styles). Below SHORT_VP_TIER3 the grid can't leave MIN_MEANINGFUL_ROWS rows visible
+  // even with the ceiling collapsed, so stickyChrome forfeits its last pins: `effectiveSticky` goes false,
+  // `data-beam-sticky-chrome` drops, and every :has() contract (shell padding, stickyChromeGapSx, the snap)
+  // deactivates in step — the existing non-sticky path IS the fallback, no new layout. Initial state reads
+  // matchMedia SYNCHRONOUSLY so a squashed first paint never flashes sticky. Tiers 1–2 stay pure CSS below.
+  const [tooShortForSticky, setTooShortForSticky] = useState(() =>
+    typeof window !== 'undefined' && stickyChrome
+      ? window.matchMedia(belowHeightQuery(SHORT_VP_TIER3)).matches
+      : false,
+  );
+  useEffect(() => {
+    if (!stickyChrome || typeof window === 'undefined') return;
+    const mq = window.matchMedia(belowHeightQuery(SHORT_VP_TIER3));
+    const sync = () => setTooShortForSticky(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, [stickyChrome]);
+  const effectiveSticky = stickyChrome && !tooShortForSticky;
+  // T1 (footer unsticks) = the pure-px base + the floor (CONTENT_BOTTOM.md), its one width-dependent term,
+  // resolved to px here via theme.spacing (no literal 8). T2/T3 are pure-px module constants.
+  const shortVpTier1 = SHORT_VP_TIER1_BASE + parseFloat(theme.spacing(CONTENT_BOTTOM.md));
+
   // Suspend row hover WHILE a Collapse animates. Rows translating under a stationary cursor during
   // expand/collapse otherwise latch `:hover` — browsers recompute hover on pointermove, not on layout
   // change — and keep the tint until the next move. We drop pointer-events on the tbody for the
@@ -602,7 +635,7 @@ export function BeamDataTable<Row>({
   // RO, and structurally: show/hide, reorder, page-size, row-count). Drift is structurally impossible
   // because the clone owns no width of its own.
   useLayoutEffect(() => {
-    if (!stickyChrome) return;
+    if (!effectiveSticky) return;
     const measure = () => {
       const rowEl = theadRowRef.current;
       if (!rowEl) return;
@@ -623,14 +656,14 @@ export function BeamDataTable<Row>({
       window.removeEventListener('resize', measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stickyChrome, cm.columnOrder, cm.columnVisibility, table.getState().sorting, table.getState().pagination.pageSize, visibleRows.length, leafColumns.length]);
+  }, [effectiveSticky, cm.columnOrder, cm.columnVisibility, table.getState().sorting, table.getState().pagination.pageSize, visibleRows.length, leafColumns.length]);
 
   // STUCK DETECTION — the estate's progressive posture: `@container scroll-state(stuck)` drives the
   // dressing + clone on Chrome (pure CSS, below), and this IntersectionObserver fallback sets a
   // `data-stuck` attr everywhere else. Sentinels bracket the pinned chrome; the scroll root is found by
   // walking to the nearest scrollable ancestor (AppShell `main` in Gaspar, the document in Storybook).
   useEffect(() => {
-    if (!stickyChrome || typeof IntersectionObserver === 'undefined') return;
+    if (!effectiveSticky || typeof IntersectionObserver === 'undefined') return;
     const root = getScrollParent(bucketRef.current);
     const observe = (sentinel: HTMLDivElement | null, target: HTMLDivElement | null, edge: 'top' | 'bottom', rootMargin: string) => {
       if (!sentinel || !target) return null;
@@ -651,7 +684,7 @@ export function BeamDataTable<Row>({
       top?.disconnect();
       bottom?.disconnect();
     };
-  }, [stickyChrome]);
+  }, [effectiveSticky]);
 
   // Publish the bucket's measured height as `--beam-bucket-height` on the SCROLL PARENT (the page owns the
   // scroll). A page section above the grid reads it via `stickyChromeExitSx` to inset its `view()` exit
@@ -660,7 +693,7 @@ export function BeamDataTable<Row>({
   // (no offset term). Measured, never assumed (the rail-width precedent) — RO tracks strip/header height
   // changes (bulk-strip appearing, wrap, resize).
   useEffect(() => {
-    if (!stickyChrome) return;
+    if (!effectiveSticky) return;
     const bucket = bucketRef.current;
     const host = getScrollParent(bucket);
     if (!bucket || !host) return;
@@ -674,7 +707,7 @@ export function BeamDataTable<Row>({
       window.removeEventListener('resize', publish);
       host.style.removeProperty('--beam-bucket-height');
     };
-  }, [stickyChrome]);
+  }, [effectiveSticky]);
 
   // One pinned rail column holds all row controls, in fixed order
   // [select][kebab][expand] — each rendered only if enabled (grammar §3):
@@ -813,7 +846,7 @@ export function BeamDataTable<Row>({
   // width — the far endpoint `translateX(calc(-100% + 100cqw))` = -(fullWidth - visibleWidth), exact
   // because the track's width is the measured column sum.
   const railOffset = railEnabled ? 1 : 0;
-  const cloneEl = stickyChrome ? (
+  const cloneEl = effectiveSticky ? (
     <Box
       className="beam-header-clone"
       aria-hidden
@@ -976,7 +1009,7 @@ export function BeamDataTable<Row>({
   // strip renders bare (byte-identical). The inner carries the stuck dressing (both data-stuck + Chrome
   // scroll-state paths). The clone appears only while stuck, landing exactly where the real header
   // scrolls under, so the handoff reads seamless.
-  const bucketEl = stickyChrome ? (
+  const bucketEl = effectiveSticky ? (
     // OUTER = the page CEILING. Pins at `top: 0` ALWAYS — sticky's contract is CONSTANT geometry through
     // the pin, so the card sits a fixed distance below the bucket top at every scroll position: no jump.
     // Logo clearance is the BAND HEIGHT, not a pin offset: `pt` is a constant CHROME_CEILING_BAND (strip
@@ -988,7 +1021,20 @@ export function BeamDataTable<Row>({
     // inner re-enables auto.
     <Box
       ref={bucketRef}
-      sx={{ position: 'sticky', top: 0, zIndex: Z_CHROME, pt: `${CHROME_CEILING_BAND}px`, pointerEvents: 'none', ...ceilingPaintSx, ...containerTypeScrollState }}
+      sx={{
+        position: 'sticky',
+        top: 0,
+        zIndex: Z_CHROME,
+        pt: `${CHROME_CEILING_BAND}px`,
+        pointerEvents: 'none',
+        ...ceilingPaintSx,
+        ...containerTypeScrollState,
+        // TIER 2 (footer already unstuck): below SHORT_VP_TIER2 the ceiling band would eat the row budget,
+        // so it collapses to 0 — the chrome pins at the TRUE viewport top (logo clearance forfeited; on a
+        // <328px viewport, rows win over clearance). stickyChromeGapSx reverts the pre-grid negative margin
+        // in step, and the snap's scroll-margin-top collapses to 0 too, so all three stay coherent.
+        [`@media ${belowHeightQuery(SHORT_VP_TIER2)}`]: { pt: 0 },
+      }}
     >
       <Box
         className="beam-bucket-inner"
@@ -1052,14 +1098,25 @@ export function BeamDataTable<Row>({
       paginationEl
     );
 
-  const footerEl = stickyChrome ? (
+  const footerEl = effectiveSticky ? (
     // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), and PAINTS the page's own
     // backdrop (pageBackdropSx, fixed attachment — see the ceiling outer) so it's opaque + seamless,
     // carrying the page's bottom spacing as its padding (CONTENT_BOTTOM, the shell gave it up). Rows
     // transiting the band are occluded; released, the footer sits where it does today.
     <Box
       ref={footerRef}
-      sx={{ position: 'sticky', bottom: 0, zIndex: Z_CHROME, pb: CONTENT_BOTTOM, ...pageBackdropSx, ...containerTypeScrollState }}
+      sx={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: Z_CHROME,
+        pb: CONTENT_BOTTOM,
+        ...pageBackdropSx,
+        ...containerTypeScrollState,
+        // TIER 1 (cheapest pin to drop): below shortVpTier1 the viewport can't hold the full chrome +
+        // MIN_MEANINGFUL_ROWS, so the footer unsticks — pagination scrolls with the content instead of
+        // pinning. Pure CSS; the pinned top (ceiling + bucket) stays until tier 2.
+        [`@media ${belowHeightQuery(shortVpTier1)}`]: { position: 'static' },
+      }}
     >
       {/* INNER = the bordered paper footer — opaque paper (reads as the card footer over the page-bg
           floor). Frame region: sides + bottom + bottom-radius — the card's floor edge, traveling with
@@ -1099,7 +1156,7 @@ export function BeamDataTable<Row>({
         variant="outlined"
         // CONTRACT: published when stickyChrome is on. BeamAppShell's `main:has([data-beam-sticky-chrome])`
         // gives up its bottom padding so this grid's footer floor takes it over (see BeamAppShell notes).
-        data-beam-sticky-chrome={stickyChrome ? '' : undefined}
+        data-beam-sticky-chrome={effectiveSticky ? '' : undefined}
         sx={{
           // Non-sticky keeps the single-Paper frame (outlined border + radius) and clips to it. Sticky
           // DECONSTRUCTS the frame onto the three regions, so the Paper drops border + radius — and with
@@ -1107,8 +1164,8 @@ export function BeamDataTable<Row>({
           // the mode → `visible`: sticky escapes to the scroll owner either way (neither clip nor visible
           // creates a scroll container), the TableContainer clips its own horizontal scroll, and the
           // stuck bands stay within their regions — nothing overflows the Paper needing a clip.
-          overflow: stickyChrome ? 'visible' : 'hidden',
-          ...(stickyChrome
+          overflow: effectiveSticky ? 'visible' : 'hidden',
+          ...(effectiveSticky
             ? ({
                 border: 'none',
                 borderRadius: 0,
@@ -1121,11 +1178,17 @@ export function BeamDataTable<Row>({
                 // timeline-scope: expose the body's named scroll-timeline (defined on the TableContainer)
                 // to the sibling header clone. The Paper is the common ancestor of both.
                 'timeline-scope': '--beam-body-scroll',
+                // SNAP POINT 2 (A): the grid Paper is a snap target (proximity, set on the scroll owner via
+                // the shell contract). scroll-margin-top: CHROME_CEILING_BAND resolves the snap to the pinned
+                // position; it collapses to 0 at TIER 2 in step with the ceiling band (dead sync otherwise).
+                scrollSnapAlign: 'start',
+                scrollMarginTop: `${CHROME_CEILING_BAND}px`,
+                [`@media ${belowHeightQuery(SHORT_VP_TIER2)}`]: { scrollMarginTop: 0 },
               } as object)
             : {}),
         }}
       >
-        {stickyChrome && <Box ref={topSentinelRef} aria-hidden sx={{ height: 0 }} />}
+        {effectiveSticky && <Box ref={topSentinelRef} aria-hidden sx={{ height: 0 }} />}
         {bucketEl}
 
         {/* Toolbar region: the internal search field ONLY (for lists with no page-level filter bar).
@@ -1165,7 +1228,7 @@ export function BeamDataTable<Row>({
           // Rows region of the deconstructed frame (sticky only): SIDE borders only — the continuous
           // vertical lines between the bucket's top and the footer's bottom — AND the paper SURFACE the
           // Paper ceded (so rows still sit on paper now that the Paper paints nothing).
-          ...(stickyChrome ? { ...SIDE_BORDER, bgcolor: 'background.paper' } : {}),
+          ...(effectiveSticky ? { ...SIDE_BORDER, bgcolor: 'background.paper' } : {}),
           '& .beam-edge-right': { opacity: 0, transition: 'opacity var(--beam-motion-quick)' },
           '&[data-overflow-end="true"] .beam-edge-right': { opacity: 1 },
         }}
@@ -1178,7 +1241,7 @@ export function BeamDataTable<Row>({
             containerType: 'scroll-state' as 'normal',
             // Define the body's inline-axis scroll-timeline; the header clone animates along it (see the
             // clone track). Scoped to the Paper (timeline-scope) so the sibling clone can bind by name.
-            ...(stickyChrome ? ({ 'scroll-timeline-name': '--beam-body-scroll', 'scroll-timeline-axis': 'inline' } as object) : {}),
+            ...(effectiveSticky ? ({ 'scroll-timeline-name': '--beam-body-scroll', 'scroll-timeline-axis': 'inline' } as object) : {}),
             // Scrollbar (Task B): this is an in-content scroller, so it goes THIN — slimmer than the primary
             // page bar, themed by the estate-wide vars. The webkit override wins over the global `*` rule on
             // specificity (a class beats `*`); Firefox honors `scrollbar-width`.
@@ -1190,7 +1253,7 @@ export function BeamDataTable<Row>({
             // trackpad/keyboard gestures. Keyboard panning survives (scrollbar-width:none/display:none hide
             // only the visual bar, not the scroll behavior — focus + arrow keys still pan). The real fix
             // remains a footer-proxy scrollbar (or the endgame restructure); recorded in the notes.
-            ...(stickyChrome
+            ...(effectiveSticky
               ? ({ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } } as object)
               : {}),
           }}
@@ -1418,7 +1481,7 @@ export function BeamDataTable<Row>({
           count — and pagination on the right (grammar §4). Wrapped in a sticky positioner (footerEl)
           when stickyChrome; otherwise byte-identical. */}
       {footerEl}
-      {stickyChrome && <Box ref={bottomSentinelRef} aria-hidden sx={{ height: 0 }} />}
+      {effectiveSticky && <Box ref={bottomSentinelRef} aria-hidden sx={{ height: 0 }} />}
       </Paper>
     </>
   );
