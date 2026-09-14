@@ -3,6 +3,19 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-beam-datatable-column-manager.md`.)
 
+## Footer toolbar height — finishing the density pass *(2026-09-14)*
+
+The density pass pinned `.beam-footer-inner` to `FIELD_TWIN_HEIGHT` but MISSED the inner MUI pagination
+toolbar (`.MuiTablePagination-toolbar`), which kept its 52px base min-height PLUS the Toolbar variant's
+breakpoint media queries (48 landscape, 64 up-sm) — so the footer measured ~54, not 44.
+- **Toolbar → 44 across all breakpoints (theme, `MuiTablePagination.styleOverrides.toolbar`):** `&&` doubles
+  the slot class (0,2,0) so it beats MUI's single-class (`.MuiToolbar-root`, 0,1,0) min-heights inside every
+  media query — no mirroring, no `!important`, no literal (uses `FIELD_TWIN_HEIGHT`).
+- **The remaining ~2px = the inner's border stacking ON TOP of `minHeight`.** Switched `.beam-footer-inner`
+  from `minHeight` to `height: FIELD_TWIN_HEIGHT` (fixed, border-box) so its 1px bottom card-edge border sits
+  INSIDE the 44 — identical to how a body row is `height: 44` with its border included. Footer now lands at
+  exactly 44 alongside the 44 rows.
+
 ## Pagination persistence + deterministic re-anchor *(2026-09-14)*
 
 - **ROOT CAUSE of the "nav toggle resets rowsPerPage 50→10" symptom (shell remount — reported, fix deferred

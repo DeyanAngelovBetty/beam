@@ -12,6 +12,7 @@ import {
   BeamFilterBar,
   BeamDataTable,
   BeamPageHeader,
+  InputAdornment,
   stickyChromeGapSx,
   stickyChromeExitSx,
   PAGE_SECTION_GAP,
@@ -19,6 +20,8 @@ import {
 import type { BeamColumn, AddableField, BeamBadgeProps } from '@betty/beam';
 import type { PaginationState } from '@tanstack/react-table';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import { useSearchParams } from 'react-router-dom';
 import { useMilestone } from './milestone';
 
@@ -227,7 +230,13 @@ const ERROR_CODE_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.errorCode).filter(
  */
 interface Filters {
   // Default (always-present) fields.
-  q: string;
+  q: string; // COMPOUND search (v1.1+): id / PSP id / customer / email in one field.
+  // v1.0 individual searches (the compound field doesn't exist yet) — each matches its own column. Empty
+  // at v1.1+ (the fields aren't rendered), so the filter can apply both sets unconditionally.
+  searchId: string;
+  searchPsp: string;
+  searchCustomer: string;
+  searchEmail: string;
   start: string; // yyyy-mm-dd, inclusive lower bound on createdAt
   end: string; // yyyy-mm-dd, inclusive upper bound on createdAt
   status: string;
@@ -241,10 +250,20 @@ interface Filters {
   amountMin: string;
   amountMax: string;
 }
-const EMPTY_FILTERS: Filters = { q: '', start: '', end: '', status: '', direction: '', provider: '', currency: '', threeDs: '', errorCode: '', amountMin: '', amountMax: '' };
+const EMPTY_FILTERS: Filters = { q: '', searchId: '', searchPsp: '', searchCustomer: '', searchEmail: '', start: '', end: '', status: '', direction: '', provider: '', currency: '', threeDs: '', errorCode: '', amountMin: '', amountMax: '' };
 const isActive = (f: Filters) =>
-  f.q !== '' || f.start !== '' || f.end !== '' || f.status !== '' || f.direction !== '' || f.provider !== '' ||
+  f.q !== '' || f.searchId !== '' || f.searchPsp !== '' || f.searchCustomer !== '' || f.searchEmail !== '' ||
+  f.start !== '' || f.end !== '' || f.status !== '' || f.direction !== '' || f.provider !== '' ||
   f.currency !== '' || f.threeDs !== '' || f.errorCode !== '' || f.amountMin !== '' || f.amountMax !== '';
+
+// v1.0 individual search fields (replace the compound field, which doesn't exist yet at v1.0). Each maps to
+// its own `Filters` slot + column (see the filter). Order = the 4-up row where the compound search sat.
+const V10_SEARCH_FIELDS: readonly { key: keyof Filters; label: string }[] = [
+  { key: 'searchId', label: 'ID' },
+  { key: 'searchPsp', label: 'PSP ID' },
+  { key: 'searchCustomer', label: 'Customer' },
+  { key: 'searchEmail', label: 'Customer Email' },
+];
 
 const ERROR_CODE_NONE = '__none__'; // sentinel value for "rows with no error code"
 
@@ -598,10 +617,16 @@ export function TransactionsPage() {
     const q = applied.q.trim().toLowerCase();
     return PAYMENTS.filter((r) => {
       // Search: id, pspTransactionId, customerId, customerEmail (email added 2026-09-10 — ops flow).
+      // COMPOUND (v1.1+): one field across all four. Empty at v1.0.
       if (q) {
         const hay = `${r.id} ${r.pspTransactionId ?? ''} ${r.customerId} ${r.customerEmail}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
+      // v1.0 INDIVIDUAL searches — each its own column (contains, case-insensitive). Empty at v1.1+.
+      if (applied.searchId && !r.id.toLowerCase().includes(applied.searchId.trim().toLowerCase())) return false;
+      if (applied.searchPsp && !(r.pspTransactionId ?? '').toLowerCase().includes(applied.searchPsp.trim().toLowerCase())) return false;
+      if (applied.searchCustomer && !r.customerId.toLowerCase().includes(applied.searchCustomer.trim().toLowerCase())) return false;
+      if (applied.searchEmail && !r.customerEmail.toLowerCase().includes(applied.searchEmail.trim().toLowerCase())) return false;
       // Date range on createdAt — compared as the UTC calendar date (createdAt is ...Z); inclusive.
       const day = r.createdAt.slice(0, 10);
       if (applied.start && day < applied.start) return false;
@@ -739,7 +764,9 @@ export function TransactionsPage() {
       <BeamFilterBar
         aria-label="Transaction filters"
         searchValue={draft.q}
-        onSearchChange={(q) => patchDraft({ q })}
+        // COMPOUND search is v1.1+ (caps.compoundSearch). At v1.0 no onSearchChange → the bar's built-in
+        // field doesn't render; the 4 individual fields below stand in.
+        onSearchChange={caps.compoundSearch ? (q) => patchDraft({ q }) : undefined}
         searchPlaceholder="Search ID, PSP ID, customer, email"
         applied={isApplied}
         onFilter={apply}
@@ -750,6 +777,38 @@ export function TransactionsPage() {
         // implements them as [+] fields, so they too appear only at v1.2 — recorded in the gap list.
         advanced={caps.advancedFilters ? { addableFields, storageKey: 'gaspar.transactions', onFieldRemoved } : undefined}
       >
+        {/* v1.0 — 4 individual search fields where the compound field sat (search icon + clear each). They
+            flow as the first row of the bar's grid (4-up at lg). v1.1+ uses the built-in compound field. */}
+        {!caps.compoundSearch &&
+          V10_SEARCH_FIELDS.map((f) => (
+            <BeamField
+              key={f.key}
+              label={f.label}
+              value={draft[f.key]}
+              onChange={(e) => patchDraft({ [f.key]: e.target.value } as Partial<Filters>)}
+              onKeyDown={applyOnEnter}
+              fullWidth
+              slotProps={{
+                // shrink: the label sits in the notch always, so it never overlaps the search adornment
+                // when the field is empty/unfocused (MUI's startAdornment-vs-label quirk).
+                inputLabel: { shrink: true },
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: draft[f.key] ? (
+                    <InputAdornment position="end">
+                      <IconButton size="small" edge="end" aria-label={`Clear ${f.label}`} onClick={() => patchDraft({ [f.key]: '' } as Partial<Filters>)}>
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : undefined,
+                },
+              }}
+            />
+          ))}
         <BeamField
           label="Created from"
           type="date"

@@ -40,6 +40,7 @@ export {
   Button,
   IconButton,
   TextField,
+  InputAdornment,
   Select,
   MenuItem,
   Checkbox,

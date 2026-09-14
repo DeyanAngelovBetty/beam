@@ -698,6 +698,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
         styleOverrides: {
           selectLabel: { ...meta },
           displayedRows: { ...meta },
+          // Density: the pagination toolbar converges on the 44px field-twin datum like every grid band.
+          // MUI's toolbar carries a 52px base min-height PLUS the Toolbar variant's breakpoint media queries
+          // (48 landscape, 64 up-sm), all on the single `.MuiToolbar-root` class (0,1,0). `&&` doubles the
+          // slot class (0,2,0) so this wins across ALL of them without mirroring the media queries and
+          // without !important. (No literal — FIELD_TWIN_HEIGHT.)
+          toolbar: { '&&': { minHeight: FIELD_TWIN_HEIGHT } },
         },
       },
       // Form-field labels are keys too. Base color from meta; MUI's focused/

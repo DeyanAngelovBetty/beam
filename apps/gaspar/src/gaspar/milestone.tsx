@@ -23,7 +23,7 @@ export type Milestone = 'v1_0' | 'v1_1' | 'v1_2' | 'beyond';
 /** Canonical order + display metadata for the switcher rows: `badge` is the circle's version number,
  *  `label` the primary line, `sub` the release-date sub-line (Beyond has none — it's the open-ended top). */
 export const MILESTONES: { id: Milestone; badge: string; label: string; sub?: string }[] = [
-  { id: 'v1_0', badge: '1.0', label: 'v1.0', sub: '5 October' },
+  { id: 'v1_0', badge: '1.0', label: 'v1.0', sub: '19 October' },
   { id: 'v1_1', badge: '1.1', label: 'v1.1', sub: '1 November (TBC)' },
   { id: 'v1_2', badge: '1.2', label: 'v1.2', sub: 'date TBD' },
   { id: 'beyond', badge: '2.0', label: 'Beyond v1.2' },
@@ -41,6 +41,9 @@ export interface MilestoneCaps {
   paginationAt500: boolean;
   /** Complete / Decline — bulk-strip options AND the row kebab. (Beyond) */
   actions: boolean;
+  /** The COMPOUND search field (one input across id/PSP/customer/email). At v1.0 it doesn't exist yet —
+   *  the page shows 4 individual search fields instead. (v1.1+) */
+  compoundSearch: boolean;
 }
 
 const RANK: Record<Milestone, number> = { v1_0: 0, v1_1: 1, v1_2: 2, beyond: 3 };
@@ -54,6 +57,7 @@ export const capsFor = (m: Milestone): MilestoneCaps => ({
   columnManager: RANK[m] >= RANK.v1_2,
   paginationAt500: RANK[m] >= RANK.v1_2,
   actions: RANK[m] >= RANK.beyond,
+  compoundSearch: RANK[m] >= RANK.v1_1, // v1.0 → 4 individual fields instead
 });
 
 const parse = (raw: string | null): Milestone =>

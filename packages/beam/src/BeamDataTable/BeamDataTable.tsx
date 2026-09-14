@@ -1193,9 +1193,11 @@ export function BeamDataTable<Row>({
         className="beam-footer-inner"
         sx={{
           position: 'relative',
-          // Density (#2): the footer converges on the 44px field-twin datum. minHeight (a Box, not a cell),
-          // so a taller control still grows it; footerContent is already centre-aligned within.
-          minHeight: FIELD_TWIN_HEIGHT,
+          // Density: the footer band is EXACTLY FIELD_TWIN_HEIGHT, border-box — its 1px bottom card-edge
+          // border sits INSIDE the 44, identical to a body row's `height: 44` (was `minHeight`, which added
+          // the border ON TOP → the extra ~2px vs the 52px toolbar). The toolbar min-height is capped to 44
+          // in the theme, so nothing forces the band taller; the pagination centres within.
+          height: FIELD_TWIN_HEIGHT,
           bgcolor: 'background.paper',
           ...SIDE_BORDER,
           // WIDTH/STYLE longhands, NOT the `border-bottom` shorthand: the shorthand would reset
