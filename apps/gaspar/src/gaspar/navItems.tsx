@@ -6,12 +6,15 @@ import RuleIcon from '@mui/icons-material/Rule';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import SettingsIcon from '@mui/icons-material/Settings';
+import PersonIcon from '@mui/icons-material/Person';
+import ShieldIcon from '@mui/icons-material/Shield';
+import ChecklistIcon from '@mui/icons-material/Checklist';
 import type { BeamNavItem } from '@betty/beam';
 import type { Milestone } from './milestone';
 
 /** Top-level app views a nav leaf can route to. App wires selected/onClick from
  *  the `view` tag below — no positional (index-0) coupling. */
-export type GasparView = 'dashboard' | 'transactions' | 'ruleBuilder';
+export type GasparView = 'dashboard' | 'transactions' | 'ruleBuilder' | 'users' | 'roles' | 'permissions';
 
 /** view → hash route path. The App wires nav onClick → navigate(path) and selected from the pathname;
  *  HashRouter keeps these gh-pages-safe and deep-linkable (…/#/transactions). */
@@ -19,6 +22,9 @@ export const VIEW_PATH: Record<GasparView, string> = {
   dashboard: '/dashboard',
   transactions: '/transactions',
   ruleBuilder: '/rule-builder',
+  users: '/users',
+  roles: '/roles',
+  permissions: '/permissions',
 };
 
 /** A nav leaf that routes to a top-level view carries `view` — at ANY depth, so children override
@@ -39,27 +45,41 @@ export const GASPAR_NAV: GasparNavItem[] = [
       { label: 'Providers', icon: <HubIcon fontSize="small" /> },
     ],
   },
+  // Administration — a REAL collapsible group (after Routing), available since v1.0. Its leaves route to
+  // stub placeholder pages (nav targets, not features). Structure mirrors Routing: group icon at default
+  // size, child icons `fontSize="small"`, `defaultOpen` like Routing.
+  {
+    label: 'Administration',
+    icon: <SettingsIcon />,
+    defaultOpen: true,
+    children: [
+      { label: 'Users', icon: <PersonIcon fontSize="small" />, view: 'users' },
+      { label: 'Roles', icon: <ShieldIcon fontSize="small" />, view: 'roles' },
+      { label: 'Permissions', icon: <ChecklistIcon fontSize="small" />, view: 'permissions' },
+    ],
+  },
   { label: 'Disputes', icon: <ReportProblemIcon />, children: [{ label: 'Chargebacks' }] },
   { label: 'Reporting', icon: <BarChartIcon />, children: [{ label: 'Settlement' }] },
-  { label: 'Administration', icon: <SettingsIcon />, children: [{ label: 'Users & Roles' }] },
 ];
 
 /**
  * Milestone → which views the Back Office HAS (Boryana's release phasing + Deyan's ruling): v1.0 is
- * Transactions-only; v1.1 onward adds Dashboard + Rule Builder. Cumulative. Read literally: the demo
- * nav shows exactly these functional views per phase — the speculative IA sections (Providers,
- * Disputes, Reporting, Administration) are pruned at every milestone, since none maps to a real view
- * and "hidden = absent" is the rule.
+ * Transactions + Administration; v1.1 onward adds Dashboard + Rule Builder. Cumulative. Read literally:
+ * the demo nav shows exactly these functional views per phase — the remaining speculative IA sections
+ * (Providers, Disputes, Reporting) are pruned at every milestone, since none maps to a real view and
+ * "hidden = absent" is the rule. Administration (Users/Roles/Permissions) is available SINCE v1.0, so its
+ * three views are present at every milestone — the group survives pruning everywhere.
  *
  * (Gap for Boryana, recorded not resolved: v1.0 also references 3DS rules living IN the Rule Builder
  * while stating the BO is Transactions-only at v1.0 — a contradiction. Nav follows the ruling: Rule
  * Builder at v1.1.)
  */
+const ADMIN_VIEWS: GasparView[] = ['users', 'roles', 'permissions']; // available since v1.0 — every phase
 const MILESTONE_VIEWS: Record<Milestone, GasparView[]> = {
-  v1_0: ['transactions'],
-  v1_1: ['dashboard', 'transactions', 'ruleBuilder'],
-  v1_2: ['dashboard', 'transactions', 'ruleBuilder'],
-  beyond: ['dashboard', 'transactions', 'ruleBuilder'],
+  v1_0: ['transactions', ...ADMIN_VIEWS],
+  v1_1: ['dashboard', 'transactions', 'ruleBuilder', ...ADMIN_VIEWS],
+  v1_2: ['dashboard', 'transactions', 'ruleBuilder', ...ADMIN_VIEWS],
+  beyond: ['dashboard', 'transactions', 'ruleBuilder', ...ADMIN_VIEWS],
 };
 
 export const allowedViews = (m: Milestone): Set<GasparView> => new Set(MILESTONE_VIEWS[m]);

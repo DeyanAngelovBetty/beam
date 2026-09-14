@@ -8,6 +8,7 @@ import { MilestoneProvider, useMilestone } from './gaspar/milestone';
 import { ThemeLabDrawer } from '@betty/beam-lab';
 import { TransactionsPage } from './gaspar/TransactionsPage';
 import { DashboardPage } from './gaspar/DashboardPage';
+import { PlaceholderPage } from './gaspar/PlaceholderPage';
 
 // Rule Builder carries @xyflow/react (gaspar's first heavy shipped dep) — LAZY-loaded so the
 // canvas + d3/zustand only download when an operator opens the route (proposal Q5).
@@ -139,6 +140,11 @@ function GasparApp() {
               )
             }
           />
+          {/* Administration — available at every milestone, so no guard; each routes to a stub placeholder
+              (nav targets, not features). */}
+          <Route path={VIEW_PATH.users} element={<PlaceholderPage title="Users" />} />
+          <Route path={VIEW_PATH.roles} element={<PlaceholderPage title="Roles" />} />
+          <Route path={VIEW_PATH.permissions} element={<PlaceholderPage title="Permissions" />} />
           {/* Unknown hash → the milestone's landing view. */}
           <Route path="*" element={<Navigate to={toLanding} replace />} />
         </Routes>
