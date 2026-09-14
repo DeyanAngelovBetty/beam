@@ -24,8 +24,8 @@ export type Milestone = 'v1_0' | 'v1_1' | 'v1_2' | 'beyond';
  *  `label` the primary line, `sub` the release-date sub-line (Beyond has none — it's the open-ended top). */
 export const MILESTONES: { id: Milestone; badge: string; label: string; sub?: string }[] = [
   { id: 'v1_0', badge: '1.0', label: 'v1.0', sub: '19 October' },
-  { id: 'v1_1', badge: '1.1', label: 'v1.1', sub: '1 November (TBC)' },
-  { id: 'v1_2', badge: '1.2', label: 'v1.2', sub: 'date TBD' },
+  { id: 'v1_1', badge: '1.1', label: 'v1.1', sub: 'TBC' },
+  { id: 'v1_2', badge: '1.2', label: 'v1.2', sub: 'TBD' },
   { id: 'beyond', badge: '2.0', label: 'Beyond v1.2' },
 ];
 
