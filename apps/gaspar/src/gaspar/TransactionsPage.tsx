@@ -9,7 +9,7 @@ import {
   MenuItem,
   BeamField,
   BeamBadge,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
   BeamPage,
   InputAdornment,
@@ -223,7 +223,7 @@ const THREEDS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.threeDsStatus));
 const ERROR_CODE_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.errorCode).filter((c): c is string => Boolean(c)));
 
 /**
- * TableFilters's apply model (bar v1 spec; UsersPage is the estate reference): the bar edits a
+ * TableFiltersLegacy's apply model (bar v1 spec; UsersPage is the estate reference): the bar edits a
  * `draft`; the grid filters by `applied`; the Filter CTA commits draft → applied. We keep BOTH stores
  * page-local — no URL/query-param persistence (this page's own constraint), which is the one deviation
  * from UsersPage (it persists `applied` in the URL).
@@ -746,22 +746,22 @@ export function TransactionsPage() {
     <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
       <BeamPage title="Transactions" />
 
-      {/* Filters — TableFilters's designed apply model (bar v1; UsersPage is the reference): the bar
+      {/* Filters — TableFiltersLegacy's designed apply model (bar v1; UsersPage is the reference): the bar
           edits `draft`, the grid filters by `applied`, the Filter CTA commits. Search is the bar's
           built-in field; the date range and the three selects are promoted fields passed as `children`
           (the bar's composition API — a first-class dateRange prop waits for a 2nd consumer, per
           promotion-follows-usage). Select options are DERIVED from the data.
           NOTE: Enter-to-apply is wired on the date fields (page-local). The SEARCH field is the bar's
           built-in input with no key-event hook exposed, so Enter there cannot commit without a
-          TableFilters API addition — deliberately NOT done (no component change); the Filter CTA
+          TableFiltersLegacy API addition — deliberately NOT done (no component change); the Filter CTA
           commits search. UsersPage, the reference, likewise has no Enter-to-apply. */}
       {/* Exit treatment (bench→official promotion of the ratified sticky-chrome exit): the pre-grid section
           scales + fades + lifts as it slides up under the pinned bucket. The bench attaches stickyChromeExitSx
-          directly on its filter panel's root Paper; TableFilters (a placeholder organism) exposes no sx prop,
+          directly on its filter panel's root Paper; TableFiltersLegacy (a placeholder organism) exposes no sx prop,
           so the SAME sx rides a Box wrapper here — the wrapper is now the pre-grid section that stickyChromeGapSx
           and the exit both key off. Progressive + reduced-motion gating lives inside the helper. */}
       <Box sx={stickyChromeExitSx}>
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Transaction filters"
         searchValue={draft.q}
         // COMPOUND search is v1.1+ (caps.compoundSearch). At v1.0 no onSearchChange → the bar's built-in
@@ -845,7 +845,7 @@ export function TransactionsPage() {
             <MenuItem key={p} value={p}>{p}</MenuItem>
           ))}
         </BeamField>
-      </TableFilters>
+      </TableFiltersLegacy>
       </Box>
 
       <Table

@@ -13,7 +13,7 @@ import {
   TextField,
   Typography,
   BeamPage,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
@@ -46,10 +46,10 @@ const EMPTY: Filters = { statuses: [], type: 'any', q: '', by: 'any', from: '', 
  *
  * SPECULATIVE BY DESIGN: our CR model, these columns, and the Approve/Reject vocabulary are OUR
  * PROPOSAL — the backend team's actual contract is unavailable, so this is designed on our own
- * semantics with their screenshots as visual reference. Built on the existing TableFilters as-is;
+ * semantics with their screenshots as visual reference. Built on the existing TableFiltersLegacy as-is;
  * moving it to a field-schema filter API is a recorded LATER task, not this one.
  *
- * A TableFilters over the FULL change-request set (the archive is browsable now, not just the
+ * A TableFiltersLegacy over the FULL change-request set (the archive is browsable now, not just the
  * pending queue). Status is a FILTER (multi-select), never tabs — one queue, not five pages
  * (grammar §5). Sort: PENDING PINNED FIRST, then recency — the checker's default is "everything
  * actionable, on top." A record page's alert deep-links here with `?type=<slug>` (that FEATURE's
@@ -221,7 +221,7 @@ export function PendingApprovalsPage() {
         subtitle="Change requests awaiting a second pair of eyes — and the decision history."
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Change request filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -260,7 +260,7 @@ export function PendingApprovalsPage() {
         </TextField>
         <TextField fullWidth size="small" type="date" label="From" value={draft.from} onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
         <TextField fullWidth size="small" type="date" label="To" value={draft.to} onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
-      </TableFilters>
+      </TableFiltersLegacy>
 
       {notice && (
         <Alert severity={notice.severity} onClose={() => setNotice(null)}>

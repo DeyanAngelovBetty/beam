@@ -1,78 +1,78 @@
-import type { ReactNode } from 'react';
+// PORTED from official Beam (beam-alex @ b40e815) — TableFilters/TableFilters.types.ts, verbatim shapes.
+// The typed filter-definition model: each control is keyed to a field of `TFilters`, so the definitions
+// array can only reference real filter keys. Consumed by TableFilters + useTableFilters.
 
-/**
- * TableFilters — the list-screen filter surface (grammar doc §1).
- *
- * v1: a built-in search field, per-page promoted filters passed as children
- * (composition — a field-schema API is a later design decision), optional
- * date-range presets, and the Filter / Clear-all actions. The bar is
- * presentational: the page owns filter state and decides live-vs-submitted;
- * the bar just fires the callbacks and reflects `applied`.
- *
- * Deliberately NOT in v1 (grammar §1 is the north star, not this pass):
- * applied-filter chips, URL state, saved views, in-bar result count (the
- * count lives in the datagrid's pagination footer).
- */
+type FilterKey<TFilters> = Extract<keyof TFilters, string>;
 
-export interface BeamFilterPreset {
-  id: string;
+type StringFilterKey<TFilters> = {
+  [K in FilterKey<TFilters>]-?: TFilters[K] extends string ? K : never;
+}[FilterKey<TFilters>];
+
+type DateTimeFilterKey<TFilters> = {
+  [K in FilterKey<TFilters>]-?: null extends TFilters[K]
+    ? TFilters[K] extends string | null
+      ? K
+      : never
+    : never;
+}[FilterKey<TFilters>];
+
+type BaseFilterDefinition<TKey extends PropertyKey> = {
+  key: TKey;
   label: string;
-}
-
-/**
- * An addable filter field for the ADVANCED representation. `control` is the page-wired input rendered
- * when the field is added (composition — same mechanism as `children`); `disabled` marks a menu entry
- * that can't be added yet (the "awaiting data" ledger), never rendered as a field.
- */
-export interface AddableField {
-  id: string;
-  label: string;
-  control: ReactNode;
   disabled?: boolean;
-  disabledReason?: string;
-}
+};
 
-/**
- * Advanced-representation config. Presence turns TableFilters into the advanced panel: a [+] add-field
- * menu and [x]-removable added fields, whose STRUCTURE (which fields are added) the bar owns and
- * persists. Values stay the page's (draft/applied). Absent = today's default representation, untouched.
- */
-export interface BeamFilterAdvancedConfig {
-  addableFields: AddableField[];
-  storageKey: string;
-  /** Called when a field is removed so the page can clear that field's draft value(s). */
-  onFieldRemoved?: (id: string) => void;
-}
+export type TextFilterDefinition<TFilters> = {
+  [K in StringFilterKey<TFilters>]: BaseFilterDefinition<K> & {
+    control: 'text';
+    placeholder?: string;
+  };
+}[StringFilterKey<TFilters>];
 
-export interface TableFiltersProps {
-  /** Promoted filter fields. App-supplied until a field-schema API is designed. */
-  children: ReactNode;
+export type SelectFilterDefinition<TFilters> = {
+  [K in FilterKey<TFilters>]: BaseFilterDefinition<K> & {
+    control: 'select';
+    options: readonly {
+      label: string;
+      value: TFilters[K];
+    }[];
+  };
+}[FilterKey<TFilters>];
 
-  /** Built-in search field. Renders only when onSearchChange is provided. */
-  searchValue?: string;
-  onSearchChange?: (value: string) => void;
-  searchPlaceholder?: string;
+export type DateTimeFilterDefinition<TFilters> = {
+  [K in DateTimeFilterKey<TFilters>]: BaseFilterDefinition<K> & {
+    control: 'dateTime';
+  };
+}[DateTimeFilterKey<TFilters>];
 
-  /** Quick date ranges, e.g. Today / Last 7 days. Omit for no preset row. */
-  presets?: BeamFilterPreset[];
-  activePreset?: string | null;
-  onPresetChange?: (id: string | null) => void;
+/** A single filter control — text, select, or dateTime — keyed to a field of `TFilters`. */
+export type TableFilterDefinition<TFilters> =
+  | TextFilterDefinition<TFilters>
+  | SelectFilterDefinition<TFilters>
+  | DateTimeFilterDefinition<TFilters>;
 
-  /** Primary CTA, labeled "Filter". */
-  onFilter?: () => void;
-  /** "Clear all" text button, beside Filter. */
-  onClearAll?: () => void;
-  /**
-   * Whether any filter is currently active. Drives the applied-state visuals:
-   * a visible border on the bar and a filled Filter CTA. App-computed.
-   */
-  applied?: boolean;
+/** Draft-state controller for a filter bar. Produced by `useTableFilters`. */
+export type TableFiltersController<TFilters extends object> = {
+  /** Current (unapplied) filter values. */
+  draft: TFilters;
+  setDraftValue: <K extends keyof TFilters>(key: K, value: TFilters[K]) => void;
+  /** Commit the draft (fires the consumer's query). */
+  apply: () => void;
+  /** Reset all filters to their empty state. */
+  clear: () => void;
+  /** Whether there is anything to clear. */
+  canClear: boolean;
+  /** Whether the draft differs from the applied state. */
+  isDraft: boolean;
+};
 
-  /**
-   * Opt-in ADVANCED representation (add/remove/persist fields). Omit for today's default bar —
-   * byte-identical. See BeamFilterAdvancedConfig.
-   */
-  advanced?: BeamFilterAdvancedConfig;
-
-  'aria-label': string;
-}
+// DEVIATION (flagged): official imports `TablePaginationState` from `Table/Table.types` (Wave 2, not done).
+// Defined locally here to keep the port self-contained until the Table API converges. 1-based `page`, per
+// official.
+export type TablePaginationState = {
+  page: number;
+  pageSize: number;
+};
+export type TablePaginationController = TablePaginationState & {
+  onChange: (pagination: TablePaginationState) => void;
+};

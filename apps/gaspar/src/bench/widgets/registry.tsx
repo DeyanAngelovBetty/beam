@@ -7,7 +7,7 @@ import {
   Chip,
   BeamStatusBadge,
   Table,
-  TableFilters,
+  TableFiltersLegacy,
   beamGradientBorder,
   usePointerAngleTracking,
 } from '@betty/beam';
@@ -146,7 +146,7 @@ export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: C
     title: 'Filters',
     span: 'full', // a filter bar owns its whole row at every width (1 / -1) — "span 4" was a proxy for this
     node: (
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Dashboard filters"
         searchValue=""
         onSearchChange={() => {}}
@@ -154,7 +154,7 @@ export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: C
       >
         <Chip label="Last 24h" size="small" />
         <Chip label="All providers" size="small" variant="outlined" />
-      </TableFilters>
+      </TableFiltersLegacy>
     ),
   },
   table: {

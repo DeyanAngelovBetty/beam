@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Table,
-  TableFilters,
+  TableFiltersLegacy,
   BeamPage,
   BeamStatusBadge,
   Button,
@@ -179,7 +179,7 @@ export function MetaGamePresetsPage() {
         }
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="MetaGame preset filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((current) => ({ ...current, q }))}
@@ -204,7 +204,7 @@ export function MetaGamePresetsPage() {
           <MenuItem value="any">Any</MenuItem>
           {PAYOUT_STATUSES.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
         </TextField>
-      </TableFilters>
+      </TableFiltersLegacy>
 
       <Table
         columns={columns}

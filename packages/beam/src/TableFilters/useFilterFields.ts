@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import type { AddableField, BeamFilterAdvancedConfig } from './TableFilters.types';
+import type { AddableField, BeamFilterAdvancedConfig } from './TableFiltersLegacy.types';
 
 /**
  * useFilterFields — the add/remove/persist backbone for TableFilters's advanced representation.

@@ -6,7 +6,7 @@ import {
   TextField,
   BeamPage,
   BeamEmptyState,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
@@ -122,7 +122,7 @@ export function CampaignWinnersPage() {
       {/* Child-scoped header: title "Winners", campaign name as context (subtitle), back → detail. */}
       <BeamPage title="Winners" subtitle={campaign.name} back={back} />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Winner filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -143,7 +143,7 @@ export function CampaignWinnersPage() {
             <MenuItem key={t} value={t}>{t}</MenuItem>
           ))}
         </TextField>
-      </TableFilters>
+      </TableFiltersLegacy>
 
       <Table
         columns={columns}

@@ -7,7 +7,7 @@ import {
   MenuItem,
   TextField,
   BeamPage,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
   BeamBadge,
   BeamBool,
@@ -159,7 +159,7 @@ export function TokenCampaignsPage() {
         }
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Token campaign filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -179,7 +179,7 @@ export function TokenCampaignsPage() {
           <MenuItem value="yes">Enabled</MenuItem>
           <MenuItem value="no">Disabled</MenuItem>
         </TextField>
-      </TableFilters>
+      </TableFiltersLegacy>
 
       {notice && (
         <Alert severity={notice.severity} onClose={() => setNotice(null)}>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Table,
-  TableFilters,
+  TableFiltersLegacy,
   BeamPage,
   BeamStatusBadge,
   Button,
@@ -135,7 +135,7 @@ export function GameConfigsPage() {
         }
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Game config filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((current) => ({ ...current, q }))}
@@ -181,7 +181,7 @@ export function GameConfigsPage() {
             </MenuItem>
           ))}
         </TextField>
-      </TableFilters>
+      </TableFiltersLegacy>
 
       <Table
         columns={columns}

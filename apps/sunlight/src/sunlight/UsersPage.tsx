@@ -7,7 +7,7 @@ import {
   TextField,
   MenuItem,
   BeamPage,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
@@ -123,7 +123,7 @@ export function UsersPage() {
         }
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="User filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -162,7 +162,7 @@ export function UsersPage() {
             </MenuItem>
           ))}
         </TextField>
-      </TableFilters>
+      </TableFiltersLegacy>
 
       <Table
         columns={columns}

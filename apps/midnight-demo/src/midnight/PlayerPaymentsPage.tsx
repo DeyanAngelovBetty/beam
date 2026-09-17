@@ -8,7 +8,7 @@ import {
   BeamStat,
   DetailsPanel,
   BeamTabs,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
   BeamStatusBadge,
 } from '@betty/beam';
@@ -129,7 +129,7 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
         aria-label="Player sections"
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Payment transaction filters"
         presets={RANGE_PRESETS}
         activePreset={preset}
@@ -157,7 +157,7 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
           <MenuItem value="deposit">Deposit</MenuItem>
           <MenuItem value="withdrawal">Withdrawal</MenuItem>
         </TextField>
-      </TableFilters>
+      </TableFiltersLegacy>
 
       <Table
         columns={columns}

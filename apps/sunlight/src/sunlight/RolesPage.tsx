@@ -4,7 +4,7 @@ import {
   Stack,
   Button,
   BeamPage,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
@@ -70,7 +70,7 @@ export function RolesPage() {
         }
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Role filters"
         searchValue={draftQ}
         onSearchChange={setDraftQ}
@@ -83,7 +83,7 @@ export function RolesPage() {
         }}
       >
         {null}
-      </TableFilters>
+      </TableFiltersLegacy>
 
       <Table
         columns={columns}

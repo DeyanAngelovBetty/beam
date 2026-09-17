@@ -135,7 +135,23 @@ export { BeamPage } from './Page/Page';
 export type { BeamPageProps, BeamBackLink } from './Page/Page.types';
 export { BeamTabs } from './BeamTabs/BeamTabs';
 export type { BeamTabsProps, BeamTabItem } from './BeamTabs/BeamTabs.types';
-export { TableFilters } from './TableFilters/TableFilters';
-export type { TableFiltersProps, BeamFilterPreset, AddableField, BeamFilterAdvancedConfig } from './TableFilters/TableFilters.types';
+// TableFilters — official typed-definition model (Wave 1). `TableFiltersLegacy` is the TEMPORARY old
+// composition-by-children implementation, kept only while consumers migrate batch-by-batch; it is DELETED
+// in this wave's final commit (no permanent shim, zero split-brain at wave end).
+export { TableFilters, type TableFiltersProps } from './TableFilters/TableFilters';
+export type {
+  TableFilterDefinition,
+  TableFiltersController,
+  TextFilterDefinition,
+  SelectFilterDefinition,
+  DateTimeFilterDefinition,
+  TablePaginationState,
+  TablePaginationController,
+} from './TableFilters/TableFilters.types';
+export { useTableFilters } from './TableFilters/hooks';
+export type { FilterApplyReason, UseTableFiltersOptions } from './TableFilters/hooks';
+export { defineTableFilters, type TableFiltersUrlSync } from './TableFilters/TableFilters.helpers';
+export { TableFiltersLegacy } from './TableFilters/TableFiltersLegacy';
+export type { TableFiltersLegacyProps, BeamFilterPreset, AddableField, BeamFilterAdvancedConfig } from './TableFilters/TableFiltersLegacy.types';
 export { BeamEmptyState } from './BeamEmptyState/BeamEmptyState';
 export type { BeamEmptyStateProps } from './BeamEmptyState/BeamEmptyState.types';

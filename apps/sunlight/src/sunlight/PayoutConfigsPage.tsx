@@ -7,7 +7,7 @@ import {
   TextField,
   MenuItem,
   BeamPage,
-  TableFilters,
+  TableFiltersLegacy,
   Table,
   BeamStatusBadge,
 } from '@betty/beam';
@@ -182,7 +182,7 @@ export function PayoutConfigsPage() {
         }
       />
 
-      <TableFilters
+      <TableFiltersLegacy
         aria-label="Payout config filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -224,7 +224,7 @@ export function PayoutConfigsPage() {
             </MenuItem>
           ))}
         </TextField>
-      </TableFilters>
+      </TableFiltersLegacy>
 
       <Table
         columns={columns}
