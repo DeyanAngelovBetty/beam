@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  BeamPageHeader,
+  BeamPage,
   BeamStat,
   BeamField,
   DetailsPanel,
@@ -52,7 +52,7 @@ export function UserPage({ edit = false }: { edit?: boolean }) {
   if (!detail) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title="User not found" back={backTo(navigate, '/users', 'Users')} />
+        <BeamPage title="User not found" back={backTo(navigate, '/users', 'Users')} />
         <BeamEmptyState title={`No user with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -88,7 +88,7 @@ function UserView({
 
   return (
     <Stack spacing={2}>
-      <BeamPageHeader
+      <BeamPage
         title={detail.name}
         back={back}
         subtitle={detail.email}
@@ -229,7 +229,7 @@ function UserEdit({
 
   return (
     <Stack spacing={2}>
-      <BeamPageHeader
+      <BeamPage
         title={working.name || 'User'}
         back={back}
         subtitle={working.email}

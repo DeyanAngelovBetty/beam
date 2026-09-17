@@ -41,9 +41,9 @@ Beam Foundations (MUI v9 kit + Betty token collections)    ≈ node_modules
   moves up to Organisms. Nobody predicts sharedness in advance; usage decides.
   - Worked example, both halves: `SunlightShell` was deliberately **left** in `apps/sunlight`
     even though all three demo apps plainly would need a BO shell — and then **promoted** to
-    `BeamAppShell` one step later, when Gaspar actually became the second consumer. Same day,
+    `AppShell` one step later, when Gaspar actually became the second consumer. Same day,
     both decisions. Waiting cost nothing and the abstraction was better for having two real
-    consumers to answer to. `BeamPageHeader` and `BeamTabs` followed the same path from
+    consumers to answer to. `BeamPage` and `BeamTabs` followed the same path from
     duplication in Sunlight and Gaspar. *(2026-07-20)*
 - Product-specific patterns (e.g. the paytable editor) start and stay in the product until
   promoted.
@@ -108,7 +108,7 @@ pain each one prevents:
    (`textStyles.ts`) so it inherits the body face. The **title** face binds to **h1–h6 only**, so
    expressive type lives at headline size and never in data. Numeric columns in that data use
    **tabular figures** (`font-variant-numeric: tabular-nums`, applied to right-aligned cells in
-   BeamDataTable) — Gaspar's body face is Geist chosen for exactly this. Font moved off the
+   Table) — Gaspar's body face is Geist chosen for exactly this. Font moved off the
    per-jurisdiction collection where it never belonged: **Alberta no longer renders Poppins, and
    that is the correction landing, not a regression — do not restore it.** Swapping a face is one
    seed edit + one webfont line per app `index.html` + `packages/beam/.storybook/preview-head.html`
@@ -150,6 +150,20 @@ pain each one prevents:
   component. Flag the ambiguous; don't convert reflexively.
 
 ## 6. Component rules
+
+**Convergence doctrine *(2026-09-17 — supersedes the uniform-`Beam*`-prefix convention)*:** our repo
+mirrors official Beam's component **names, story titles, and API shapes exactly**, in official casing and
+prefix reality — which is **mixed**: `BeamPage`, `BeamStat`, `BeamPageSkeleton` are `Beam`-prefixed;
+`Table`, `Section`, `TableFilters`, `AppShell`, `ActionMenu`, `DetailsPanel` are **not**. **Name divergence
+from official is a bug.** Beam-lane capabilities — stickyChrome + its hardening, scrollbar theming, the 44px
+`FIELD_TWIN` geometry, the column manager, `Section`'s `isEdit="auto"` — are **additive, opt-in extensions**
+that never alter a shared shape. **Lane-only components** (no official counterpart, keep their `Beam*`
+names): `BeamEmptyState`, `BeamBadge`, `BeamStatusBadge`, `BeamField`, `BeamSwitchField`, `BeamColumnManager`,
+`BeamChildList`, `BeamTabs`, `GemIcon`. **DOM/CSS contracts are namespace, not branding** — `data-beam-mode`,
+`data-beam-sticky-chrome`, `data-stuck`, `data-overflow-*`, all `--beam-*` vars, and the `beam-*` internal
+classes are never renamed. Full mapping + audit: [docs/beam-alignment.md](docs/beam-alignment.md). *(This is
+Wave 0 — names, story titles, `Section` API parity; Waves 1–3 converge the `TableFilters` / `AppShell` /
+`Table` APIs.)*
 
 1. **Atoms are MUI. We never rebuild them.** MUI's docs are the atom documentation; the theme
    makes them Betty's. Beam's own surface area is *organisms only*.
@@ -314,7 +328,7 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
 | `…/primary/{theme}/alpha 4·8·12%` | `palette.action.{hover,selected,focus}Opacity` |
 | `product/font/{title,body}` | **body** → `theme.typography.fontFamily`; **title** → `typography.h1`–`h6` (`createBeamTheme` via `productFonts`) · webfont links in app **and** Storybook head |
 | `product/font/titleWeight` | `typography.h1`–`h6` `fontWeight` (`createBeamTheme` via `productFonts`) — one seed, whole heading scale; no `fontWeight` in any organism *(2026-08-11)* |
-| `product/title/{tint,underlineWeight,underlineFade,underlineOffset,halo}` | `titleSeeds` → the gradient title recipe in `BeamPageHeader`: `--beam-title-tint` + `--beam-title-halo` per-mode; `--beam-title-underline-{weight,fade,offset}` per-product. Halo = a canvas-coloured text-shadow clone that carves a skip-ink gap between glyphs and the tucked underline. Default on; dial `tint`→0% / `underlineWeight`→0px / `halo`→0px to disable parts *(2026-08-11; light-mode tint + halo values are starting proposals — Deyan tunes)* |
+| `product/title/{tint,underlineWeight,underlineFade,underlineOffset,halo}` | `titleSeeds` → the gradient title recipe in `BeamPage`: `--beam-title-tint` + `--beam-title-halo` per-mode; `--beam-title-underline-{weight,fade,offset}` per-product. Halo = a canvas-coloured text-shadow clone that carves a skip-ink gap between glyphs and the tucked underline. Default on; dial `tint`→0% / `underlineWeight`→0px / `halo`→0px to disable parts *(2026-08-11; light-mode tint + halo values are starting proposals — Deyan tunes)* |
 | `product/surface/{dark,light}/{anchor,step}` | `surfaceSeeds` → a 5-position derived ramp (`derived.surface`): `background.default`→0, `background.paper`→1, Menu/Popover→2, Dialog→3; sunken −1 reserved. Jurisdiction no longer carries background *(product-scoped since 2026-08-05; the old `bg/*` vars were deleted — don't restore)*. See docs/derived-color-tokens.md §7 |
 | `derived.tableBorder` — code formula | `palette.divider` + MUI `TableCell.border`; baked → `_derived (baked)` |
 | `derived.pageGradient` — code formula | `--beam-page-gradient` via CssBaseline (non-bakeable; Figma twin = a style) |
@@ -424,10 +438,10 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   workspace, consumed as source** (apps alias `@betty/beam` → `packages/beam/src`, no build
   step). Forced by `GemIcon`'s `import.meta.glob` asset registry, which resolves at Vite
   transform time and cannot survive precompilation. Revisit if Beam ever ships outside this repo.
-- **Placeholder organisms awaiting a Figma design pass**: `BeamPageHeader`, `BeamTabs`,
-  `BeamFilterBar` (added 2026-07-20, grouped under "Organisms (placeholder)" in Storybook).
+- **Placeholder organisms awaiting a Figma design pass**: `BeamPage`, `BeamTabs`,
+  `TableFilters` (added 2026-07-20, grouped under "Organisms (placeholder)" in Storybook).
   Shape-only, so screens had something stable to build against — the design thinking is
-  deliberately deferred to Figma rather than improvised in code. `BeamFilterBar` in particular
+  deliberately deferred to Figma rather than improvised in code. `TableFilters` in particular
   passes fields as children; a field-schema API is the open design question. *(`BeamStat`
   graduated 2026-07-24 — spine motif + `meta` key + severity; no longer a placeholder.)*
 - Asset pipeline: gems done (GemIcon self-registering registry); coins & collection art

@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom';
  * (`#/transactions?milestone=v1_0`); the footer select and the URL stay in sync.
  *
  * Gating is EXISTENCE, not disablement: each capability maps to *not passing* an already-opt-in prop
- * on BeamDataTable / BeamFilterBar. The switcher shows what a version IS, not what it's missing —
+ * on Table / TableFilters. The switcher shows what a version IS, not what it's missing —
  * hidden means absent. Zero organism changes. The caps→prop map and the derivation source (Boryana's
  * `gaspar-transactions-requirements-v1.md`, cumulative) are recorded in
  * `docs/NOTES-gaspar-transactions-milestones.md`, along with the v-spec gap list.

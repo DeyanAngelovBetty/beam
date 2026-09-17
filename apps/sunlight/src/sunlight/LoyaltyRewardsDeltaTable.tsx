@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { BeamDataTable, type BeamColumn } from '@betty/beam';
+import { Table, type BeamColumn } from '@betty/beam';
 import type { StatusReward } from './loyaltyStatuses';
 import { ChangeValue } from './ChangeValue';
 
@@ -11,7 +11,7 @@ import { ChangeValue } from './ChangeValue';
  * list, and the row id IS the index — so an inserted/removed row shifts every row below it and lights
  * them all up as false edits. This is logged as OPEN ITEM (a) in docs/approval-grammar.md
  * "Presentation" and is deliberately NOT fixed here. Mechanical adaptations only: MUI Table →
- * BeamDataTable, formatBettyCoins → toLocaleString, our reward field names.
+ * Table, formatBettyCoins → toLocaleString, our reward field names.
  */
 type BoxDiffRow = { index: number; before?: StatusReward; after?: StatusReward };
 
@@ -59,7 +59,7 @@ function LoyaltyRewardsDeltaTableBase({ before, after }: { before: StatusReward[
     return Array.from({ length }, (_, index) => ({ index, before: before[index], after: after[index] }));
   }, [before, after]);
 
-  return <BeamDataTable columns={columns} rows={rows} getRowId={getRowId} aria-label="Reward changes" />;
+  return <Table columns={columns} rows={rows} getRowId={getRowId} aria-label="Reward changes" />;
 }
 
 export const LoyaltyRewardsDeltaTable = memo(LoyaltyRewardsDeltaTableBase);

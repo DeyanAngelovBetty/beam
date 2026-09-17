@@ -13,7 +13,7 @@ import {
   Tabs,
   Tab,
 } from '../index';
-import { BeamStatusBadge, BeamPageHeader } from '../index';
+import { BeamStatusBadge, BeamPage } from '../index';
 
 /**
  * Not a component — a proof. Every atom below is stock MUI consuming the
@@ -25,7 +25,7 @@ function Gallery() {
     <Stack spacing={3} sx={{ maxWidth: 560 }}>
       {/* The gradient title treatment (seeded weight + text gradient + revealing
           underline) — flip product/mode in the toolbar to see the per-product dials. */}
-      <BeamPageHeader title="Loyalty Status" subtitle="Gradient title — product dials, both modes." />
+      <BeamPage title="Loyalty Status" subtitle="Gradient title — product dials, both modes." />
 
       <Stack direction="row" spacing={1}>
         <Button variant="contained">Primary</Button>

@@ -53,7 +53,7 @@ use the observed **Succeeded / Pending / Failed**; not reseeded here.
 | 13 | Midnight PlayerPaymentsPage | `PlayerPaymentsPage.tsx:95` (data `players.ts:47`) | `settled, pending, error, refunded, chargeback` | `BeamStatus`-typed field |
 | 14 | Gaspar bench registry (list) | `apps/gaspar/src/bench/widgets/registry.tsx:106` (data :88-95) | `active, scheduled, error` | field typed `'active'\|'error'\|'scheduled'` |
 | 15 | Gaspar bench registry (legend) | `registry.tsx:139-141` | `active→"Routing"`, `scheduled→"Settlement"`, `error→"Adyen"` (**relabeled** semantic tokens) | hardcoded status + custom `label` |
-| 16 | Beam BeamDataTable stories | `BeamDataTable.stories.tsx:23,130,144,311,363` | `active, scheduled, paused, draft, error` (Perk/Paytable/WideRow) | `BeamStatus`-typed mock |
+| 16 | Beam Table stories | `Table.stories.tsx:23,130,144,311,363` | `active, scheduled, paused, draft, error` (Perk/Paytable/WideRow) | `BeamStatus`-typed mock |
 | 17 | Beam BeamStatusBadge stories | `BeamStatusBadge.stories.tsx:53,63` | full `BeamStatus` union | iteration |
 | 18 | Beam ThemeGallery story | `packages/beam/src/stories/ThemeGallery.stories.tsx:40-44` | `active, scheduled, paused, draft, error` | hardcoded |
 
@@ -78,7 +78,7 @@ use the observed **Succeeded / Pending / Failed**; not reseeded here.
 | 28 | Gaspar RuleNodeCard advisory | `ruleBuilder/nodes/RuleNodeCard.tsx:44` | `ReportProblem` icon, `aria-label`, tooltip | `error.main` (semantic) | icon only (hue + shape) | `advisories.length > 0` |
 | 29 | Gaspar KpiCardWidget delta | `bench/widgets/KpiCardWidget.tsx:36` | delta caption text | `success.main` (semantic) | text only | static (demo) |
 | 30 | Validation-error text (family) | `ConditionBuilder.tsx:139`; `MultiplierRowsEditor.tsx:99,104`; `PayoutRowsEditor.tsx:136`; `TargetingRulesEditor.tsx:208` | `Typography color="error" role="alert"` | `error` (semantic) | text only | form validation state |
-| 31 | Destructive-action buttons (family) | `PendingApprovalDetailPage.tsx:100`; `GameConfigEditor.tsx:229`; `UserPage.tsx:294`; `LoyaltyStatusEditor.tsx:409`; `MetaGamePresetsPage.tsx:232`; `PayoutConfigEditor.tsx:314`; `MetaGamePresetEditor.tsx:388`; `ruleBuilder/NodeInspector.tsx:84`; `BeamRowMenu.tsx:18,21` | `Button`/menu item `color="error"` | `error` (semantic) | button/text | static destructive intent (an ACTION affordance, not a status render — recorded for hue completeness) |
+| 31 | Destructive-action buttons (family) | `PendingApprovalDetailPage.tsx:100`; `GameConfigEditor.tsx:229`; `UserPage.tsx:294`; `LoyaltyStatusEditor.tsx:409`; `MetaGamePresetsPage.tsx:232`; `PayoutConfigEditor.tsx:314`; `MetaGamePresetEditor.tsx:388`; `ruleBuilder/NodeInspector.tsx:84`; `ActionMenu.tsx:18,21` | `Button`/menu item `color="error"` | `error` (semantic) | button/text | static destructive intent (an ACTION affordance, not a status render — recorded for hue completeness) |
 
 ### 1g. MUI `Alert` severity (a separate "severity" vocabulary)
 
@@ -90,7 +90,7 @@ use the observed **Succeeded / Pending / Failed**; not reseeded here.
 
 | # | Surface | file:line | Vocabulary | Hue | Fill |
 |---|---|---|---|---|---|
-| 33 | BeamPageHeader story | `BeamPageHeader.stories.tsx:76,81` | `Pending` (`color="info"`), `Active` (`color="success"`) — raw `Chip`, not BeamStatusBadge | semantic | outlined |
+| 33 | BeamPage story | `BeamPage.stories.tsx:76,81` | `Pending` (`color="info"`), `Active` (`color="success"`) — raw `Chip`, not BeamStatusBadge | semantic | outlined |
 | 34 | Gaspar bench filter chips | `bench/widgets/registry.tsx:155,156`; `DashboardBench.tsx:56` | `Last 24h` (filled default), `All providers` (outlined) — non-status filter labels | none | filled / outlined |
 
 ---
@@ -146,5 +146,5 @@ Two shared mapping helpers (#9 `statusBadge`, #10 `lifecycleBadge`) feed #1; bot
 - **`severity` word collision** — `BeamStat` (`warning|error`) vs MUI `Alert` (`info|success|warning|error`) (#3 vs #32): same prop name, different member sets, different components.
 - **Casing inconsistency** — `BeamStatusBadge` forces `textTransform: capitalize` (so `active`→"Active"); `TxBadge`/`CRStatusChip` render the raw label as-authored (`Succeeded`, `Pending`, `Update`). Mixed casing across the estate's chips.
 - **Hue-adjacent-to-icon encodings** — `BeamBool` (#2) and the advisory icons (#27, #28) carry meaning in color; each pairs a distinct icon *shape* (check vs cancel; WarningAmber vs ReportProblem) and `titleAccess`/`aria-label`, so none is strictly color-alone. `RuleNodeCard` advisory (#28) is icon-only (no visible text label) — meaning via hue + icon shape + tooltip/aria-label.
-- **Hand-rolled status chips in a story** (#33) — `BeamPageHeader.stories` builds `Pending`/`Active` chips directly from MUI `Chip` rather than `BeamStatusBadge`, duplicating the vocabulary outside the sanctioned component.
+- **Hand-rolled status chips in a story** (#33) — `BeamPage.stories` builds `Pending`/`Active` chips directly from MUI `Chip` rather than `BeamStatusBadge`, duplicating the vocabulary outside the sanctioned component.
 - **Incoming-vs-current gaspar mismatch** — real vocabulary `created/processing/pending/failed/completed` vs mock/`TxBadge` `Succeeded/Pending/Failed` (recorded above; not reconciled this pass).

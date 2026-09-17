@@ -1,4 +1,4 @@
-import { BeamDataTable, type BeamColumn } from '@betty/beam';
+import { Table, type BeamColumn } from '@betty/beam';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineRounded';
 import { NodeKindChip } from './nodes/NodeKindChip';
@@ -48,7 +48,7 @@ export function GridLens({
   ];
 
   return (
-    <BeamDataTable<GridRow>
+    <Table<GridRow>
       columns={columns}
       rows={rows}
       getRowId={(r) => r.node.id}

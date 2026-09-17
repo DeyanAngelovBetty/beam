@@ -3,20 +3,20 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import AddIcon from '@mui/icons-material/Add';
-import { BeamPageHeader } from './BeamPageHeader';
+import { BeamPage } from './Page';
 import { DetailsPanel } from '../DetailsPanel/DetailsPanel';
 import { BeamStat } from '../BeamStat/BeamStat';
 
 /**
- * BeamPageHeader (ratified Figma pass, node 12745:68663) — three fixed rows: breadcrumb 26 (always
+ * BeamPage (ratified Figma pass, node 12745:68663) — three fixed rows: breadcrumb 26 (always
  * reserved), title 41 (title | actions), sub-title 24 (only when present). The title treatment
  * (gradient / halo / underline) is ratified as-is.
  */
 const meta = {
-  title: 'Organisms/BeamPageHeader',
-  component: BeamPageHeader,
+  title: 'Components/BeamPage',
+  component: BeamPage,
   parameters: { layout: 'padded' },
-} satisfies Meta<typeof BeamPageHeader>;
+} satisfies Meta<typeof BeamPage>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -71,10 +71,10 @@ export const SubtitleVariants: Story = {
   args: { title: 'Subtitle variants' },
   render: () => (
     <Box sx={{ display: 'grid', gap: 4 }}>
-      <BeamPageHeader title="No subtitle" />
-      <BeamPageHeader title="Text subtitle" subtitle="A plain description in the subtitle voice." />
-      <BeamPageHeader title="Chip subtitle" subtitle={<Chip label="Pending" color="info" size="small" variant="outlined" />} />
-      <BeamPageHeader
+      <BeamPage title="No subtitle" />
+      <BeamPage title="Text subtitle" subtitle="A plain description in the subtitle voice." />
+      <BeamPage title="Chip subtitle" subtitle={<Chip label="Pending" color="info" size="small" variant="outlined" />} />
+      <BeamPage
         title="Composed subtitle"
         subtitle={
           <>
@@ -98,11 +98,11 @@ export const ListDetailTitleConstancy: Story = {
     <Box sx={{ display: 'grid', gap: 5 }}>
       <Box>
         <Box sx={{ typography: 'overline', color: 'text.secondary' }}>List (no back link)</Box>
-        <BeamPageHeader title="Users" subtitle="Operators with back-office access." action={<Button variant="contained" startIcon={<AddIcon />}>Add</Button>} />
+        <BeamPage title="Users" subtitle="Operators with back-office access." action={<Button variant="contained" startIcon={<AddIcon />}>Add</Button>} />
       </Box>
       <Box>
         <Box sx={{ typography: 'overline', color: 'text.secondary' }}>Detail (back link)</Box>
-        <BeamPageHeader title="Edna Schimmel" back={{ label: 'Users', href: '#/users' }} subtitle="Player ID 257291" action={<Button variant="contained">Edit</Button>} />
+        <BeamPage title="Edna Schimmel" back={{ label: 'Users', href: '#/users' }} subtitle="Player ID 257291" action={<Button variant="contained">Edit</Button>} />
       </Box>
     </Box>
   ),
@@ -113,7 +113,7 @@ export const RecordWithDetailsPanel: Story = {
   args: { title: 'Edna Schimmel' },
   render: () => (
     <Box sx={{ display: 'grid', gap: 2 }}>
-      <BeamPageHeader title="Edna Schimmel" back={{ label: 'Players', href: '#/players' }} subtitle="Player ID 257291" action={<Button variant="outlined">Quick actions</Button>} />
+      <BeamPage title="Edna Schimmel" back={{ label: 'Players', href: '#/players' }} subtitle="Player ID 257291" action={<Button variant="outlined">Quick actions</Button>} />
       <DetailsPanel aria-label="Player summary">
         <BeamStat label="Status" value="Approved" caption="Online" />
         <BeamStat label="Cash balance" value="$20.00" caption="CAD" />

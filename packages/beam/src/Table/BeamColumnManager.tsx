@@ -35,7 +35,7 @@ export interface BeamColumnManagerProps {
 }
 
 /**
- * BeamColumnManager — the toolbar trigger + popover for BeamDataTable's column manager. Internal to
+ * BeamColumnManager — the toolbar trigger + popover for Table's column manager. Internal to
  * the organism (not barrel-exported). Show/hide via checkbox; reorder via a pointer DRAG HANDLE
  * (mouse/touch) OR the ▲/▼ buttons. Both write the same columnOrder through the parent, so the two
  * paths can't diverge. Reset returns to declared defaults. Minimum one visible column is enforced:

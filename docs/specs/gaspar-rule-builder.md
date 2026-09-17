@@ -15,7 +15,7 @@ The Routing › Rule Builder page becomes real — a rule-set editor with two le
 - **Graph lens** — `@xyflow/react` v12 canvas (zoom/pan, Controls, MiniMap, dotted Background whose
   colour derives from theme tokens). Node kinds `sequence | condition | action`, each a themed Beam
   card; selection uses the gradient-border recipe.
-- **Grid lens** — `BeamDataTable` over the same store, one row per node (kind pigment-chip, name,
+- **Grid lens** — `Table` over the same store, one row per node (kind pigment-chip, name,
   params summary, connections). List-grammar conformant, read-only in v1.
 - **Lens toggle** — `BeamTabs` graph|grid; switching never touches data.
 - **Import/export** — versioned JSON `{ version: 1, name, nodes, edges }` incl. positions; export =
@@ -51,11 +51,11 @@ the RuleSet verbatim, positions included. `validateRuleSet(json)` returns typed 
 
 ### Component anatomy
 
-Page = `BeamPageHeader` (import/export actions) → `BeamTabs` → active lens, inside one
+Page = `BeamPage` (import/export actions) → `BeamTabs` → active lens, inside one
 `<ReactFlowProvider>`. GraphLens = `<ReactFlow>` with themed Background/Controls/MiniMap + a
 toolbar Panel (add-node buttons + a disabled **Tidy** stub where auto-layout will live). RuleNodeCard
 = `<Paper variant="outlined">` (surface 1); selected → `beamGradientBorder()` (carry the
-no-`overflow:hidden` constraint). GridLens = `BeamDataTable`. NodeInspector = the single edit surface
+no-`overflow:hidden` constraint). GridLens = `Table`. NodeInspector = the single edit surface
 (rename / kind-specific params / delete).
 
 ### Dependency wiring

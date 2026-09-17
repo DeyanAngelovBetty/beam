@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  BeamDataTable,
-  BeamFilterBar,
-  BeamPageHeader,
+  Table,
+  TableFilters,
+  BeamPage,
   BeamStatusBadge,
   Button,
   MenuItem,
@@ -125,7 +125,7 @@ export function GameConfigsPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Game Configs"
         subtitle="Targeted payout configurations across MetaGame game types."
         action={
@@ -135,7 +135,7 @@ export function GameConfigsPage() {
         }
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Game config filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((current) => ({ ...current, q }))}
@@ -181,9 +181,9 @@ export function GameConfigsPage() {
             </MenuItem>
           ))}
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(config) => config.id}

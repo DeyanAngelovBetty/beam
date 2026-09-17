@@ -13,7 +13,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  BeamPageHeader,
+  BeamPage,
   BeamStatusBadge,
   type BrandName,
   type Theme,
@@ -62,7 +62,7 @@ function Swatch({ token, label }: { token: string; label: string }) {
 function Board() {
   return (
     <Stack spacing={2} sx={{ p: 3 }}>
-      <BeamPageHeader title="Gaspar" subtitle="Candidate preview" />
+      <BeamPage title="Gaspar" subtitle="Candidate preview" />
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
         <Button variant="contained">Primary</Button>
         <Button variant="outlined">Outlined</Button>

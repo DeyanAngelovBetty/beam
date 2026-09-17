@@ -7,7 +7,7 @@ import {
   Button,
   Typography,
   TextField,
-  BeamPageHeader,
+  BeamPage,
   BeamTabs,
   type BeamTabItem,
 } from '@betty/beam';
@@ -169,7 +169,7 @@ function RuleBuilderBody() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Rule Builder"
         subtitle="Author payment-routing rule trees — the engine's schema, two lenses over one tree."
         action={

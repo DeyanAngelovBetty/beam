@@ -8,7 +8,7 @@ import {
   Button,
   IconButton,
   Snackbar,
-  Table,
+  MuiTable as Table,
   TableHead,
   TableBody,
   TableRow,
@@ -18,14 +18,14 @@ import {
   DialogContent,
   DialogActions,
   MenuItem,
-  BeamPageHeader,
+  BeamPage,
   BeamEmptyState,
   DetailsPanel,
   BeamStat,
   BeamBool,
   BeamField,
   BeamSwitchField,
-  BeamPaper,
+  Section,
   fieldGeometrySx,
   meta,
 } from '@betty/beam';
@@ -200,7 +200,7 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
   if (!campaign || (!stage && !create)) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title={`Stage ${sid}`} back={backTo(navigate, `${BASE}/${id}`, campaign?.name ?? 'Campaign')} />
+        <BeamPage title={`Stage ${sid}`} back={backTo(navigate, `${BASE}/${id}`, campaign?.name ?? 'Campaign')} />
         <BeamEmptyState title="Wall stage not found" description="It may have been removed." />
       </Stack>
     );
@@ -226,7 +226,7 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         // Create has no stage yet → a create title. (The Add frame's "Wall Stage 1" + Delete/Edit
         // chrome is View/Edit-frame residue — NOT copied.)
         title={create ? 'Create Wall Stage' : stageLabel(st)}
@@ -279,12 +279,12 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
         )}
       </DetailsPanel>
 
-      {/* Two-column BeamPaper masonry (frame layout). */}
+      {/* Two-column Section masonry (frame layout). */}
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ alignItems: 'flex-start' }}>
         {/* LEFT column */}
         <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: '100%' }}>
           {/* Opening Windows */}
-          <BeamPaper title="Opening Windows" bleed>
+          <Section isEdit="auto" title="Opening Windows" bleed>
             <Table size="small" aria-label="Opening windows">
               <TableHead>
                 <TableRow>
@@ -337,12 +337,12 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
                 </Button>
               </Box>
             )}
-          </BeamPaper>
+          </Section>
 
           {/* Reward items — a FIXED 12-slot grid (frame + mock). Filled slot = card (opens the dialog in
               both modes). Empty slot: in-session = "+ ADD" tile (opens the dialog's ADD flavor); in view
               = inert placeholder (no add outside a session — the leaf inherits the parent's mode). */}
-          <BeamPaper title="Reward items">
+          <Section isEdit="auto" title="Reward items">
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
               {Array.from({ length: REWARD_SLOTS }, (_, i) => {
                 const items = isEdit && d ? d.rewardItems : st.rewardItems;
@@ -351,23 +351,23 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
                 return isEdit ? <AddRewardTile key={`add-${i}`} onAdd={openAddReward} /> : <EmptyRewardTile key={`empty-${i}`} />;
               })}
             </Box>
-          </BeamPaper>
+          </Section>
         </Stack>
 
         {/* RIGHT column */}
         <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: '100%' }}>
           {/* Quick Rules */}
-          <BeamPaper title="Quick Rules" bleed>
+          <Section isEdit="auto" title="Quick Rules" bleed>
             <RulesTable
               rows={isEdit && d ? d.quickRules : st.quickRules}
               edit={isEdit}
               onCopy={copyUrl}
               onChange={(next) => patch({ quickRules: next })}
             />
-          </BeamPaper>
+          </Section>
 
           {/* Info Page Rules — a title field/stat, then the rules table. */}
-          <BeamPaper title="Info Page Rules" bleed>
+          <Section isEdit="auto" title="Info Page Rules" bleed>
             <Box sx={{ px: 2, pb: 1 }}>
               {isEdit && d ? (
                 <BeamField label="Info page title" value={d.infoPageTitle} onChange={(e) => patch({ infoPageTitle: e.target.value })} fullWidth />
@@ -381,10 +381,10 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
               onCopy={copyUrl}
               onChange={(next) => patch({ infoRules: next })}
             />
-          </BeamPaper>
+          </Section>
 
           {/* Images — Header + Background × desktop/mobile. */}
-          <BeamPaper title="Images" bleed>
+          <Section isEdit="auto" title="Images" bleed>
             <Table size="small" aria-label="Images">
               <TableHead>
                 <TableRow>
@@ -406,7 +406,7 @@ export function WallStagePage({ create = false }: { create?: boolean } = {}) {
                 </TableRow>
               </TableBody>
             </Table>
-          </BeamPaper>
+          </Section>
         </Stack>
       </Stack>
 

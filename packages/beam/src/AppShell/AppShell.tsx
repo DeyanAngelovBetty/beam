@@ -21,7 +21,7 @@ import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrow
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import type { BeamAppShellProps, BeamNavItem } from './BeamAppShell.types';
+import type { AppShellProps, BeamNavItem } from './AppShell.types';
 import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT } from '../theme/tokens';
 
 const DRAWER_WIDTH = 264;
@@ -158,7 +158,7 @@ function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }
       selected={item.selected}
       onClick={item.onClick}
       sx={(theme) => {
-        // Same CSS-vars-aware access BeamDataTable uses for hover overlays.
+        // Same CSS-vars-aware access Table uses for hover overlays.
         const hover = (theme.vars || theme).palette.action.hover;
         return {
           ...(inset && { pl: 4 }),
@@ -221,7 +221,7 @@ function NavItem({ item }: { item: BeamNavItem }) {
   );
 }
 
-export function BeamAppShell({
+export function AppShell({
   navItems,
   children,
   brandMark,
@@ -235,7 +235,7 @@ export function BeamAppShell({
   peekCloseGraceMs = PEEK_CLOSE_GRACE_MS,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   title,
-}: BeamAppShellProps) {
+}: AppShellProps) {
   const theme = useTheme();
   const isWide = useMediaQuery(theme.breakpoints.up('md'));
 

@@ -9,7 +9,7 @@ import { BeamSwitchField } from './BeamSwitchField';
  * a Switch). Shown on a paper surface (the notch mask assumes surface-1). Placeholder visuals.
  */
 const meta = {
-  title: 'Organisms/BeamSwitchField',
+  title: 'Components/BeamSwitchField',
   component: BeamSwitchField,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof BeamSwitchField>;

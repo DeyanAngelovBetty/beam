@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Typography, Stack, BeamDataTable } from '@betty/beam';
+import { Typography, Stack, Table } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
 import { NextGemPanel } from './NextGemPanel';
 import type { LoyaltyStatus, StatusReward } from './loyaltyStatuses';
@@ -29,7 +29,7 @@ export function ExpandedLoyaltyPanel({ status, next }: { status: LoyaltyStatus; 
         <Typography variant="subtitle2" color="text.secondary">
           {status.name} — claimable rewards
         </Typography>
-        <BeamDataTable
+        <Table
           columns={rewardColumns}
           rows={rewards}
           getRowId={(rw) => rw.id}

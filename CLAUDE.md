@@ -84,13 +84,13 @@ not re-exported by MUI's root entry, so the barrel sources them from `@mui/mater
 
 Every organism ships as a trio: `Name.types.ts` + `Name.tsx` + `Name.stories.tsx`.
 
-Four are **explicit placeholders** — `BeamPageHeader`, `BeamStat`, `BeamTabs`,
-`BeamFilterBar` — marked in their types files and grouped under `Organisms (placeholder)/` in
+Four are **explicit placeholders** — `BeamPage`, `BeamStat`, `BeamTabs`,
+`TableFilters` — marked in their types files and grouped under `Organisms (placeholder)/` in
 Storybook. They lock in a name and rough API so screens have something stable to build
 against; the design pass belongs in Figma. Expect them to change.
 
 Promotion follows usage, not prediction (BEAM.md §2): a pattern moves into Beam when a
-*second* product actually needs it. `BeamAppShell`, `BeamPageHeader`, and `BeamTabs` all got
+*second* product actually needs it. `AppShell`, `BeamPage`, and `BeamTabs` all got
 there that way.
 
 ## Conventions

@@ -1,12 +1,12 @@
 import { memo } from 'react';
-import { BeamDataTable, type BeamColumn } from '@betty/beam';
+import { Table, type BeamColumn } from '@betty/beam';
 import { getLoyaltyLevels, type LoyaltyLevel, type SchemeType } from './loyaltyLevels';
 
 /**
  * LoyaltyLevelsList — ported from official Sunlight (LoyaltyLevelsList + its .table columns). The
  * level ladder for a scheme, as a paginated table. Mechanical adaptations: the source's RTK-Query
  * paged fetch → the local seed store; MUI `Table` (controlled pagination, stickyHeader, maxHeight) →
- * `BeamDataTable` (internal pagination). Columns are faithful (isSpecial stays out of the table, as
+ * `Table` (internal pagination). Columns are faithful (isSpecial stays out of the table, as
  * in the source — it rides along in the CSV export only).
  */
 const columns: BeamColumn<LoyaltyLevel>[] = [
@@ -23,7 +23,7 @@ const getRowId = (level: LoyaltyLevel) => String(level.level);
 
 function LoyaltyLevelsListBase({ schemeType }: { schemeType: SchemeType }) {
   return (
-    <BeamDataTable
+    <Table
       columns={columns}
       rows={getLoyaltyLevels(schemeType)}
       getRowId={getRowId}

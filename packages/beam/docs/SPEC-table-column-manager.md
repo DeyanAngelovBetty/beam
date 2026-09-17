@@ -1,8 +1,8 @@
-# SPEC — BeamDataTable Column Manager (Tracer Bullet 3)
+# SPEC — Table Column Manager (Tracer Bullet 3)
 
 **Date:** 2026-09-08
 **Consumer:** Gaspar transactions page (first); Sunlight grids inherit
-**Organism:** BeamDataTable — this IS an organism change, unlike bullet 1
+**Organism:** Table — this IS an organism change, unlike bullet 1
 **Scope:** Column show/hide + reordering + persistence, and the manager UI.
 **Explicitly out of scope:** filters (separate workstream), row selection/export, density/sticky work, header-drag reordering (see Reordering), any change to column *definitions* on the Gaspar page beyond wiring the new capability.
 
@@ -13,7 +13,7 @@ Column visibility and order are TanStack table state (`columnVisibility`, `colum
 ## Organism API
 
 ```ts
-<BeamDataTable
+<Table
   columns={columns}
   rows={rows}
   columnManager={{ storageKey: "gaspar.transactions" }}  // opt-in; absent = today's behavior
@@ -61,8 +61,8 @@ v1 reorders via the manager popover list only — no header drag-and-drop. Heade
 
 ## Build notes — how this was implemented (2026-09-08)
 
-- **Files.** `useColumnManager.ts` (state + persistence + merge), `BeamColumnManager.tsx` (trigger + popover, internal — NOT barrel-exported), wiring in `BeamDataTable.tsx`, types in `BeamDataTable.types.ts` (`defaultHidden` on `BeamColumn`; `BeamColumnManagerConfig` with `catalog`). Story: `BeamDataTable.stories.tsx` → `ColumnManager`.
-- **API delta.** `BeamColumn.defaultHidden?: boolean`; `BeamDataTableProps.columnManager?: { storageKey: string; catalog?: { id; label }[] }`. Both additive/opt-in.
+- **Files.** `useColumnManager.ts` (state + persistence + merge), `BeamColumnManager.tsx` (trigger + popover, internal — NOT barrel-exported), wiring in `Table.tsx`, types in `Table.types.ts` (`defaultHidden` on `BeamColumn`; `BeamColumnManagerConfig` with `catalog`). Story: `Table.stories.tsx` → `ColumnManager`.
+- **API delta.** `BeamColumn.defaultHidden?: boolean`; `TableProps.columnManager?: { storageKey: string; catalog?: { id; label }[] }`. Both additive/opt-in.
 - **Render reroute (architecture finding, surfaced + approved).** The render previously mapped the raw `columns` prop (header paired positionally to `getAllColumns()[i]`; body mapped `columns`), so `columnVisibility`/`columnOrder` would have been ignored. Header and body now iterate **`table.getVisibleLeafColumns()`** and resolve each back to its `BeamColumn` via an id→column `Map`. With no manager this yields declared order, all visible → **byte-identical**. TanStack stays the single state backbone (no parallel state).
 - **Opt-in isolation.** When `columnManager` is absent, no `columnVisibility`/`columnOrder` state and no `on…Change` are threaded into `useReactTable`, and the toolbar's spacer + trigger are not rendered — a searchable-only or toolbar-less grid is unchanged in the DOM.
 - **Reorder mechanism.** ▲/▼ buttons per row (keyboard + pointer, no DnD dependency). Drag handle is additive-later.

@@ -11,7 +11,7 @@ filling.*
 ## Identity & routes
 - Page title (create / edit variants):
 - Routes: create `/.../new` · edit `/.../:id`
-- Back link: label + destination ▸ BeamPageHeader's `back` prop —
+- Back link: label + destination ▸ BeamPage's `back` prop —
   NEVER a hand-rolled link or a button in secondaryActions
 - Subtitle line (create): ▸ e.g. "New X are created as Disabled."
 
@@ -21,7 +21,7 @@ filling.*
 - [ ] View ↔ Edit (User-page model) — what differs per mode:
 
 ## Save model  ▸ FIXED by grammar §4: Cancel + Create/Save in the
-BeamPageHeader ACTIONS slot. Not a bottom bar, not floating buttons.
+BeamPage ACTIONS slot. Not a bottom bar, not floating buttons.
 - Save gating: valid form AND: (aggregate conditions, e.g. "total
   probability exactly 100%")
 - Unsaved-changes guard: yes (grammar default — useBlocker + dialog,

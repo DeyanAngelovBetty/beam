@@ -4,9 +4,9 @@ import {
   TextField,
   MenuItem,
   Button,
-  BeamPageHeader,
-  BeamFilterBar,
-  BeamDataTable,
+  BeamPage,
+  TableFilters,
+  Table,
   BeamStatusBadge,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
@@ -17,7 +17,7 @@ import { PLAYERS, type Player } from './players';
  *
  * Same job as Midnight's screen — find a player by identity or registration
  * facts, then open them. The differences are the point: filters live in one
- * BeamFilterBar rather than a loose field grid, status is the shared badge
+ * TableFilters rather than a loose field grid, status is the shared badge
  * vocabulary rather than bare text, and the row opens the player instead of
  * requiring a separate action column.
  */
@@ -60,12 +60,12 @@ export function PlayerSearchPage({ onOpenPlayer }: PlayerSearchPageProps) {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Player Search"
         subtitle="Find a player by identity or registration facts."
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Player search filters"
         applied={status !== 'Any'}
         onFilter={() => {}}
@@ -91,9 +91,9 @@ export function PlayerSearchPage({ onOpenPlayer }: PlayerSearchPageProps) {
             </MenuItem>
           ))}
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={PLAYERS}
         getRowId={(p) => p.id}

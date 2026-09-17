@@ -4,12 +4,12 @@ import {
   Button,
   TextField,
   MenuItem,
-  BeamPageHeader,
+  BeamPage,
   BeamStat,
   DetailsPanel,
   BeamTabs,
-  BeamFilterBar,
-  BeamDataTable,
+  TableFilters,
+  Table,
   BeamStatusBadge,
 } from '@betty/beam';
 import type { BeamColumn, BeamTabItem } from '@betty/beam';
@@ -100,7 +100,7 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={`${CURRENT_PLAYER.firstName} ${CURRENT_PLAYER.lastName}`}
         back={{ label: 'Search', onClick: onBack }}
         subtitle={`Player ID ${CURRENT_PLAYER.id}`}
@@ -129,7 +129,7 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
         aria-label="Player sections"
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Payment transaction filters"
         presets={RANGE_PRESETS}
         activePreset={preset}
@@ -157,9 +157,9 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
           <MenuItem value="deposit">Deposit</MenuItem>
           <MenuItem value="withdrawal">Withdrawal</MenuItem>
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={TRANSACTIONS}
         getRowId={(t) => t.id}

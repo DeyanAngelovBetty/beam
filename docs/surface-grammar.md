@@ -51,7 +51,7 @@ veil** (`--Paper-overlay`). That is a *second*, uncontrolled elevation signal fi
   fixes are only for a component that already hardcodes one.
 - **Chrome wears the page's backdrop — literally, via fixed-attachment copies of the shared backdrop
   source — not a flat color.** A pinned surface that stands in for the *page* background — the
-  sticky-chrome ceiling/floor outers (BeamDataTable) — **paints a copy of the page backdrop** (the shared
+  sticky-chrome ceiling/floor outers (Table) — **paints a copy of the page backdrop** (the shared
   `pageBackdropSx`: `background.default` base + mesh, `background-attachment: fixed`), NOT a flat
   `background.default`, and NOT transparency. One source, two consumers: `body::before` and the bands spread
   the same object, so the band samples the same viewport-fixed mesh and reads seamlessly with the backdrop

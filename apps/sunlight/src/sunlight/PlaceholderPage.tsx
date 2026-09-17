@@ -1,5 +1,5 @@
 import ConstructionIcon from '@mui/icons-material/Construction';
-import { Stack, BeamPageHeader, BeamEmptyState } from '@betty/beam';
+import { Stack, BeamPage, BeamEmptyState } from '@betty/beam';
 
 /**
  * A not-built-yet screen: page header for orientation, then a Beam empty
@@ -8,7 +8,7 @@ import { Stack, BeamPageHeader, BeamEmptyState } from '@betty/beam';
 export function PlaceholderPage({ title }: { title: string }) {
   return (
     <Stack spacing={3}>
-      <BeamPageHeader title={title} />
+      <BeamPage title={title} />
       <BeamEmptyState
         icon={<ConstructionIcon />}
         title={`${title} is coming soon`}

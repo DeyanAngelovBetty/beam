@@ -9,7 +9,7 @@ teaches something reusable.
 diverged from the Figma — the composition (section band, surfaces, column headers) was invented from
 the description because the description was all there was. Deyan then hand-edited the page/organism
 code toward the real composition, and this rework reconciled those edits and formalized them
-(`BeamPaper`, `BeamChildList` composing it, the editability border).
+(`Section`, `BeamChildList` composing it, the editability border).
 
 **The learning — a page prompt carries the design artifact, referenced by path:**
 

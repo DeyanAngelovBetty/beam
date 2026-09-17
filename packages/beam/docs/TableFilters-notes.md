@@ -1,4 +1,4 @@
-# BeamFilterBar — organism build-notes
+# TableFilters — organism build-notes
 
 Decisions and additive changes to the organism, newest first.
 
@@ -12,7 +12,7 @@ Decisions and additive changes to the organism, newest first.
 Opt-in `advanced` config turns the bar into the advanced filters panel (Figma `AdvancedFiltersPanel`,
 node 12900-785; frame at `apps/gaspar/designs/AdvancedFiltersPanel.png`). Additive — absent ⇒ today's
 default bar, byte-identical (no Sunlight consumer passes `advanced`, and none enters the added-field or
-[+] paths). Kept the name `BeamFilterBar` (no rename/alias) so the ~8 Sunlight consumers don't churn;
+[+] paths). Kept the name `TableFilters` (no rename/alias) so the ~8 Sunlight consumers don't churn;
 "FiltersPanel" stays a concept name for a possible future quiet-day rename.
 
 - **API:** `advanced?: { addableFields: AddableField[]; storageKey: string; onFieldRemoved?: (id) => void }`.

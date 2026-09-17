@@ -9,9 +9,9 @@ import {
   MenuItem,
   BeamField,
   BeamBadge,
-  BeamFilterBar,
-  BeamDataTable,
-  BeamPageHeader,
+  TableFilters,
+  Table,
+  BeamPage,
   InputAdornment,
   stickyChromeGapSx,
   stickyChromeExitSx,
@@ -27,14 +27,14 @@ import { useMilestone } from './milestone';
 
 // Pagination persisted in the URL (the source of truth) — survives the nav-toggle remount + refresh, and
 // back/forward + link-sharing work. Defaults stay OUT of the URL (clean URL at 10 / page 1). 1-based `page`
-// for humans; `pageSize` matches the grid's default. See BeamDataTable's controlled `pagination` prop.
+// for humans; `pageSize` matches the grid's default. See Table's controlled `pagination` prop.
 const DEFAULT_PAGE_SIZE = 10;
 
 /**
  * Gaspar Transactions — the payments list grid.
  *
  * Column set per `apps/gaspar/docs/SPEC-gaspar-transactions-columns.md` (Tracer Bullet 1, v2):
- * columns and cell treatments only, against the new `payments` list response. BeamDataTable is
+ * columns and cell treatments only, against the new `payments` list response. Table is
  * UNTOUCHED — all cell treatments here are PAGE-LOCAL helpers, no organism API change, no Beam
  * promotion (that follows usage, not prediction).
  *
@@ -223,7 +223,7 @@ const THREEDS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.threeDsStatus));
 const ERROR_CODE_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.errorCode).filter((c): c is string => Boolean(c)));
 
 /**
- * BeamFilterBar's apply model (bar v1 spec; UsersPage is the estate reference): the bar edits a
+ * TableFilters's apply model (bar v1 spec; UsersPage is the estate reference): the bar edits a
  * `draft`; the grid filters by `applied`; the Filter CTA commits draft → applied. We keep BOTH stores
  * page-local — no URL/query-param persistence (this page's own constraint), which is the one deviation
  * from UsersPage (it persists `applied` in the URL).
@@ -744,24 +744,24 @@ export function TransactionsPage() {
   // (then it donates the pre-grid seam to the header ceiling).
   return (
     <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
-      <BeamPageHeader title="Transactions" />
+      <BeamPage title="Transactions" />
 
-      {/* Filters — BeamFilterBar's designed apply model (bar v1; UsersPage is the reference): the bar
+      {/* Filters — TableFilters's designed apply model (bar v1; UsersPage is the reference): the bar
           edits `draft`, the grid filters by `applied`, the Filter CTA commits. Search is the bar's
           built-in field; the date range and the three selects are promoted fields passed as `children`
           (the bar's composition API — a first-class dateRange prop waits for a 2nd consumer, per
           promotion-follows-usage). Select options are DERIVED from the data.
           NOTE: Enter-to-apply is wired on the date fields (page-local). The SEARCH field is the bar's
           built-in input with no key-event hook exposed, so Enter there cannot commit without a
-          BeamFilterBar API addition — deliberately NOT done (no component change); the Filter CTA
+          TableFilters API addition — deliberately NOT done (no component change); the Filter CTA
           commits search. UsersPage, the reference, likewise has no Enter-to-apply. */}
       {/* Exit treatment (bench→official promotion of the ratified sticky-chrome exit): the pre-grid section
           scales + fades + lifts as it slides up under the pinned bucket. The bench attaches stickyChromeExitSx
-          directly on its filter panel's root Paper; BeamFilterBar (a placeholder organism) exposes no sx prop,
+          directly on its filter panel's root Paper; TableFilters (a placeholder organism) exposes no sx prop,
           so the SAME sx rides a Box wrapper here — the wrapper is now the pre-grid section that stickyChromeGapSx
           and the exit both key off. Progressive + reduced-motion gating lives inside the helper. */}
       <Box sx={stickyChromeExitSx}>
-      <BeamFilterBar
+      <TableFilters
         aria-label="Transaction filters"
         searchValue={draft.q}
         // COMPOUND search is v1.1+ (caps.compoundSearch). At v1.0 no onSearchChange → the bar's built-in
@@ -845,10 +845,10 @@ export function TransactionsPage() {
             <MenuItem key={p} value={p}>{p}</MenuItem>
           ))}
         </BeamField>
-      </BeamFilterBar>
+      </TableFilters>
       </Box>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(r) => r.id}

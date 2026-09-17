@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import { Stack, Box, Alert, Button, MenuItem, BeamPageHeader, BeamTabs, BeamField, DetailsPanel } from '@betty/beam';
+import { Stack, Box, Alert, Button, MenuItem, BeamPage, BeamTabs, BeamField, DetailsPanel } from '@betty/beam';
 import FileDownloadIcon from '@mui/icons-material/FileDownloadRounded';
 import UploadFileIcon from '@mui/icons-material/UploadFileRounded';
 import ScienceIcon from '@mui/icons-material/ScienceOutlined';
@@ -114,7 +114,7 @@ export function LoyaltyLevelsPage() {
     cancelAbTest();
   };
 
-  // Header actions swap by mode; geometry is constant (BeamPageHeader's fixed rows — only this node
+  // Header actions swap by mode; geometry is constant (BeamPage's fixed rows — only this node
   // changes). Default: least→most important L→R. A/B mode: the cancel/submit pair.
   const headerActions =
     mode === 'default' ? (
@@ -142,7 +142,7 @@ export function LoyaltyLevelsPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Loyalty Levels"
         subtitle={mode === 'abtest' ? 'Configuring an A/B test — Scheme A vs Scheme B.' : undefined}
         secondaryActions={headerActions}

@@ -1,6 +1,6 @@
 # Shell Grammar — the frame every product wears
 
-*The BeamAppShell doctrine: navigation, chrome, and branding for all Beam
+*The AppShell doctrine: navigation, chrome, and branding for all Beam
 products. Sibling to the page grammars; broader jurisdiction — every screen of
 every product wears the shell, so shell decisions are estate-wide by
 definition. Visual companion: the Gaspar shell exploration in the Sunlight
@@ -145,7 +145,7 @@ document root while it runs.
 ## 5. The header subtraction
 
 There is no persistent app-header bar. The page owns its top edge;
-**BeamPageHeader** (breadcrumb / title / actions / subtitle) is the page's
+**BeamPage** (breadcrumb / title / actions / subtitle) is the page's
 first row and needs no bar above it. Whatever lived in the old app bar
 (product switcher, user menu, etc.) migrates per-product into the sidebar's
 header or footer zone — audited per app, not assumed.
@@ -166,9 +166,9 @@ header or footer zone — audited per app, not assumed.
 - Motion token values (bench).
 - Whether the ghost appears in the narrow-viewport drawer (probably not —
   the drawer has no lock to promise).
-- **Content vertical rhythm migrates to BeamPageHeader.** The `contentGutter`
+- **Content vertical rhythm migrates to BeamPage.** The `contentGutter`
   prop owns the horizontal gutter only; top/bottom rhythm is parked on the
-  shell provisionally (`CONTENT_VERTICAL`) until BeamPageHeader leaves
+  shell provisionally (`CONTENT_VERTICAL`) until BeamPage leaves
   placeholder and owns the rhythm above the page's first row.
 - **Content max-width, not a wider gutter, is the ultrawide answer.** The
   gutter's top step is pinned at `md` (the drawer boundary); beyond that,

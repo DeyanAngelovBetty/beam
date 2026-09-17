@@ -1,4 +1,4 @@
-import { Stack, BeamPageHeader } from '@betty/beam';
+import { Stack, BeamPage } from '@betty/beam';
 import { BenchDashboardStatic } from '../bench/BenchDashboardStatic';
 
 /**
@@ -16,7 +16,7 @@ import { BenchDashboardStatic } from '../bench/BenchDashboardStatic';
 export function DashboardPage() {
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Dashboard"
         subtitle="Routing, settlement, and gateway health at a glance."
       />

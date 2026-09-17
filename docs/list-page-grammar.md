@@ -108,7 +108,7 @@ out.* The rule above said **there is no opt-out**. One day later a
 `showExpandedActions` flag landed and quietly set PayoutConfigs, GameConfigs, and
 MetaGamePresets to `false` — no rationale in the commit, no note here —
 reintroducing the very opt-out this section forbids (loyalty inherited it later by
-copying the others). Repaired: the flag is **removed** from `BeamDataTable`, so the
+copying the others). Repaired: the flag is **removed** from `Table`, so the
 projection is unconditional once more. The exact contract, restated so it can't be
 read as optional again:
 
@@ -138,7 +138,7 @@ now), so its Approve/Reject live in the kebab alone.
 
 *Amended 2026-07-31 — altitude determines alignment (detail-grammar §4).* Sub-page
 action strips (the batch strip, Add Row / Add Rule) render **LEFT, directly above
-the organism** they operate on; the page's right edge (the `BeamPageHeader`
+the organism** they operate on; the page's right edge (the `BeamPage`
 actions slot) is page-only. Per-item rail/cell controls keep their anatomy;
 collapse carets are disclosure, not actions.
 
@@ -171,7 +171,7 @@ constant; only enablement varies.**
   background between the filter bar and the table (§1.3 exempt — plain actions,
   not a raised container). They are **disabled at zero selection** and enable as
   selection grows. Nothing overlays, replaces, or reflows on select/deselect.
-- **Ownership:** BeamDataTable keeps owning selection and renders the strip
+- **Ownership:** Table keeps owning selection and renders the strip
   itself, above its Paper — the batch bar is *table* chrome (it acts on the
   table's selected rows), distinct from the filter bar's *page* chrome (which
   narrows the dataset). *(When the server-side "select all matching" escalation

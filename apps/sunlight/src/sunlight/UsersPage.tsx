@@ -6,9 +6,9 @@ import {
   Switch,
   TextField,
   MenuItem,
-  BeamPageHeader,
-  BeamFilterBar,
-  BeamDataTable,
+  BeamPage,
+  TableFilters,
+  Table,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
@@ -113,7 +113,7 @@ export function UsersPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Users"
         subtitle="Operators with back-office access."
         action={
@@ -123,7 +123,7 @@ export function UsersPage() {
         }
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="User filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -162,9 +162,9 @@ export function UsersPage() {
             </MenuItem>
           ))}
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(u) => u.id}

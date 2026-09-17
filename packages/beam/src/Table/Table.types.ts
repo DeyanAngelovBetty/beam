@@ -1,6 +1,6 @@
 import type { ComponentType, MouseEventHandler, ReactNode } from 'react';
 import type { PaginationState, OnChangeFn } from '@tanstack/react-table';
-import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
+import type { BeamRowAction } from '../ActionMenu/ActionMenu.types';
 import type { BeamBadgeHue } from '../BeamBadge/BeamBadge.types';
 
 /**
@@ -16,7 +16,7 @@ export interface BeamIdentityLinkProps {
 }
 
 /**
- * BeamDataTable — the dense operational table.
+ * Table — the dense operational table.
  *
  * v2: headless engine is TanStack Table; Beam owns 100% of the rendered
  * surface (MUI atoms + tokens). Features map to the Yoda audit:
@@ -106,7 +106,7 @@ export interface BeamActionOption {
   label: string;
 }
 
-export interface BeamDataTableProps<Row> {
+export interface TableProps<Row> {
   columns: BeamColumn<Row>[];
   rows: Row[];
   getRowId: (row: Row) => string;

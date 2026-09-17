@@ -6,7 +6,7 @@ import {
   useNavigate,
   useLocation,
 } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, AppShell, Box, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import { buildSunlightNav } from './sunlight/navItems';
 import { ShellFooter } from './sunlight/ShellFooter';
@@ -85,7 +85,7 @@ function Layout() {
 
   return (
     <>
-      <BeamAppShell
+      <AppShell
         brandMark={brandMark}
         navItems={nav}
         persistKey="beam.shell.sunlight"
@@ -93,7 +93,7 @@ function Layout() {
         appAlert={<PendingReviewAlert />}
       >
         <Outlet />
-      </BeamAppShell>
+      </AppShell>
       {/* Non-modal — the live Sunlight app above IS the preview. product='sunlight' scopes the export. */}
       <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="sunlight" jurisdiction={brand} />
     </>

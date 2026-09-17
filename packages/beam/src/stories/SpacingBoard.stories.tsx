@@ -32,7 +32,7 @@ const SCALE: Spec[] = [
 
 const LAYOUT: Spec[] = [
   { name: 'spine width', px: 2, note: 'BeamStat · off-grid' },
-  { name: 'RAIL_DIVIDER_INSET', px: 6, note: 'BeamDataTable · off-grid' },
+  { name: 'RAIL_DIVIDER_INSET', px: 6, note: 'Table · off-grid' },
   { name: 'radius', px: 8, note: 'shape.borderRadius' },
   { name: 'contentGutter xs', px: 16 },
   { name: 'radius (soft)', px: 24, note: 'MuiPaper rounded / squircle' },
@@ -44,11 +44,11 @@ const LAYOUT: Spec[] = [
 ];
 
 const CONTROLS: Spec[] = [
-  { name: 'row / tab minHeight', px: 40, note: 'BeamDataTable · BeamTabs (×2)' },
+  { name: 'row / tab minHeight', px: 40, note: 'Table · BeamTabs (×2)' },
   { name: 'BeamStat minWidth', px: 140 },
   { name: 'field: name', px: 150, note: 'PayoutConfig editor' },
   { name: 'field: values', px: 260, note: 'ConditionBuilder' },
-  { name: 'search field', px: 280, note: 'BeamDataTable toolbar' },
+  { name: 'search field', px: 280, note: 'Table toolbar' },
   { name: 'PayoutConfig select (min)', px: 360 },
   { name: 'PayoutConfig select (max)', px: 480 },
 ];

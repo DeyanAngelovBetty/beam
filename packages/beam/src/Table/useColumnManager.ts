@@ -1,9 +1,9 @@
 import { useMemo, useState, useCallback } from 'react';
 import type { ColumnOrderState, VisibilityState, OnChangeFn, Updater } from '@tanstack/react-table';
-import type { BeamColumn, BeamColumnManagerConfig } from './BeamDataTable.types';
+import type { BeamColumn, BeamColumnManagerConfig } from './Table.types';
 
 /**
- * useColumnManager — the state + persistence backbone for BeamDataTable's opt-in column manager.
+ * useColumnManager — the state + persistence backbone for Table's opt-in column manager.
  *
  * TanStack owns the actual table state (`columnVisibility`, `columnOrder`); this hook seeds it from
  * localStorage, persists user changes, and — the part that always goes wrong — MERGES a persisted

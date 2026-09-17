@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  BeamPageHeader,
+  BeamPage,
   BeamEmptyState,
   GemIcon,
   DetailsPanel,
@@ -78,7 +78,7 @@ export function LoyaltyStatusEditor() {
   if (!existing) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title={`Status ${id ?? ''}`} back={backTo(navigate, '/', 'Loyalty Status')} />
+        <BeamPage title={`Status ${id ?? ''}`} back={backTo(navigate, '/', 'Loyalty Status')} />
         <BeamEmptyState title={`No loyalty status with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -124,7 +124,7 @@ function ViewForm({ status, onEdit, onImport }: { status: LoyaltyStatus; onEdit:
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
         // The view is the row's record page → it carries the row's NON-EDIT actions (§6):
@@ -319,7 +319,7 @@ function EditorForm({ status, imported, onCancel }: { status: LoyaltyStatus; imp
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={status.name}
         back={backTo(navigate, '/', 'Loyalty Status')}
         action={

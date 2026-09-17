@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import type { BeamPageHeaderProps, BeamBackLink } from './BeamPageHeader.types';
+import type { BeamPageProps, BeamBackLink } from './Page.types';
 import Box from '@mui/material/Box';
 
 /**
@@ -46,15 +46,15 @@ function BackLink({ back }: { back: BeamBackLink }) {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.5,
-    '& .BeamPageHeader-backLabel': { textDecoration: 'none' },
-    '&:hover .BeamPageHeader-backLabel, &:focus-visible .BeamPageHeader-backLabel': {
+    '& .BeamPage-backLabel': { textDecoration: 'none' },
+    '&:hover .BeamPage-backLabel, &:focus-visible .BeamPage-backLabel': {
       textDecoration: 'underline',
       textUnderlineOffset: '0.2em',
     },
   }}
 >
   <Box component="span" aria-hidden sx={{ fontSize: '1.1em', lineHeight: 1 }}>&lt;-</Box>
-  <span className="BeamPageHeader-backLabel">{back.label}</span>
+  <span className="BeamPage-backLabel">{back.label}</span>
 </Link>
   );
 }
@@ -65,7 +65,7 @@ function BackLink({ back }: { back: BeamBackLink }) {
 // (stable per-page identity, no cross-page-type toggle). Asymmetry rationale in detail-grammar §4.
 const ROW = { breadcrumb: 26, title: 41, subtitle: 24 } as const;
 
-export function BeamPageHeader({ title, back, subtitle, action, secondaryActions }: BeamPageHeaderProps) {
+export function BeamPage({ title, back, subtitle, action, secondaryActions }: BeamPageProps) {
   return (
     <Stack spacing={0}>
       {/* Breadcrumb row — always present (reserved); back link when given, else empty. */}
@@ -124,7 +124,7 @@ export function BeamPageHeader({ title, back, subtitle, action, secondaryActions
               // anchor changes this afternoon), with a soft same-colour blur
               // (--beam-title-halo). Halo 0px = separation off. aria-hidden + no
               // pointer/select → the title is announced & copied once.
-              '& .BeamPageHeader-titleHalo': {
+              '& .BeamPage-titleHalo': {
                 position: 'absolute',
                 inset: 0,
                 zIndex: 2,
@@ -137,7 +137,7 @@ export function BeamPageHeader({ title, back, subtitle, action, secondaryActions
               // GRADIENT fill (z3, top) — in NORMAL FLOW, so it DEFINES the box (the halo
               // tracks it → wrapping stays correct for free). Contrast-safe: left stop pure
               // text-primary, far end mixes --beam-title-tint of primary → L pinned near text.
-              '& .BeamPageHeader-titleFill': {
+              '& .BeamPage-titleFill': {
                 position: 'relative',
                 zIndex: 3,
                 backgroundImage:
@@ -149,10 +149,10 @@ export function BeamPageHeader({ title, back, subtitle, action, secondaryActions
               },
             }}
           >
-            <span aria-hidden className="BeamPageHeader-titleHalo">
+            <span aria-hidden className="BeamPage-titleHalo">
               {title}
             </span>
-            <span className="BeamPageHeader-titleFill">{title}</span>
+            <span className="BeamPage-titleFill">{title}</span>
           </Typography>
         </Box>
         {/* Secondary actions sit to the left of the primary action. The organism pins their size

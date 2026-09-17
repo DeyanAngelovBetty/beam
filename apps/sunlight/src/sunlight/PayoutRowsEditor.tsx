@@ -9,7 +9,7 @@ import {
   IconButton,
   Tooltip,
   Paper,
-  Table,
+  MuiTable as Table,
   TableHead,
   TableBody,
   TableRow,

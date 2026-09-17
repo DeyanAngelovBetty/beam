@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Stack,
   Button,
-  BeamPageHeader,
-  BeamFilterBar,
-  BeamDataTable,
+  BeamPage,
+  TableFilters,
+  Table,
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
@@ -60,7 +60,7 @@ export function RolesPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Roles"
         subtitle="Permission sets assigned to operators."
         action={
@@ -70,7 +70,7 @@ export function RolesPage() {
         }
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Role filters"
         searchValue={draftQ}
         onSearchChange={setDraftQ}
@@ -83,9 +83,9 @@ export function RolesPage() {
         }}
       >
         {null}
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(r) => r.id}

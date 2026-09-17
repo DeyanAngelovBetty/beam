@@ -8,9 +8,9 @@ import {
   Button,
   TextField,
   Alert,
-  BeamDataTable,
+  Table,
   GemIcon,
-  BeamPageHeader,
+  BeamPage,
   BeamTabs,
   BeamBadge,
 } from '@betty/beam';
@@ -163,7 +163,7 @@ export function LoyaltyStatusPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Loyalty Status"
         // Grid-level export/import (list-grammar: whole-collection actions live in the page header,
         // per-row ones in the kebab). Export = the live list; Import = a governed diff → CRs.
@@ -286,7 +286,7 @@ export function LoyaltyStatusPage() {
         </Paper>
       )}
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={LOYALTY_STATUSES}
         getRowId={(r) => String(r.id)}

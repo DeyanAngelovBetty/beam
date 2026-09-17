@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  BeamDataTable,
-  BeamFilterBar,
-  BeamPageHeader,
+  Table,
+  TableFilters,
+  BeamPage,
   BeamStatusBadge,
   Button,
   Dialog,
@@ -169,7 +169,7 @@ export function MetaGamePresetsPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="MetaGame Presets"
         subtitle="Betty GameConfig and legacy Yoda presets used when awarding MetaGame experiences."
         action={
@@ -179,7 +179,7 @@ export function MetaGamePresetsPage() {
         }
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="MetaGame preset filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((current) => ({ ...current, q }))}
@@ -204,9 +204,9 @@ export function MetaGamePresetsPage() {
           <MenuItem value="any">Any</MenuItem>
           {PAYOUT_STATUSES.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(preset) => preset.id}

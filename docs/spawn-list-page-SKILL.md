@@ -26,7 +26,7 @@ seems to conflict with a grammar doc, the doc wins; flag it.
 4. Propose: data shape, file list, nav diff, any organism gap the spec
    exposes (organism changes are NEVER made silently — propose
    structure-only or flag).
-5. On approval, build as pure assembly: BeamDataTable + BeamFilterBar
+5. On approval, build as pure assembly: Table + TableFilters
    per grammar, rowActions as one data definition, URL-resident filter
    state, seed data per spec, states per spec.
 6. Doc: the spec's dated doc-note line lands in the owning domain doc,

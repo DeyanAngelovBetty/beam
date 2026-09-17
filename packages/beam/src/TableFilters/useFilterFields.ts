@@ -1,10 +1,10 @@
 import { useMemo, useState, useCallback } from 'react';
-import type { AddableField, BeamFilterAdvancedConfig } from './BeamFilterBar.types';
+import type { AddableField, BeamFilterAdvancedConfig } from './TableFilters.types';
 
 /**
- * useFilterFields — the add/remove/persist backbone for BeamFilterBar's advanced representation.
+ * useFilterFields — the add/remove/persist backbone for TableFilters's advanced representation.
  *
- * DELIBERATELY parallels `useColumnManager` (BeamDataTable): the same opt-in-capability idiom — the
+ * DELIBERATELY parallels `useColumnManager` (Table): the same opt-in-capability idiom — the
  * organism owns the STRUCTURE state + persistence, seeded from localStorage and merged against the
  * current `addableFields` so a saved panel survives a deploy that adds/removes addable fields. The page
  * owns the VALUES (draft/applied); removal bridges back via `config.onFieldRemoved`. Absent config ⇒

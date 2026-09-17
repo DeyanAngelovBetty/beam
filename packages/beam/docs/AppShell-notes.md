@@ -1,4 +1,4 @@
-# BeamAppShell — organism build-notes
+# AppShell — organism build-notes
 
 Decisions and additive changes to the shell, newest first.
 
@@ -19,7 +19,7 @@ Deliberate rhythm retune, applied through the shared tokens (no magic numbers re
 ## Sticky-chrome contract — `main` yields its top + bottom padding *(2026-09-12)*
 
 `main` is the page's **scroll owner** (`overflow-y: auto`), and it owns the page's vertical rhythm
-(`CONTENT_TOP`/`CONTENT_BOTTOM` as `pt`/`pb`). A grid using `BeamDataTable`'s `stickyChrome` turns its
+(`CONTENT_TOP`/`CONTENT_BOTTOM` as `pt`/`pb`). A grid using `Table`'s `stickyChrome` turns its
 footer into the **page floor** and its header into the **page ceiling**, taking over BOTH edges — so the
 shell gives up both:
 
@@ -35,10 +35,10 @@ main:has([data-beam-sticky-chrome]) { padding-top: 0; padding-bottom: 0 }
   and the footer flush at the bottom. Released-state geometry is unchanged — the spacing changed owners.
 - **The two halves.** FLOOR (bottom): the footer floor carries `CONTENT_BOTTOM` as its `padding-bottom`.
   CEILING (top): the page's **section container** (not the shell) re-adopts `CONTENT_TOP` as `padding-top`
-  via `BeamDataTable`'s exported **`stickyChromeGapSx`** (`:has`-gated on the same attr, which also
+  via `Table`'s exported **`stickyChromeGapSx`** (`:has`-gated on the same attr, which also
   collapses the section gap and donates the pre-grid seam to the bucket ceiling). Same declarative `:has`
   posture; the top spacing lives on the Stack so it *scrolls away*, the bottom on the footer. See
-  **BeamDataTable-notes** → the ceiling/floor.
+  **Table-notes** → the ceiling/floor.
 - **`:has()` posture:** Baseline across engines — no fallback needed. Stated explicitly so a future
   reader doesn't add a redundant JS path; if a grid ever needs this on a non-`:has` engine, that's a new
   decision, not a gap here.

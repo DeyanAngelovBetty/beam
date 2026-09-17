@@ -8,12 +8,12 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { meta } from '../theme/textStyles';
-import { BeamPaper } from '../BeamPaper/BeamPaper';
+import { Section } from '../Section/Section';
 import type { BeamChildListProps } from './BeamChildList.types';
 
 /**
  * BeamChildList — see BeamChildList.types. A view-only summary of child records: identity link
- * (the drill) + vital-sign columns. It COMPOSES BeamPaper (the section surface): `title` inside, the
+ * (the drill) + vital-sign columns. It COMPOSES Section (the section surface): `title` inside, the
  * table FULL-BLEED — it owns no surface of its own. Because its content is view-only (never grows a
  * field), the surface stays borderless even in a page's edit mode — the editability-border ruling.
  */
@@ -31,7 +31,7 @@ export function BeamChildList<Row>({
 }: BeamChildListProps<Row>) {
   const Identity = LinkComponent;
   return (
-    <BeamPaper title={title} bleed>
+    <Section title={title} bleed>
       {rows.length === 0 ? (
         <Box sx={{ px: 2, pb: 2 }}>
           <Typography variant="body2" color="text.secondary">{emptyMessage}</Typography>
@@ -77,6 +77,6 @@ export function BeamChildList<Row>({
           </TableBody>
         </Table>
       )}
-    </BeamPaper>
+    </Section>
   );
 }

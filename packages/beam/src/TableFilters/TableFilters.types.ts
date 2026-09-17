@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * BeamFilterBar — the list-screen filter surface (grammar doc §1).
+ * TableFilters — the list-screen filter surface (grammar doc §1).
  *
  * v1: a built-in search field, per-page promoted filters passed as children
  * (composition — a field-schema API is a later design decision), optional
@@ -33,7 +33,7 @@ export interface AddableField {
 }
 
 /**
- * Advanced-representation config. Presence turns BeamFilterBar into the advanced panel: a [+] add-field
+ * Advanced-representation config. Presence turns TableFilters into the advanced panel: a [+] add-field
  * menu and [x]-removable added fields, whose STRUCTURE (which fields are added) the bar owns and
  * persists. Values stay the page's (draft/applied). Absent = today's default representation, untouched.
  */
@@ -44,7 +44,7 @@ export interface BeamFilterAdvancedConfig {
   onFieldRemoved?: (id: string) => void;
 }
 
-export interface BeamFilterBarProps {
+export interface TableFiltersProps {
   /** Promoted filter fields. App-supplied until a field-schema API is designed. */
   children: ReactNode;
 

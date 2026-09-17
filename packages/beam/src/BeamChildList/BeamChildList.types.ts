@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import type { BeamIdentityLinkProps } from '../BeamDataTable/BeamDataTable.types';
+import type { BeamIdentityLinkProps } from '../Table/Table.types';
 
 /**
  * BeamChildList — the child-list SUMMARY organism (drill-down flows, detail-page-grammar). A
@@ -7,7 +7,7 @@ import type { BeamIdentityLinkProps } from '../BeamDataTable/BeamDataTable.types
  * a few vital-sign columns, rendered as a light table in a card. NO CRUD affordances — children are
  * edited on their own pages (the child-sections ruling); this is the summary + the way in.
  *
- * Deliberately NOT BeamDataTable: no pagination, filters, kebab, or bulk — those machinery would
+ * Deliberately NOT Table: no pagination, filters, kebab, or bulk — those machinery would
  * fight the view-only summary intent. First consumer: the Token Campaign detail's Wall Stages; it
  * recurs across Gaspar / Prize Wall siblings (a scheduled recurrence, hence a real organism now).
  */
@@ -22,8 +22,9 @@ export interface BeamChildColumn<Row> {
 
 export interface BeamChildListProps<Row> {
   'aria-label': string;
-  /** Optional card title (the section name, e.g. "Wall stages"). */
-  title?: string;
+  /** Card title (the section name, e.g. "Wall stages"). REQUIRED — propagates Section's now-required
+   *  `title` (official parity); BeamChildList always renders a titled Section. */
+  title: string;
   rows: Row[];
   getRowId: (row: Row) => string;
 
@@ -32,7 +33,7 @@ export interface BeamChildListProps<Row> {
   getIdentityLabel: (row: Row) => ReactNode;
   /** The child record's canonical route — the drill target. */
   getHref: (row: Row) => string;
-  /** Router adapter for the identity link (same contract as BeamDataTable). Default: a real `<a>`. */
+  /** Router adapter for the identity link (same contract as Table). Default: a real `<a>`. */
   LinkComponent?: ComponentType<BeamIdentityLinkProps>;
 
   /** The vital-sign columns, after the identity column. */

@@ -6,9 +6,9 @@ import {
   Typography,
   TextField,
   MenuItem,
-  BeamPageHeader,
-  BeamFilterBar,
-  BeamDataTable,
+  BeamPage,
+  TableFilters,
+  Table,
   BeamStatusBadge,
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
@@ -172,7 +172,7 @@ export function PayoutConfigsPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Payout Configs"
         subtitle="Payout tables across every MetaGame game type."
         action={
@@ -182,7 +182,7 @@ export function PayoutConfigsPage() {
         }
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Payout config filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -224,9 +224,9 @@ export function PayoutConfigsPage() {
             </MenuItem>
           ))}
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(c) => c.id}

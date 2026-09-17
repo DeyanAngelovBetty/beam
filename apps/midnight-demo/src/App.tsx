@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, AppShell } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import { MIDNIGHT_NAV } from './midnight/navItems';
 import { ShellFooter } from './midnight/ShellFooter';
@@ -14,7 +14,7 @@ import { PlayerPaymentsPage } from './midnight/PlayerPaymentsPage';
  * operator tasks, none of the legacy layout. Midnight's current versions are
  * not well-considered examples, so copying them would bake their decisions
  * into Beam's first organisms — backwards. The organisms these screens use
- * (BeamPageHeader, BeamStat, BeamTabs, BeamFilterBar) are explicit
+ * (BeamPage, BeamStat, BeamTabs, TableFilters) are explicit
  * placeholders awaiting the Figma design pass.
  *
  * Uses Sunlight's token set: Midnight has no product axis of its own, and
@@ -39,7 +39,7 @@ export function App() {
       {/* NO Theme Lab entry here (deliberate, parked): Midnight renders as product 'sunlight',
           so a Lab mounted here would export sunlight-scoped combos from a demo retrofit shell —
           confusing provenance. If Midnight ever graduates to a real product axis, revisit. */}
-      <BeamAppShell
+      <AppShell
         title="MIDNIGHT"
         navItems={nav}
         persistKey="beam.shell.midnight"
@@ -50,7 +50,7 @@ export function App() {
         ) : (
           <PlayerPaymentsPage onBack={() => setScreen('search')} />
         )}
-      </BeamAppShell>
+      </AppShell>
     </ThemeProvider>
   );
 }

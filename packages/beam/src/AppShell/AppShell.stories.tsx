@@ -16,14 +16,14 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
-import { BeamAppShell } from './BeamAppShell';
-import type { BeamNavItem } from './BeamAppShell.types';
+import { AppShell } from './AppShell';
+import type { BeamNavItem } from './AppShell.types';
 import { products } from '../theme/tokens';
 import type { BrandName } from '../theme/tokens';
 import { brandLogos, brandLogoMaskSx } from '../theme/brandLogos';
 
 /**
- * Bench for BeamAppShell v2 — the state matrix for the motion pass
+ * Bench for AppShell v2 — the state matrix for the motion pass
  * (shell-grammar.md). NO motion here: every state is instant. locked · closed
  * (strip only) · peek · narrow drawer, plus a Playground exposing the state and
  * timing knobs. Demo brand = the SUNLIGHT logo (color) + its mono ghost.
@@ -113,7 +113,7 @@ function DemoPage() {
         Loyalty Status
       </Typography>
       <Typography color="text.secondary">
-        The page owns its top edge — no bar above it (grammar §5). BeamPageHeader would be the
+        The page owns its top edge — no bar above it (grammar §5). BeamPage would be the
         first row here. Hover the strip (or the left edge) to peek; the chevron locks it.
       </Typography>
     </Box>
@@ -153,7 +153,7 @@ function ShellBench({
   } as CSSProperties;
   return (
     <div style={motionVars}>
-      <BeamAppShell
+      <AppShell
         brandMark={DEMO_BRAND}
         navItems={navItems}
         persistKey={false}
@@ -161,7 +161,7 @@ function ShellBench({
         {...shellProps}
       >
         <DemoPage />
-      </BeamAppShell>
+      </AppShell>
     </div>
   );
 }
@@ -198,7 +198,7 @@ function AutoHover({ children }: { children: ReactNode }) {
 }
 
 const meta = {
-  title: 'Organisms/BeamAppShell',
+  title: 'Components/AppShell',
   component: ShellBench,
   parameters: { layout: 'fullscreen' },
 } satisfies Meta<typeof ShellBench>;

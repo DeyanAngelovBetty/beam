@@ -24,7 +24,7 @@ for compare-and-scan. Do not bolt list chrome onto it.
   a data grid's internal structure. So the reference matrix carries a bordered
   container + a meta-voice header + a pinned first column — recorded here as the
   species rule, distinct from §1's list/detail dichotomy.
-- **Not BeamDataTable.** The organism can render read-only (omit rail / selection
+- **Not Table.** The organism can render read-only (omit rail / selection
   / pagination / filter / sort by passing columns without `getValue`), but its
   sticky-first-column + scroll affordance is built for the **rail** (a controls
   column), and cannot pin an arbitrary *data* column. The matrix needs the
@@ -32,11 +32,11 @@ for compare-and-scan. Do not bolt list chrome onto it.
   "else" branch).
 - **Pinned Status + scroll affordance:** the first column is `position: sticky`;
   the scroll-affordance elevation (truth-conditional inset divider + rightward
-  shadow) is **reused from BeamDataTable's rail** — the CSS enhancement
+  shadow) is **reused from Table's rail** — the CSS enhancement
   (scroll-state container query) transferred cheaply as `sx`; the JS base
   (a `data-perks-scrolled` listener, feature-gated) is a small copy. *Flag: the
   mechanism isn't extracted/shared — a future refactor could lift it out of
-  BeamDataTable into a reusable sticky-scroll helper.*
+  Table into a reusable sticky-scroll helper.*
 - **Cell semantics:** granted = success tick, denied = error cross, for now —
   `// perk-cell semantics: pending design pass`. The **red-✗ question** (should
   "not included" read as an error/red, or something calmer?) is Deyan's design

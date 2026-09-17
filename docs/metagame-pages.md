@@ -71,7 +71,7 @@ follows. Confirmation dialogs ship **plain** (`window.confirm`); real copy is
 brief §10.1.
 - **No Delete** anywhere (brief §10). **No batch actions** — the brief specifies
   no bulk workflows, so this page renders none. The persistent batch strip
-  remains a BeamDataTable capability + list-grammar doctrine for pages that earn
+  remains a Table capability + list-grammar doctrine for pages that earn
   it (list-grammar §4, §6); Payout Configs isn't one.
 
 ## PayoutRowsGrid (expansion content)

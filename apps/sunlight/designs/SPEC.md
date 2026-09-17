@@ -65,7 +65,7 @@ Intent deltas the grammar and the frames don't fully carry. Governs `TokenCampai
   leaves (discards) the campaign draft per the no-confirm cancel semantics — the sanctioned drill,
   distinct from View-Winners (a blocked peek).
 - **Page-local composition (both modes).** `BeamChildList` has only a `title` (no header-action slot), so
-  the section is composed page-locally (BeamPaper + a light table) to host the button; every row is a real
+  the section is composed page-locally (Section + a light table) to host the button; every row is a real
   drill link. **PROMOTION CANDIDATE (logged, not built):** a `BeamChildList` `headerAction` slot would
   reclaim this section for the organism — this page its motivating consumer.
 - **Stage rows show full ET datetime** for Start / Final Open (was date-only) — faithful-port to the Edit

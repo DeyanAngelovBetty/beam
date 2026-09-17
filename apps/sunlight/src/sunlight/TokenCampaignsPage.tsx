@@ -6,9 +6,9 @@ import {
   Button,
   MenuItem,
   TextField,
-  BeamPageHeader,
-  BeamFilterBar,
-  BeamDataTable,
+  BeamPage,
+  TableFilters,
+  Table,
   BeamBadge,
   BeamBool,
 } from '@betty/beam';
@@ -145,7 +145,7 @@ export function TokenCampaignsPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Token Campaigns"
         subtitle="Prize Wall token campaigns and their stages."
         action={
@@ -159,7 +159,7 @@ export function TokenCampaignsPage() {
         }
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Token campaign filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -179,7 +179,7 @@ export function TokenCampaignsPage() {
           <MenuItem value="yes">Enabled</MenuItem>
           <MenuItem value="no">Disabled</MenuItem>
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
       {notice && (
         <Alert severity={notice.severity} onClose={() => setNotice(null)}>
@@ -187,7 +187,7 @@ export function TokenCampaignsPage() {
         </Alert>
       )}
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(c) => c.id}

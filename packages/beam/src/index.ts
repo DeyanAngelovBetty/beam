@@ -69,7 +69,7 @@ export {
   Pagination,
   Paper,
   // Layout / navigation — the app-shell vocabulary. Here because SunlightShell
-  // needs them; they move behind BeamAppShell if that gets promoted (BEAM.md §2).
+  // needs them; they move behind AppShell if that gets promoted (BEAM.md §2).
   AppBar,
   Toolbar,
   Drawer,
@@ -84,9 +84,10 @@ export {
   CssBaseline,
   useMediaQuery,
   // Table primitives — for app-local tabular composition (e.g. Sunlight's
-  // PayoutRowsGrid). BeamDataTable uses these internally; these exports serve
+  // PayoutRowsGrid). The `Table` organism owns the bare `Table` name (official
+  // parity), so the raw MUI element is re-exported as `MuiTable`; these serve
   // hand-built tables that aren't the datagrid organism.
-  Table,
+  Table as MuiTable,
   TableHead,
   TableBody,
   TableRow,
@@ -99,23 +100,23 @@ export { ThemeProvider, useColorScheme, useTheme, alpha } from '@mui/material/st
 export type { Theme } from '@mui/material/styles';
 
 // ---- Organisms (Beam-owned) ----
-export { BeamAppShell } from './BeamAppShell/BeamAppShell';
-export type { BeamAppShellProps, BeamNavItem, BeamBrandMark } from './BeamAppShell/BeamAppShell.types';
+export { AppShell } from './AppShell/AppShell';
+export type { AppShellProps, BeamNavItem, BeamBrandMark } from './AppShell/AppShell.types';
 export { BeamBadge } from './BeamBadge/BeamBadge';
 export type { BeamBadgeProps, BeamBadgeHue } from './BeamBadge/BeamBadge.types';
 export { BeamStatusBadge } from './BeamStatusBadge/BeamStatusBadge';
 export type { BeamStatusBadgeProps, BeamStatus } from './BeamStatusBadge/BeamStatusBadge.types';
-export { BeamDataTable, stickyChromeGapSx, stickyChromeExitSx } from './BeamDataTable/BeamDataTable';
+export { Table, stickyChromeGapSx, stickyChromeExitSx } from './Table/Table';
 export { PAGE_SECTION_GAP } from './theme/tokens';
 export { BeamChildList } from './BeamChildList/BeamChildList';
 export type { BeamChildListProps, BeamChildColumn } from './BeamChildList/BeamChildList.types';
-export { BeamPaper } from './BeamPaper/BeamPaper';
-export type { BeamPaperProps } from './BeamPaper/BeamPaper.types';
-export { BeamRowMenu } from './BeamRowMenu/BeamRowMenu';
-export type { BeamRowMenuProps, BeamRowAction } from './BeamRowMenu/BeamRowMenu.types';
+export { Section } from './Section/Section';
+export type { SectionProps } from './Section/Section.types';
+export { ActionMenu } from './ActionMenu/ActionMenu';
+export type { ActionMenuProps, BeamRowAction } from './ActionMenu/ActionMenu.types';
 export { GemIcon } from './GemIcon/GemIcon';
 export type { GemIconProps, GemName } from './GemIcon/GemIcon.types';
-export type { BeamDataTableProps, BeamColumn, BeamIdentityLinkProps } from './BeamDataTable/BeamDataTable.types';
+export type { TableProps, BeamColumn, BeamIdentityLinkProps } from './Table/Table.types';
 export { BeamStat, BeamBool } from './BeamStat/BeamStat';
 export type { BeamStatProps, BeamStatSeverity } from './BeamStat/BeamStat.types';
 export { BeamSwitchField } from './BeamSwitchField/BeamSwitchField';
@@ -130,11 +131,11 @@ export { FIELD_GEOMETRY, fieldGeometrySx, editabilityBorderSx } from './theme/to
 // Shape-only, pending the Figma design pass. Screens can be built against a
 // stable name and API now; the eventual design lands in one place instead of
 // a dozen inline copies. Expect these to change — that is the point.
-export { BeamPageHeader } from './BeamPageHeader/BeamPageHeader';
-export type { BeamPageHeaderProps, BeamBackLink } from './BeamPageHeader/BeamPageHeader.types';
+export { BeamPage } from './Page/Page';
+export type { BeamPageProps, BeamBackLink } from './Page/Page.types';
 export { BeamTabs } from './BeamTabs/BeamTabs';
 export type { BeamTabsProps, BeamTabItem } from './BeamTabs/BeamTabs.types';
-export { BeamFilterBar } from './BeamFilterBar/BeamFilterBar';
-export type { BeamFilterBarProps, BeamFilterPreset, AddableField, BeamFilterAdvancedConfig } from './BeamFilterBar/BeamFilterBar.types';
+export { TableFilters } from './TableFilters/TableFilters';
+export type { TableFiltersProps, BeamFilterPreset, AddableField, BeamFilterAdvancedConfig } from './TableFilters/TableFilters.types';
 export { BeamEmptyState } from './BeamEmptyState/BeamEmptyState';
 export type { BeamEmptyStateProps } from './BeamEmptyState/BeamEmptyState.types';

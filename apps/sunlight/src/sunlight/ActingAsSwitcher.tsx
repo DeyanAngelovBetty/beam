@@ -14,7 +14,7 @@ import { DEMO_USERS, setCurrentUser, useCurrentUser } from './currentUser';
  * selection state announce correctly).
  *
  * DEMO SCAFFOLDING, not architecture (approval-flow §6): the real target is the authenticated user +
- * an approve-type permission. Sunlight-local — nothing here is promoted into BeamAppShell.
+ * an approve-type permission. Sunlight-local — nothing here is promoted into AppShell.
  */
 
 /** "Maja Novak" → "MN" — the avatar initials. */

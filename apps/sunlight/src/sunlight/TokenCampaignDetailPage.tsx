@@ -8,19 +8,19 @@ import {
   Button,
   IconButton,
   Snackbar,
-  Table,
+  MuiTable as Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
-  BeamPageHeader,
+  BeamPage,
   BeamEmptyState,
   DetailsPanel,
   BeamStat,
   BeamBool,
   BeamField,
   BeamSwitchField,
-  BeamPaper,
+  Section,
   fieldGeometrySx,
   meta,
 } from '@betty/beam';
@@ -180,7 +180,7 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
   if (!campaign && !create) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title={`Campaign ${id}`} back={backTo(navigate, BASE, 'Token Campaigns')} />
+        <BeamPage title={`Campaign ${id}`} back={backTo(navigate, BASE, 'Token Campaigns')} />
         <BeamEmptyState title={`No campaign with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -194,7 +194,7 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
   return (
     // Page-body section gap = spacing(3) = 24px on BOTH axes (the band uses 3 too — see below).
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         // Create has no entity yet → a create title, no date subtitle. (The Add frame's "cveti
         // campaign" + dates are Edit-frame residue — deliberately NOT copied.)
         title={create ? 'Create Token Campaign' : cc.name}
@@ -258,12 +258,12 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
         )}
       </DetailsPanel>
 
-      {/* Section band — three BeamPaper surfaces side by side, gap spacing(3)=24px (both axes ruling).
+      {/* Section band — three Section surfaces side by side, gap spacing(3)=24px (both axes ruling).
           Promotional Images is the wide middle column (frame proportions). */}
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ alignItems: 'stretch' }}>
         {/* Compliance T&C — padded surface; text ⇄ textarea twin. */}
         <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0 }}>
-          <BeamPaper title="Compliance - Terms &amp; Conditions">
+          <Section isEdit="auto" title="Compliance - Terms &amp; Conditions">
             {isEdit && d ? (
               <BeamField label="Terms &amp; conditions" value={d.tAndC} onChange={(e) => patch({ tAndC: e.target.value })} multiline minRows={10} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
             ) : (
@@ -273,12 +273,12 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
                 </Typography>
               </Box>
             )}
-          </BeamPaper>
+          </Section>
         </Box>
 
         {/* Promotional Images — full-bleed table: NAME · DESKTOP · MOBILE (thumbnail + Copy URL ⇄ URL field). */}
         <Box sx={{ flex: { md: '3 1 0' }, minWidth: 0 }}>
-          <BeamPaper title="Promotional Images" bleed>
+          <Section isEdit="auto" title="Promotional Images" bleed>
             {(isEdit && d ? d.promotionalImages : cc.promotionalImages).length === 0 ? (
               <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No images.</Typography></Box>
             ) : (
@@ -305,12 +305,12 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
                 </TableBody>
               </Table>
             )}
-          </BeamPaper>
+          </Section>
         </Box>
 
         {/* Sounds — full-bleed table: NAME · URL (play affordance + Copy URL ⇄ URL field). */}
         <Box sx={{ flex: { md: '1.4 1 0' }, minWidth: 0 }}>
-          <BeamPaper title="Sounds" bleed>
+          <Section isEdit="auto" title="Sounds" bleed>
             {(isEdit && d ? d.sounds : cc.sounds).length === 0 ? (
               <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No sounds.</Typography></Box>
             ) : (
@@ -343,7 +343,7 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
                 </TableBody>
               </Table>
             )}
-          </BeamPaper>
+          </Section>
         </Box>
       </Stack>
 
@@ -357,13 +357,13 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
           BeamChildList has no header-action slot to host the button, so this is composed page-locally;
           reclaimed when the organism gains that slot — the logged promotion candidate. */}
       {create ? (
-        <BeamPaper title="Wall Stages">
+        <Section isEdit="auto" title="Wall Stages">
           <Typography variant="body2" color="text.secondary">
             You must create your token campaign first in order to unlock wall configurations.
           </Typography>
-        </BeamPaper>
+        </Section>
       ) : (
-        <BeamPaper title="Wall Stages" bleed>
+        <Section isEdit="auto" title="Wall Stages" bleed>
           <Box sx={{ px: 2, pb: 0.5 }}>
             <Button variant="text" size="small" startIcon={<AddIcon />} onClick={() => navigate(`${BASE}/${cc.id}/stages/new`)}>
               Add wall stage
@@ -401,7 +401,7 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
               </TableBody>
             </Table>
           )}
-        </BeamPaper>
+        </Section>
       )}
 
       <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)} message="URL copied to clipboard" />

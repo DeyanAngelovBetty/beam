@@ -10,7 +10,7 @@ const ALL: GemName[] = [
 ];
 
 const meta: Meta<typeof GemIcon> = {
-  title: 'Organisms/GemIcon',
+  title: 'Components/GemIcon',
   component: GemIcon,
   parameters: { layout: 'padded' },
   argTypes: { gem: { control: 'select', options: ALL } },

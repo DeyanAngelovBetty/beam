@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, BeamAppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, AppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
 import { GASPAR_NAV, VIEW_PATH, allowedViews, landingView, pruneNav, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
@@ -113,7 +113,7 @@ function GasparApp() {
   return (
     <ThemeProvider theme={theme} defaultMode="dark" noSsr>
       <CssBaseline />
-      <BeamAppShell
+      <AppShell
         brandMark={brandMark}
         navItems={navItems}
         persistKey="beam.shell.gaspar"
@@ -148,7 +148,7 @@ function GasparApp() {
           {/* Unknown hash → the milestone's landing view. */}
           <Route path="*" element={<Navigate to={toLanding} replace />} />
         </Routes>
-      </BeamAppShell>
+      </AppShell>
       {/* Non-modal — the live app above IS the preview; it stays interactable. */}
       <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} />
     </ThemeProvider>

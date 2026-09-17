@@ -10,7 +10,7 @@
 
 One Beam organism, two representations, chosen per page at composition time:
 
-- Default representation: exactly today's BeamFilterBar behavior. Untouched.
+- Default representation: exactly today's TableFilters behavior. Untouched.
 - Advanced representation: same panel, same familiar position, plus:
   - a **[+] add-field** button after the last field (per Figma),
   - **removable fields** — added fields render wrapped with an **[x]** remove affordance to the field's right (per Figma); default fields have no [x],
@@ -20,7 +20,7 @@ No tabs, no mode switch, no visual chrome distinguishing the two beyond [+] and 
 
 ## Component (as built)
 
-**Extended `BeamFilterBar` in place** (kept the name — the concept name "FiltersPanel" is a future quiet-day rename if ever; a rename now would churn ~8 Sunlight consumers). New optional prop:
+**Extended `TableFilters` in place** (kept the name — the concept name "FiltersPanel" is a future quiet-day rename if ever; a rename now would churn ~8 Sunlight consumers). New optional prop:
 
 - `advanced?: { addableFields: AddableField[]; storageKey: string; onFieldRemoved?: (id) => void }` — presence enables the advanced representation.
 - `AddableField = { id, label, control, disabled?, disabledReason? }` — `control` is the field's rendered input (composition, same as today's children mechanism); `disabled` marks a menu entry that can't be added yet.
@@ -70,12 +70,12 @@ PAYMENTS grown to ~40 rows. NO new enum values: statuses Succeeded/Pending/Faile
 
 ## Build notes — how this was implemented (2026-09-09)
 
-- **Component:** `BeamFilterBar` extended in place with the optional `advanced` config (no rename, no alias). Absent ⇒ today's default bar, byte-identical (verified: no Sunlight consumer passes `advanced`, and none uses the added-fields/[+] paths).
-- **State backbone:** `packages/beam/src/BeamFilterBar/useFilterFields.ts` — **deliberately parallels `useColumnManager`** (BeamDataTable): the same opt-in-capability idiom. The organism owns the STRUCTURE (`addedFieldIds`) + persistence (localStorage, merge-on-load dropping unknown/disabled ids); the page owns the VALUES (draft/applied). Removal bridges back via `advanced.onFieldRemoved(id)` so the page clears the field's draft value(s).
+- **Component:** `TableFilters` extended in place with the optional `advanced` config (no rename, no alias). Absent ⇒ today's default bar, byte-identical (verified: no Sunlight consumer passes `advanced`, and none uses the added-fields/[+] paths).
+- **State backbone:** `packages/beam/src/TableFilters/useFilterFields.ts` — **deliberately parallels `useColumnManager`** (Table): the same opt-in-capability idiom. The organism owns the STRUCTURE (`addedFieldIds`) + persistence (localStorage, merge-on-load dropping unknown/disabled ids); the page owns the VALUES (draft/applied). Removal bridges back via `advanced.onFieldRemoved(id)` so the page clears the field's draft value(s).
 - **CLEAR ALL keeps structure:** the page's `clearAll` zeroes values only; the bar never resets `addedFieldIds`.
 - **[+] menu:** MUI `Menu`; lists not-yet-added fields; disabled "awaiting data" entries render disabled with their reason (the third rendered ledger). Each added field carries a keyboard-reachable `[x]`.
 - **Design source:** `apps/gaspar/designs/AdvancedFiltersPanel.png` (node 12900-785) — visual-authoritative. (The connector pull needed a fileKey the node id alone didn't provide — Gaspar has no registered Figma file — so the frame was added manually.)
-- **Story:** `BeamFilterBar.stories.tsx` → `Advanced`.
+- **Story:** `TableFilters.stories.tsx` → `Advanced`.
 
 ### Parked adjacencies (out of scope, by design — recorded so they aren't re-litigated)
 

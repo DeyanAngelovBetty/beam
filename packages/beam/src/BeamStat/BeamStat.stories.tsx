@@ -16,7 +16,7 @@ import { BeamField } from '../BeamField/BeamField';
  * (WarningAmber outlined → Error filled), boolean (CheckCircle filled / Cancel outlined). No tone.
  */
 const meta = {
-  title: 'Organisms/BeamStat',
+  title: 'Components/BeamStat',
   component: BeamStat,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof BeamStat>;

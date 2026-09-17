@@ -14,10 +14,10 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
-import type { BeamFilterBarProps } from './BeamFilterBar.types';
+import type { TableFiltersProps } from './TableFilters.types';
 import { useFilterFields } from './useFilterFields';
 
-export function BeamFilterBar({
+export function TableFilters({
   children,
   searchValue = '',
   onSearchChange,
@@ -30,7 +30,7 @@ export function BeamFilterBar({
   applied = false,
   advanced,
   'aria-label': ariaLabel,
-}: BeamFilterBarProps) {
+}: TableFiltersProps) {
   // Advanced representation (add/remove/persist fields). Inert when `advanced` is absent — the render
   // below is then byte-identical to the default bar.
   const fields = useFilterFields(advanced);

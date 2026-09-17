@@ -9,7 +9,7 @@ import { BeamBool } from '../BeamStat/BeamStat';
  * identity link is the only interaction. First consumer: the Token Campaign detail's Wall Stages.
  */
 const meta: Meta<typeof BeamChildList> = {
-  title: 'Organisms/BeamChildList',
+  title: 'Components/BeamChildList',
   component: BeamChildList,
   parameters: { layout: 'padded' },
 };

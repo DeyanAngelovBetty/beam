@@ -38,16 +38,16 @@ often off the 8px grid.)*
 
 | Constant | Value | Where | Verdict |
 |---|---|---|---|
-| `DEFAULT_CONTENT_GUTTER` | `{2,4,7}` = 16/32/56 | BeamAppShell | **citizen** (units) — but md=56 collides with STRIP_HEIGHT |
-| `CONTENT_VERTICAL` | `{2,10}` = 16/80 | BeamAppShell | **citizen** (units) |
+| `DEFAULT_CONTENT_GUTTER` | `{2,4,7}` = 16/32/56 | AppShell | **citizen** (units) — but md=56 collides with STRIP_HEIGHT |
+| `CONTENT_VERTICAL` | `{2,10}` = 16/80 | AppShell | **citizen** (units) |
 | `shape.borderRadius` / soft radius | 8 / 24 | theme | **citizen** (shape token) |
-| `DRAWER_WIDTH` | 264px | BeamAppShell | **squatter** (literal; = 33u, hardcoded) |
-| `STRIP_HEIGHT` | 56px | BeamAppShell | **squatter** (= `spacing(7)`; duplicates the gutter md step) |
-| `RAIL_DIVIDER_INSET` | 6px | BeamDataTable | **squatter** (off-scale, 0.75u) |
+| `DRAWER_WIDTH` | 264px | AppShell | **squatter** (literal; = 33u, hardcoded) |
+| `STRIP_HEIGHT` | 56px | AppShell | **squatter** (= `spacing(7)`; duplicates the gutter md step) |
+| `RAIL_DIVIDER_INSET` | 6px | Table | **squatter** (off-scale, 0.75u) |
 | spine width | `2px` | BeamStat | **squatter** (off-scale) |
-| batch-strip / tab `minHeight` | 40px | BeamDataTable, BeamTabs | **squatter ×2** (a control-row height, repeated literal) |
+| batch-strip / tab `minHeight` | 40px | Table, BeamTabs | **squatter ×2** (a control-row height, repeated literal) |
 | empty-state `py` | 48 (datagrid) · 80 (BeamEmptyState) | | **squatters + drift** (same intent, two values) |
-| search-field width | 280px | BeamDataTable toolbar | **squatter** |
+| search-field width | 280px | Table toolbar | **squatter** |
 | field / select widths | 110/120/130/150/240/260/360/480px | ConditionBuilder, editors, PayoutConfig select | **squatters** (no field-width step) |
 | `BeamStat` minWidth | 140px | BeamStat | **squatter** |
 
@@ -83,7 +83,7 @@ re-render, CSS variables respond):
   - `--beam-density-section-gap` (today's `spacing(3)` = 24)
   - `--beam-density-control-h` (input/button height)
   - *(control widths, radii: probably stay fixed — open)*
-- **Datagrid as the first opt-in:** `BeamDataTable` binds row height + cell
+- **Datagrid as the first opt-in:** `Table` binds row height + cell
   padding to the density vars; everything else stays comfortable until it opts
   in — the same "earn your existence" discipline as the theming axes.
 - **Switch:** a density control in each app's `ShellFooter`, beside the mode

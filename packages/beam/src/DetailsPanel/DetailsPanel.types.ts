@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
  *
  * NO title, NO heading slot: its POSITION is the convention (one title per page — the page title is
  * the title). It does NOT own mode (the page owns view/edit) and has NO buttons (Edit/Save/Cancel
- * stay in `BeamPageHeader`). It renders what it's given.
+ * stay in `BeamPage`). It renders what it's given.
  *
  * Figma: Beam MUI v9 → node 12743:68281. Deyan's ratified panel: elevated Paper — BORDERED WHEN IT
  * CONTAINS FIELDS (borderless in view, quiet divider frame in edit; detected structurally, colour-

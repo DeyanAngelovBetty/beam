@@ -8,7 +8,7 @@ cumulative requirements doc `gaspar-transactions-requirements-v1.md`.
 A demo control (`ShellFooter` → "Viewing as", precedent: Sunlight's Acting-as switcher) that
 shapeshifts the Transactions page to a release phase — v1.0 → v1.1 → v1.2 → Beyond. **Gating is
 existence, not disablement:** each capability maps to *not passing* an already-opt-in prop on
-`BeamDataTable` / `BeamFilterBar`. The switcher shows what a version IS, not what it's missing. Zero
+`Table` / `TableFilters`. The switcher shows what a version IS, not what it's missing. Zero
 organism changes.
 
 The switcher itself (`MilestoneSwitcher.tsx`) is the always-visible **radio list** styled like
@@ -83,7 +83,7 @@ Two composition rules the table doesn't show on its own:
   + `jumpToPage`. v1.0/v1.1 keep the light default. Mock grew to **~1,200 rows** (same generator, same
   enums, no new vocabulary; `stageForDemo` still leads page one).
 - **Performance — measured, not assumed.**
-  - *Instrument:* `BeamDataTable` logs `rows × cols → ms (render→commit)` to the console behind a
+  - *Instrument:* `Table` logs `rows × cols → ms (render→commit)` to the console behind a
     **`perf=1` URL token** (works on **dev and prod** — the token can ride the hash, e.g.
     `#/transactions?milestone=v1_2&perf=1`; off by default). Open at 500/page and read the number.
   - *First-principles estimate:* 500 rows × 14 cols ≈ 7k cells + ~1.5k copy-button / badge / accent
@@ -93,7 +93,7 @@ Two composition rules the table doesn't show on its own:
     slow, STOP** — virtualization is a separate project (collides with rail / expandable / pinned panel),
     not this pass.
 
-    > PROD measurement (Chrome, 500/page): _pending — paste `[BeamDataTable perf]` console line here._
+    > PROD measurement (Chrome, 500/page): _pending — paste `[Table perf]` console line here._
 
 ## Ledger — pagination contract questions (record, don't build)
 

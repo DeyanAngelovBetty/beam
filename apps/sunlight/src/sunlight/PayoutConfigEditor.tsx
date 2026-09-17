@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  BeamPageHeader,
+  BeamPage,
   BeamStatusBadge,
   BeamStat,
   BeamField,
@@ -70,7 +70,7 @@ export function PayoutConfigEditor() {
   if (id && !existing) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title={`Config ${id}`} back={backTo(navigate, '/payout-configs', 'Payout Configs')} />
+        <BeamPage title={`Config ${id}`} back={backTo(navigate, '/payout-configs', 'Payout Configs')} />
         <BeamEmptyState title={`No payout config with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -93,7 +93,7 @@ function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={config.name}
         back={backTo(navigate, '/payout-configs', 'Payout Configs')}
         subtitle={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
@@ -213,7 +213,7 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={existing ? existing.name : 'Create Payout Config'}
         back={backTo(navigate, '/payout-configs', 'Payout Configs')}
         // Subtitle: the status badge in edit (identity), or the "created as Disabled" note in create.

@@ -46,7 +46,7 @@ state. Dirty state belongs to the CTA and the page-header actions (§4).
   slot changes. Reserve the space, signal with what fills it.
 
 - ✅ This blesses shipped reality: the datagrid stays bordered.
-- ⚠️ **Code amendment queued (in flight):** `BeamFilterBar` border becomes
+- ⚠️ **Code amendment queued (in flight):** `TableFilters` border becomes
   constant (it is an interactive surface); applied-state = filled Filter CTA only.
 - 📌 **Queued refinement — border, second derived variant.** Row separators
   inside boxes want to read *quieter* than the container/header border, so the
@@ -129,7 +129,7 @@ rides ThemeLab and lands the text column on the datagrid cell-text scan line), 2
 top-aligned, rows sized by their tallest member, booleans inline as peers.
 
 - **It needs no title — the position IS the convention.** *One title per page:* the page title (in
-  `BeamPageHeader`) is the title; the details panel never adds a heading. (This retires the
+  `BeamPage`) is the title; the details panel never adds a heading. (This retires the
   "Status fields" / "Request details" sub-headings that led earlier panels.)
 - **Container: elevated Paper, MODE-SCOPED border** *(ratified 2026-08-27; supersedes the same-day
   "no border" ruling below — the trail keeps both; fast supersession after a visual pass is the
@@ -162,9 +162,9 @@ top-aligned, rows sized by their tallest member, booleans inline as peers.
   ruled**. *(Resolved 2026-09-04 — see the section-surface amendment below: sections DO keep their
   titles, rendered INSIDE the section surface.)*
 
-*Amended 2026-09-04 — **`BeamPaper`, the section surface** (Token Campaign detail; frames in
+*Amended 2026-09-04 — **`Section`, the section surface** (Token Campaign detail; frames in
 `apps/sunlight/designs/`).* Below the details panel, every content section renders on ONE sanctioned
-surface, **`BeamPaper`** — an elevated Paper carrying:
+surface, **`Section`** — an elevated Paper carrying:
 - **Title INSIDE the surface.** A section heading lives at the top of its own surface, **never
   free-floating above it**. (This resolves the open question above.)
 - **Content modes: padded (default) or full-bleed.** Prose/stats get a padded body; **grids, tables,
@@ -177,8 +177,8 @@ surface, **`BeamPaper`** — an elevated Paper carrying:
   grows a field, so it stays borderless even in the page's edit mode** — a child-list summary
   (`BeamChildList`) is bordered-in-edit *by nature only if it were editable*, which it isn't. The
   border marks EDITABILITY, not the page's mode.
-- **`BeamChildList` composes `BeamPaper`** (title inside, table full-bleed) — it owns no surface of
-  its own. The child-list summary organism (drill-down section) is a `BeamPaper` consumer.
+- **`BeamChildList` composes `Section`** (title inside, table full-bleed) — it owns no surface of
+  its own. The child-list summary organism (drill-down section) is a `Section` consumer.
 
 *Body-level geometry rulings 2026-09-04 (Token Campaign detail; sized against the Edit frame — see
 `designs/SPEC.md`).*
@@ -211,7 +211,7 @@ Loyalty Levels A/B-test config).* Everything above describes view↔edit, but th
 **MODE** grammar, not an edit one. A **feature mode** — a page entering a distinct configuration
 state that is not "editing this record" — reuses the SAME mechanics:
 
-- **Header action swap, constant geometry.** The `BeamPageHeader` actions node swaps for the mode
+- **Header action swap, constant geometry.** The `BeamPage` actions node swaps for the mode
   ([A/B Test] [Export] [Import] → [Cancel] [Submit for A/B Test]); the header's fixed rows mean no
   layout jump. Only the actions node changes — the mode-swap promise the edit case already makes.
 - **A `DetailsPanel` in edit mode carries the mode's fields**, mode border and all — here the
@@ -269,8 +269,8 @@ drill-down PAGES**. The rulings:
   drill into the stage. This scopes edit mode to ONE entity at a time (the field-twins §2 morph stays
   about THIS record's fields).
 
-*Breadcrumbs — pending a BeamPageHeader design decision.* The drill levels want the **full path at
-every level** (List / Campaign / Stage). Today each level uses `BeamPageHeader`'s single `back` link
+*Breadcrumbs — pending a BeamPage design decision.* The drill levels want the **full path at
+every level** (List / Campaign / Stage). Today each level uses `BeamPage`'s single `back` link
 one level up — a correct back CHAIN, not a rendered full trail. The full trail is **not scoped as an
 organism**: it lives inside the header's **constant-geometry contract** (§1 — breadcrumb-row
 placement, truncation at depth), so its design comes from **Figma first**.
@@ -291,7 +291,7 @@ detail's Wall Stages).* A parent's detail page summarises each **drillable child
 organism: a light, **view-only** table in a card whose columns are **an identity-link column (the
 drill affordance) + a few vital signs** — nothing more. **No add/remove/edit affordances** (the
 child-sections ruling — children are edited on their own pages). It is deliberately **not**
-`BeamDataTable` (no pagination/filters/kebab/bulk — that machinery fights a summary). Built as a real
+`Table` (no pagination/filters/kebab/bulk — that machinery fights a summary). Built as a real
 Beam organism on its first consumer because its recurrence is **scheduled, not speculative** (Gaspar,
 Prize Wall siblings). Columns pattern for Wall Stages: `Stage` (identity → stage page) · `Enabled`
 (boolean doctrine) · `Additional Windows` (count) · `Start` · `Final Open`.
@@ -362,7 +362,7 @@ page-header (fixed rows, constant geometry)
   detail does), **collapse what is stable per-page identity** (the subtitle). The payoff: the title
   sits at the **same Y on every page**, so list↔detail navigation never jumps. Actions **pin to the
   title line** (not centred against the whole text column); the subtitle flows full-width beneath.
-- **One sub-title slot** *(2026-08-27).* `BeamPageHeader` has a single `subtitle?: ReactNode` (text,
+- **One sub-title slot** *(2026-08-27).* `BeamPage` has a single `subtitle?: ReactNode` (text,
   a Chip, or a composed row in the description voice). It **replaces** `status` + `description`, which
   are deprecated and removed once call sites migrate. The old `summary` strip (outlined Paper) is
   removed — it violated the details-panel container ruling (§2); record stats move to a `DetailsPanel`
@@ -386,7 +386,7 @@ page-header (fixed rows, constant geometry)
   chip on single-entity diffs (it earns its place only in a multi-entity diff,
   where it differentiates).
 - **Altitude determines alignment** *(2026-07-31):* the right edge belongs to
-  the page. Page-level actions live in the `BeamPageHeader` actions slot, and
+  the page. Page-level actions live in the `BeamPage` actions slot, and
   **nothing below page altitude aligns right.** Section/organism-level actions
   (the batch strip, Add Row, Add Rule) render as a **LEFT-aligned strip directly
   above the organism** they operate on — proximity-above declares ownership, and
@@ -395,7 +395,7 @@ page-header (fixed rows, constant geometry)
   controls (collapse carets) are not actions and keep their anatomy.
   *(Cross-ref: list-grammar §3.)*
 - **The back link is header anatomy** *(2026-07-30):* the breadcrumb row is
-  owned by `BeamPageHeader` (the `back` prop: `{ label, href?, onClick? }`),
+  owned by `BeamPage` (the `back` prop: `{ label, href?, onClick? }`),
   never hand-rolled above the header. `href` gives real-anchor semantics,
   `onClick` intercepts a plain left-click for SPA nav; a callback with no `href`
   (screen-state back) renders an accessible button.
@@ -410,7 +410,7 @@ page-header (fixed rows, constant geometry)
   Cancel → the list. (Route-split editors like the User page keep their `/edit`
   route's own cancel — recorded divergence, approval-flow §6.)
 - **Header actions are sized by the organism, never the page** *(2026-08-13):*
-  `BeamPageHeader` pins one size for its actions slot (`HEADER_ACTION_SIZE`, currently
+  `BeamPage` pins one size for its actions slot (`HEADER_ACTION_SIZE`, currently
   **medium** — the size the estate mostly wore); call sites pass **no** `size`. Per-page
   size props were the drift (Loyalty's list Export/Import, Rule Builder's header) — the
   organism owns it now, the showExpandedActions lesson applied to size.

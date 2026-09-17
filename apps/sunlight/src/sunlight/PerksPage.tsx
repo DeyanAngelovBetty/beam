@@ -3,12 +3,12 @@ import {
   Stack,
   Paper,
   Typography,
-  Table,
+  MuiTable as Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
-  BeamPageHeader,
+  BeamPage,
   Box,
   GemIcon,
   BeamBool,
@@ -100,7 +100,7 @@ const PERKS_MATRIX: PerkRow[] = TIERS.map((status, i) => ({
   }),
 }));
 
-// Scroll-affordance elevation, reused from BeamDataTable's pinned rail: a
+// Scroll-affordance elevation, reused from Table's pinned rail: a
 // rightward shadow + inset divider appear only while content scrolls under the
 // pinned Status column. Chrome uses the scroll-state container query; other
 // engines the data-attribute the listener below toggles.
@@ -172,7 +172,7 @@ export function PerksPage() {
   return (
     <Stack spacing={3}>
       {/* Read-only page — the actions slot is empty (grammar §4). */}
-      <BeamPageHeader title="Perks" subtitle="What each loyalty status unlocks." />
+      <BeamPage title="Perks" subtitle="What each loyalty status unlocks." />
 
       {/* Reference matrix: a compare-and-scan grid. Non-interactive, so §1.1
           would say borderless — but a matrix earns internal rules for legibility

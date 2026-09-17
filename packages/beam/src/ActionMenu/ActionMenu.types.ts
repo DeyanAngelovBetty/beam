@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 /**
  * BeamRowAction — a row's action, defined ONCE per datagrid as data
- * (BeamDataTable `rowActions`). Every surface that manifests it — the rail
+ * (Table `rowActions`). Every surface that manifests it — the rail
  * kebab, the expanded-row action bar, any future surface — projects this one
  * definition, so surfaces cannot drift (list-grammar §3).
  *
@@ -31,7 +31,7 @@ interface BeamRowActionBase {
 }
 
 /**
- * BeamRowAction — a row's action, defined ONCE per datagrid as data (BeamDataTable `rowActions`). Every
+ * BeamRowAction — a row's action, defined ONCE per datagrid as data (Table `rowActions`). Every
  * surface projects this one definition, so surfaces cannot drift (list-grammar §3).
  *
  * A DISCRIMINATED UNION (grammar as types, the BeamBadge lesson): an action is EITHER **flat**
@@ -43,7 +43,7 @@ export type BeamRowAction =
   | (BeamRowActionBase & { onSelect: () => void; options?: never })
   | (BeamRowActionBase & { options: BeamRowActionOption[]; onSelect?: never });
 
-export interface BeamRowMenuProps {
+export interface ActionMenuProps {
   anchorEl: HTMLElement | null;
   open: boolean;
   onClose: () => void;

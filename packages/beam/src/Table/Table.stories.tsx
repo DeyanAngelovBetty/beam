@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { BeamDataTable } from './BeamDataTable';
-import type { BeamColumn } from './BeamDataTable.types';
+import { Table } from './Table';
+import type { BeamColumn } from './Table.types';
 import { BeamStatusBadge } from '../BeamStatusBadge/BeamStatusBadge';
 import type { BeamStatus } from '../BeamStatusBadge/BeamStatusBadge.types';
 import Stack from '@mui/material/Stack';
@@ -9,7 +9,7 @@ import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE, PAGE_SECTION_GAP } from '../theme/tokens';
-import { stickyChromeGapSx, stickyChromeExitSx } from './BeamDataTable';
+import { stickyChromeGapSx, stickyChromeExitSx } from './Table';
 
 /** Realistic Sunlight shape: perks management list (Beam candidate page) */
 interface Perk {
@@ -37,14 +37,14 @@ const rows: Perk[] = [
   { id: '5', name: 'Spring LP Multiplier', loyaltyStatus: 'All', reward: '2x LP', status: 'expired', updated: '2026-05-30' },
 ];
 
-const meta: Meta<typeof BeamDataTable<Perk>> = {
-  title: 'Organisms/BeamDataTable',
-  component: BeamDataTable,
+const meta: Meta<typeof Table<Perk>> = {
+  title: 'Components/Table',
+  component: Table,
   parameters: { layout: 'padded' },
 };
 export default meta;
 
-type Story = StoryObj<typeof BeamDataTable<Perk>>;
+type Story = StoryObj<typeof Table<Perk>>;
 
 export const PerksList: Story = {
   args: {
@@ -152,7 +152,7 @@ const wideColumns: BeamColumn<Perk>[] = [
 
 export const RowControlsRail: StoryObj = {
   render: () => (
-    <BeamDataTable<Perk>
+    <Table<Perk>
       columns={wideColumns}
       rows={rows}
       getRowId={(r) => r.id}
@@ -187,7 +187,7 @@ export const RowControlsRail: StoryObj = {
  */
 export const RowActionsProjection: StoryObj = {
   render: () => (
-    <BeamDataTable<Perk>
+    <Table<Perk>
       columns={wideColumns}
       rows={rows}
       getRowId={(r) => r.id}
@@ -222,7 +222,7 @@ export const RowActionsProjection: StoryObj = {
 export const RailScrollAffordance: StoryObj = {
   render: () => (
     <Box sx={{ maxWidth: 480 }}>
-      <BeamDataTable<Perk>
+      <Table<Perk>
         columns={wideColumns}
         rows={rows}
         getRowId={(r) => r.id}
@@ -252,7 +252,7 @@ export const IdentityLink: StoryObj = {
       ...columns.slice(1),
     ];
     return (
-      <BeamDataTable<Perk>
+      <Table<Perk>
         columns={linkedColumns}
         rows={rows}
         getRowId={(r) => r.id}
@@ -269,7 +269,7 @@ export const IdentityLink: StoryObj = {
 
 export const PaytablesYodaPatterns: StoryObj = {
   render: () => (
-    <BeamDataTable<Paytable>
+    <Table<Paytable>
       columns={paytableColumns}
       rows={PAYTABLES}
       getRowId={(r) => r.id}
@@ -388,7 +388,7 @@ const wideRows: WideRow[] = Array.from({ length: 8 }, (_, i) => ({
 export const HorizontalOverflow: StoryObj = {
   render: () => (
     <div style={{ maxWidth: 720 }}>
-      <BeamDataTable<WideRow>
+      <Table<WideRow>
         columns={wideCols}
         rows={wideRows}
         getRowId={(r) => r.id}
@@ -411,7 +411,7 @@ export const HorizontalOverflow: StoryObj = {
 /** No horizontal overflow → shadows must NEVER appear (acceptance). Same columns, roomy canvas. */
 export const NoOverflowNoShadows: StoryObj = {
   render: () => (
-    <BeamDataTable<Perk>
+    <Table<Perk>
       columns={columns}
       rows={rows}
       getRowId={(r) => r.id}
@@ -434,7 +434,7 @@ export const SeverityAccent: StoryObj = {
   render: () => (
     <div style={{ maxWidth: 720 }}>
       <Typography variant="overline" color="text.secondary">Leading-edge danger accent (chargeback rows)</Typography>
-      <BeamDataTable<WideRow>
+      <Table<WideRow>
         columns={wideCols}
         rows={accentRows}
         getRowId={(r) => r.id}
@@ -566,7 +566,7 @@ function renderStickyBench(fancyBackdrop: boolean) {
             <TextField size="small" label="Min amount" sx={{ width: 160 }} />
           </Box>
         </Paper>
-        <BeamDataTable<BenchRow>
+        <Table<BenchRow>
           columns={benchColumns}
           rows={benchRows}
           getRowId={(r) => r.id}

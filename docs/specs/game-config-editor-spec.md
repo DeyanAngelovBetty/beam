@@ -21,7 +21,7 @@ main** (`5169569 Game Configs`); extended, not duplicated.
 Create + Edit only — no view mode (MetaGame default).
 
 ## Save model
-Cancel + Create/Save in the BeamPageHeader actions slot (grammar §4). Gated on:
+Cancel + Create/Save in the BeamPage actions slot (grammar §4). Gated on:
 name valid+unique · every rule has a PayoutConfig · every rule's condition passes
 `isValidConditionTree` · fallback has its PayoutConfig. Unsaved guard: `useBlocker`
 + dialog.

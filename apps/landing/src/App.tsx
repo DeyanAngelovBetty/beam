@@ -9,7 +9,7 @@ import {
   Button,
   Typography,
   Divider,
-  BeamPageHeader,
+  BeamPage,
   BeamStat,
   DetailsPanel,
   beamGradientBorder,
@@ -181,7 +181,7 @@ export function App() {
       <Box sx={{ minHeight: '100vh' }}>
         <Box sx={{ maxWidth: 1100, mx: 'auto', p: { xs: 3, md: 6 } }}>
           <Stack spacing={5}>
-            <BeamPageHeader
+            <BeamPage
               title="Beam"
               subtitle="Betty's back-office design system, and the demo apps that share it. Every surface below is built from the same tokens, theme, and organisms — flip light/dark or jurisdiction inside any app to watch one system carry all of them."
             />

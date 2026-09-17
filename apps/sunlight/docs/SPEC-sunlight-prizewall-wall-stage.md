@@ -32,7 +32,7 @@ e.g. campaign/:id/stage/:stageId). Breadcrumb per the frame: back to the campaig
 - Stat row: the frame's four stats (win probability, loss probability, cost of
   play, enabled) as BeamStat with the established 44px view↔edit field-twin
   shapeshift — fields in Edit, stats in View.
-- Sections — each a BeamPaper surface per the sectioning doctrine, content per the
+- Sections — each a Section surface per the sectioning doctrine, content per the
   frames: Opening Windows (tabular; Edit adds "+ NEW OPENING WINDOW" and per-row
   remove), Quick Rules (name + desktop/mobile URL with copy affordances in View,
   text fields in Edit), Reward Items (card grid: image, xN quantity, dimensions
@@ -203,7 +203,7 @@ Audited create/add actions estate-wide against the grammar (list → NEW, child 
   the existing Radi/Tzeno open items — no validation invented here.
 
 ### Fence
-No organism changes (reused `BeamPaper` / `DetailsPanel` / `BeamStat` / `BeamBool` / `BeamField` /
+No organism changes (reused `Section` / `DetailsPanel` / `BeamStat` / `BeamBool` / `BeamField` /
 `BeamSwitchField` / MUI `Dialog` + `Table`, all barrel atoms). No approval-pipeline changes (Submit is
 the same stub as Campaign detail). Token Campaigns / Campaign detail untouched beyond the pre-existing
 stage-row navigation. Status/state renderings comply with the grammar (`BeamBool` for Enabled).

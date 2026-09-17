@@ -18,7 +18,7 @@ const ALL_STATUSES: BeamStatus[] = [...LIFECYCLE, ...SETTLEMENT];
  * Mirrors the Figma component: MUI kit file → 🧪 Beam Organisms — POC → BeamStatusBadge.
  */
 const meta: Meta<typeof BeamStatusBadge> = {
-  title: 'Organisms/BeamStatusBadge',
+  title: 'Components/BeamStatusBadge',
   component: BeamStatusBadge,
   parameters: { layout: 'padded' },
   argTypes: {

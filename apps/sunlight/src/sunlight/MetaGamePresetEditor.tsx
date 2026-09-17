@@ -3,7 +3,7 @@ import { useBlocker, useNavigate, useParams, useLocation } from 'react-router-do
 import EditIcon from '@mui/icons-material/EditRounded';
 import {
   BeamEmptyState,
-  BeamPageHeader,
+  BeamPage,
   BeamStatusBadge,
   BeamStat,
   BeamField,
@@ -69,7 +69,7 @@ export function MetaGamePresetEditor() {
   if (id && !existing) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title={`Preset ${id}`} back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')} />
+        <BeamPage title={`Preset ${id}`} back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')} />
         <BeamEmptyState title={`No preset with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -90,7 +90,7 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={preset.displayName}
         back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')}
         subtitle={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
@@ -212,7 +212,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={existing ? existing.displayName : 'Create MetaGame Preset'}
         back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')}
         subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New presets are created as Disabled.'}

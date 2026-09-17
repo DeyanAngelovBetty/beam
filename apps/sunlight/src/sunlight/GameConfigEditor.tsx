@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  BeamPageHeader,
+  BeamPage,
   BeamStatusBadge,
   BeamStat,
   BeamField,
@@ -56,7 +56,7 @@ export function GameConfigEditor() {
   if (id && !existing) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title={`Config ${id}`} back={backTo(navigate, '/game-configs', 'Game Configs')} />
+        <BeamPage title={`Config ${id}`} back={backTo(navigate, '/game-configs', 'Game Configs')} />
         <BeamEmptyState title={`No game config with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -73,7 +73,7 @@ function ViewForm({ config, onEdit }: { config: GameConfig; onEdit: () => void }
   const badge = statusBadge(config.status);
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={config.code}
         back={backTo(navigate, '/game-configs', 'Game Configs')}
         subtitle={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
@@ -146,7 +146,7 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={existing ? existing.code : 'Create Game Config'}
         back={backTo(navigate, '/game-configs', 'Game Configs')}
         subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New configurations are created as Disabled.'}

@@ -13,7 +13,7 @@ import {
   type ExpandedState,
 } from '@tanstack/react-table';
 import { useTheme } from '@mui/material/styles';
-import Table from '@mui/material/Table';
+import MuiTable from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableRow from '@mui/material/TableRow';
@@ -41,9 +41,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { BeamRowMenu } from '../BeamRowMenu/BeamRowMenu';
-import type { BeamRowAction } from '../BeamRowMenu/BeamRowMenu.types';
-import type { BeamColumn, BeamDataTableProps, BeamIdentityLinkProps, BeamBulkAction } from './BeamDataTable.types';
+import { ActionMenu } from '../ActionMenu/ActionMenu';
+import type { BeamRowAction } from '../ActionMenu/ActionMenu.types';
+import type { BeamColumn, TableProps, BeamIdentityLinkProps, BeamBulkAction } from './Table.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
 import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, aboveHeightQuery, pageBackdropSx } from '../theme/tokens';
@@ -223,7 +223,7 @@ function RailKebab({ items }: { items: BeamRowAction[] }) {
       >
         <MoreVertIcon fontSize="small" />
       </IconButton>
-      <BeamRowMenu
+      <ActionMenu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={() => setAnchorEl(null)}
@@ -396,7 +396,7 @@ function BulkActionButton({
  * Row states (hover/selected) come from palette.action tokens —
  * the Figma `_states` group earning its living.
  */
-export function BeamDataTable<Row>({
+export function Table<Row>({
   columns,
   rows,
   getRowId,
@@ -421,7 +421,7 @@ export function BeamDataTable<Row>({
   columnManager,
   rowAccent,
   'aria-label': ariaLabel,
-}: BeamDataTableProps<Row>) {
+}: TableProps<Row>) {
   const theme = useTheme();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -601,7 +601,7 @@ export function BeamDataTable<Row>({
     if (!paginated || typeof window === 'undefined' || !/[?&#]perf=1\b/.test(window.location.href)) return;
     const ms = performance.now() - perfStartRef.current;
     // eslint-disable-next-line no-console
-    console.info(`[BeamDataTable perf] ${visibleRows.length} rows × ${leafColumns.length} cols → ${ms.toFixed(1)}ms (render→commit)`);
+    console.info(`[Table perf] ${visibleRows.length} rows × ${leafColumns.length} cols → ${ms.toFixed(1)}ms (render→commit)`);
   });
 
   // Scroll-affordance edges. `data-overflow-start` / `data-overflow-end` on the WRAPPER drive both
@@ -882,7 +882,7 @@ export function BeamDataTable<Row>({
   // backdrop is behind; where the exiting panel is still behind, the fade cross-dissolves with the panel's
   // exit — a paint transition, never a layout shift. Pointer-transparent (inherits the outer's none).
   // (Frost RETIRED 2026-09-13 — tried twice, transparent then sheen-over-opaque; the exit animation is the
-  // treatment, the band is page. See stickyChromeExitSx + BeamDataTable-notes.)
+  // treatment, the band is page. See stickyChromeExitSx + Table-notes.)
   const ceilingPaintSx = {
     '&::before': {
       content: '""',
@@ -1042,7 +1042,7 @@ export function BeamDataTable<Row>({
   ) : null;
 
   // Batch actions — a top SECTION of the grid surface (moved inside the Paper 2026-09-08, the
-  // BeamPaper-sectioning pattern; DetailsPanel/PrizeWall precedent). Persistent when bulkActions is set;
+  // Section-sectioning pattern; DetailsPanel/PrizeWall precedent). Persistent when bulkActions is set;
   // constant geometry, variable enablement — every action renders, disabled at zero selection.
   const stripEl = resolvedBulkActions.length > 0 ? (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: FIELD_TWIN_HEIGHT, borderBottom: 1, borderColor: 'divider' }}>
@@ -1225,8 +1225,8 @@ export function BeamDataTable<Row>({
       <Paper
         ref={paperRef}
         variant="outlined"
-        // CONTRACT: published when stickyChrome is on. BeamAppShell's `main:has([data-beam-sticky-chrome])`
-        // gives up its bottom padding so this grid's footer floor takes it over (see BeamAppShell notes).
+        // CONTRACT: published when stickyChrome is on. AppShell's `main:has([data-beam-sticky-chrome])`
+        // gives up its bottom padding so this grid's footer floor takes it over (see AppShell notes).
         data-beam-sticky-chrome={effectiveSticky ? '' : undefined}
         sx={{
           // Non-sticky keeps the single-Paper frame (outlined border + radius) and clips to it. Sticky
@@ -1324,7 +1324,7 @@ export function BeamDataTable<Row>({
             '&::-webkit-scrollbar': effectiveSticky ? { display: 'none' } : { height: 8, width: 8 },
           }}
         >
-          <Table size="small" aria-label={ariaLabel}>
+          <MuiTable size="small" aria-label={ariaLabel}>
           <TableHead>
             <TableRow ref={theadRowRef}>
               {railEnabled && (
@@ -1523,7 +1523,7 @@ export function BeamDataTable<Row>({
               );
             })}
           </TableBody>
-        </Table>
+        </MuiTable>
         </TableContainer>
         {/* Right-edge scroll shadow — visible only while content continues off-screen to the right
             (data-overflow-end on the wrapper); gone at the end. Tint from the theme edge-shadow token. */}

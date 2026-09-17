@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-08 (v2 — merged MN columns + Konstantin's list, status resolved)
 **Consumer:** Gaspar transactions page (`payments` list endpoint)
-**Organism:** BeamDataTable (TanStack headless + MUI surface)
+**Organism:** Table (TanStack headless + MUI surface)
 **Scope:** Column definitions and cell treatments only.
 **Explicitly out of scope:** column show/hide + reordering (bullet 3), row selection / export actions, advanced filters, detail/history panel — all noted in the roadmap appendix, none built in this pass. If a column need seems to require touching the organism, stop and flag.
 
@@ -93,7 +93,7 @@ The 12-column layout must not paint us into a corner on any of these: leave the 
 Deltas between the spec's language and this repo, recorded so the next reader isn't surprised:
 
 - **`BeamColumn`, not raw TanStack `columnDef`.** The organism's public API is `BeamColumn<Row>`; the column defs are expressed through it. `getValue` (spec-implicit) makes a column sortable + searchable.
-- **`tabular-nums` is automatic.** `BeamDataTable` applies `font-variant-numeric: tabular-nums` to every right-aligned column, so the Amount acceptance is satisfied by the organism — the cell only right-aligns and renders `amount.toFixed(2)`.
+- **`tabular-nums` is automatic.** `Table` applies `font-variant-numeric: tabular-nums` to every right-aligned column, so the Amount acceptance is satisfied by the organism — the cell only right-aligns and renders `amount.toFixed(2)`.
 - **Badges are PAGE-LOCAL (`TxBadge`), not `BeamStatusBadge`.** Conflict surfaced and ruled on: `BeamStatusBadge` takes a fixed semantic `BeamStatus` union with **no neutral/unknown member** and colors from the token, so it structurally cannot render "neutral badge + arbitrary raw string." `TxBadge` (an MUI `Chip`, colored via palette tokens) renders the raw string always, `success` tone only for the observed positive (`Succeeded`), neutral for everything else. **`BeamStatus` is untouched**; API-string ↔ `BeamStatus` reconciliation is a separate future Beam task.
 - **Copy cell is PAGE-LOCAL (`TruncateCopyCell`).** No shared Beam copy pattern exists (only Sunlight's page-local `CopyUrlButton`) — flagged per the spec. This is the estate's **second** page-local copy affordance; promotion to a Beam copy molecule is a queued candidate, separate task.
 - **Row expansion removed.** The prior page's `renderExpanded`/`RoutePanel`/`route[]` mock is dropped — orphaned by the new API and fenced off for the future detail drawer (roadmap #4). No `onRowClick`, no selection gutter consumed.
@@ -113,10 +113,10 @@ Added a page-local **Error Code** column (after Status), driven by `PaymentRow.e
 
 **Selection + batch actions (Task A).** `selectable` on; the rail's select control lives in the gutter bullet-1 kept clean. Batch actions and the row kebab both carry **Export / Complete / Decline** (one definition, two projections — rail grammar; the kebab also satisfies the head-of-payments per-row export ask).
 
-- **Export is a FORMAT MENU (2026-09-10):** JSON / CSV / PDF / Excel — a rendered ledger, *formats-as-open-questions*. **JSON + CSV are REAL** client-side downloads (CSV = the 13 visible-catalog fields, RFC-4180 quoted; Excel opens it natively — the demo line). **PDF + Excel are PROPOSALS** — selecting one shows the design-proposal snackbar, no fake file (pending an export-service decision). Batch: options on the `Export` bulk action → `onBulkAction('export', ids, optionId)`. Row kebab: an Export **submenu** (per-option `onSelect`). (Organism: `BeamBulkAction.options` + `BeamRowAction` discriminated union — see `packages/beam/docs/BeamDataTable-notes.md`.)
+- **Export is a FORMAT MENU (2026-09-10):** JSON / CSV / PDF / Excel — a rendered ledger, *formats-as-open-questions*. **JSON + CSV are REAL** client-side downloads (CSV = the 13 visible-catalog fields, RFC-4180 quoted; Excel opens it natively — the demo line). **PDF + Excel are PROPOSALS** — selecting one shows the design-proposal snackbar, no fake file (pending an export-service decision). Batch: options on the `Export` bulk action → `onBulkAction('export', ids, optionId)`. Row kebab: an Export **submenu** (per-option `onSelect`). (Organism: `BeamBulkAction.options` + `BeamRowAction` discriminated union — see `packages/beam/docs/Table-notes.md`.)
 - **Complete / Decline are PROPOSALS:** confirm (action + count) → snackbar stating it's a design proposal, no backend, **no mock mutation**. Decline is destructive-styled.
 - **Eligibility = Pending only — an ASSUMPTION to validate with backend.** When the selection (or row) has no eligible row, the action is **disabled with a tooltip reason** (never clickable-then-refused). Bulk eligibility works because `bulkActions` is the selection-aware factory (organism Option C); row eligibility uses `BeamRowAction.disabled`/`disabledReason`.
-- **Confirm mechanism:** the shipped `window.confirm` (bulk via the organism's `confirm`/`destructive`; row via `onSelect`). A styled confirm surface is a queued organism decision — see `packages/beam/docs/BeamDataTable-notes.md`.
+- **Confirm mechanism:** the shipped `window.confirm` (bulk via the organism's `confirm`/`destructive`; row via `onSelect`). A styled confirm surface is a queued organism decision — see `packages/beam/docs/Table-notes.md`.
 - **Usage question to watch:** the organism resets row selection after every bulk action, so selection clears after **Export** too ("export-then-act re-selection"). Accepted for now; revisit if operators expect the selection to persist after an export.
 
 **Details as an expandable row (Task B) — INTERIM.** `renderExpanded` shows a light event timeline (time · type · details) in the payment-details `events[]` shape (`eventType`, `occurredOnUtc`, `details`, `amountModifier`, `pspTransactionId`), seeded per row from status via `buildEvents`. This is a deliberate **for-now** choice; a richer detail surface (drawer/page) is a queued topic, not built here.

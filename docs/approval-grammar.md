@@ -165,7 +165,7 @@ the maker-checker machinery in one place.
 **Approvals list page:**
 - Status is a **filter, not tabs** — one queue, not five pages; statuses are
   a filter dimension, not navigation contexts. Filter lives in the
-  BeamFilterBar (status multi-select + the existing record filter).
+  TableFilters (status multi-select + the existing record filter).
 - **Sort: pending pinned first**, then the rest by recency. The checker's
   default view is "everything actionable, on top."
 

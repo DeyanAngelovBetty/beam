@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  BeamDataTable,
-  BeamPageHeader,
+  Table,
+  BeamPage,
   BeamStatusBadge,
   Button,
   MenuItem,
@@ -143,11 +143,11 @@ export function DefaultGameConfigsPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title="Default Game Configs"
         subtitle="Choose the GameConfig used for each game type when a game is awarded without a Preset."
       />
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(row) => row.gameType}

@@ -5,7 +5,7 @@ import {
   IconButton,
   Paper,
   Stack,
-  Table,
+  MuiTable as Table,
   TableBody,
   TableCell,
   TableHead,

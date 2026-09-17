@@ -7,7 +7,7 @@ import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import Box from '@mui/material/Box';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import type { BeamRowAction, BeamRowMenuProps } from './BeamRowMenu.types';
+import type { BeamRowAction, ActionMenuProps } from './ActionMenu.types';
 
 function Item({ item, onClose }: { item: BeamRowAction; onClose: () => void }) {
   const [subAnchor, setSubAnchor] = useState<HTMLElement | null>(null);
@@ -74,13 +74,13 @@ function Item({ item, onClose }: { item: BeamRowAction; onClose: () => void }) {
   return menuItem;
 }
 
-export function BeamRowMenu({
+export function ActionMenu({
   anchorEl,
   open,
   onClose,
   items,
   'aria-label': ariaLabel = 'Row actions',
-}: BeamRowMenuProps) {
+}: ActionMenuProps) {
   const normal = items.filter((i) => !i.destructive);
   const destructive = items.filter((i) => i.destructive);
 

@@ -5,18 +5,18 @@ import LockResetIcon from '@mui/icons-material/LockReset';
 import BlockIcon from '@mui/icons-material/Block';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { BeamRowMenu } from './BeamRowMenu';
-import type { BeamRowAction } from './BeamRowMenu.types';
+import { ActionMenu } from './ActionMenu';
+import type { BeamRowAction } from './ActionMenu.types';
 
 /**
  * The per-record overflow menu. Labeled items, destructive grouped last
  * behind an error divider, ineligible items disabled with a reason.
  */
 const meta = {
-  title: 'Organisms/BeamRowMenu',
-  component: BeamRowMenu,
+  title: 'Components/ActionMenu',
+  component: ActionMenu,
   parameters: { layout: 'centered' },
-} satisfies Meta<typeof BeamRowMenu>;
+} satisfies Meta<typeof ActionMenu>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -50,7 +50,7 @@ export const Default: Story = {
         <Button variant="outlined" onClick={(e) => setAnchorEl(e.currentTarget)}>
           Open row menu
         </Button>
-        <BeamRowMenu
+        <ActionMenu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={() => setAnchorEl(null)}
@@ -84,7 +84,7 @@ export const DestructiveDisabled: Story = {
         <Button variant="outlined" onClick={(e) => setAnchorEl(e.currentTarget)}>
           Open role menu
         </Button>
-        <BeamRowMenu
+        <ActionMenu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={() => setAnchorEl(null)}

@@ -9,7 +9,7 @@ import { BeamBadge } from './BeamBadge';
  * vocabulary→(hue,volume) map; the organism knows no product words.
  */
 const meta: Meta<typeof BeamBadge> = {
-  title: 'Organisms/BeamBadge',
+  title: 'Components/BeamBadge',
   component: BeamBadge,
   parameters: { layout: 'padded' },
 };

@@ -96,7 +96,7 @@ row; color is additive, never the sole carrier — the a11y rule holds, accents 
 Accents key on **hue** (the category), with **`danger`** the primary sanctioned use (scanning a queue
 for the rows that need investigation). The **loudness budget governs chips, not accents** — an accent
 *locates*, it doesn't *shout*, so multiple accented rows are not an alarm-wall. First use:
-`BeamDataTable`'s `rowAccent` (Gaspar transactions, failed rows).
+`Table`'s `rowAccent` (Gaspar transactions, failed rows).
 
 ## Architecture: who speaks what
 
@@ -174,7 +174,7 @@ proposed amendments come back as edits here, not as local divergence.
    BeamSwitchField) settle on the boolean treatment (BeamBool / switch), not a status chip.
 4. **`NodeKindChip`** (gaspar rule builder) — categorical node kinds, decide silent/plain vs a
    sanctioned categorical treatment (not semantic hues).
-5. **Hand-rolled story chips** (`BeamPageHeader.stories` Pending/Active) → `BeamBadge`.
+5. **Hand-rolled story chips** (`BeamPage.stories` Pending/Active) → `BeamBadge`.
 6. **Grammar wording:** clarify "hue fixed across the estate" → **per product vocabulary** (the
    Gaspar-`warning` vs Sunlight-`in-progress` `Pending` homonym). Doc-only.
 

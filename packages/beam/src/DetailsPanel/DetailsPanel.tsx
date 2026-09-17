@@ -31,7 +31,7 @@ export function DetailsPanel({ children, minColumnWidth = 220, 'aria-label': ari
         px: 'calc(2 * var(--mui-spacing))',
         // The EDITABILITY border — the ONE shared recipe (editabilityBorderSx): always 1px transparent,
         // colour → divider only when the surface `:has(.MuiInputBase-root)` (contains a field). Constant
-        // geometry; nothing moves on the switch. Same mixin BeamPaper uses.
+        // geometry; nothing moves on the switch. Same mixin Section uses.
         ...editabilityBorderSx,
       }}
     >

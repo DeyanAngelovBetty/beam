@@ -10,10 +10,10 @@ import { BeamSwitchField } from '../BeamSwitchField/BeamSwitchField';
 /**
  * DetailsPanel — the unlabeled field panel that opens a detail page. Field twins as children:
  * BeamStat (view) morph to BeamField/BeamSwitchField (edit) in place. No title (position is the
- * convention), no buttons (they live in BeamPageHeader). A wide item spans via a gridColumn wrapper.
+ * convention), no buttons (they live in BeamPage). A wide item spans via a gridColumn wrapper.
  */
 const meta = {
-  title: 'Organisms/DetailsPanel',
+  title: 'Components/DetailsPanel',
   component: DetailsPanel,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof DetailsPanel>;

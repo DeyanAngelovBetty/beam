@@ -1,6 +1,6 @@
 import {
   Paper,
-  Table,
+  MuiTable as Table,
   TableHead,
   TableBody,
   TableRow,

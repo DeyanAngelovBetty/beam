@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Stack, Box, Typography, Alert, Button, BeamPageHeader, BeamEmptyState, DetailsPanel, BeamStat, BeamField } from '@betty/beam';
+import { Stack, Box, Typography, Alert, Button, BeamPage, BeamEmptyState, DetailsPanel, BeamStat, BeamField } from '@betty/beam';
 import { backTo } from './backTo';
 import { getChangeRequest, approve, reject, cancel, pendingOnRecord, markSeen, useChangeRequests } from './changeRequests';
 import { useCurrentUser } from './currentUser';
@@ -49,7 +49,7 @@ export function PendingApprovalDetailPage() {
   if (!cr) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title={`Approval ${id ?? ''}`} back={backTo(navigate, '/pending-approvals', 'Configuration Approvals')} />
+        <BeamPage title={`Approval ${id ?? ''}`} back={backTo(navigate, '/pending-approvals', 'Configuration Approvals')} />
         <BeamEmptyState title={`No change request with id ${id}`} description="It may have been cleared." />
       </Stack>
     );
@@ -80,7 +80,7 @@ export function PendingApprovalDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={`${cr.entityName} approval #${shortCrId(cr.id)}`}
         back={backTo(navigate, '/pending-approvals', 'Configuration Approvals')}
         subtitle={

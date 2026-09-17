@@ -4,10 +4,10 @@ import {
   Stack,
   MenuItem,
   TextField,
-  BeamPageHeader,
+  BeamPage,
   BeamEmptyState,
-  BeamFilterBar,
-  BeamDataTable,
+  TableFilters,
+  Table,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
 import { backTo } from './backTo';
@@ -91,7 +91,7 @@ export function CampaignWinnersPage() {
   if (!campaign) {
     return (
       <Stack spacing={3}>
-        <BeamPageHeader title="Winners" back={backTo(navigate, BASE, 'Token Campaigns')} />
+        <BeamPage title="Winners" back={backTo(navigate, BASE, 'Token Campaigns')} />
         <BeamEmptyState title={`No campaign with id ${id}`} description="It may have been removed." />
       </Stack>
     );
@@ -120,9 +120,9 @@ export function CampaignWinnersPage() {
   return (
     <Stack spacing={3}>
       {/* Child-scoped header: title "Winners", campaign name as context (subtitle), back → detail. */}
-      <BeamPageHeader title="Winners" subtitle={campaign.name} back={back} />
+      <BeamPage title="Winners" subtitle={campaign.name} back={back} />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Winner filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -143,9 +143,9 @@ export function CampaignWinnersPage() {
             <MenuItem key={t} value={t}>{t}</MenuItem>
           ))}
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
 
-      <BeamDataTable
+      <Table
         columns={columns}
         rows={rows}
         getRowId={(w) => w.id}

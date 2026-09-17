@@ -15,7 +15,7 @@ docs/detail-page-grammar.md and the worked examples
 2. Gap check: empty required sections → ask. Flags → build around,
    ship plain with `// pending design pass`, never improvise.
 3. Hard checks (bounce with the rule if violated):
-   - save controls anywhere but the BeamPageHeader actions slot →
+   - save controls anywhere but the BeamPage actions slot →
      grammar §4
    - hand-rolled back link / status chip in the actions slot → the
      back prop · status-is-identity rule
@@ -28,7 +28,7 @@ docs/detail-page-grammar.md and the worked examples
 4. Propose: data/API shape, route + mode structure, file list,
    which existing components each section reuses, any organism gap
    (structure-only proposal or flag — never silent).
-5. Build as assembly: BeamPageHeader(back, actions, status-below-
+5. Build as assembly: BeamPage(back, actions, status-below-
    title) · form sections per spec · collections sharing skeletons
    with their view twins where named · Live Checks as BeamStat with
    the spec's severity mapping · useBlocker guard · aggregate-shaped

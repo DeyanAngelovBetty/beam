@@ -9,7 +9,7 @@ import { BeamEmptyState } from './BeamEmptyState';
  * (nav placeholders) and "genuinely empty list".
  */
 const meta = {
-  title: 'Organisms (placeholder)/BeamEmptyState',
+  title: 'Components/BeamEmptyState',
   component: BeamEmptyState,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof BeamEmptyState>;

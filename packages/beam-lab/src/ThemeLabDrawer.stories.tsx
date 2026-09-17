@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Box, Stack, Typography, Paper, BeamPageHeader, BeamStatusBadge, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import { Box, Stack, Typography, Paper, BeamPage, BeamStatusBadge, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import { ThemeLabDrawer } from './ThemeLabDrawer';
 
 /**
@@ -47,7 +47,7 @@ function SurfacesBoard() {
 
       {/* Content — page bg + the ramp surfaces + a gradient title. */}
       <Stack spacing={3} sx={{ flex: 1, p: 4, pr: '400px' /* clear the fixed drawer */ }}>
-        <BeamPageHeader title="Theme Lab preview" subtitle="Drag the anchor — every surface re-derives." />
+        <BeamPage title="Theme Lab preview" subtitle="Drag the anchor — every surface re-derives." />
 
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={1.5}>

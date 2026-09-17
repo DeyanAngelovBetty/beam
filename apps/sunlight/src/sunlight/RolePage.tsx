@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { Stack, BeamPageHeader } from '@betty/beam';
+import { Stack, BeamPage } from '@betty/beam';
 import { ROLES } from './roles';
 import { backTo } from './backTo';
 
@@ -14,7 +14,7 @@ export function RolePage() {
 
   return (
     <Stack spacing={3}>
-      <BeamPageHeader
+      <BeamPage
         title={role ? role.name : `Role ${id}`}
         back={backTo(navigate, '/roles', 'Roles')}
         subtitle={role ? role.description : 'Unknown role'}

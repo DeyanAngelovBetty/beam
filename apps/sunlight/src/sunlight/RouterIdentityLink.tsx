@@ -3,7 +3,7 @@ import { Link } from '@betty/beam';
 import type { BeamIdentityLinkProps } from '@betty/beam';
 
 /**
- * The identity link for BeamDataTable, router-aware: keeps a real `href`
+ * The identity link for Table, router-aware: keeps a real `href`
  * (middle-click, new-tab, copy-address all work) but intercepts a plain
  * left-click for smooth in-app navigation. `href` is the full path incl. the
  * Pages base; the router `to` is that path minus the base.

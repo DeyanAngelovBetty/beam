@@ -54,10 +54,10 @@ const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, ou
 /**
  * Page content rhythm — ONE source per edge, as sx spacing values, so the shell and the sticky footer
  * floor can't drift (retune 2026-09-12: inline 7→5, bottom 10→3, top stays 10 to preserve the nav
- * dock/undock shift). `BeamAppShell`'s `main` owns TOP/BOTTOM/INLINE as its padding; `BeamDataTable`'s
+ * dock/undock shift). `AppShell`'s `main` owns TOP/BOTTOM/INLINE as its padding; `Table`'s
  * sticky footer FLOOR takes over **CONTENT_BOTTOM** when the shell gives up its bottom padding (the
  * sticky-chrome contract — see the notes). Split from the former single `CONTENT_VERTICAL`.
- * (Provisional home — migrates to BeamPageHeader's rhythm once that organism leaves placeholder.)
+ * (Provisional home — migrates to BeamPage's rhythm once that organism leaves placeholder.)
  */
 export const CONTENT_TOP = { xs: 2, md: 10 };
 export const CONTENT_BOTTOM = { xs: 2, md: 3 };
@@ -72,7 +72,7 @@ export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
 export const PAGE_SECTION_GAP = 3;
 
 /**
- * LOGO_BAR_HEIGHT — the floating brand strip's height (BeamAppShell's `STRIP_HEIGHT`), promoted here as
+ * LOGO_BAR_HEIGHT — the floating brand strip's height (AppShell's `STRIP_HEIGHT`), promoted here as
  * the ONE source so a sticky-chrome grid can clear it without the shell and the grid drifting apart. The
  * shell imports it as `STRIP_HEIGHT`; the grid derives `CHROME_CEILING_BAND` from it.
  */
@@ -85,13 +85,13 @@ export const LOGO_BAR_HEIGHT = 56;
  * is CONSTANT geometry through the pin — no jump); this band is a CONSTANT `padding-top`, and its extra
  * height over the section gap is absorbed at rest by the pre-grid section's negative margin (against
  * PAGE_SECTION_GAP — NOT CONTENT_TOP, whose nav-shift duty disqualifies it), keeping the rest gap
- * pixel-identical. See BeamDataTable's ceiling paint + stickyChromeGapSx.
+ * pixel-identical. See Table's ceiling paint + stickyChromeGapSx.
  */
 export const CHROME_CEILING_BAND = LOGO_BAR_HEIGHT + 8;
 
 /**
  * pageBackdropSx — the page's FIXED backdrop as a shared source, ONE definition two consumers: the
- * `body::before` layer (base + mesh) AND the sticky-chrome ceiling/floor bands (BeamDataTable). Both paint
+ * `body::before` layer (base + mesh) AND the sticky-chrome ceiling/floor bands (Table). Both paint
  * `background.default` + the mesh with `background-attachment: fixed`, so a band samples the SAME function
  * of viewport position as the body around it — the seam disappears by construction, and the opaque base
  * kills the ghosting that killed the transparent-outer route. Raw CSS vars (not MUI shorthands) so it
@@ -123,7 +123,7 @@ export const FIELD_GEOMETRY = {
 /**
  * FIELD_TWIN_HEIGHT — the 44px view↔edit datum (BeamStat / form-field geometry, `FIELD_GEOMETRY.height`),
  * named for reuse as a ROW/CHROME height so the grid speaks the same number as the fields (Ruslan density
- * ask, installment #2). Aliases the one source above — no second literal 44. BeamDataTable's bulk strip,
+ * ask, installment #2). Aliases the one source above — no second literal 44. Table's bulk strip,
  * header + body rows, and footer inner all converge on it; the field-twin doctrine, applied to the table.
  */
 export const FIELD_TWIN_HEIGHT = FIELD_GEOMETRY.height;
@@ -141,7 +141,7 @@ export const MIN_MEANINGFUL_ROWS = 4;
  *   T1 footer unsticks   = CEILING + strip + header + N·row + footer + floor
  *   T2 ceiling collapses = CEILING + strip + header + N·row            (footer already gone)
  *   T3 sticky disengages =           strip + header + N·row            (ceiling already gone)
- * "strip + header" = 2·FIELD_TWIN_HEIGHT (the CONSERVATIVE bucket — see BeamDataTable notes for why the
+ * "strip + header" = 2·FIELD_TWIN_HEIGHT (the CONSERVATIVE bucket — see Table notes for why the
  * bucket can't be per-grid: T2 has two consumers that must agree). T2/T3 are pure-px so they can be shared
  * module constants; T1 adds the floor (CONTENT_BOTTOM.md) in-component via `theme.spacing` (its one
  * width-dependent term — an 8px xs/md swing, noise against a 44px row). `SHORT_VP_TIER1_BASE` is T1 minus
@@ -192,7 +192,7 @@ export const fieldGeometrySx = {
  * emergent behaviour IS the ruling (detail-page-grammar). Constant geometry: the border is always
  * present (1px transparent) and only its COLOUR transitions to `divider`, so nothing shifts a pixel.
  *
- * The ONE definition consumed by every section surface (DetailsPanel, BeamPaper) — never re-inlined.
+ * The ONE definition consumed by every section surface (DetailsPanel, Section) — never re-inlined.
  */
 export const editabilityBorderSx = {
   border: '1px solid transparent',
@@ -247,7 +247,7 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
  *
  * ⚠️ Gaspar's pair (Sora display + Geist body) is real, not placeholder. Geist is the body
  * face specifically for its tabular figures (`font-variant-numeric: tabular-nums`, applied
- * in BeamDataTable's numeric cells) — the reason it beat a geometric face.
+ * in Table's numeric cells) — the reason it beat a geometric face.
  */
 export const productFonts: Record<ProductName, { title: string; body: string; titleWeight: number }> = {
   // titleWeight (Figma twin: `font/title/fontWeight`; Deyan syncs Figma separately) rides
@@ -258,10 +258,10 @@ export const productFonts: Record<ProductName, { title: string; body: string; ti
 };
 
 /**
- * TITLE TREATMENT — the gradient title recipe's per-product dials (BeamPageHeader, default
+ * TITLE TREATMENT — the gradient title recipe's per-product dials (BeamPage, default
  * on). Figma twins (real paths): `title/{dark,light}/tint`, `title/underlineWeight`,
  * `title/underlineFade`, `title/underlineOffset`, `title/{dark,light}/halo` (Deyan syncs Figma).
- * Two gradients, deliberately different (see BeamPageHeader):
+ * Two gradients, deliberately different (see BeamPage):
  *  - `tint`  — % of primary mixed into text-primary for the TEXT gradient's far end. Per MODE:
  *              a dark near-white text tolerates more tint than a light near-black one, where a
  *              high mix raises L and costs contrast. Light values are proposals — flag: unsure,
@@ -500,7 +500,7 @@ export const derived = {
     light: 'color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c h / 0.25) 77%, black)',
   },
   /**
-   * EDGE SHADOW — the occlusion tint for a scroll-affordance edge (BeamDataTable's rail-left and
+   * EDGE SHADOW — the occlusion tint for a scroll-affordance edge (Table's rail-left and
    * container-right shadows; sticky headers will want it next). A quiet black at low alpha reads as
    * depth on both light and dark surfaces, so ONE mode-agnostic value — no per-scheme fork, no
    * hardcoded rgba. Consumed as a box-shadow tint and as a linear-gradient stop; retired

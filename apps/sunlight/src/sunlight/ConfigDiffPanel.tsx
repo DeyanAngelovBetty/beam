@@ -1,4 +1,4 @@
-import { Paper, Box, Stack, Typography, Divider, Alert, Table, TableHead, TableBody, TableRow, TableCell } from '@betty/beam';
+import { Paper, Box, Stack, Typography, Divider, Alert, MuiTable as Table, TableHead, TableBody, TableRow, TableCell } from '@betty/beam';
 import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
 import type { ChangeRequest } from './changeRequests';
 import type { LoyaltyStatusDraft, StatusReward } from './loyaltyStatuses';

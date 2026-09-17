@@ -12,9 +12,9 @@ import {
   Select,
   TextField,
   Typography,
-  BeamPageHeader,
-  BeamFilterBar,
-  BeamDataTable,
+  BeamPage,
+  TableFilters,
+  Table,
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
 import { RouterIdentityLink } from './RouterIdentityLink';
@@ -46,10 +46,10 @@ const EMPTY: Filters = { statuses: [], type: 'any', q: '', by: 'any', from: '', 
  *
  * SPECULATIVE BY DESIGN: our CR model, these columns, and the Approve/Reject vocabulary are OUR
  * PROPOSAL — the backend team's actual contract is unavailable, so this is designed on our own
- * semantics with their screenshots as visual reference. Built on the existing BeamFilterBar as-is;
+ * semantics with their screenshots as visual reference. Built on the existing TableFilters as-is;
  * moving it to a field-schema filter API is a recorded LATER task, not this one.
  *
- * A BeamFilterBar over the FULL change-request set (the archive is browsable now, not just the
+ * A TableFilters over the FULL change-request set (the archive is browsable now, not just the
  * pending queue). Status is a FILTER (multi-select), never tabs — one queue, not five pages
  * (grammar §5). Sort: PENDING PINNED FIRST, then recency — the checker's default is "everything
  * actionable, on top." A record page's alert deep-links here with `?type=<slug>` (that FEATURE's
@@ -216,12 +216,12 @@ export function PendingApprovalsPage() {
   return (
     <Stack spacing={3}>
       {/* Acting-as moved to the shell chrome (global) — see ShellFooter / ActingAsSwitcher. */}
-      <BeamPageHeader
+      <BeamPage
         title="Configuration Approvals"
         subtitle="Change requests awaiting a second pair of eyes — and the decision history."
       />
 
-      <BeamFilterBar
+      <TableFilters
         aria-label="Change request filters"
         searchValue={draft.q}
         onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
@@ -260,7 +260,7 @@ export function PendingApprovalsPage() {
         </TextField>
         <TextField fullWidth size="small" type="date" label="From" value={draft.from} onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
         <TextField fullWidth size="small" type="date" label="To" value={draft.to} onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
-      </BeamFilterBar>
+      </TableFilters>
 
       {notice && (
         <Alert severity={notice.severity} onClose={() => setNotice(null)}>
@@ -269,7 +269,7 @@ export function PendingApprovalsPage() {
       )}
 
       <Box>
-        <BeamDataTable
+        <Table
           columns={columns}
           rows={rows}
           getRowId={(cr) => cr.id}

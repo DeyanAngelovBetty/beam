@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * BeamPageHeader — a breadcrumb back link, page title, one sub-title slot, and a right-aligned
+ * BeamPage — a breadcrumb back link, page title, one sub-title slot, and a right-aligned
  * primary action (with optional secondary actions to its left).
  *
  * Layout is the ratified Figma pass (Beam MUI v9 → PageHeader, node 12745:68663): three fixed rows —
@@ -26,7 +26,7 @@ export interface BeamBackLink {
   onClick?: () => void;
 }
 
-export interface BeamPageHeaderProps {
+export interface BeamPageProps {
   title: string;
   /** Back link, rendered as the breadcrumb row above the title (§4). */
   back?: BeamBackLink;

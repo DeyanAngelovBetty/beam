@@ -194,7 +194,7 @@ decoration.
   page** does view↔edit as a **route split** (`/users/:id` vs `/users/:id/edit`), not an in-page
   mode flip — so its `/edit` cancel navigates by its own route mechanism and is **out of scope**
   for the flip rule. Left as-is; unify onto the in-page flip only if the split ever costs us.
-- Anatomy = the `PayoutConfigEditor` precedent: `BeamPageHeader` + back link,
+- Anatomy = the `PayoutConfigEditor` precedent: `BeamPage` + back link,
   **[Cancel] [Submit for approval]** in the header actions slot, dirty-gated,
   `useBlocker` discard guard. No commit bar (parked, §4 of detail grammar).
 - **Import → draft, never store.** A single-entity file import deep-links into edit
@@ -276,7 +276,7 @@ An entity onboarded without all six is half-governed; flag it, don't ship it.
   vs proposed, changed-only with non-colour markers, snapshot-absent fallback. Live-vs-proposed
   comparison is real; the open part is only reconciling it with the eventual backend diff.
 - **Filter-API reconciliation** — the approvals list is built on the existing composition
-  `BeamFilterBar`; moving it to a field-schema filter API is a recorded later task, not owned here.
+  `TableFilters`; moving it to a field-schema filter API is a recorded later task, not owned here.
 - **App-level alert bar — built** *(2026-08-14, supersedes the earlier "later" deferral for §3
   only).* A standing condition needs a standing surface: `AppAlertBar` is a full-width, in-flow
   alert bar (pushes content down) filling the gap where our shared component set has only a

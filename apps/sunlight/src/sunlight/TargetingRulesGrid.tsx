@@ -2,7 +2,7 @@ import {
   BeamStatusBadge,
   Paper,
   Stack,
-  Table,
+  MuiTable as Table,
   TableBody,
   TableCell,
   TableHead,

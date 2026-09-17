@@ -9,7 +9,7 @@ import type { BeamTabItem } from './BeamTabs.types';
  * Nesting is a capability, not a default — see BeamTabs.types.ts.
  */
 const meta = {
-  title: 'Organisms (placeholder)/BeamTabs',
+  title: 'Components/BeamTabs',
   component: BeamTabs,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof BeamTabs>;

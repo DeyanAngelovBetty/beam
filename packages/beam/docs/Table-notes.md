@@ -1,7 +1,7 @@
-# BeamDataTable — organism build-notes
+# Table — organism build-notes
 
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
-spec: `SPEC-beam-datatable-column-manager.md`.)
+spec: `SPEC-table-column-manager.md`.)
 
 ## Footer toolbar height — finishing the density pass *(2026-09-14)*
 
@@ -19,7 +19,7 @@ breakpoint media queries (48 landscape, 64 up-sm) — so the footer measured ~54
 ## Pagination persistence + deterministic re-anchor *(2026-09-14)*
 
 - **ROOT CAUSE of the "nav toggle resets rowsPerPage 50→10" symptom (shell remount — reported, fix deferred
-  as structural).** `BeamAppShell`'s `frameContent` is a ternary on `effectiveLocked` producing two
+  as structural).** `AppShell`'s `frameContent` is a ternary on `effectiveLocked` producing two
   structurally different trees: locked = `<Box display:grid>{nav}{main}</Box>`, closed = a Fragment
   `<>{strip}{hoverZone}{main}{peek}</>`. When the nav toggles, the appFrame's child changes root TYPE
   (grid `<div>` ↔ Fragment, which flattens to a different child list), so React can't reconcile `{main}` to
@@ -50,7 +50,7 @@ breakpoint media queries (48 landscape, 64 up-sm) — so the footer measured ~54
 The PAGE stays the scroll owner; the grid grows to content height; its chrome pins to the scrollport
 edges only while crossing them (sticky's natural content-height-when-short for free). No `maxBodyHeight`,
 no internal scroll region, no virtualization. Opt-in (`stickyChrome`); absent = byte-identical. **Story
-`Organisms/BeamDataTable → StickyChromeBench` (1,200 rows / page 500) is the bench** — eyeballed before
+`Organisms/Table → StickyChromeBench` (1,200 rows / page 500) is the bench** — eyeballed before
 Gaspar wiring.
 
 - **The one overflow trap:** the grid `Paper`'s `overflow: hidden` → **`overflow: clip`** when
@@ -91,9 +91,9 @@ When pinned, the footer becomes the page floor rather than floating with an offs
   footer sits where it does today — **the spacing merely changed owners** (from the shell's `pb` to the
   footer floor's).
 - **`data-beam-sticky-chrome` is a documented CONTRACT** (published on the grid `Paper` when
-  `stickyChrome`): the page's scroll owner drops its bottom padding for it. See **BeamAppShell-notes**.
+  `stickyChrome`): the page's scroll owner drops its bottom padding for it. See **AppShell-notes**.
 - **The shared spacing value:** `CONTENT_VERTICAL` (`{ xs: 2, md: 10 }`) now lives in `theme/tokens.ts`
-  and is read by BOTH `BeamAppShell` (its `main` padding) and this footer floor — one source, no drift.
+  and is read by BOTH `AppShell` (its `main` padding) and this footer floor — one source, no drift.
   It was a magic const in the shell; promoted to a token so the two sides can't disagree.
 
 *Eyeball nuance (bench):* at rest the page-floor padding + the `Paper`'s bottom border/radius now sit
@@ -357,7 +357,7 @@ Three cosmetic passes. **A** (frosted ceiling + filter-panel exit) is BENCH-gate
   absorbed AT REST by the pre-grid section's **negative margin** in `stickyChromeGapSx` (`PAGE_SECTION_GAP −
   CHROME_CEILING_BAND` = −40px → visible rest gap = −40 + 64 = 24, pixel-identical). The budget is
   `PAGE_SECTION_GAP`, NOT `CONTENT_TOP` (whose nav dock/undock duty disqualifies it; and md's 80 < the 88
-  it'd need). `LOGO_BAR_HEIGHT` is the ONE source with the shell's `STRIP_HEIGHT` (BeamAppShell imports it).
+  it'd need). `LOGO_BAR_HEIGHT` is the ONE source with the shell's `STRIP_HEIGHT` (AppShell imports it).
   Sentinel `rootMargin` is plain `0px` again (flush pin). *Edge case:* a sticky grid with NO preceding
   section has no negative margin to absorb the extra 40px, so its top gap is ~40px larger — acceptable, no
   preceding seam to preserve there.
@@ -456,7 +456,7 @@ back-compat, action-as-data.
 - **Row (`BeamRowAction` is now a DISCRIMINATED UNION).** Flat `{ onSelect, options?: never }` XOR menu
   `{ options: {id,label,onSelect}[], onSelect?: never }` — an action with neither/both is
   unrepresentable (grammar as types, the BeamBadge lesson). The row is closure-captured, so each option
-  carries its **own `onSelect`** (distributed, mirroring the flat action). `BeamRowMenu` renders a menu
+  carries its **own `onSelect`** (distributed, mirroring the flat action). `ActionMenu` renders a menu
   action as a **submenu** (chevron → nested Menu); the expanded-row `RowActionBar` renders it as a small
   anchored menu — one definition, both projections, can't drift (grammar §3).
 - **Asymmetry, deliberate:** bulk centralizes (`onBulkAction(…, optionId)`) because the organism owns
@@ -581,7 +581,7 @@ Sunlight/midnight grid passes `selectable`/`columnManager`/`bulkActions`).
 
 - **Bulk-actions strip moved INSIDE the grid's `Paper`, as the top section** (was an unboxed strip on
   the page background above the surface). Now a bordered top region (`px:2`, `minHeight:48`,
-  `borderBottom`) — the BeamPaper-sectioning *pattern* (DetailsPanel/PrizeWall precedent), applied
+  `borderBottom`) — the Section-sectioning *pattern* (DetailsPanel/PrizeWall precedent), applied
   without adopting the component (see the future task below).
 - **Column-manager trigger relocated to the FOOTER, leftmost**, with the aria-live selection count
   immediately to its right; rows-per-page + range + pagination stay right. aria-live preserved across
@@ -593,14 +593,14 @@ Sunlight/midnight grid passes `selectable`/`columnManager`/`bulkActions`).
   the density topic; further density/sticky work is out of scope until picked up deliberately.
 
 **Future doctrine task (own task, own gate):** *grid surface → a shared surface primitive, or an
-always-bordered / full-bleed / multi-region BeamPaper variant.* Today the grid uses raw
-`Paper variant="outlined"`. BeamPaper was **not** adopted here because its border is a semantic — the
+always-bordered / full-bleed / multi-region Section variant.* Today the grid uses raw
+`Paper variant="outlined"`. Section was **not** adopted here because its border is a semantic — the
 editability border (transparent until the surface holds an input) — whereas a grid must be
 always-outlined; adopting it without an API extension would ship a regression as a swap.
 
 ## Batch-actions surface — eligibility + confirm + selection-aware factory *(2026-09-08)*
 
-Brought the bulk-actions surface up to the **BeamRowMenu doctrine** the row kebab already followed
+Brought the bulk-actions surface up to the **ActionMenu doctrine** the row kebab already followed
 (actions computed against their subject; disable-with-a-reason, never silently hide). All additive,
 opt-in, back-compat — the only consumers were two stories.
 

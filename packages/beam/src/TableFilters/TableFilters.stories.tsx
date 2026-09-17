@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
-import { BeamFilterBar } from './BeamFilterBar';
+import { TableFilters } from './TableFilters';
 
 /**
  * v1 filter bar: built-in search, promoted filters as children, Filter /
@@ -10,10 +10,10 @@ import { BeamFilterBar } from './BeamFilterBar';
  * are children — a field-schema API is a later design decision (grammar §1).
  */
 const meta = {
-  title: 'Organisms (placeholder)/BeamFilterBar',
-  component: BeamFilterBar,
+  title: 'Components/TableFilters',
+  component: TableFilters,
   parameters: { layout: 'padded' },
-} satisfies Meta<typeof BeamFilterBar>;
+} satisfies Meta<typeof TableFilters>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -34,7 +34,7 @@ export const SearchAndFilters: Story = {
     const [status, setStatus] = useState('any');
     const applied = search !== '' || status !== 'any';
     return (
-      <BeamFilterBar
+      <TableFilters
         {...args}
         searchValue={search}
         onSearchChange={setSearch}
@@ -58,7 +58,7 @@ export const SearchAndFilters: Story = {
           <MenuItem value="active">Active</MenuItem>
           <MenuItem value="inactive">Inactive</MenuItem>
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
     );
   },
 };
@@ -70,7 +70,7 @@ export const WithPresets: Story = {
     const [preset, setPreset] = useState<string | null>('7d');
     const [search, setSearch] = useState('');
     return (
-      <BeamFilterBar
+      <TableFilters
         {...args}
         searchValue={search}
         onSearchChange={setSearch}
@@ -89,7 +89,7 @@ export const WithPresets: Story = {
           <MenuItem value="interac">Interac</MenuItem>
         </TextField>
         <TextField label="Amount" size="small" fullWidth />
-      </BeamFilterBar>
+      </TableFilters>
     );
   },
 };
@@ -111,7 +111,7 @@ export const Advanced: Story = {
     const [threeDs, setThreeDs] = useState('');
     const applied = search !== '' || status !== '' || currency !== '' || threeDs !== '';
     return (
-      <BeamFilterBar
+      <TableFilters
         {...args}
         searchValue={search}
         onSearchChange={setSearch}
@@ -165,7 +165,7 @@ export const Advanced: Story = {
           <MenuItem value="Pending">Pending</MenuItem>
           <MenuItem value="Failed">Failed</MenuItem>
         </TextField>
-      </BeamFilterBar>
+      </TableFilters>
     );
   },
 };
