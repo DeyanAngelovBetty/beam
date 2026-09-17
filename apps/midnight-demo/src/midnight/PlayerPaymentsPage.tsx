@@ -2,17 +2,17 @@ import { useState } from 'react';
 import {
   Stack,
   Button,
-  TextField,
-  MenuItem,
+  Chip,
   BeamPage,
   BeamStat,
   DetailsPanel,
   BeamTabs,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
   BeamStatusBadge,
 } from '@betty/beam';
-import type { BeamColumn, BeamTabItem } from '@betty/beam';
+import type { BeamColumn, BeamTabItem, TableFilterDefinition } from '@betty/beam';
 import { CURRENT_PLAYER, TRANSACTIONS, type PaymentTransaction } from './players';
 
 /**
@@ -67,13 +67,38 @@ const RANGE_PRESETS = [
   { id: '60d', label: 'Last 60 days' },
 ];
 
+// Retrofit demo: these fields are illustrative (the Table shows all TRANSACTIONS; nothing filters yet).
+// Modelled as definitions to exercise the ported bar. Dates kept as plain text (matching the original
+// placeholder fields — the dateTime-sliced ruling is for Gaspar's live date filters).
+interface TxFilters {
+  transactionId: string;
+  startDate: string;
+  endDate: string;
+  method: string;
+  status: string;
+  type: string;
+}
+const EMPTY: TxFilters = { transactionId: '', startDate: '', endDate: '', method: 'any', status: 'any', type: 'any' };
+const TX_DEFS: TableFilterDefinition<TxFilters>[] = [
+  { key: 'transactionId', control: 'text', label: 'Transaction ID' },
+  { key: 'startDate', control: 'text', label: 'Start date' },
+  { key: 'endDate', control: 'text', label: 'End date' },
+  { key: 'method', control: 'select', label: 'Payment method', options: [{ label: 'Any', value: 'any' }, { label: 'Debit card', value: 'card' }, { label: 'Interac', value: 'interac' }] },
+  { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, { label: 'Settled', value: 'settled' }, { label: 'Pending', value: 'pending' }, { label: 'Failed', value: 'error' }] },
+  { key: 'type', control: 'select', label: 'Transaction type', options: [{ label: 'Any', value: 'any' }, { label: 'Deposit', value: 'deposit' }, { label: 'Withdrawal', value: 'withdrawal' }] },
+];
+
 const money = (amount: number, currency: string) =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency }).format(amount);
 
 export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
   const [tab, setTab] = useState('payments');
   const [subTab, setSubTab] = useState('transactions');
+  // Range presets are a page-owned affordance — official TableFilters has no `presets` shape, so (per
+  // the [+]-style ruling) they stay page-level composition around the unmodified bar. No urlSync on the
+  // demo; App mounts a MemoryRouter only so the controller's useSearchParams has a Router.
   const [preset, setPreset] = useState<string | null>('7d');
+  const filters = useTableFilters<TxFilters>({ initialValues: EMPTY });
 
   const columns: BeamColumn<PaymentTransaction>[] = [
     { key: 'createdAt', header: 'Created at', render: (t) => t.createdAt, getValue: (t) => t.createdAt, width: 170 },
@@ -129,35 +154,22 @@ export function PlayerPaymentsPage({ onBack }: PlayerPaymentsPageProps) {
         aria-label="Player sections"
       />
 
-      <TableFiltersLegacy
-        aria-label="Payment transaction filters"
-        presets={RANGE_PRESETS}
-        activePreset={preset}
-        onPresetChange={setPreset}
-        applied={preset !== null}
-        onFilter={() => {}}
-        onClearAll={() => setPreset(null)}
-      >
-        <TextField label="Transaction ID" size="small" fullWidth />
-        <TextField label="Start date" size="small" fullWidth />
-        <TextField label="End date" size="small" fullWidth />
-        <TextField label="Payment method" size="small" select fullWidth defaultValue="any">
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="card">Debit card</MenuItem>
-          <MenuItem value="interac">Interac</MenuItem>
-        </TextField>
-        <TextField label="Status" size="small" select fullWidth defaultValue="any">
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="settled">Settled</MenuItem>
-          <MenuItem value="pending">Pending</MenuItem>
-          <MenuItem value="error">Failed</MenuItem>
-        </TextField>
-        <TextField label="Transaction type" size="small" select fullWidth defaultValue="any">
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="deposit">Deposit</MenuItem>
-          <MenuItem value="withdrawal">Withdrawal</MenuItem>
-        </TextField>
-      </TableFiltersLegacy>
+      {/* Range presets: page-owned quick-picks above the definition-driven bar (official has no `presets`
+          shape). Illustrative on the demo — they toggle emphasis but don't yet narrow the rows. */}
+      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+        {RANGE_PRESETS.map((p) => (
+          <Chip
+            key={p.id}
+            label={p.label}
+            size="small"
+            variant={preset === p.id ? 'filled' : 'outlined'}
+            color={preset === p.id ? 'primary' : 'default'}
+            onClick={() => setPreset(preset === p.id ? null : p.id)}
+          />
+        ))}
+      </Stack>
+
+      <TableFilters definitions={TX_DEFS} controller={filters} />
 
       <Table
         columns={columns}

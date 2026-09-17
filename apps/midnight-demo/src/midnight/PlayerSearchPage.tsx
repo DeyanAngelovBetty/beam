@@ -1,15 +1,13 @@
-import { useState } from 'react';
 import {
   Stack,
-  TextField,
-  MenuItem,
   Button,
   BeamPage,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
   BeamStatusBadge,
 } from '@betty/beam';
-import type { BeamColumn } from '@betty/beam';
+import type { BeamColumn, TableFilterDefinition } from '@betty/beam';
 import { PLAYERS, type Player } from './players';
 
 /**
@@ -17,9 +15,9 @@ import { PLAYERS, type Player } from './players';
  *
  * Same job as Midnight's screen — find a player by identity or registration
  * facts, then open them. The differences are the point: filters live in one
- * TableFiltersLegacy rather than a loose field grid, status is the shared badge
- * vocabulary rather than bare text, and the row opens the player instead of
- * requiring a separate action column.
+ * TableFilters (the official definition-driven bar) rather than a loose field
+ * grid, status is the shared badge vocabulary rather than bare text, and the row
+ * opens the player instead of requiring a separate action column.
  */
 
 interface PlayerSearchPageProps {
@@ -28,8 +26,32 @@ interface PlayerSearchPageProps {
 
 const STATUS_OPTIONS = ['Any', 'Approved', 'Pending'];
 
+// Retrofit demo: the identity fields are illustrative (the Table's own `searchable` box does the live
+// filtering); only Status is a bound control. Modelled as definitions to exercise the ported bar.
+interface PlayerFilters {
+  playerId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  registrationIp: string;
+  status: string;
+}
+const EMPTY: PlayerFilters = { playerId: '', email: '', firstName: '', lastName: '', phone: '', registrationIp: '', status: 'Any' };
+const PLAYER_DEFS: TableFilterDefinition<PlayerFilters>[] = [
+  { key: 'playerId', control: 'text', label: 'Player ID' },
+  { key: 'email', control: 'text', label: 'Email' },
+  { key: 'firstName', control: 'text', label: 'First name' },
+  { key: 'lastName', control: 'text', label: 'Last name' },
+  { key: 'phone', control: 'text', label: 'Phone' },
+  { key: 'registrationIp', control: 'text', label: 'Registration IP' },
+  { key: 'status', control: 'select', label: 'Status', options: STATUS_OPTIONS.map((o) => ({ label: o, value: o })) },
+];
+
 export function PlayerSearchPage({ onOpenPlayer }: PlayerSearchPageProps) {
-  const [status, setStatus] = useState('Any');
+  // No urlSync on the retrofit demo (App mounts a MemoryRouter only so the controller's useSearchParams
+  // has a Router). The bar is illustrative; the Table's `searchable` box does the real filtering.
+  const filters = useTableFilters<PlayerFilters>({ initialValues: EMPTY });
 
   const columns: BeamColumn<Player>[] = [
     { key: 'id', header: 'Player ID', render: (p) => p.id, getValue: (p) => p.id, width: 110 },
@@ -65,33 +87,7 @@ export function PlayerSearchPage({ onOpenPlayer }: PlayerSearchPageProps) {
         subtitle="Find a player by identity or registration facts."
       />
 
-      <TableFiltersLegacy
-        aria-label="Player search filters"
-        applied={status !== 'Any'}
-        onFilter={() => {}}
-        onClearAll={() => setStatus('Any')}
-      >
-        <TextField label="Player ID" size="small" fullWidth />
-        <TextField label="Email" size="small" fullWidth />
-        <TextField label="First name" size="small" fullWidth />
-        <TextField label="Last name" size="small" fullWidth />
-        <TextField label="Phone" size="small" fullWidth />
-        <TextField label="Registration IP" size="small" fullWidth />
-        <TextField
-          label="Status"
-          size="small"
-          select
-          fullWidth
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </TextField>
-      </TableFiltersLegacy>
+      <TableFilters definitions={PLAYER_DEFS} controller={filters} />
 
       <Table
         columns={columns}
