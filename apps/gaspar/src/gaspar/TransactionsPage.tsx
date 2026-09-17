@@ -9,9 +9,11 @@ import {
   MenuItem,
   Menu,
   Button,
-  Chip,
+  TextField,
+  Paper,
+  Divider,
+  ListItemText,
   BeamBadge,
-  TableFilters,
   useTableFilters,
   Table,
   BeamPage,
@@ -23,6 +25,7 @@ import type { BeamColumn, BeamBadgeProps, TableFilterDefinition } from '@betty/b
 import type { PaginationState } from '@tanstack/react-table';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import { useMilestone } from './milestone';
 
 // Pagination persisted in the URL (the source of truth) — survives the nav-toggle remount + refresh, and
@@ -255,13 +258,23 @@ const EMPTY_TX_FILTERS: TxFilters = {
   status: '', direction: '', provider: '', currency: '', threeDs: '', errorCode: '', amountMin: '', amountMax: '',
 };
 
-// The optional (v1.2 `[+]`) filter keys — the page owns which are ACTIVE and renders the `[+]` menu, then
-// includes their definitions in the array. official TableFilters stays unmodified (page-level composition).
+// The optional (v1.2 `[+]`) filter KEYS — the concrete TxFilters fields an addable maps to. The page owns
+// which are ACTIVE, folds their definitions into the array, and renders each active field with an inline ×.
 const OPTIONAL_KEYS = ['currency', 'threeDs', 'errorCode', 'amountMin', 'amountMax'] as const;
 type OptionalKey = (typeof OPTIONAL_KEYS)[number];
 const OPTIONAL_LABEL: Record<OptionalKey, string> = {
   currency: 'Currency', threeDs: '3DS status', errorCode: 'Error code', amountMin: 'Min amount', amountMax: 'Max amount',
 };
+
+// LOGICAL addables shown in the `[+]` menu. Each maps to one or two keys; "Amount" is a SINGLE entry that
+// adds the min+max pair (and its × removes both). The awaiting-data catalog mirrors the column manager's:
+// known dimensions with no data source yet, shown as disabled items with an "awaiting data" subtitle.
+type Addable = 'threeDs' | 'errorCode' | 'amount' | 'currency';
+const ADDABLE_ORDER: Addable[] = ['threeDs', 'errorCode', 'amount', 'currency'];
+const ADDABLE_LABEL: Record<Addable, string> = { threeDs: '3DS status', errorCode: 'Error code', amount: 'Amount', currency: 'Currency' };
+const ADDABLE_KEYS: Record<Addable, OptionalKey[]> = { threeDs: ['threeDs'], errorCode: ['errorCode'], amount: ['amountMin', 'amountMax'], currency: ['currency'] };
+const KEY_ADDABLE: Record<OptionalKey, Addable> = { threeDs: 'threeDs', errorCode: 'errorCode', amountMin: 'amount', amountMax: 'amount', currency: 'currency' };
+const AWAITING_DATA_FIELDS = ['Transaction Type', 'Name on Card', 'ProcessedBy', 'Fraud Rules Matched'];
 
 const ERROR_CODE_NONE = '__none__'; // sentinel value for "rows with no error code"
 
@@ -525,14 +538,24 @@ export function TransactionsPage() {
     filters.pagination.onChange({ page: next.pageIndex + 1, pageSize: next.pageSize });
   };
 
-  // v1.2 `[+]` advanced fields — page-level composition around the official component (which stays static):
-  // the page owns WHICH optional definitions are active and renders the [+] / remove menu; active keys are
-  // folded into the `definitions` array. (Was the Legacy bar's advanced addable-field menu.)
-  const [activeOptional, setActiveOptional] = useState<OptionalKey[]>([]);
+  // v1.2 `[+]` advanced fields — PAGE-LEVEL COMPOSITION. Official TableFilters has no addable-fields / `[+]` /
+  // per-field-× shape (verified against beam-alex @ b40e815 — it's a plain definition-driven bar), so to
+  // reproduce the Gaspar screenshot exactly (the `[+]` as an in-grid cell after the last field; each added
+  // field carrying an inline ×) the whole bar is composed page-side below, mirroring official's Paper + grid
+  // geometry and driven by the SAME `useTableFilters` controller. The strongest case for the folded upstream
+  // pitch: native addable-fields support (see the wave-end doctrine note). The page owns which LOGICAL
+  // addables are active; their keys fold into the `definitions` array.
+  const [activeAddables, setActiveAddables] = useState<Addable[]>([]);
   const [addAnchor, setAddAnchor] = useState<HTMLElement | null>(null);
-  const removeOptional = (key: OptionalKey) => {
-    setActiveOptional((prev) => prev.filter((k) => k !== key));
-    filters.setDraftValue(key, '');
+  const activeOptional = useMemo<OptionalKey[]>(() => activeAddables.flatMap((a) => ADDABLE_KEYS[a]), [activeAddables]);
+  const addAddable = (a: Addable) => {
+    setActiveAddables((prev) => [...prev, a]);
+    setAddAnchor(null);
+  };
+  const removeAddable = (a: Addable) => {
+    setActiveAddables((prev) => prev.filter((x) => x !== a));
+    // Orphan rule: drop each mapped key's draft + applied + URL value together (one × removes the pair).
+    ADDABLE_KEYS[a].forEach((k) => filters.clearValue(k));
   };
 
   // Definitions — search (compound at v1.1+, else the four id/psp/customer/email text fields), the date
@@ -697,47 +720,160 @@ export function TransactionsPage() {
     { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => r.threeDsStatus },
   ];
 
+  // Page-composed field twins — mirror official TableFilters' renderFilter (text / dateTime / select) EXACTLY
+  // so the composed bar is visually identical to the component; values + onChange run through the controller.
+  const draft = filters.draft;
+  const renderControl = (def: TableFilterDefinition<TxFilters>) => {
+    const value = draft[def.key];
+    if (def.control === 'text') {
+      return (
+        <TextField
+          placeholder={def.placeholder || def.label}
+          value={value as string}
+          disabled={def.disabled}
+          size="small"
+          fullWidth
+          onChange={(e) => filters.setDraftValue(def.key, e.target.value as TxFilters[typeof def.key])}
+        />
+      );
+    }
+    if (def.control === 'dateTime') {
+      return (
+        <TextField
+          type="datetime-local"
+          label={def.label}
+          value={(value as string | null) ?? ''}
+          disabled={def.disabled}
+          size="small"
+          fullWidth
+          slotProps={{ inputLabel: { shrink: true } }}
+          onChange={(e) => filters.setDraftValue(def.key, e.target.value as TxFilters[typeof def.key])}
+        />
+      );
+    }
+    return (
+      <TextField
+        select
+        label={def.label}
+        value={value as string}
+        disabled={def.disabled}
+        size="small"
+        fullWidth
+        onChange={(e) => filters.setDraftValue(def.key, e.target.value as TxFilters[typeof def.key])}
+      >
+        {def.options.map((opt) => (
+          <MenuItem key={String(opt.value)} value={opt.value as string}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </TextField>
+    );
+  };
+
+  const remainingAddables = ADDABLE_ORDER.filter((a) => !activeAddables.includes(a));
+
   // Section gap from the shared token; the gap-surgery sx is inert until this grid opts into stickyChrome
   // (then it donates the pre-grid seam to the header ceiling).
   return (
     <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
       <BeamPage title="Transactions" />
 
-      {/* Filters — official TableFilters (typed `definitions` + `useTableFilters` controller: draft → apply →
-          applied, Filter/Clear built in). Milestone gating is PAGE-LEVEL (the definitions array per phase),
-          never a component concern: v1.0 shows four id/psp/customer/email text fields, v1.1+ the compound
-          search. The v1.2 `[+]` advanced menu is PAGE-LOCAL composition around the static component (the page
-          owns which optional definitions are active). Wrapped in the stickyChromeExitSx Box so the exit
-          animation + snap geometry are unchanged (the Box is still the pre-grid section). */}
+      {/* Filters — PAGE-COMPOSED bar (mirrors official TableFilters' Paper + grid + Filter/Clear geometry,
+          driven by the same `useTableFilters` controller). It is composed page-side rather than rendering
+          <TableFilters> because the Gaspar screenshot puts the `[+]` IN the grid (a square outlined button
+          after the last field) and hangs an inline × on each added field — neither of which the unmodified
+          official component can express (it has no addable-fields shape; verified against beam-alex). Base
+          fields still come from the typed `definitions` array; milestone gating stays PAGE-LEVEL (the array
+          per phase: v1.0 four id/psp/customer/email text fields, v1.1+ the compound search). Wrapped in the
+          stickyChromeExitSx Box so the exit animation + snap geometry are unchanged (still the pre-grid
+          section). */}
       <Box sx={stickyChromeExitSx}>
-        {caps.advancedFilters && (
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
-            {activeOptional.map((k) => (
-              <Chip key={k} label={OPTIONAL_LABEL[k]} size="small" onDelete={() => removeOptional(k)} />
-            ))}
-            {activeOptional.length < OPTIONAL_KEYS.length && (
-              <>
-                <Button size="small" variant="text" startIcon={<AddIcon />} onClick={(e) => setAddAnchor(e.currentTarget)}>
-                  Add filter
-                </Button>
-                <Menu anchorEl={addAnchor} open={Boolean(addAnchor)} onClose={() => setAddAnchor(null)}>
-                  {OPTIONAL_KEYS.filter((k) => !activeOptional.includes(k)).map((k) => (
-                    <MenuItem
-                      key={k}
-                      onClick={() => {
-                        setActiveOptional((prev) => [...prev, k]);
-                        setAddAnchor(null);
+        <Paper
+          component="form"
+          variant="outlined"
+          onSubmit={(e) => {
+            e.preventDefault();
+            filters.apply();
+          }}
+          sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}
+          aria-label="Payment transaction filters"
+        >
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+            }}
+          >
+            {definitions.map((def) => {
+              const optional = (OPTIONAL_KEYS as readonly string[]).includes(def.key);
+              if (!optional) return <Box key={def.key}>{renderControl(def)}</Box>;
+              // Added field: an inline × at the top-right (orphan rule — removes the parent addable's key(s)).
+              const addable = KEY_ADDABLE[def.key as OptionalKey];
+              return (
+                <Box key={def.key} sx={{ position: 'relative' }}>
+                  {renderControl(def)}
+                  <Tooltip title={`Remove ${ADDABLE_LABEL[addable]}`}>
+                    <IconButton
+                      size="small"
+                      aria-label={`Remove ${ADDABLE_LABEL[addable]} filter`}
+                      onClick={() => removeAddable(addable)}
+                      sx={{
+                        position: 'absolute',
+                        top: -10,
+                        right: -10,
+                        p: 0.25,
+                        bgcolor: 'background.paper',
+                        border: 1,
+                        borderColor: 'divider',
+                        '&:hover': { bgcolor: 'background.paper' },
                       }}
                     >
-                      {OPTIONAL_LABEL[k]}
+                      <CloseIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              );
+            })}
+            {/* The `[+]` — a square outlined IconButton flowing as the grid cell AFTER the last field (it
+                moves as fields are added). Its menu lists the addable-not-active fields (clickable) then the
+                awaiting-data catalog (disabled, "awaiting data" subtitle — the column-manager pattern). */}
+            {caps.advancedFilters && (
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Tooltip title="Add filter">
+                  <IconButton
+                    aria-label="Add filter"
+                    onClick={(e) => setAddAnchor(e.currentTarget)}
+                    sx={{ border: 1, borderColor: 'divider', borderRadius: 1, width: 40, height: 40 }}
+                  >
+                    <AddIcon />
+                  </IconButton>
+                </Tooltip>
+                <Menu anchorEl={addAnchor} open={Boolean(addAnchor)} onClose={() => setAddAnchor(null)}>
+                  {remainingAddables.map((a) => (
+                    <MenuItem key={a} onClick={() => addAddable(a)}>
+                      {ADDABLE_LABEL[a]}
+                    </MenuItem>
+                  ))}
+                  {remainingAddables.length > 0 && <Divider />}
+                  {AWAITING_DATA_FIELDS.map((label) => (
+                    <MenuItem key={label} disabled>
+                      <ListItemText primary={label} secondary="awaiting data" />
                     </MenuItem>
                   ))}
                 </Menu>
-              </>
+              </Box>
             )}
           </Box>
-        )}
-        <TableFilters definitions={definitions} controller={filters} />
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button variant={filters.isDraft ? 'contained' : 'outlined'} type="submit">
+              Filter
+            </Button>
+            <Button variant="text" onClick={filters.clear} disabled={!filters.canClear} type="button">
+              Clear All
+            </Button>
+          </Box>
+        </Paper>
       </Box>
 
       <Table

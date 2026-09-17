@@ -95,6 +95,21 @@ function useTableFilters<TFilters extends object>({
 
   const resetDraft = useCallback(() => setDraft(applied), [applied]);
 
+  // LOCAL ADDITION (flagged — not in official's controller, alongside `applied`/`resetDraft`/`pagination`).
+  // Clears ONE key's draft + applied + URL param together, leaving every other filter and the pagination
+  // untouched. Wave-1 orphan rule: removing a page-level `[+]` field must drop that field's draft, applied,
+  // AND URL value in one shot — `setDraftValue` touches draft only, and `apply` commits the WHOLE draft.
+  const clearValue = useCallback(
+    <K extends keyof TFilters>(key: K) => {
+      const nextApplied = { ...applied, [key]: initialValues[key] };
+      setDraft((prev) => ({ ...prev, [key]: initialValues[key] }));
+      setApplied(nextApplied);
+      writeUrl(nextApplied, paginationState);
+      onAppliedChange?.(nextApplied, 'apply');
+    },
+    [applied, initialValues, writeUrl, paginationState, onAppliedChange],
+  );
+
   const changePagination = useCallback(
     (next: TablePaginationState) => {
       setPagination(next);
@@ -122,7 +137,7 @@ function useTableFilters<TFilters extends object>({
     onAppliedChange?.(urlFilters, 'apply');
   }, [searchParams, urlSyncOptions, initialValues, namespace, paginationDefaults, applied, onAppliedChange]);
 
-  return { draft, applied, setDraftValue, apply, clear, resetDraft, canClear, isDraft, pagination };
+  return { draft, applied, setDraftValue, apply, clear, clearValue, resetDraft, canClear, isDraft, pagination };
 }
 
 export default useTableFilters;
