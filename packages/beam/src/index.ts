@@ -43,6 +43,7 @@ export {
   InputAdornment,
   Select,
   MenuItem,
+  Menu,
   Checkbox,
   Radio,
   Switch,

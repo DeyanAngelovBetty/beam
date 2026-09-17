@@ -7,7 +7,8 @@ import {
   Chip,
   BeamStatusBadge,
   Table,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   beamGradientBorder,
   usePointerAngleTracking,
 } from '@betty/beam';
@@ -125,6 +126,25 @@ export type CardSpan = number | 'full' | { divisor: number; min: number; max: nu
  * clamped to the real track count); Variants 1 & 2 ignore it and use colSpan/rowSpan from
  * config. A card cannot be dragged wider — the card decides its span (BEAM Appendix C).
  */
+// Decorative dashboard filter widget — a demo, not a real query. Migrated to official TableFilters +
+// useTableFilters (a component now, so it can call the hook). The old bar's decorative preset chips have no
+// shape in official's model, so they ride page-locally above the component (composition).
+function FilterWidget() {
+  const controller = useTableFilters<{ q: string }>({ initialValues: { q: '' } });
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Stack direction="row" spacing={1}>
+        <Chip label="Last 24h" size="small" />
+        <Chip label="All providers" size="small" variant="outlined" />
+      </Stack>
+      <TableFilters
+        definitions={[{ key: 'q', control: 'text', label: 'Search', placeholder: 'Search transactions…' }]}
+        controller={controller}
+      />
+    </Box>
+  );
+}
+
 export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: CardSpan }> = {
   kpi: { title: 'KPI', node: <KpiCardWidget />, span: 2 }, // ≥2 tracks reveals its chart (CQ.threeCol)
   // Proportional: ~half the grid, never < 2, never > 4. Responds to track count — a wider
@@ -145,17 +165,7 @@ export const WIDGETS: Record<WidgetId, { title: string; node: ReactNode; span: C
   filter: {
     title: 'Filters',
     span: 'full', // a filter bar owns its whole row at every width (1 / -1) — "span 4" was a proxy for this
-    node: (
-      <TableFiltersLegacy
-        aria-label="Dashboard filters"
-        searchValue=""
-        onSearchChange={() => {}}
-        searchPlaceholder="Search transactions…"
-      >
-        <Chip label="Last 24h" size="small" />
-        <Chip label="All providers" size="small" variant="outlined" />
-      </TableFiltersLegacy>
-    ),
+    node: <FilterWidget />,
   },
   table: {
     title: 'Recent transactions',

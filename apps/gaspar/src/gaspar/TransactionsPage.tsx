@@ -7,22 +7,22 @@ import {
   Tooltip,
   IconButton,
   MenuItem,
-  BeamField,
+  Menu,
+  Button,
+  Chip,
   BeamBadge,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
   BeamPage,
-  InputAdornment,
   stickyChromeGapSx,
   stickyChromeExitSx,
   PAGE_SECTION_GAP,
 } from '@betty/beam';
-import type { BeamColumn, AddableField, BeamBadgeProps } from '@betty/beam';
+import type { BeamColumn, BeamBadgeProps, TableFilterDefinition } from '@betty/beam';
 import type { PaginationState } from '@tanstack/react-table';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
-import SearchIcon from '@mui/icons-material/Search';
-import ClearIcon from '@mui/icons-material/Clear';
-import { useSearchParams } from 'react-router-dom';
+import AddIcon from '@mui/icons-material/Add';
 import { useMilestone } from './milestone';
 
 // Pagination persisted in the URL (the source of truth) — survives the nav-toggle remount + refresh, and
@@ -223,47 +223,45 @@ const THREEDS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.threeDsStatus));
 const ERROR_CODE_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.errorCode).filter((c): c is string => Boolean(c)));
 
 /**
- * TableFiltersLegacy's apply model (bar v1 spec; UsersPage is the estate reference): the bar edits a
- * `draft`; the grid filters by `applied`; the Filter CTA commits draft → applied. We keep BOTH stores
- * page-local — no URL/query-param persistence (this page's own constraint), which is the one deviation
- * from UsersPage (it persists `applied` in the URL).
+ * Filter model — official TableFilters + useTableFilters (Wave 1): the controller owns `draft` (edited by
+ * the bar) and `applied` (what the grid filters by); the Filter button commits draft → applied. `urlSync`
+ * mirrors applied filters + page/pageSize to the URL and restores on load / back-forward.
  */
-interface Filters {
-  // Default (always-present) fields.
-  q: string; // COMPOUND search (v1.1+): id / PSP id / customer / email in one field.
-  // v1.0 individual searches (the compound field doesn't exist yet) — each matches its own column. Empty
-  // at v1.1+ (the fields aren't rendered), so the filter can apply both sets unconditionally.
+// Wave-1: the typed filter shape consumed by official TableFilters + useTableFilters. dateTime fields are
+// `string | null` (the control's contract); everything else is a string. Amount is two TEXT defs, parsed
+// leniently in the row filter (upstream gap: official ships MoneyTextField but the definitions model has no
+// money/number/range control — pitch a `money` definition). Dates are `dateTime` defs (upstream gap: no
+// `date` control though official ships DatePicker), sliced to yyyy-mm-dd in the filter to preserve behaviour.
+interface TxFilters {
+  q: string; // COMPOUND search (v1.1+): id / PSP id / customer / email.
   searchId: string;
   searchPsp: string;
   searchCustomer: string;
   searchEmail: string;
-  start: string; // yyyy-mm-dd, inclusive lower bound on createdAt
-  end: string; // yyyy-mm-dd, inclusive upper bound on createdAt
+  createdFrom: string | null;
+  createdTo: string | null;
   status: string;
   direction: string;
   provider: string;
-  // Addable-field VALUE slots (empty unless the field is added AND filled — empty filters nothing).
-  // The bar owns whether these fields are shown; the page always owns their values.
   currency: string;
   threeDs: string;
   errorCode: string; // '' = any; '__none__' = rows with no error code
   amountMin: string;
   amountMax: string;
 }
-const EMPTY_FILTERS: Filters = { q: '', searchId: '', searchPsp: '', searchCustomer: '', searchEmail: '', start: '', end: '', status: '', direction: '', provider: '', currency: '', threeDs: '', errorCode: '', amountMin: '', amountMax: '' };
-const isActive = (f: Filters) =>
-  f.q !== '' || f.searchId !== '' || f.searchPsp !== '' || f.searchCustomer !== '' || f.searchEmail !== '' ||
-  f.start !== '' || f.end !== '' || f.status !== '' || f.direction !== '' || f.provider !== '' ||
-  f.currency !== '' || f.threeDs !== '' || f.errorCode !== '' || f.amountMin !== '' || f.amountMax !== '';
+const EMPTY_TX_FILTERS: TxFilters = {
+  q: '', searchId: '', searchPsp: '', searchCustomer: '', searchEmail: '',
+  createdFrom: null, createdTo: null,
+  status: '', direction: '', provider: '', currency: '', threeDs: '', errorCode: '', amountMin: '', amountMax: '',
+};
 
-// v1.0 individual search fields (replace the compound field, which doesn't exist yet at v1.0). Each maps to
-// its own `Filters` slot + column (see the filter). Order = the 4-up row where the compound search sat.
-const V10_SEARCH_FIELDS: readonly { key: keyof Filters; label: string }[] = [
-  { key: 'searchId', label: 'ID' },
-  { key: 'searchPsp', label: 'PSP ID' },
-  { key: 'searchCustomer', label: 'Customer' },
-  { key: 'searchEmail', label: 'Customer Email' },
-];
+// The optional (v1.2 `[+]`) filter keys — the page owns which are ACTIVE and renders the `[+]` menu, then
+// includes their definitions in the array. official TableFilters stays unmodified (page-level composition).
+const OPTIONAL_KEYS = ['currency', 'threeDs', 'errorCode', 'amountMin', 'amountMax'] as const;
+type OptionalKey = (typeof OPTIONAL_KEYS)[number];
+const OPTIONAL_LABEL: Record<OptionalKey, string> = {
+  currency: 'Currency', threeDs: '3DS status', errorCode: 'Error code', amountMin: 'Min amount', amountMax: 'Max amount',
+};
 
 const ERROR_CODE_NONE = '__none__'; // sentinel value for "rows with no error code"
 
@@ -509,109 +507,63 @@ export function TransactionsPage() {
   // today's full behavior: every cap true.
   const { caps } = useMilestone();
 
-  // Pagination derives from the URL (source of truth). Grid state flows from `pagination`; changes write
-  // back via `onPaginationChange` (TanStack's updater signature, passed straight through). Push (not replace)
-  // so back/forward step through pages; defaults are omitted so the URL stays clean at 10 / page 1.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const rawSize = parseInt(searchParams.get('pageSize') ?? '', 10);
-  const rawPage = parseInt(searchParams.get('page') ?? '', 10);
-  const pagination: PaginationState = {
-    pageSize: Number.isFinite(rawSize) && rawSize > 0 ? rawSize : DEFAULT_PAGE_SIZE,
-    pageIndex: Number.isFinite(rawPage) && rawPage > 1 ? rawPage - 1 : 0,
-  };
-  const onPaginationChange = (updater: PaginationState | ((p: PaginationState) => PaginationState)) => {
-    const next = typeof updater === 'function' ? updater(pagination) : updater;
-    setSearchParams((prev) => {
-      const p = new URLSearchParams(prev);
-      if (next.pageSize === DEFAULT_PAGE_SIZE) p.delete('pageSize');
-      else p.set('pageSize', String(next.pageSize));
-      if (next.pageIndex === 0) p.delete('page');
-      else p.set('page', String(next.pageIndex + 1));
-      return p;
-    });
-  };
+  // Pagination + filter URL sync are now owned by `useTableFilters` (below) — one controller, one writer,
+  // page/pageSize + filter params coexisting in the hash query without clobbering ?milestone.
 
   // One snackbar for all transient notices (copy confirmations + the action proposals).
   const [snack, setSnack] = useState<string | null>(null);
   const onCopied = () => setSnack('Copied to clipboard');
 
-  // Filter state — page-local (no persistence, no query-param model). `draft` is what the bar's fields
-  // edit; `applied` is what the grid filters by. The Filter CTA (and Enter in a date field) commits.
-  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
-  const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
-  const patchDraft = (p: Partial<Filters>) => setDraft((d) => ({ ...d, ...p }));
-
-  const apply = () => setApplied(draft);
-  const clearAll = () => {
-    setDraft(EMPTY_FILTERS);
-    setApplied(EMPTY_FILTERS);
-  };
-  // Enter in a date field commits (search-field Enter can't — see the note by the bar).
-  const applyOnEnter = (e: { key: string }) => {
-    if (e.key === 'Enter') apply();
+  // Filter state — official useTableFilters controller (draft/applied/apply/clear + pagination). urlSync
+  // mirrors applied filters + page/pageSize to the URL and restores on load / back-forward.
+  const filters = useTableFilters<TxFilters>({ initialValues: EMPTY_TX_FILTERS, urlSync: true });
+  // Convert the controller's 1-based pagination to the Table's 0-based `pagination`/`onPaginationChange`
+  // (Wave-2 will align these). One writer — the hook — owns the URL.
+  const tablePagination: PaginationState = { pageIndex: filters.pagination.page - 1, pageSize: filters.pagination.pageSize };
+  const onTablePaginationChange = (updater: PaginationState | ((p: PaginationState) => PaginationState)) => {
+    const next = typeof updater === 'function' ? updater(tablePagination) : updater;
+    filters.pagination.onChange({ page: next.pageIndex + 1, pageSize: next.pageSize });
   };
 
-  // isApplied reflects the COMMITTED filters (drives the bar's Filter-CTA fill + Clear-all enablement),
-  // never the uncommitted draft.
-  const isApplied = isActive(applied);
-
-  // ADVANCED filters (bar owns structure + persistence; page owns these controls' values in `draft`).
-  // Each control is a page-wired input rendered by the bar only when the field is added. Selects offer
-  // observed values only. Amount is one field, two inputs.
-  const addableFields: AddableField[] = [
-    {
-      id: 'currency',
-      label: 'Currency',
-      control: (
-        <BeamField select label="Currency" value={draft.currency} onChange={(e) => patchDraft({ currency: e.target.value })} fullWidth>
-          <MenuItem value="">Any</MenuItem>
-          {CURRENCY_OPTIONS.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-        </BeamField>
-      ),
-    },
-    {
-      id: 'threeDs',
-      label: '3DS status',
-      control: (
-        <BeamField select label="3DS status" value={draft.threeDs} onChange={(e) => patchDraft({ threeDs: e.target.value })} fullWidth>
-          <MenuItem value="">Any</MenuItem>
-          {THREEDS_OPTIONS.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-        </BeamField>
-      ),
-    },
-    {
-      id: 'errorCode',
-      label: 'Error code',
-      control: (
-        <BeamField select label="Error code" value={draft.errorCode} onChange={(e) => patchDraft({ errorCode: e.target.value })} fullWidth>
-          <MenuItem value="">Any</MenuItem>
-          <MenuItem value={ERROR_CODE_NONE}>None</MenuItem>
-          {ERROR_CODE_OPTIONS.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-        </BeamField>
-      ),
-    },
-    {
-      id: 'amount',
-      label: 'Amount',
-      control: (
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <BeamField label="Min" type="number" value={draft.amountMin} onChange={(e) => patchDraft({ amountMin: e.target.value })} onKeyDown={applyOnEnter} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
-          <BeamField label="Max" type="number" value={draft.amountMax} onChange={(e) => patchDraft({ amountMax: e.target.value })} onKeyDown={applyOnEnter} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
-        </Box>
-      ),
-    },
-    // Disabled "awaiting data" ledger — the third rendered ledger (columns manager, error codes, now
-    // the filter [+] menu). Never addable; sourced from the bullet-1 catalog.
-    { id: 'transactionType', label: 'Transaction Type', control: null, disabled: true, disabledReason: 'awaiting data' },
-    { id: 'nameOnCard', label: 'Name on Card', control: null, disabled: true, disabledReason: 'awaiting data' },
-    { id: 'processedBy', label: 'ProcessedBy', control: null, disabled: true, disabledReason: 'awaiting data' },
-    { id: 'fraudRulesMatched', label: 'Fraud Rules Matched', control: null, disabled: true, disabledReason: 'awaiting data' },
-  ];
-  // Removing a field clears its draft value(s); the grid updates only on the next FILTER (doctrine).
-  const onFieldRemoved = (id: string) => {
-    if (id === 'amount') patchDraft({ amountMin: '', amountMax: '' });
-    else if (id === 'currency' || id === 'threeDs' || id === 'errorCode') patchDraft({ [id]: '' } as Partial<Filters>);
+  // v1.2 `[+]` advanced fields — page-level composition around the official component (which stays static):
+  // the page owns WHICH optional definitions are active and renders the [+] / remove menu; active keys are
+  // folded into the `definitions` array. (Was the Legacy bar's advanced addable-field menu.)
+  const [activeOptional, setActiveOptional] = useState<OptionalKey[]>([]);
+  const [addAnchor, setAddAnchor] = useState<HTMLElement | null>(null);
+  const removeOptional = (key: OptionalKey) => {
+    setActiveOptional((prev) => prev.filter((k) => k !== key));
+    filters.setDraftValue(key, '');
   };
+
+  // Definitions — search (compound at v1.1+, else the four id/psp/customer/email text fields), the date
+  // range, the base selects, then the active v1.2 optional fields.
+  const definitions = useMemo<TableFilterDefinition<TxFilters>[]>(() => {
+    const search: TableFilterDefinition<TxFilters>[] = caps.compoundSearch
+      ? [{ key: 'q', control: 'text', label: 'Search', placeholder: 'Search ID, PSP ID, customer, email' }]
+      : [
+          { key: 'searchId', control: 'text', label: 'ID' },
+          { key: 'searchPsp', control: 'text', label: 'PSP ID' },
+          { key: 'searchCustomer', control: 'text', label: 'Customer' },
+          { key: 'searchEmail', control: 'text', label: 'Customer Email' },
+        ];
+    const opt = (key: OptionalKey): TableFilterDefinition<TxFilters> => {
+      if (key === 'currency') return { key, control: 'select', label: 'Currency', options: [{ label: 'Any', value: '' }, ...CURRENCY_OPTIONS.map((c) => ({ label: c, value: c }))] };
+      if (key === 'threeDs') return { key, control: 'select', label: '3DS status', options: [{ label: 'Any', value: '' }, ...THREEDS_OPTIONS.map((t) => ({ label: t, value: t }))] };
+      if (key === 'errorCode') return { key, control: 'select', label: 'Error code', options: [{ label: 'Any', value: '' }, { label: 'None', value: ERROR_CODE_NONE }, ...ERROR_CODE_OPTIONS.map((c) => ({ label: c, value: c }))] };
+      return { key, control: 'text', label: OPTIONAL_LABEL[key] }; // amountMin / amountMax
+    };
+    return [
+      ...search,
+      { key: 'createdFrom', control: 'dateTime', label: 'Created from' },
+      { key: 'createdTo', control: 'dateTime', label: 'Created to' },
+      { key: 'status', control: 'select', label: 'Status', options: [{ label: 'All', value: '' }, ...STATUS_OPTIONS.map((s) => ({ label: s, value: s }))] },
+      { key: 'direction', control: 'select', label: 'Direction', options: [{ label: 'All', value: '' }, ...DIRECTION_OPTIONS.map((d) => ({ label: d, value: d }))] },
+      { key: 'provider', control: 'select', label: 'Provider', options: [{ label: 'All', value: '' }, ...PROVIDER_OPTIONS.map((p) => ({ label: p, value: p }))] },
+      ...activeOptional.map(opt),
+    ];
+  }, [caps.compoundSearch, activeOptional]);
+
+  const applied = filters.applied;
 
   const rows = useMemo(() => {
     const q = applied.q.trim().toLowerCase();
@@ -627,15 +579,16 @@ export function TransactionsPage() {
       if (applied.searchPsp && !(r.pspTransactionId ?? '').toLowerCase().includes(applied.searchPsp.trim().toLowerCase())) return false;
       if (applied.searchCustomer && !r.customerId.toLowerCase().includes(applied.searchCustomer.trim().toLowerCase())) return false;
       if (applied.searchEmail && !r.customerEmail.toLowerCase().includes(applied.searchEmail.trim().toLowerCase())) return false;
-      // Date range on createdAt — compared as the UTC calendar date (createdAt is ...Z); inclusive.
+      // Date range — the dateTime controls yield yyyy-mm-ddThh:mm; SLICE to the calendar date to keep the
+      // original date-granularity behaviour (upstream gap: no `date` control). Inclusive.
       const day = r.createdAt.slice(0, 10);
-      if (applied.start && day < applied.start) return false;
-      if (applied.end && day > applied.end) return false;
+      if (applied.createdFrom && day < applied.createdFrom.slice(0, 10)) return false;
+      if (applied.createdTo && day > applied.createdTo.slice(0, 10)) return false;
       // Exact-match selects (defaults).
       if (applied.status && r.status !== applied.status) return false;
       if (applied.direction && r.direction !== applied.direction) return false;
       if (applied.provider && r.psp !== applied.provider) return false;
-      // Addable fields — each inert when empty (i.e. not added, or added-but-unfilled).
+      // Advanced (v1.2 [+]) — each inert when empty.
       if (applied.currency && r.currency !== applied.currency) return false;
       if (applied.threeDs && r.threeDsStatus !== applied.threeDs) return false;
       if (applied.errorCode) {
@@ -645,8 +598,12 @@ export function TransactionsPage() {
           return false;
         }
       }
-      if (applied.amountMin && r.amount < Number(applied.amountMin)) return false;
-      if (applied.amountMax && r.amount > Number(applied.amountMax)) return false;
+      // Amount range — LENIENT parse (upstream gap: no number/money control): non-numeric input filters as
+      // empty rather than erroring.
+      const min = Number(applied.amountMin);
+      const max = Number(applied.amountMax);
+      if (applied.amountMin.trim() !== '' && Number.isFinite(min) && r.amount < min) return false;
+      if (applied.amountMax.trim() !== '' && Number.isFinite(max) && r.amount > max) return false;
       return true;
     });
   }, [applied]);
@@ -746,106 +703,41 @@ export function TransactionsPage() {
     <Stack spacing={PAGE_SECTION_GAP} sx={stickyChromeGapSx}>
       <BeamPage title="Transactions" />
 
-      {/* Filters — TableFiltersLegacy's designed apply model (bar v1; UsersPage is the reference): the bar
-          edits `draft`, the grid filters by `applied`, the Filter CTA commits. Search is the bar's
-          built-in field; the date range and the three selects are promoted fields passed as `children`
-          (the bar's composition API — a first-class dateRange prop waits for a 2nd consumer, per
-          promotion-follows-usage). Select options are DERIVED from the data.
-          NOTE: Enter-to-apply is wired on the date fields (page-local). The SEARCH field is the bar's
-          built-in input with no key-event hook exposed, so Enter there cannot commit without a
-          TableFiltersLegacy API addition — deliberately NOT done (no component change); the Filter CTA
-          commits search. UsersPage, the reference, likewise has no Enter-to-apply. */}
-      {/* Exit treatment (bench→official promotion of the ratified sticky-chrome exit): the pre-grid section
-          scales + fades + lifts as it slides up under the pinned bucket. The bench attaches stickyChromeExitSx
-          directly on its filter panel's root Paper; TableFiltersLegacy (a placeholder organism) exposes no sx prop,
-          so the SAME sx rides a Box wrapper here — the wrapper is now the pre-grid section that stickyChromeGapSx
-          and the exit both key off. Progressive + reduced-motion gating lives inside the helper. */}
+      {/* Filters — official TableFilters (typed `definitions` + `useTableFilters` controller: draft → apply →
+          applied, Filter/Clear built in). Milestone gating is PAGE-LEVEL (the definitions array per phase),
+          never a component concern: v1.0 shows four id/psp/customer/email text fields, v1.1+ the compound
+          search. The v1.2 `[+]` advanced menu is PAGE-LOCAL composition around the static component (the page
+          owns which optional definitions are active). Wrapped in the stickyChromeExitSx Box so the exit
+          animation + snap geometry are unchanged (the Box is still the pre-grid section). */}
       <Box sx={stickyChromeExitSx}>
-      <TableFiltersLegacy
-        aria-label="Transaction filters"
-        searchValue={draft.q}
-        // COMPOUND search is v1.1+ (caps.compoundSearch). At v1.0 no onSearchChange → the bar's built-in
-        // field doesn't render; the 4 individual fields below stand in.
-        onSearchChange={caps.compoundSearch ? (q) => patchDraft({ q }) : undefined}
-        searchPlaceholder="Search ID, PSP ID, customer, email"
-        applied={isApplied}
-        onFilter={apply}
-        onClearAll={clearAll}
-        // Advanced [+] addable-field menu is v1.2+ (caps.advancedFilters). Below it, only the base
-        // filters (search, date range, Status, Direction, Provider) show. NOTE (v-spec gap): the
-        // requirements doc places Error Code + 3DS Status as v1.0 *default* filters, but the page
-        // implements them as [+] fields, so they too appear only at v1.2 — recorded in the gap list.
-        advanced={caps.advancedFilters ? { addableFields, storageKey: 'gaspar.transactions', onFieldRemoved } : undefined}
-      >
-        {/* v1.0 — 4 individual search fields where the compound field sat (search icon + clear each). They
-            flow as the first row of the bar's grid (4-up at lg). v1.1+ uses the built-in compound field. */}
-        {!caps.compoundSearch &&
-          V10_SEARCH_FIELDS.map((f) => (
-            <BeamField
-              key={f.key}
-              label={f.label}
-              value={draft[f.key]}
-              onChange={(e) => patchDraft({ [f.key]: e.target.value } as Partial<Filters>)}
-              onKeyDown={applyOnEnter}
-              fullWidth
-              slotProps={{
-                // shrink: the label sits in the notch always, so it never overlaps the search adornment
-                // when the field is empty/unfocused (MUI's startAdornment-vs-label quirk).
-                inputLabel: { shrink: true },
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: draft[f.key] ? (
-                    <InputAdornment position="end">
-                      <IconButton size="small" edge="end" aria-label={`Clear ${f.label}`} onClick={() => patchDraft({ [f.key]: '' } as Partial<Filters>)}>
-                        <ClearIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : undefined,
-                },
-              }}
-            />
-          ))}
-        <BeamField
-          label="Created from"
-          type="date"
-          value={draft.start}
-          onChange={(e) => patchDraft({ start: e.target.value })}
-          onKeyDown={applyOnEnter}
-          slotProps={{ inputLabel: { shrink: true } }}
-          fullWidth
-        />
-        <BeamField
-          label="Created to"
-          type="date"
-          value={draft.end}
-          onChange={(e) => patchDraft({ end: e.target.value })}
-          onKeyDown={applyOnEnter}
-          slotProps={{ inputLabel: { shrink: true } }}
-          fullWidth
-        />
-        <BeamField select label="Status" value={draft.status} onChange={(e) => patchDraft({ status: e.target.value })} fullWidth>
-          <MenuItem value="">All</MenuItem>
-          {STATUS_OPTIONS.map((s) => (
-            <MenuItem key={s} value={s}>{s}</MenuItem>
-          ))}
-        </BeamField>
-        <BeamField select label="Direction" value={draft.direction} onChange={(e) => patchDraft({ direction: e.target.value })} fullWidth>
-          <MenuItem value="">All</MenuItem>
-          {DIRECTION_OPTIONS.map((dir) => (
-            <MenuItem key={dir} value={dir}>{dir}</MenuItem>
-          ))}
-        </BeamField>
-        <BeamField select label="Provider" value={draft.provider} onChange={(e) => patchDraft({ provider: e.target.value })} fullWidth>
-          <MenuItem value="">All</MenuItem>
-          {PROVIDER_OPTIONS.map((p) => (
-            <MenuItem key={p} value={p}>{p}</MenuItem>
-          ))}
-        </BeamField>
-      </TableFiltersLegacy>
+        {caps.advancedFilters && (
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
+            {activeOptional.map((k) => (
+              <Chip key={k} label={OPTIONAL_LABEL[k]} size="small" onDelete={() => removeOptional(k)} />
+            ))}
+            {activeOptional.length < OPTIONAL_KEYS.length && (
+              <>
+                <Button size="small" variant="text" startIcon={<AddIcon />} onClick={(e) => setAddAnchor(e.currentTarget)}>
+                  Add filter
+                </Button>
+                <Menu anchorEl={addAnchor} open={Boolean(addAnchor)} onClose={() => setAddAnchor(null)}>
+                  {OPTIONAL_KEYS.filter((k) => !activeOptional.includes(k)).map((k) => (
+                    <MenuItem
+                      key={k}
+                      onClick={() => {
+                        setActiveOptional((prev) => [...prev, k]);
+                        setAddAnchor(null);
+                      }}
+                    >
+                      {OPTIONAL_LABEL[k]}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            )}
+          </Box>
+        )}
+        <TableFilters definitions={definitions} controller={filters} />
       </Box>
 
       <Table
@@ -853,10 +745,10 @@ export function TransactionsPage() {
         rows={rows}
         getRowId={(r) => r.id}
         paginated
-        // Pagination is URL-controlled (source of truth) — survives the nav-toggle remount + refresh, and
-        // back/forward + link-sharing work. The grid derives its page/size from these.
-        pagination={pagination}
-        onPaginationChange={onPaginationChange}
+        // Pagination is owned by useTableFilters (URL source of truth, coexisting with filter params). The
+        // controller is 1-based; converted to the Table's 0-based `pagination`/`onPaginationChange` here.
+        pagination={tablePagination}
+        onPaginationChange={onTablePaginationChange}
         // Sticky chrome — the header bucket pins to the top, the footer to the bottom, the page owns the
         // scroll. NOT milestone-gated (layout is baseline UX). The Stack's stickyChromeGapSx + the shell's
         // main:has() contract are already in place and activate off this grid's data-beam-sticky-chrome.
