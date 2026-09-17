@@ -1,5 +1,15 @@
 # TableFilters — organism build-notes
 
+> **SUPERSEDED (Wave 1, 2026-09-17).** The organism described below — the composition-by-children bar
+> with a page-owned `draft`/`applied` contract and the `advanced`/`useFilterFields`/`onFieldRemoved`
+> addable-fields API — was **deleted**. `TableFilters` now mirrors official Beam: a typed `definitions`
+> array + the `useTableFilters` draft/applied controller (see [/BEAM.md](../../../BEAM.md) §"Placeholder
+> organisms", [/docs/list-page-grammar.md](../../../docs/list-page-grammar.md) §1, and
+> [/docs/beam-alignment.md](../../../docs/beam-alignment.md) decision 5). The `[+]` addable fields and
+> other affordances official's bar can't express now live as **page-level composition** in the consumer
+> (e.g. Gaspar's `TransactionsPage`), not as an organism API. The notes below are kept only as historical
+> record of the retired implementation.
+
 Decisions and additive changes to the organism, newest first.
 
 > The `[+]` menu's disabled "awaiting data" entries are a rendered-state ledger; how state/status

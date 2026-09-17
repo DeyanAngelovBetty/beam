@@ -29,6 +29,17 @@ chips** where time matters (Today / 7d / 30d — the Payments-tab pattern, kept)
   that makes filtering trustworthy.
 - **Filter state lives in the URL.** Shareable filtered views are half of BO
   collaboration; this also makes future *saved views* nearly free.
+- **The draft/applied contract is official Beam's `useTableFilters` controller**
+  *(Wave 1, 2026-09-17 — supersedes the old page-owned `draft`/`applied` + boolean
+  `applied` prop)*. The bar is driven by a typed `definitions` array; the controller
+  owns `draft` (what the bar edits), `applied` (what the grid filters by), `apply`
+  / `clear` / `clearValue` / `canClear` / `isDraft`, and — via `urlSync` — the URL
+  mirror (adapted to react-router `useSearchParams` here; it touches only filter +
+  page/pageSize params). "Live vs submitted" is still page behavior on top of this
+  one contract. Affordances official's bar has no shape for — applied-filter chips
+  beneath, date presets, Gaspar's in-grid `[+]` addable fields, a multi-select —
+  are **page-level composition around the unmodified component**, not forks of the
+  controller (pending the upstream pitch to widen `definitions`).
 
 ## 2. Row click — one meaning, three tiers
 

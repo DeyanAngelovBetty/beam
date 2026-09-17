@@ -162,8 +162,9 @@ names): `BeamEmptyState`, `BeamBadge`, `BeamStatusBadge`, `BeamField`, `BeamSwit
 `BeamChildList`, `BeamTabs`, `GemIcon`. **DOM/CSS contracts are namespace, not branding** — `data-beam-mode`,
 `data-beam-sticky-chrome`, `data-stuck`, `data-overflow-*`, all `--beam-*` vars, and the `beam-*` internal
 classes are never renamed. Full mapping + audit: [docs/beam-alignment.md](docs/beam-alignment.md). *(This is
-Wave 0 — names, story titles, `Section` API parity; Waves 1–3 converge the `TableFilters` / `AppShell` /
-`Table` APIs.)*
+Wave 0 — names, story titles, `Section` API parity; **Wave 1 (done, 2026-09-17) aligned `TableFilters` —
+API + implementation** (definitions + `useTableFilters`, old children API deleted); Waves 2–3 converge the
+`AppShell` / `Table` APIs.)*
 
 1. **Atoms are MUI. We never rebuild them.** MUI's docs are the atom documentation; the theme
    makes them Betty's. Beam's own surface area is *organisms only*.
@@ -438,12 +439,20 @@ everyone else sees, and a missing Figma link there reads as "no design exists".
   workspace, consumed as source** (apps alias `@betty/beam` → `packages/beam/src`, no build
   step). Forced by `GemIcon`'s `import.meta.glob` asset registry, which resolves at Vite
   transform time and cannot survive precompilation. Revisit if Beam ever ships outside this repo.
-- **Placeholder organisms awaiting a Figma design pass**: `BeamPage`, `BeamTabs`,
-  `TableFilters` (added 2026-07-20, grouped under "Organisms (placeholder)" in Storybook).
+- **Placeholder organisms awaiting a Figma design pass**: `BeamPage`, `BeamTabs`
+  (added 2026-07-20, grouped under "Organisms (placeholder)" in Storybook).
   Shape-only, so screens had something stable to build against — the design thinking is
-  deliberately deferred to Figma rather than improvised in code. `TableFilters` in particular
-  passes fields as children; a field-schema API is the open design question. *(`BeamStat`
+  deliberately deferred to Figma rather than improvised in code. *(`BeamStat`
   graduated 2026-07-24 — spine motif + `meta` key + severity; no longer a placeholder.)*
+  *(`TableFilters` graduated 2026-09-17, Wave 1 — the old pass-fields-as-children shape is
+  gone; it now mirrors official Beam's typed field-schema: a `definitions` array + the
+  `useTableFilters` draft/applied controller. **Aligned — API + implementation.** Where our
+  setup forced a deviation it is flagged in-code: react-router `useSearchParams` URL sync,
+  a native `datetime-local` for `dateTime`, and local `TablePagination*` until Wave 2. Product
+  affordances official's bar has no shape for — Gaspar's in-grid `[+]` addable fields,
+  PendingApprovals' multi-select — stay PAGE-LEVEL composition around the unmodified component,
+  folded into one upstream pitch: "let definitions reach more control types" (money, date,
+  multiSelect) plus dynamic definitions and native addable-fields.)*
 - Asset pipeline: gems done (GemIcon self-registering registry); coins & collection art
   pending; automated Figma→repo export pending network allowlist (`www.figma.com`)
 - **The token sync — three NAMED lanes, none in this repo yet:**
