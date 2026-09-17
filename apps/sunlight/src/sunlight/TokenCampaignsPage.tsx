@@ -1,18 +1,17 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Stack,
   Alert,
   Button,
-  MenuItem,
-  TextField,
   BeamPage,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
   BeamBadge,
   BeamBool,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowAction, BeamBadgeProps } from '@betty/beam';
+import type { BeamColumn, BeamRowAction, BeamBadgeProps, TableFilterDefinition } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditRounded';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEventsOutlined';
@@ -59,24 +58,22 @@ interface Applied {
   enabled: 'any' | 'yes' | 'no';
 }
 const EMPTY: Applied = { q: '', status: 'any', enabled: 'any' };
+const TOKEN_CAMPAIGN_DEFS: TableFilterDefinition<Applied>[] = [
+  { key: 'q', control: 'text', label: 'Search', placeholder: 'Search campaign name' },
+  { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, ...LIFECYCLES.map((l) => ({ label: l, value: l }))] },
+  { key: 'enabled', control: 'select', label: 'Enabled', options: [{ label: 'Any', value: 'any' }, { label: 'Enabled', value: 'yes' }, { label: 'Disabled', value: 'no' }] },
+];
 
 const BASE = '/prize-wall/token-campaigns';
 const fmtDate = (iso: string) => iso.slice(0, 10);
 
 export function TokenCampaignsPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [notice, setNotice] = useState<Notice>(null);
 
-  // Applied filters live in the URL (shareable, refresh-proof); the draft is local until Filter.
-  const statusParam = searchParams.get('status');
-  const enabledParam = searchParams.get('enabled');
-  const applied: Applied = {
-    q: searchParams.get('q') ?? '',
-    status: LIFECYCLES.includes(statusParam as CampaignLifecycle) ? (statusParam as CampaignLifecycle) : 'any',
-    enabled: enabledParam === 'yes' || enabledParam === 'no' ? enabledParam : 'any',
-  };
-  const [draft, setDraft] = useState<Applied>(applied);
+  // Applied filters + URL sync are owned by useTableFilters (shareable, refresh-proof).
+  const filters = useTableFilters<Applied>({ initialValues: EMPTY, urlSync: true });
+  const applied = filters.applied;
 
   const rows = useMemo(() => {
     const q = applied.q.trim().toLowerCase();
@@ -87,20 +84,6 @@ export function TokenCampaignsPage() {
       return true;
     });
   }, [applied.q, applied.status, applied.enabled]);
-
-  const isApplied = applied.q !== '' || applied.status !== 'any' || applied.enabled !== 'any';
-
-  const submit = () => {
-    const p = new URLSearchParams();
-    if (draft.q.trim()) p.set('q', draft.q.trim());
-    if (draft.status !== 'any') p.set('status', draft.status);
-    if (draft.enabled !== 'any') p.set('enabled', draft.enabled);
-    setSearchParams(p, { replace: true });
-  };
-  const clearAll = () => {
-    setDraft(EMPTY);
-    setSearchParams(new URLSearchParams(), { replace: true });
-  };
 
   // Columns ≈ Figma: Name (identity link) · Token/prize info (derived summary placeholder) · Start ·
   // End · Enabled (BeamBool per the boolean ruling) · Created by.
@@ -159,27 +142,7 @@ export function TokenCampaignsPage() {
         }
       />
 
-      <TableFiltersLegacy
-        aria-label="Token campaign filters"
-        searchValue={draft.q}
-        onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
-        searchPlaceholder="Search campaign name"
-        applied={isApplied}
-        onFilter={submit}
-        onClearAll={clearAll}
-      >
-        <TextField select fullWidth size="small" label="Status" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as Applied['status'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          {LIFECYCLES.map((l) => (
-            <MenuItem key={l} value={l} sx={{ textTransform: 'capitalize' }}>{l}</MenuItem>
-          ))}
-        </TextField>
-        <TextField select fullWidth size="small" label="Enabled" value={draft.enabled} onChange={(e) => setDraft((d) => ({ ...d, enabled: e.target.value as Applied['enabled'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="yes">Enabled</MenuItem>
-          <MenuItem value="no">Disabled</MenuItem>
-        </TextField>
-      </TableFiltersLegacy>
+      <TableFilters definitions={TOKEN_CAMPAIGN_DEFS} controller={filters} />
 
       {notice && (
         <Alert severity={notice.severity} onClose={() => setNotice(null)}>

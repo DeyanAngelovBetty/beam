@@ -1,15 +1,14 @@
-import { useMemo, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Stack,
-  MenuItem,
-  TextField,
   BeamPage,
   BeamEmptyState,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
 } from '@betty/beam';
-import type { BeamColumn } from '@betty/beam';
+import type { BeamColumn, TableFilterDefinition } from '@betty/beam';
 import { backTo } from './backTo';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { getTokenCampaign, stageLabel } from './tokenCampaigns';
@@ -40,7 +39,6 @@ const EMPTY: Applied = { q: '', stage: 'any', rewardType: 'any' };
 export function CampaignWinnersPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const campaign = getTokenCampaign(id);
 
@@ -48,16 +46,20 @@ export function CampaignWinnersPage() {
 
   // Stage filter options sourced from THIS campaign (cross-entity filter from the parent).
   const stageOptions = campaign?.wallStages ?? [];
-  const stageIds = stageOptions.map((s) => s.id);
 
-  const applied: Applied = {
-    q: searchParams.get('q') ?? '',
-    stage: stageIds.includes(searchParams.get('stage') ?? '') ? (searchParams.get('stage') as string) : 'any',
-    rewardType: WINNER_REWARD_TYPES.includes(searchParams.get('rewardType') as WinnerRewardType)
-      ? (searchParams.get('rewardType') as WinnerRewardType)
-      : 'any',
-  };
-  const [draft, setDraft] = useState<Applied>(applied);
+  // Applied filters + URL sync are owned by useTableFilters (shareable, refresh-proof).
+  const filters = useTableFilters<Applied>({ initialValues: EMPTY, urlSync: true });
+  const applied = filters.applied;
+
+  // Stage options are per-campaign, so the Stage definition is built at render (cross-entity filter).
+  const WINNER_DEFS = useMemo<TableFilterDefinition<Applied>[]>(
+    () => [
+      { key: 'q', control: 'text', label: 'Search', placeholder: 'Search player ID or name' },
+      { key: 'stage', control: 'select', label: 'Stage', options: [{ label: 'Any', value: 'any' }, ...stageOptions.map((s) => ({ label: stageLabel(s), value: s.id }))] },
+      { key: 'rewardType', control: 'select', label: 'Reward type', options: [{ label: 'Any', value: 'any' }, ...WINNER_REWARD_TYPES.map((t) => ({ label: t, value: t }))] },
+    ],
+    [stageOptions],
+  );
 
   const rows = useMemo(() => {
     const q = applied.q.trim().toLowerCase();
@@ -68,20 +70,6 @@ export function CampaignWinnersPage() {
       return true;
     });
   }, [id, applied.q, applied.stage, applied.rewardType]);
-
-  const isApplied = applied.q !== '' || applied.stage !== 'any' || applied.rewardType !== 'any';
-
-  const submit = () => {
-    const p = new URLSearchParams();
-    if (draft.q.trim()) p.set('q', draft.q.trim());
-    if (draft.stage !== 'any') p.set('stage', draft.stage);
-    if (draft.rewardType !== 'any') p.set('rewardType', draft.rewardType);
-    setSearchParams(p, { replace: true });
-  };
-  const clearAll = () => {
-    setDraft(EMPTY);
-    setSearchParams(new URLSearchParams(), { replace: true });
-  };
 
   const stageName = (stageId: string) => {
     const s = stageOptions.find((st) => st.id === stageId);
@@ -122,28 +110,7 @@ export function CampaignWinnersPage() {
       {/* Child-scoped header: title "Winners", campaign name as context (subtitle), back → detail. */}
       <BeamPage title="Winners" subtitle={campaign.name} back={back} />
 
-      <TableFiltersLegacy
-        aria-label="Winner filters"
-        searchValue={draft.q}
-        onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
-        searchPlaceholder="Search player ID or name"
-        applied={isApplied}
-        onFilter={submit}
-        onClearAll={clearAll}
-      >
-        <TextField select fullWidth size="small" label="Stage" value={draft.stage} onChange={(e) => setDraft((d) => ({ ...d, stage: e.target.value }))}>
-          <MenuItem value="any">Any</MenuItem>
-          {stageOptions.map((s) => (
-            <MenuItem key={s.id} value={s.id}>{stageLabel(s)}</MenuItem>
-          ))}
-        </TextField>
-        <TextField select fullWidth size="small" label="Reward type" value={draft.rewardType} onChange={(e) => setDraft((d) => ({ ...d, rewardType: e.target.value as Applied['rewardType'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          {WINNER_REWARD_TYPES.map((t) => (
-            <MenuItem key={t} value={t}>{t}</MenuItem>
-          ))}
-        </TextField>
-      </TableFiltersLegacy>
+      <TableFilters definitions={WINNER_DEFS} controller={filters} />
 
       <Table
         columns={columns}

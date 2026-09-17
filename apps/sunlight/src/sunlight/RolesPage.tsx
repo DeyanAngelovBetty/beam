@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Stack,
   Button,
   BeamPage,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowAction } from '@betty/beam';
+import type { BeamColumn, BeamRowAction, TableFilterDefinition } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import GroupIcon from '@mui/icons-material/Group';
@@ -20,11 +21,15 @@ import { RouterIdentityLink } from './RouterIdentityLink';
  * navigates there. Single-row actions in a kebab rail (no bulk). Search is
  * submitted on the Filter button and lives in the URL (list §1).
  */
+interface RoleFilters {
+  q: string;
+}
+const ROLE_DEFS: TableFilterDefinition<RoleFilters>[] = [{ key: 'q', control: 'text', label: 'Search', placeholder: 'Search roles' }];
+
 export function RolesPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const appliedQ = searchParams.get('q') ?? '';
-  const [draftQ, setDraftQ] = useState(appliedQ);
+  const filters = useTableFilters<RoleFilters>({ initialValues: { q: '' }, urlSync: true });
+  const appliedQ = filters.applied.q;
 
   const rows = useMemo(() => {
     const q = appliedQ.trim().toLowerCase();
@@ -70,20 +75,7 @@ export function RolesPage() {
         }
       />
 
-      <TableFiltersLegacy
-        aria-label="Role filters"
-        searchValue={draftQ}
-        onSearchChange={setDraftQ}
-        searchPlaceholder="Search roles"
-        applied={appliedQ !== ''}
-        onFilter={() => setSearchParams(draftQ.trim() ? { q: draftQ.trim() } : {})}
-        onClearAll={() => {
-          setDraftQ('');
-          setSearchParams({});
-        }}
-      >
-        {null}
-      </TableFiltersLegacy>
+      <TableFilters definitions={ROLE_DEFS} controller={filters} />
 
       <Table
         columns={columns}

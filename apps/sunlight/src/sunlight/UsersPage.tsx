@@ -1,16 +1,15 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Stack,
   Button,
   Switch,
-  TextField,
-  MenuItem,
   BeamPage,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
 } from '@betty/beam';
-import type { BeamColumn } from '@betty/beam';
+import type { BeamColumn, TableFilterDefinition } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import { USERS, PERMISSION_OPTIONS, type User } from './users';
 import { RouterIdentityLink } from './RouterIdentityLink';
@@ -31,29 +30,17 @@ interface Applied {
 }
 
 const EMPTY: Applied = { q: '', active: 'any', perm: 'any' };
-
-/** Applied filters -> URL query, omitting defaults so the URL stays clean. */
-function toParams(d: Applied): URLSearchParams {
-  const p = new URLSearchParams();
-  if (d.q.trim()) p.set('q', d.q.trim());
-  if (d.active !== 'any') p.set('active', d.active);
-  if (d.perm !== 'any') p.set('perm', d.perm);
-  return p;
-}
+const USER_DEFS: TableFilterDefinition<Applied>[] = [
+  { key: 'q', control: 'text', label: 'Search', placeholder: 'Search name or email' },
+  { key: 'active', control: 'select', label: 'Active', options: [{ label: 'Any', value: 'any' }, { label: 'Active', value: 'active' }, { label: 'Inactive', value: 'inactive' }] },
+  { key: 'perm', control: 'select', label: 'Effective permission', options: [{ label: 'Any', value: 'any' }, ...PERMISSION_OPTIONS.map((p) => ({ label: p, value: p }))] },
+];
 
 export function UsersPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Applied filters are read from the URL (the shareable, refresh-proof
-  // source of truth); the draft is local until the Filter button submits it.
-  const activeParam = searchParams.get('active');
-  const applied: Applied = {
-    q: searchParams.get('q') ?? '',
-    active: activeParam === 'active' || activeParam === 'inactive' ? activeParam : 'any',
-    perm: searchParams.get('perm') ?? 'any',
-  };
-  const [draft, setDraft] = useState<Applied>(applied);
+  // Applied filters + URL sync are owned by useTableFilters (shareable, refresh-proof).
+  const filters = useTableFilters<Applied>({ initialValues: EMPTY, urlSync: true });
+  const applied = filters.applied;
   const [activeOverrides, setActiveOverrides] = useState<Record<string, boolean>>({});
 
   const rows = useMemo(() => {
@@ -65,8 +52,6 @@ export function UsersPage() {
       return true;
     });
   }, [applied.q, applied.active, applied.perm]);
-
-  const isApplied = applied.q !== '' || applied.active !== 'any' || applied.perm !== 'any';
 
   const columns: BeamColumn<User>[] = [
     {
@@ -123,46 +108,7 @@ export function UsersPage() {
         }
       />
 
-      <TableFiltersLegacy
-        aria-label="User filters"
-        searchValue={draft.q}
-        onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
-        searchPlaceholder="Search name or email"
-        applied={isApplied}
-        onFilter={() => setSearchParams(toParams(draft))}
-        onClearAll={() => {
-          setDraft(EMPTY);
-          setSearchParams({});
-        }}
-      >
-        <TextField
-          label="Active"
-          size="small"
-          select
-          fullWidth
-          value={draft.active}
-          onChange={(e) => setDraft((d) => ({ ...d, active: e.target.value as Applied['active'] }))}
-        >
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="active">Active</MenuItem>
-          <MenuItem value="inactive">Inactive</MenuItem>
-        </TextField>
-        <TextField
-          label="Effective permission"
-          size="small"
-          select
-          fullWidth
-          value={draft.perm}
-          onChange={(e) => setDraft((d) => ({ ...d, perm: e.target.value }))}
-        >
-          <MenuItem value="any">Any</MenuItem>
-          {PERMISSION_OPTIONS.map((p) => (
-            <MenuItem key={p} value={p}>
-              {p}
-            </MenuItem>
-          ))}
-        </TextField>
-      </TableFiltersLegacy>
+      <TableFilters definitions={USER_DEFS} controller={filters} />
 
       <Table
         columns={columns}

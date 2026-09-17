@@ -1,16 +1,15 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Table,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   BeamPage,
   BeamStatusBadge,
   Button,
-  MenuItem,
   Stack,
-  TextField,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowAction } from '@betty/beam';
+import type { BeamColumn, BeamRowAction, TableFilterDefinition } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditRounded';
 import BlockIcon from '@mui/icons-material/Block';
@@ -29,14 +28,11 @@ interface Applied {
 }
 
 const EMPTY: Applied = { q: '', gameType: 'any', status: 'any' };
-
-function toParams(filters: Applied): URLSearchParams {
-  const params = new URLSearchParams();
-  if (filters.q.trim()) params.set('q', filters.q.trim());
-  if (filters.gameType !== 'any') params.set('gameType', filters.gameType);
-  if (filters.status !== 'any') params.set('status', filters.status);
-  return params;
-}
+const GAME_CONFIG_DEFS: TableFilterDefinition<Applied>[] = [
+  { key: 'q', control: 'text', label: 'Search', placeholder: 'Search name or ID' },
+  { key: 'gameType', control: 'select', label: 'Game Type', options: [{ label: 'Any', value: 'any' }, ...GAME_TYPES.map((g) => ({ label: gameTypeLabel(g), value: g }))] },
+  { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, ...PAYOUT_STATUSES.map((s) => ({ label: s, value: s }))] },
+];
 
 function confirmToggle(config: GameConfig, next: 'Enable' | 'Disable') {
   if (typeof window === 'undefined') return;
@@ -47,15 +43,8 @@ function confirmToggle(config: GameConfig, next: 'Enable' | 'Disable') {
 
 export function GameConfigsPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const gameTypeParam = searchParams.get('gameType');
-  const statusParam = searchParams.get('status');
-  const applied: Applied = {
-    q: searchParams.get('q') ?? '',
-    gameType: GAME_TYPES.includes(gameTypeParam as GameType) ? (gameTypeParam as GameType) : 'any',
-    status: PAYOUT_STATUSES.includes(statusParam as PayoutStatus) ? (statusParam as PayoutStatus) : 'any',
-  };
-  const [draft, setDraft] = useState<Applied>(applied);
+  const filters = useTableFilters<Applied>({ initialValues: EMPTY, urlSync: true });
+  const applied = filters.applied;
 
   const rows = useMemo(() => {
     const query = applied.q.trim().toLowerCase();
@@ -135,53 +124,7 @@ export function GameConfigsPage() {
         }
       />
 
-      <TableFiltersLegacy
-        aria-label="Game config filters"
-        searchValue={draft.q}
-        onSearchChange={(q) => setDraft((current) => ({ ...current, q }))}
-        searchPlaceholder="Search name or ID"
-        applied={isApplied}
-        onFilter={() => setSearchParams(toParams(draft))}
-        onClearAll={() => {
-          setDraft(EMPTY);
-          setSearchParams({});
-        }}
-      >
-        <TextField
-          label="Game Type"
-          size="small"
-          select
-          fullWidth
-          value={draft.gameType}
-          onChange={(event) =>
-            setDraft((current) => ({ ...current, gameType: event.target.value as Applied['gameType'] }))
-          }
-        >
-          <MenuItem value="any">Any</MenuItem>
-          {GAME_TYPES.map((gameType) => (
-            <MenuItem key={gameType} value={gameType}>
-              {gameTypeLabel(gameType)}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          label="Status"
-          size="small"
-          select
-          fullWidth
-          value={draft.status}
-          onChange={(event) =>
-            setDraft((current) => ({ ...current, status: event.target.value as Applied['status'] }))
-          }
-        >
-          <MenuItem value="any">Any</MenuItem>
-          {PAYOUT_STATUSES.map((status) => (
-            <MenuItem key={status} value={status}>
-              {status}
-            </MenuItem>
-          ))}
-        </TextField>
-      </TableFiltersLegacy>
+      <TableFilters definitions={GAME_CONFIG_DEFS} controller={filters} />
 
       <Table
         columns={columns}

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Table,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   BeamPage,
   BeamStatusBadge,
   Button,
@@ -10,12 +11,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  MenuItem,
   Stack,
-  TextField,
   Typography,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowAction } from '@betty/beam';
+import type { BeamColumn, BeamRowAction, TableFilterDefinition } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -41,15 +40,12 @@ interface AppliedFilters {
 }
 
 const EMPTY_FILTERS: AppliedFilters = { q: '', gameType: 'any', source: 'any', status: 'any' };
-
-function filtersToParams(filters: AppliedFilters): URLSearchParams {
-  const params = new URLSearchParams();
-  if (filters.q.trim()) params.set('q', filters.q.trim());
-  if (filters.gameType !== 'any') params.set('gameType', filters.gameType);
-  if (filters.source !== 'any') params.set('source', filters.source);
-  if (filters.status !== 'any') params.set('status', filters.status);
-  return params;
-}
+const PRESET_DEFS: TableFilterDefinition<AppliedFilters>[] = [
+  { key: 'q', control: 'text', label: 'Search', placeholder: 'Search Display Name or ID' },
+  { key: 'gameType', control: 'select', label: 'Game Type', options: [{ label: 'Any', value: 'any' }, ...GAME_TYPES.map((g) => ({ label: gameTypeLabel(g), value: g }))] },
+  { key: 'source', control: 'select', label: 'Configuration Source', options: [{ label: 'Any', value: 'any' }, { label: 'Betty', value: 'Betty' }, { label: 'Yoda', value: 'Yoda' }] },
+  { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, ...PAYOUT_STATUSES.map((s) => ({ label: s, value: s }))] },
+];
 
 function gameConfigName(preset: MetaGamePreset): string {
   if (!preset.gameConfigId) return preset.configCode ?? 'Not configured';
@@ -76,19 +72,10 @@ function PresetPreview({ preset }: { preset: MetaGamePreset }) {
 
 export function MetaGamePresetsPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [revision, setRevision] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<MetaGamePreset | null>(null);
-  const gameTypeParam = searchParams.get('gameType');
-  const sourceParam = searchParams.get('source');
-  const statusParam = searchParams.get('status');
-  const applied: AppliedFilters = {
-    q: searchParams.get('q') ?? '',
-    gameType: GAME_TYPES.includes(gameTypeParam as GameType) ? (gameTypeParam as GameType) : 'any',
-    source: sourceParam === 'Betty' || sourceParam === 'Yoda' ? sourceParam : 'any',
-    status: PAYOUT_STATUSES.includes(statusParam as PayoutStatus) ? (statusParam as PayoutStatus) : 'any',
-  };
-  const [draft, setDraft] = useState<AppliedFilters>(applied);
+  const filters = useTableFilters<AppliedFilters>({ initialValues: EMPTY_FILTERS, urlSync: true });
+  const applied = filters.applied;
 
   const rows = useMemo(() => {
     const query = applied.q.trim().toLowerCase();
@@ -179,32 +166,7 @@ export function MetaGamePresetsPage() {
         }
       />
 
-      <TableFiltersLegacy
-        aria-label="MetaGame preset filters"
-        searchValue={draft.q}
-        onSearchChange={(q) => setDraft((current) => ({ ...current, q }))}
-        searchPlaceholder="Search Display Name or ID"
-        applied={isApplied}
-        onFilter={() => setSearchParams(filtersToParams(draft))}
-        onClearAll={() => {
-          setDraft(EMPTY_FILTERS);
-          setSearchParams({});
-        }}
-      >
-        <TextField select fullWidth size="small" label="Game Type" value={draft.gameType} onChange={(event) => setDraft((current) => ({ ...current, gameType: event.target.value as AppliedFilters['gameType'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          {GAME_TYPES.map((gameType) => <MenuItem key={gameType} value={gameType}>{gameTypeLabel(gameType)}</MenuItem>)}
-        </TextField>
-        <TextField select fullWidth size="small" label="Configuration Source" value={draft.source} onChange={(event) => setDraft((current) => ({ ...current, source: event.target.value as AppliedFilters['source'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="Betty">Betty</MenuItem>
-          <MenuItem value="Yoda">Yoda</MenuItem>
-        </TextField>
-        <TextField select fullWidth size="small" label="Status" value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as AppliedFilters['status'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          {PAYOUT_STATUSES.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
-        </TextField>
-      </TableFiltersLegacy>
+      <TableFilters definitions={PRESET_DEFS} controller={filters} />
 
       <Table
         columns={columns}

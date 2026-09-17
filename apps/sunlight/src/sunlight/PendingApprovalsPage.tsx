@@ -4,6 +4,8 @@ import {
   Stack,
   Alert,
   Box,
+  Paper,
+  Button,
   MenuItem,
   Checkbox,
   ListItemText,
@@ -13,7 +15,7 @@ import {
   TextField,
   Typography,
   BeamPage,
-  TableFiltersLegacy,
+  useTableFilters,
   Table,
 } from '@betty/beam';
 import type { BeamColumn, BeamRowAction } from '@betty/beam';
@@ -46,52 +48,65 @@ const EMPTY: Filters = { statuses: [], type: 'any', q: '', by: 'any', from: '', 
  *
  * SPECULATIVE BY DESIGN: our CR model, these columns, and the Approve/Reject vocabulary are OUR
  * PROPOSAL — the backend team's actual contract is unavailable, so this is designed on our own
- * semantics with their screenshots as visual reference. Built on the existing TableFiltersLegacy as-is;
- * moving it to a field-schema filter API is a recorded LATER task, not this one.
+ * semantics with their screenshots as visual reference.
  *
- * A TableFiltersLegacy over the FULL change-request set (the archive is browsable now, not just the
- * pending queue). Status is a FILTER (multi-select), never tabs — one queue, not five pages
- * (grammar §5). Sort: PENDING PINNED FIRST, then recency — the checker's default is "everything
- * actionable, on top." A record page's alert deep-links here with `?type=<slug>` (that FEATURE's
- * requests — never by record, §5); the app bar's maker voice with `?by=<name>` (your own).
+ * FILTER BAR: the applied state lives in the `useTableFilters` controller (draft/apply/clear + URL
+ * sync, namespaced `cr.*`). The bar is PAGE-COMPOSED rather than the definition-driven <TableFilters>,
+ * because Status is a MULTI-SELECT (empty = all) that official's single-value `select` definition
+ * can't express (Wave-1 ruling — see the bar's inline note + the folded upstream pitch). The panel
+ * mirrors official's Paper/grid geometry exactly, so the multi-select reads as a native grid cell.
+ *
+ * A filter bar over the FULL change-request set (the archive is browsable now, not just the pending
+ * queue). Status is a FILTER (multi-select), never tabs — one queue, not five pages (grammar §5).
+ * Sort: PENDING PINNED FIRST, then recency — the checker's default is "everything actionable, on top."
+ * A record page's alert deep-links here with `?type=<slug>` (that FEATURE's requests — never by
+ * record, §5); the app bar's maker voice with `?by=<name>` (your own).
  *
  * NO ROW EXPANSION (2026-08-14): the view-first DETAIL route (/pending-approvals/:id) is the review
  * surface. The kebab is the SINGLE row-action projection (list-grammar §3). The identity link opens
  * the detail route.
  *
  * Reactive: `useChangeRequests` re-renders on any CR mutation, `useCurrentUser` on an Acting-as
- * switch — approve/reject and actor changes update live. Filter state stays LOCAL applied-state.
+ * switch — approve/reject and actor changes update live. Filter state lives in the controller.
  */
 export function PendingApprovalsPage() {
   useChangeRequests(); // re-render on any CR mutation (approve/reject here, submit anywhere)
   const me = useCurrentUser().name; // reactive: tracks the shell's Acting-as switch
   const [searchParams, setSearchParams] = useSearchParams();
-  // Deep-links seed the FEATURE-TYPE filter (a record page's alert) and the SUBMITTER filter (the app
-  // bar's maker voice). There is deliberately NO record filter — per-record filtering is a backend
-  // can't (recorded rejected-for-now, grammar §5); feature pages link to their type, not their row.
-  const typeParam = searchParams.get('type') ?? '';
-  const byParam = searchParams.get('by') ?? '';
-  const paramType = PARAM_TO_ENTITY[typeParam]; // undefined when the slug is absent/unknown
+
+  // Applied filters + draft/apply/clear + URL sync are owned by useTableFilters. Params are NAMESPACED
+  // (`cr.*`) so they never collide with the bare `?type=`/`?by=` DEEP-LINK params that external surfaces
+  // navigate here with (a record page's alert; the app bar's maker voice) — those stay page-read seeds.
+  // `statuses` lives in EMPTY, so it participates in URL sync + Clear like every other key: the helpers
+  // iterate the STATE object (Object.keys(initialValues)), not the definitions, so the page-owned
+  // multi-select needs no special wiring (verified — Wave-1 requirement).
+  const filters = useTableFilters<Filters>({ initialValues: EMPTY, urlSync: { namespace: 'cr' } });
+  const { draft, applied, setDraftValue, apply, clear, canClear, isDraft } = filters;
 
   const [notice, setNotice] = useState<Notice>(null);
   const [cancelTarget, setCancelTarget] = useState<ChangeRequest | null>(null);
-  const [draft, setDraft] = useState<Filters>({ ...EMPTY, type: paramType ?? 'any', by: byParam || 'any' });
-  const [applied, setApplied] = useState<Filters>({ ...EMPTY, type: paramType ?? 'any', by: byParam || 'any' });
 
-  // Deep-link params seed their filters live, even when the page is already mounted (react-router
-  // keeps it, only the params change).
+  // Deep-link seeding. A record page's alert arrives with `?type=<slug>` (feature-type); the app bar's
+  // maker voice with `?by=<name>` (grammar §5 — feature pages link BY TYPE, never by record). Translate
+  // those bare params into the controller's namespaced params (mapping the type SLUG → entityType) and
+  // drop the bare ones; the hook's own URL-sync effect then adopts them into draft+applied atomically.
+  // Live even when already mounted — react-router keeps the page, only the params change.
   useEffect(() => {
-    if (paramType) {
-      setDraft((d) => ({ ...d, type: paramType }));
-      setApplied((a) => ({ ...a, type: paramType }));
+    const slug = searchParams.get('type');
+    const by = searchParams.get('by');
+    if (slug === null && by === null) return;
+    const next = new URLSearchParams(searchParams);
+    if (slug !== null) {
+      next.delete('type');
+      const entity = PARAM_TO_ENTITY[slug]; // undefined when the slug is unknown
+      if (entity) next.set('cr.type', entity); // string value → raw (encodeValue leaves strings bare)
     }
-  }, [paramType]);
-  useEffect(() => {
-    if (byParam) {
-      setDraft((d) => ({ ...d, by: byParam }));
-      setApplied((a) => ({ ...a, by: byParam }));
+    if (by !== null) {
+      next.delete('by');
+      if (by) next.set('cr.by', by);
     }
-  }, [byParam]);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const q = applied.q.trim().toLowerCase();
   const filtered = listAll().filter((cr) => {
@@ -199,20 +214,6 @@ export function PendingApprovalsPage() {
       return { id: 'cancel', label: 'Cancel request', onSelect: () => setCancelTarget(cr) };
     });
 
-  const isApplied =
-    applied.statuses.length > 0 ||
-    applied.type !== 'any' ||
-    applied.by !== 'any' ||
-    Boolean(applied.q) ||
-    Boolean(applied.from) ||
-    Boolean(applied.to);
-
-  const clearAll = () => {
-    setDraft({ ...EMPTY });
-    setApplied({ ...EMPTY });
-    setSearchParams(new URLSearchParams(), { replace: true }); // drop type + by deep-link params
-  };
-
   return (
     <Stack spacing={3}>
       {/* Acting-as moved to the shell chrome (global) — see ShellFooter / ActingAsSwitcher. */}
@@ -221,46 +222,78 @@ export function PendingApprovalsPage() {
         subtitle="Change requests awaiting a second pair of eyes — and the decision history."
       />
 
-      <TableFiltersLegacy
+      {/* PAGE-LEVEL COMPOSITION (Wave-1 ruling). The Status filter is a MULTI-SELECT (empty = all),
+          which official's single-value `select` definition can't express — so rather than extend the
+          ported definitions API, this page composes the whole bar over the SAME `useTableFilters`
+          controller, mirroring official TableFilters' Paper + grid geometry (p:2, column/gap:2, 1→2→4
+          col grid, gap:2, Filter/Clear footer) so the multi-select reads as a native grid cell with no
+          seam. Upstream pitch (folded, Wave end): "let definitions reach more control types" — money,
+          date, and multiSelect controls, plus dynamic (per-row) definitions, all surfaced by Sunlight's
+          first migration. */}
+      <Paper
+        component="form"
+        variant="outlined"
+        onSubmit={(e) => {
+          e.preventDefault();
+          apply();
+        }}
+        sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}
         aria-label="Change request filters"
-        searchValue={draft.q}
-        onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
-        searchPlaceholder="Search entity name"
-        applied={isApplied}
-        onFilter={() => setApplied(draft)}
-        onClearAll={clearAll}
       >
-        <FormControl size="small" fullWidth>
-          <InputLabel id="cr-status-filter-label">Status</InputLabel>
-          <Select
-            multiple
-            labelId="cr-status-filter-label"
-            label="Status"
-            value={draft.statuses}
-            onChange={(e) => setDraft((d) => ({ ...d, statuses: e.target.value as ChangeRequestStatus[] }))}
-            renderValue={(sel) => ((sel as string[]).length ? (sel as string[]).map(cap).join(', ') : 'Any')}
-          >
-            {CR_STATUSES.map((s) => (
-              <MenuItem key={s} value={s}>
-                <Checkbox size="small" checked={draft.statuses.includes(s)} />
-                <ListItemText primary={cap(s)} />
-              </MenuItem>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+          }}
+        >
+          <TextField
+            placeholder="Search entity name"
+            value={draft.q}
+            size="small"
+            fullWidth
+            onChange={(e) => setDraftValue('q', e.target.value)}
+          />
+          <FormControl size="small" fullWidth>
+            <InputLabel id="cr-status-filter-label">Status</InputLabel>
+            <Select
+              multiple
+              labelId="cr-status-filter-label"
+              label="Status"
+              value={draft.statuses}
+              onChange={(e) => setDraftValue('statuses', e.target.value as ChangeRequestStatus[])}
+              renderValue={(sel) => ((sel as string[]).length ? (sel as string[]).map(cap).join(', ') : 'Any')}
+            >
+              {CR_STATUSES.map((s) => (
+                <MenuItem key={s} value={s}>
+                  <Checkbox size="small" checked={draft.statuses.includes(s)} />
+                  <ListItemText primary={cap(s)} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField select fullWidth size="small" label="Type" value={draft.type} onChange={(e) => setDraftValue('type', e.target.value as Filters['type'])}>
+            <MenuItem value="any">Any</MenuItem>
+            <MenuItem value="loyaltyStatus">Loyalty status</MenuItem>
+          </TextField>
+          <TextField select fullWidth size="small" label="Submitted by" value={draft.by} onChange={(e) => setDraftValue('by', e.target.value as Filters['by'])}>
+            <MenuItem value="any">Any</MenuItem>
+            {DEMO_USERS.map((u) => (
+              <MenuItem key={u.id} value={u.name}>{u.name}</MenuItem>
             ))}
-          </Select>
-        </FormControl>
-        <TextField select fullWidth size="small" label="Type" value={draft.type} onChange={(e) => setDraft((d) => ({ ...d, type: e.target.value as Filters['type'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="loyaltyStatus">Loyalty status</MenuItem>
-        </TextField>
-        <TextField select fullWidth size="small" label="Submitted by" value={draft.by} onChange={(e) => setDraft((d) => ({ ...d, by: e.target.value as Filters['by'] }))}>
-          <MenuItem value="any">Any</MenuItem>
-          {DEMO_USERS.map((u) => (
-            <MenuItem key={u.id} value={u.name}>{u.name}</MenuItem>
-          ))}
-        </TextField>
-        <TextField fullWidth size="small" type="date" label="From" value={draft.from} onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
-        <TextField fullWidth size="small" type="date" label="To" value={draft.to} onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
-      </TableFiltersLegacy>
+          </TextField>
+          <TextField fullWidth size="small" type="date" label="From" value={draft.from} onChange={(e) => setDraftValue('from', e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+          <TextField fullWidth size="small" type="date" label="To" value={draft.to} onChange={(e) => setDraftValue('to', e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button variant={isDraft ? 'contained' : 'outlined'} type="submit">
+            Filter
+          </Button>
+          <Button variant="text" onClick={clear} disabled={!canClear} type="button">
+            Clear All
+          </Button>
+        </Box>
+      </Paper>
 
       {notice && (
         <Alert severity={notice.severity} onClose={() => setNotice(null)}>

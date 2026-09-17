@@ -1,17 +1,16 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Stack,
   Button,
   Typography,
-  TextField,
-  MenuItem,
   BeamPage,
-  TableFiltersLegacy,
+  TableFilters,
+  useTableFilters,
   Table,
   BeamStatusBadge,
 } from '@betty/beam';
-import type { BeamColumn, BeamRowAction } from '@betty/beam';
+import type { BeamColumn, BeamRowAction, TableFilterDefinition } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/EditRounded';
@@ -49,15 +48,11 @@ interface Applied {
 }
 
 const EMPTY: Applied = { q: '', gameType: 'any', status: 'any' };
-
-/** Applied filters -> URL query, omitting defaults so the URL stays clean. */
-function toParams(d: Applied): URLSearchParams {
-  const p = new URLSearchParams();
-  if (d.q.trim()) p.set('q', d.q.trim());
-  if (d.gameType !== 'any') p.set('gameType', d.gameType);
-  if (d.status !== 'any') p.set('status', d.status);
-  return p;
-}
+const PAYOUT_CONFIG_DEFS: TableFilterDefinition<Applied>[] = [
+  { key: 'q', control: 'text', label: 'Search', placeholder: 'Search name or ID' },
+  { key: 'gameType', control: 'select', label: 'Game Type', options: [{ label: 'Any', value: 'any' }, ...GAME_TYPES.map((g) => ({ label: gameTypeLabel(g), value: g }))] },
+  { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, ...PAYOUT_STATUSES.map((s) => ({ label: s, value: s }))] },
+];
 
 // Row actions are stubbed — behaviour wiring is a later round; only navigation
 // is real. Enable/Disable dialogs ship PLAIN (window.confirm); the real dialog
@@ -91,20 +86,9 @@ function ExpandedConfig({ config }: { config: PayoutConfig }) {
 
 export function PayoutConfigsPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Applied filters live in the URL (shareable, refresh-proof); the draft is
-  // local until the Filter button submits (list §1). Filters are exact-match.
-  const gameTypeParam = searchParams.get('gameType');
-  const statusParam = searchParams.get('status');
-  const applied: Applied = {
-    q: searchParams.get('q') ?? '',
-    gameType: GAME_TYPES.includes(gameTypeParam as GameType)
-      ? (gameTypeParam as GameType)
-      : 'any',
-    status: PAYOUT_STATUSES.includes(statusParam as PayoutStatus) ? (statusParam as PayoutStatus) : 'any',
-  };
-  const [draft, setDraft] = useState<Applied>(applied);
+  // Applied filters + URL sync are owned by useTableFilters (shareable, refresh-proof).
+  const filters = useTableFilters<Applied>({ initialValues: EMPTY, urlSync: true });
+  const applied = filters.applied;
 
   const rows = useMemo(() => {
     const q = applied.q.trim().toLowerCase();
@@ -182,49 +166,7 @@ export function PayoutConfigsPage() {
         }
       />
 
-      <TableFiltersLegacy
-        aria-label="Payout config filters"
-        searchValue={draft.q}
-        onSearchChange={(q) => setDraft((d) => ({ ...d, q }))}
-        searchPlaceholder="Search name or id"
-        applied={isApplied}
-        onFilter={() => setSearchParams(toParams(draft))}
-        onClearAll={() => {
-          setDraft(EMPTY);
-          setSearchParams({});
-        }}
-      >
-        <TextField
-          label="Game type"
-          size="small"
-          select
-          fullWidth
-          value={draft.gameType}
-          onChange={(e) => setDraft((d) => ({ ...d, gameType: e.target.value as Applied['gameType'] }))}
-        >
-          <MenuItem value="any">Any</MenuItem>
-          {GAME_TYPES.map((g) => (
-            <MenuItem key={g} value={g}>
-              {gameTypeLabel(g)}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          label="Status"
-          size="small"
-          select
-          fullWidth
-          value={draft.status}
-          onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as Applied['status'] }))}
-        >
-          <MenuItem value="any">Any</MenuItem>
-          {PAYOUT_STATUSES.map((s) => (
-            <MenuItem key={s} value={s}>
-              {s}
-            </MenuItem>
-          ))}
-        </TextField>
-      </TableFiltersLegacy>
+      <TableFilters definitions={PAYOUT_CONFIG_DEFS} controller={filters} />
 
       <Table
         columns={columns}
