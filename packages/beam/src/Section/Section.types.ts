@@ -14,6 +14,18 @@ export interface SectionProps {
   /** Actions rendered under the title (official parity). */
   actions?: ReactNode;
   /**
+   * LANE EXTENSION (flagged) — a toolbar band rendered BETWEEN the header and the body, at the
+   * field-twin datum (min-height `FIELD_TWIN_HEIGHT`, its own inset + gap). Hosts the section's
+   * add / bulk affordances; the canonical control is the small `+`-prefixed text button from the
+   * designs (Storybook `Toolbar*` variants). Official's `actions` slot (header) is untouched, so with
+   * official's subset of props Section behaves exactly like official's — `toolbar` is inert when absent.
+   *
+   * Ledger: additive, opt-in, no shared-prop change. Upstream-pitch note — official's `Section` has no
+   * between-header-and-body toolbar band; propose one so add-CTAs stop being ad-hoc children. Cross-ref
+   * the convergence audit (docs/beam-alignment.md) when that pitch is filed.
+   */
+  toolbar?: ReactNode;
+  /**
    * Editability border. Official semantics by default: `true` = a `divider` frame, `false`/omitted =
    * borderless (constant 1px geometry either way; only the colour changes). Our lane behaviour — the
    * per-surface `:has(field)` auto-derivation (borderless until the surface actually contains a field) —
