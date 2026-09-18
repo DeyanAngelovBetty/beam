@@ -21,20 +21,20 @@ recomputed from the *unlabeled* edit-row height (derived from `FIELD_GEOMETRY`, 
 
 ## ⚠️ Missing file
 
-`section-amendment-unlabeled.png` is **referenced above but not yet present in this folder** (only
-`section-current.png` and `section-goal.png` are here as of this commit). The unlabeled-inputs behavior was
-built from the text ruling; add the screenshot so the folder reads correctly cold.
+`section-amendment-unlabeled.png` was expected to land this task but is **still not present in this folder**
+(only `section-current.png` and `section-goal.png` are here). The unlabeled-inputs behavior was built from
+the text ruling; drop the screenshot in so the folder reads correctly cold.
 
-## Current build vs the spec (visual diff, this commit)
+## Current build vs the spec (contract v2)
 
-Matches goal+amendment: header kept in edit, static Reward Type, header separators + actions column,
-full-bleed dividers/hover, the two typed CTAs with the correct disabled states, unlabeled inputs, and the
-zero-reflow twin invariant. **Known deviations flagged for a decision (not changed here):**
-- Numeric columns (`# of Rewards` / `Qualification Amount` / `Reward Amount`) are **right-aligned** in the
-  build; `section-goal.png` shows them **left-aligned** (values under their header's left edge).
-- The Milestone Flip row renders its data value **"MilestoneFlip"** (no space); the goal shows
-  **"Milestone Flip"** (spaced) — a display-normalization question (the fixtures value stays "MilestoneFlip").
-- Row height is a uniform `FIELD_TWIN` (44px). It satisfies the invariant and is far more compact than the
-  goal's notched rows, but the amendment asks to recompute from the *unlabeled* input's natural height
-  (≈ `paddingY·2 + valueLineHeight` = 30px); 44 was chosen for a uniform header/body grid. Confirm the
-  intended compact height (the amendment screenshot would settle it).
+Matches goal+amendment: header kept in edit (44 chrome band), static Reward Type, header separators +
+actions column, full-bleed dividers/hover, the two typed CTAs with the correct disabled states, unlabeled
+**full-height** inputs, and the zero-reflow twin invariant. The three deviations flagged in v1 are now
+**resolved** (contract v2):
+- **Alignment** — twin/field-list tables now **left-align** values + inputs under the header's left edge
+  (density datagrids like Gaspar transactions keep right-aligned numerics).
+- **Display label** — the Milestone Flip row renders **"Milestone Flip"** (spaced) via a display map; the
+  stored data value stays `MilestoneFlip`.
+- **Row height** — the two-tier row doctrine: twin rows are **`TWIN_ROW_HEIGHT` (57 = 44 + 2·6 + 1)** so a
+  **full field twin** fits (no compact input, matching `DetailsPanel`); density/read-only embedded tables
+  (Winners) stay at 44. See BEAM.md §6.

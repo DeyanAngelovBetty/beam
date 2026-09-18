@@ -128,6 +128,20 @@ export const FIELD_GEOMETRY = {
  */
 export const FIELD_TWIN_HEIGHT = FIELD_GEOMETRY.height;
 
+// TABLE_CELL_PAD_Y — MUI small `TableCell` vertical padding (the `6px` in `padding: 6px 16px`). Named so
+// the twin-row height composes from it rather than a literal.
+export const TABLE_CELL_PAD_Y = 6;
+// TABLE_ROW_DIVIDER — the 1px hairline a table row's bottom border draws.
+export const TABLE_ROW_DIVIDER = 1;
+/**
+ * TWIN_ROW_HEIGHT — the height of a TWIN table row (a datagrid row that swaps to a field in edit). A
+ * full-height field twin (44) plus the cell's own top+bottom padding plus the row divider — so the input
+ * renders at the SAME height as a DetailsPanel field (no compact/squished variant) and view↔edit still
+ * reflows nothing. Composed, never a literal 57 = 44 + 2·6 + 1. (Density datagrid rows stay at
+ * `FIELD_TWIN_HEIGHT`; see BEAM.md §6 — two constants, two contexts.)
+ */
+export const TWIN_ROW_HEIGHT = FIELD_TWIN_HEIGHT + 2 * TABLE_CELL_PAD_Y + TABLE_ROW_DIVIDER;
+
 /**
  * MIN_MEANINGFUL_ROWS — the one tunable for the tiered sticky-chrome disengagement (stickyChrome hardening).
  * The doctrine: chrome that can't leave this many rows visible forfeits its pins, cheapest first. Everything

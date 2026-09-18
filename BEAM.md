@@ -189,19 +189,28 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
    pixels with themed MUI atoms. We do not adopt pre-styled component libraries beyond MUI.
 6. **Accessibility is not optional:** every interactive organism takes/derives `aria-label`s;
    contrast is enforced at token level (see 3.4).
-7. **Twin invariant (view↔edit stability).** A twin-capable surface must not reflow when it
-   toggles between view and edit: a view row carries a `min-height` equal to the field-bearing
-   edit row's height, so nothing below shifts. **The toolbar appearing/disappearing is the ONLY
-   sanctioned height change.** Derive the row height from the field-geometry constants
-   (`FIELD_GEOMETRY` / `FIELD_TWIN_HEIGHT`) — never a new magic number. For embedded tables this is
-   owned by `Section`'s scoped styles (the same mechanism as the 44px header enforcement): the
-   header row stays in **both** modes, and body rows hold the field-twin height in both.
-   - **Contract surface — `.beam-detail-row`:** the contract targets only the section's OWN direct-child
-     table (child combinators exclude nested tables). A body row that must NOT take the field-twin
-     height — an expansion/`Collapse` row that has to collapse to 0 — opts out by carrying the class
-     **`beam-detail-row`** on its `<TableRow>`. (Used by Community Jackpots' Milestones table.) The class
-     is the sanctioned opt-out; a page author has no other way to discover it, so it is doctrine, not an
-     incidental hook.
+7. **Twin invariant + the two-tier row doctrine (view↔edit stability).** A twin-capable surface
+   must not reflow when it toggles between view and edit: view and edit rows carry the SAME height,
+   so nothing below shifts. **The toolbar appearing/disappearing is the ONLY sanctioned height
+   change.** Two row tiers, two constants, two contexts (this is also the shape the future theme
+   density consolidation will take):
+   - **Density rows** — plain, never-editable datagrids (list pages, standalone `Table`s, and
+     always-read-only embedded tables like Winners): **`FIELD_TWIN_HEIGHT` (44)**, content may
+     stretch. Numerics stay **right-aligned** (e.g. Gaspar transactions).
+   - **Twin rows** — tables whose rows swap to fields in edit (e.g. Rewards Strategy): height
+     **`TWIN_ROW_HEIGHT` (57 = `FIELD_TWIN_HEIGHT + 2·TABLE_CELL_PAD_Y + TABLE_ROW_DIVIDER`)** in
+     BOTH modes, so a **full-height field twin** fits (no compact/squished input; it matches the
+     `DetailsPanel` field height). Values and inputs **left-align** under the header's left edge
+     (per `section-goal.png`). **Header rows stay 44 everywhere** (chrome band, not content).
+   - Never a literal — compose from `FIELD_GEOMETRY` / `FIELD_TWIN_HEIGHT` / `TABLE_CELL_PAD_Y` /
+     `TABLE_ROW_DIVIDER`. For embedded tables this is owned by `Section`'s scoped styles (same
+     mechanism as the 44px header enforcement); a table opts into twin height with the class
+     **`beam-twin-table`**.
+   - **Contract surfaces (classes a page author can't otherwise discover — doctrine, not hooks):**
+     **`beam-twin-table`** on a `<Table>` opts it into the 57px twin-row height. **`beam-detail-row`**
+     on a `<TableRow>` opts a row OUT of the height rule so an expansion/`Collapse` row collapses to 0.
+     **Bleed is a first-level privilege** — a table inside a `.beam-detail-row` does NOT bleed; it
+     reads as a bordered, rounded, inset card (depth-scoped in `Section`'s styles).
 8. **Columnar fields are labeled by their column header, not per-cell labels.** In a columnar field
    context (an embedded editable table), inputs render UNLABELED — no notched/floating per-cell
    labels; the column header is the label, wired to each input via `aria-labelledby` (header cells

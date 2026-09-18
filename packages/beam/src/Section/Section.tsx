@@ -1,7 +1,7 @@
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { editabilityBorderSx, FIELD_TWIN_HEIGHT, FIELD_GEOMETRY } from '../theme/tokens';
+import { editabilityBorderSx, FIELD_TWIN_HEIGHT, TWIN_ROW_HEIGHT } from '../theme/tokens';
 import type { SectionProps } from './Section.types';
 
 /**
@@ -12,37 +12,52 @@ import type { SectionProps } from './Section.types';
  */
 
 // The EMBEDDED-TABLE CONTRACT for a bleed Section — scoped descendant styling (same mechanism as the
-// 44px header enforcement; NOT the global theme density consolidation, which stays a recorded follow-up).
-// Child combinators target ONLY the section's OWN direct-child table, so nested tables (a Collapse's
-// sub-table) are untouched; a `.beam-detail-row` opts a row out (e.g. the expansion row itself).
+// 44px header enforcement; NOT the global theme density consolidation, which stays a recorded follow-up —
+// this contract makes its future shape clearer: TWO constants, TWO contexts). Child combinators target
+// ONLY the section's OWN direct-child table (bleed is a FIRST-LEVEL privilege), so nested tables (a
+// Collapse's sub-table) are untouched; a `.beam-detail-row` opts a row out (e.g. the expansion row itself).
 //
 // 1. BLEED — the table runs to the Section's edges (dividers, the header underline, and row hover span
 //    full width because the table is full-width). First/last cell inline padding = the Section pad (2), so
 //    text stays on the inset; inner cells get a modest gutter.
-// 2. HEADER IN BOTH MODES — header cells are pinned at the field-twin datum and carry vertical column
-//    separators; the page keeps the <thead> in edit as well as view.
-// 3. TWIN INVARIANT — view AND edit body rows carry the field-twin height, so toggling view↔edit shifts
-//    nothing below the toolbar. Derived from FIELD_GEOMETRY — no magic number.
-// 4. UNLABELED INPUTS — inputs in twin rows are plain compact outlined fields (padding from
-//    FIELD_GEOMETRY.paddingY), vertically centered; the column header is their label (aria-labelledby is
-//    wired on the page). No per-cell notched labels in columnar field contexts.
+// 2. HEADER IN BOTH MODES — header cells stay at the field-twin datum (44, a chrome band, not content) and
+//    carry vertical column separators; the page keeps the <thead> in edit as well as view.
+// 3. TWO-TIER ROW HEIGHT (the twin invariant, recomputed) —
+//    • Density rows (a plain, never-editable embedded datagrid, e.g. Winners): FIELD_TWIN_HEIGHT (44);
+//      content may stretch.
+//    • Twin rows (`.beam-twin-table` — rows that swap to fields in edit, e.g. Rewards Strategy): the
+//      composed TWIN_ROW_HEIGHT (57) in BOTH modes, so a FULL-height field twin fits and view↔edit reflows
+//      nothing below the toolbar.
+// 4. FULL-HEIGHT INPUTS — inputs in twin rows render at the full field height (matching DetailsPanel), no
+//    compact/squished variant. They are UNLABELED (the column header is the label, wired via
+//    aria-labelledby on the page); alignment is the page's (twin/field-list tables left-align — BEAM.md §6).
+// 5. NESTED CONTAINMENT — a table inside an expansion row (`.beam-detail-row` content) is NOT first-level,
+//    so it does not bleed: it reads as a bordered, rounded, inset card within its parent region.
 const T = '& > .beam-section-bleed > table';
-const twinRow = `${T} > tbody > tr:not(.beam-detail-row) > .MuiTableCell-root`;
+const bodyCell = `${T} > tbody > tr:not(.beam-detail-row) > .MuiTableCell-root`;
 const embeddedTableContractSx = {
   [T]: { width: '100%' },
-  // Header row (both modes).
+  // Header row (both modes) — chrome band at 44.
   [`${T} > thead > tr > .MuiTableCell-root`]: { height: FIELD_TWIN_HEIGHT, py: 0, px: 1 },
   [`${T} > thead > tr > .MuiTableCell-root:first-of-type`]: { pl: 2 },
   [`${T} > thead > tr > .MuiTableCell-root:last-of-type`]: { pr: 2 },
   [`${T} > thead > tr > .MuiTableCell-root:not(:last-of-type)`]: { borderRight: '1px solid', borderRightColor: 'divider' },
-  // Twin body rows (view == edit height).
-  [twinRow]: { height: FIELD_TWIN_HEIGHT, verticalAlign: 'middle', px: 1 },
-  [`${twinRow}:first-of-type`]: { pl: 2 },
-  [`${twinRow}:last-of-type`]: { pr: 2 },
-  // Compact, vertically-centered inputs (unlabeled — header is the label).
-  [`${twinRow} .MuiOutlinedInput-input`]: {
-    paddingTop: `${FIELD_GEOMETRY.paddingY}px`,
-    paddingBottom: `${FIELD_GEOMETRY.paddingY}px`,
+  // Density body rows (default) — 44; content may stretch.
+  [bodyCell]: { height: FIELD_TWIN_HEIGHT, verticalAlign: 'middle', px: 1 },
+  [`${bodyCell}:first-of-type`]: { pl: 2 },
+  [`${bodyCell}:last-of-type`]: { pr: 2 },
+  // Twin body rows — 57 both modes (the extra `.beam-twin-table` specificity wins over the density rule).
+  [`${T}.beam-twin-table > tbody > tr:not(.beam-detail-row) > .MuiTableCell-root`]: { height: TWIN_ROW_HEIGHT },
+  // Nested containment — an expansion row's own table is a contained card (bordered, rounded, inset),
+  // never bleeding. Depth-scoped: it lives BELOW `.beam-detail-row`, so no child combinator reaches it.
+  '& .beam-detail-row table': {
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: '8px',
+    borderCollapse: 'separate',
+    borderSpacing: 0,
+    overflow: 'hidden',
+    my: 0.5,
   },
 };
 

@@ -132,10 +132,11 @@ export const Toolbar: Story = {
 
 /**
  * TWIN INVARIANT harness — a live view↔edit toggle on the Rewards Strategy shape. The regression test
- * for the twin invariant: toggling must reflow NOTHING below the toolbar. The header row stays in both
- * modes; view rows and field-bearing edit rows carry the same field-twin height (Section's embedded-table
- * contract); inputs are unlabeled (the column header labels them via aria-labelledby). The dashed ruler
- * below the Section must not move when you flip the toggle. Compare against section-goal.png.
+ * for the twin invariant: toggling must reflow NOTHING below the toolbar. It is a `.beam-twin-table`, so
+ * both view rows and field-bearing edit rows carry the composed TWIN_ROW_HEIGHT (57) — a FULL-height field
+ * fits, no compact variant. The header row stays in both modes; inputs are unlabeled and left-aligned (the
+ * column header labels them via aria-labelledby). The dashed ruler below must not move when you flip the
+ * toggle. Compare against section-goal.png (inputs unlabeled per the amendment).
  */
 export const TwinInvariant: Story = {
   render: function TwinInvariantStory() {
@@ -158,7 +159,7 @@ export const TwinInvariant: Story = {
           value={v}
           onChange={(e) => patch(i, k, Number(e.target.value) || 0)}
           fullWidth
-          slotProps={{ htmlInput: { 'aria-labelledby': label, style: { textAlign: 'right' } } }}
+          slotProps={{ htmlInput: { 'aria-labelledby': label } }}
         />
       ) : (
         <>{v.toLocaleString()}</>
@@ -176,23 +177,23 @@ export const TwinInvariant: Story = {
             </Button>
           }
         >
-          <Table size="small" aria-label="Rewards strategy">
+          <Table size="small" aria-label="Rewards strategy" className="beam-twin-table">
             <TableHead>
               <TableRow>
                 <TableCell id={cid('type')} sx={cap}>Reward Type</TableCell>
-                <TableCell id={cid('num')} align="right" sx={cap}># of Rewards</TableCell>
-                <TableCell id={cid('qual')} align="right" sx={cap}>Qualification Amount</TableCell>
-                <TableCell id={cid('reward')} align="right" sx={cap}>Reward Amount</TableCell>
+                <TableCell id={cid('num')} sx={cap}># of Rewards</TableCell>
+                <TableCell id={cid('qual')} sx={cap}>Qualification Amount</TableCell>
+                <TableCell id={cid('reward')} sx={cap}>Reward Amount</TableCell>
                 <TableCell aria-hidden sx={{ width: 48 }} />
               </TableRow>
             </TableHead>
             <TableBody>
               {rows.map((r, i) => (
                 <TableRow key={i} hover>
-                  <TableCell>{r.type}</TableCell>
-                  <TableCell align="right"><Num i={i} k="num" v={r.num} label={cid('num')} /></TableCell>
-                  <TableCell align="right"><Num i={i} k="qual" v={r.qual} label={cid('qual')} /></TableCell>
-                  <TableCell align="right"><Num i={i} k="reward" v={r.reward} label={cid('reward')} /></TableCell>
+                  <TableCell>{r.type === 'MilestoneFlip' ? 'Milestone Flip' : r.type}</TableCell>
+                  <TableCell><Num i={i} k="num" v={r.num} label={cid('num')} /></TableCell>
+                  <TableCell><Num i={i} k="qual" v={r.qual} label={cid('qual')} /></TableCell>
+                  <TableCell><Num i={i} k="reward" v={r.reward} label={cid('reward')} /></TableCell>
                   <TableCell align="right">
                     {edit && (
                       <IconButton aria-label={`Remove ${r.type}`} color="error" size="small">
