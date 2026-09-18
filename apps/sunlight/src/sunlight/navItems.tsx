@@ -16,6 +16,7 @@ export type SunlightPage =
   | 'default-game-configs'
   | 'meta-game-presets'
   | 'token-campaigns'
+  | 'community-jackpots'
   | 'pending-approvals'
   | 'users'
   | 'roles';
@@ -29,6 +30,7 @@ export const PAGE_PATH: Record<SunlightPage, string> = {
   'default-game-configs': '/default-game-configs',
   'meta-game-presets': '/meta-game-presets',
   'token-campaigns': '/prize-wall/token-campaigns',
+  'community-jackpots': '/community-jackpots',
   'pending-approvals': '/pending-approvals',
   users: '/users',
   roles: '/roles',
@@ -73,11 +75,14 @@ export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[]
         leaf('MetaGame Presets', 'meta-game-presets'),
       ],
     },
-    // Prize Wall — a group now; Token Campaigns is its first destination (drill-down flow).
+    // Promotions and Loyalty — the PNG's group (CJs.png). Renamed from the demo's "Prize Wall" to match
+    // the design; holds Token Campaigns + Community Jackpots. (The PNG's other siblings — Midnight
+    // Journey, Betty Promotions, Tournaments — and its per-leaf icons are out of this task's scope; the
+    // demo's icon-less group children are kept for consistency.)
     {
-      label: 'Prize Wall',
+      label: 'Promotions and Loyalty',
       icon: <RedeemIcon />,
-      children: [leaf('Token Campaigns', 'token-campaigns')],
+      children: [leaf('Token Campaigns', 'token-campaigns'), leaf('Community Jackpots', 'community-jackpots')],
     },
     {
       label: 'Administration',
