@@ -14,6 +14,12 @@
  *    Rewards Strategy Configuration table). Scalar vs list; relationship TBD.
  *  • Select option sets are TBD: only "Fixed" (reward strategy) and "Prize" / "MilestoneFlip" (row reward
  *    type) appear in the PNGs. We offer exactly those (TERMS ruling — no invented options).
+ *  • Row "Reward Type" is FIXED AT ADD-TIME (static text, not a per-row select): a row is created as a
+ *    Prize or a Milestone Flip via the toolbar's typed CTAs, and its type never changes. This is a
+ *    TBD-RESOLUTION CANDIDATE pending Mariya — if Reward Type becomes editable per row, the static text
+ *    reverts to a select.
+ *  • REQUIREDNESS is UNDECIDED: must a milestone carry a Milestone Flip? Modelled as the single flag
+ *    `MILESTONE_FLIP_REQUIRED` (default `false` = not required) so Mariya's answer is a one-line change.
  *
  * ── State model (demo) ────────────────────────────────────────────────────────────────────────────
  * Module-level mutable arrays, URL-backed pages. DRAFT model for Add: `createDraftJackpot()` assigns an
@@ -72,6 +78,13 @@ export interface CommunityJackpot {
 // Option sets surfaced in the edit PNGs (TERMS: exactly these; broader sets TBD).
 export const REWARD_STRATEGY_OPTIONS = ['Fixed'] as const;
 export const REWARD_ROW_TYPE_OPTIONS = ['Prize', 'MilestoneFlip'] as const;
+
+/**
+ * Rewards Strategy business rule — UNDECIDED (pending Mariya): must every milestone carry a Milestone
+ * Flip? Default NOT required. Flip this ONE constant to `true` when the answer lands (a one-line change):
+ * Save then blocks a milestone with no flip. See the milestone edit page's Rewards Strategy rules.
+ */
+export const MILESTONE_FLIP_REQUIRED = false;
 
 // The rewards-strategy pair the PNGs show on every configured milestone.
 const DEFAULT_REWARDS: RewardStrategyRow[] = [
