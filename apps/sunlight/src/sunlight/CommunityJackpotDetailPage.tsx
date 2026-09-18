@@ -200,13 +200,14 @@ export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | '
       </DetailsPanel>
 
       {/* Milestones — a surfaceless child list (Section bleed). isEdit="auto": the section holds no field
-          twins (milestone fields live on the milestone page), so it stays borderless even in edit. */}
-      <Section isEdit="auto" title="Milestones" bleed>
-        {isEdit && (
-          <Box sx={{ px: 2, pb: 0.5 }}>
-            <Button variant="text" size="small" startIcon={<AddIcon />} onClick={addMilestone}>Add Milestone</Button>
-          </Box>
-        )}
+          twins (milestone fields live on the milestone page), so it stays borderless even in edit. The
+          Add CTA lives in the Section toolbar (edit only). */}
+      <Section
+        isEdit="auto"
+        title="Milestones"
+        bleed
+        toolbar={isEdit ? <Button variant="text" size="small" startIcon={<AddIcon />} onClick={addMilestone}>Add Milestone</Button> : undefined}
+      >
         {jackpot.milestones.length === 0 ? (
           <Box sx={{ px: 2, pb: 2 }}>
             <Typography variant="body2" color="text.secondary">No milestones.</Typography>

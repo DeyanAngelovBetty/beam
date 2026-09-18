@@ -363,12 +363,16 @@ export function TokenCampaignDetailPage({ create = false }: { create?: boolean }
           </Typography>
         </Section>
       ) : (
-        <Section isEdit="auto" title="Wall Stages" bleed>
-          <Box sx={{ px: 2, pb: 0.5 }}>
+        <Section
+          isEdit="auto"
+          title="Wall Stages"
+          bleed
+          toolbar={
             <Button variant="text" size="small" startIcon={<AddIcon />} onClick={() => navigate(`${BASE}/${cc.id}/stages/new`)}>
               Add wall stage
             </Button>
-          </Box>
+          }
+        >
           {cc.wallStages.length === 0 ? (
             <Box sx={{ px: 2, pb: 2 }}><Typography variant="body2" color="text.secondary">No stages.</Typography></Box>
           ) : (

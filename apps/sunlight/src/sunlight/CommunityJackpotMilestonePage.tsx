@@ -188,11 +188,16 @@ export function CommunityJackpotMilestonePage({ mode }: { mode: 'view' | 'edit' 
         )}
       </DetailsPanel>
 
-      {/* Rewards Strategy — read-only table (view) ⇄ inline editable field-list (edit/add). isEdit explicit. */}
-      <Section isEdit={isEdit} title="Rewards Strategy" bleed>
+      {/* Rewards Strategy — read-only table (view) ⇄ inline editable field-list (edit/add). isEdit explicit.
+          The Add CTA lives in the Section toolbar (edit/add only). */}
+      <Section
+        isEdit={isEdit}
+        title="Rewards Strategy"
+        bleed
+        toolbar={isEdit ? <Button variant="text" size="small" startIcon={<AddIcon />} onClick={addRow}>Add Reward Strategy</Button> : undefined}
+      >
         {isEdit ? (
           <Box sx={{ px: 2, pb: 2 }}>
-            <Button variant="text" size="small" startIcon={<AddIcon />} onClick={addRow} sx={{ mb: 1 }}>Add Reward Strategy</Button>
             {draft.rewardsStrategy.length === 0 ? (
               <Typography variant="body2" color="text.secondary">No reward strategies yet — add at least one.</Typography>
             ) : (
