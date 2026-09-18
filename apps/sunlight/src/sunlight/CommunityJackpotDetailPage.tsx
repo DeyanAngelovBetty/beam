@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Stack,
@@ -7,6 +7,7 @@ import {
   Alert,
   Button,
   IconButton,
+  Tooltip,
   MuiTable as Table,
   TableHead,
   TableBody,
@@ -27,6 +28,7 @@ import EditIcon from '@mui/icons-material/EditRounded';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import UploadIcon from '@mui/icons-material/UploadFileOutlined';
 import AddIcon from '@mui/icons-material/Add';
+import RemoveCircleIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -44,6 +46,7 @@ import {
   fromLocalInput,
   type CommunityJackpot,
   type Milestone,
+  type RewardStrategyRow,
 } from './communityJackpots';
 
 /**
@@ -273,7 +276,8 @@ function MilestoneRow({
   return (
     <>
       <TableRow hover>
-        <TableCell sx={{ px: 0.5 }}>
+        {/* Cell padding is owned by Section's embedded-table contract (bleed inset); no per-cell override. */}
+        <TableCell>
           <IconButton size="small" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => setOpen((o) => !o)}>
             {open ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
           </IconButton>
@@ -286,11 +290,12 @@ function MilestoneRow({
         <TableCell>{milestone.rewardStrategy}</TableCell>
         <TableCell align="right">{milestone.threshold.toLocaleString()}</TableCell>
         <TableCell align="right">{milestone.jackpotAmount.toLocaleString()}</TableCell>
-        <TableCell align="right" sx={{ px: 0.5 }}>
+        <TableCell align="right">
           <MilestoneKebab actions={actions} />
         </TableCell>
       </TableRow>
-      <TableRow>
+      {/* Expansion row — opted OUT of the twin-height rule so it can collapse to 0 (Section contract). */}
+      <TableRow className="beam-detail-row">
         <TableCell sx={{ p: 0, border: 0 }} colSpan={8}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ px: 2, py: 1.5 }}>
@@ -316,33 +321,97 @@ function MilestoneKebab({ actions }: { actions: BeamRowAction[] }) {
   );
 }
 
-/** The read-only "Rewards Strategy" list — shared by the jackpot-page milestone expansion and (as a
- *  Section) the milestone view page. One name across twins: "Rewards Strategy" (Figma's
- *  "Rewards Strategy Configuration" drift is unified per the twin-discipline ruling). */
-export function RewardsStrategyTable({ rows }: { rows: Milestone['rewardsStrategy'] }) {
-  if (rows.length === 0) {
-    return <Typography variant="body2" color="text.secondary" sx={{ pt: 1 }}>No reward strategies.</Typography>;
-  }
+/**
+ * The "Rewards Strategy" list — the reference TWIN-CAPABLE embedded table. One table structure in BOTH
+ * modes (the header row stays in edit; the actions column is present in both so the twins don't shift).
+ * Section's embedded-table contract owns bleed + the field-twin row heights + compact/centered inputs, so
+ * toggling view↔edit reflows nothing below the toolbar.
+ *
+ * Reward Type is STATIC TEXT in both modes (fixed at add-time; the column header labels it). The number
+ * inputs are UNLABELED (per the columnar-field ruling) and wired to their header cell via aria-labelledby.
+ * Shared by the jackpot-page milestone expansion (read-only) and the milestone page (view + edit). One
+ * name across twins: "Rewards Strategy".
+ */
+export function RewardsStrategyTable({
+  rows,
+  edit = false,
+  onPatchRow,
+  onRemoveRow,
+  isRemoveDisabled,
+}: {
+  rows: Milestone['rewardsStrategy'];
+  edit?: boolean;
+  onPatchRow?: (index: number, patch: Partial<RewardStrategyRow>) => void;
+  onRemoveRow?: (index: number) => void;
+  isRemoveDisabled?: (index: number) => boolean;
+}) {
+  const base = useId(); // unique header-cell ids per instance (aria-labelledby targets)
+  const cid = (k: string) => `${base}-${k}`;
+  const n = (v: number) => v.toLocaleString();
   return (
     <Table size="small" aria-label="Rewards strategy">
       <TableHead>
         <TableRow>
-          <TableCell sx={{ ...meta }}>Reward Type</TableCell>
-          <TableCell align="right" sx={{ ...meta }}># of Rewards</TableCell>
-          <TableCell align="right" sx={{ ...meta }}>Qualification Amount</TableCell>
-          <TableCell align="right" sx={{ ...meta }}>Reward Amount</TableCell>
+          <TableCell id={cid('type')} sx={{ ...meta }}>Reward Type</TableCell>
+          <TableCell id={cid('num')} align="right" sx={{ ...meta }}># of Rewards</TableCell>
+          <TableCell id={cid('qual')} align="right" sx={{ ...meta }}>Qualification Amount</TableCell>
+          <TableCell id={cid('reward')} align="right" sx={{ ...meta }}>Reward Amount</TableCell>
+          {/* Actions column exists in BOTH modes (empty in view) so the twins keep identical geometry. */}
+          <TableCell aria-hidden sx={{ width: 48 }} />
         </TableRow>
       </TableHead>
       <TableBody>
-        {rows.map((r, i) => (
-          <TableRow key={i} hover>
-            <TableCell>{r.rewardType}</TableCell>
-            <TableCell align="right">{r.numRewards.toLocaleString()}</TableCell>
-            <TableCell align="right">{r.qualificationAmount.toLocaleString()}</TableCell>
-            <TableCell align="right">{r.rewardAmount.toLocaleString()}</TableCell>
+        {rows.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={5}>
+              <Typography variant="body2" color="text.secondary">No reward strategies yet — add at least one prize.</Typography>
+            </TableCell>
           </TableRow>
-        ))}
+        ) : (
+          rows.map((r, i) => {
+            const removeDisabled = isRemoveDisabled?.(i) ?? false;
+            return (
+              <TableRow key={i} hover>
+                <TableCell>{r.rewardType}</TableCell>
+                <TableCell align="right">
+                  {edit ? <NumInput value={r.numRewards} labelledBy={cid('num')} onChange={(v) => onPatchRow?.(i, { numRewards: v })} /> : n(r.numRewards)}
+                </TableCell>
+                <TableCell align="right">
+                  {edit ? <NumInput value={r.qualificationAmount} labelledBy={cid('qual')} onChange={(v) => onPatchRow?.(i, { qualificationAmount: v })} /> : n(r.qualificationAmount)}
+                </TableCell>
+                <TableCell align="right">
+                  {edit ? <NumInput value={r.rewardAmount} labelledBy={cid('reward')} onChange={(v) => onPatchRow?.(i, { rewardAmount: v })} /> : n(r.rewardAmount)}
+                </TableCell>
+                <TableCell align="right">
+                  {edit && (
+                    <Tooltip title={removeDisabled ? 'At least one prize is required' : ''}>
+                      <span>
+                        <IconButton aria-label={`Remove ${r.rewardType}`} color="error" size="small" onClick={() => onRemoveRow?.(i)} disabled={removeDisabled}>
+                          <RemoveCircleIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })
+        )}
       </TableBody>
     </Table>
+  );
+}
+
+/** Unlabeled, compact number input for a columnar field cell — labelled by its column header (a11y). The
+ *  compact height + centering come from Section's embedded-table contract. */
+function NumInput({ value, labelledBy, onChange }: { value: number; labelledBy: string; onChange: (v: number) => void }) {
+  return (
+    <BeamField
+      type="number"
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value) || 0)}
+      fullWidth
+      slotProps={{ htmlInput: { 'aria-labelledby': labelledBy, style: { textAlign: 'right' } } }}
+    />
   );
 }

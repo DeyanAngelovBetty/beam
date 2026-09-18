@@ -6,7 +6,6 @@ import {
   Typography,
   Alert,
   Button,
-  IconButton,
   MuiTable as Table,
   TableHead,
   TableBody,
@@ -21,12 +20,10 @@ import {
   BeamField,
   Section,
   meta,
-  FIELD_GEOMETRY,
 } from '@betty/beam';
 import EditIcon from '@mui/icons-material/EditRounded';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import RemoveCircleIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
 import { backTo } from './backTo';
 import { RewardsStrategyTable } from './CommunityJackpotDetailPage';
 import {
@@ -241,54 +238,18 @@ export function CommunityJackpotMilestonePage({ mode }: { mode: 'view' | 'edit' 
           ) : undefined
         }
       >
-        {isEdit ? (
-          <Box sx={{ px: 2, pb: 2 }}>
-            {rows.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">No reward strategies yet — add at least one prize.</Typography>
-            ) : (
-              <Stack spacing={1.5}>
-                {rows.map((r, i) => {
-                  const flip = isFlip(r);
-                  // Min-1 applies to PRIZES independently of the flip: the last prize can't be removed;
-                  // the flip is always removable (removing it re-enables Add Milestone Flip).
-                  const removeDisabled = flip ? false : prizeCount <= 1;
-                  return (
-                    <Box
-                      key={i}
-                      sx={{
-                        display: 'grid',
-                        gap: 1.5,
-                        alignItems: 'center',
-                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr)) auto', md: 'repeat(4, minmax(0, 1fr)) auto' },
-                      }}
-                    >
-                      {/* Reward Type is FIXED at add-time → static text, not a select (TBD-resolution
-                          candidate pending Mariya; see fixtures). */}
-                      <Stack sx={{ justifyContent: 'center', minHeight: FIELD_GEOMETRY.height, minWidth: 0 }}>
-                        <Typography sx={{ ...meta }} color="text.secondary">Reward Type</Typography>
-                        <Typography variant="body2">{r.rewardType}</Typography>
-                      </Stack>
-                      <BeamField label="# of Rewards" type="number" value={r.numRewards} onChange={(e) => patchRow(i, { numRewards: Number(e.target.value) || 0 })} fullWidth />
-                      <BeamField label="Qualification Amount" type="number" value={r.qualificationAmount} onChange={(e) => patchRow(i, { qualificationAmount: Number(e.target.value) || 0 })} fullWidth />
-                      <BeamField label="Reward Amount" type="number" value={r.rewardAmount} onChange={(e) => patchRow(i, { rewardAmount: Number(e.target.value) || 0 })} fullWidth />
-                      <Tooltip title={removeDisabled ? 'At least one prize is required' : ''}>
-                        <span>
-                          <IconButton aria-label={`Remove ${r.rewardType}`} color="error" onClick={() => removeRow(i)} disabled={removeDisabled}>
-                            <RemoveCircleIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </Box>
-                  );
-                })}
-              </Stack>
-            )}
-          </Box>
-        ) : (
-          <Box sx={{ px: 2, pb: 1 }}>
-            <RewardsStrategyTable rows={(milestone as Milestone).rewardsStrategy} />
-          </Box>
-        )}
+        {/* One twin table for both modes (Section owns bleed + heights + compact inputs). Reward Type is
+            static text; min-1 applies to prizes independently of the flip (last prize's remove disabled). */}
+        <RewardsStrategyTable
+          rows={isEdit ? draft.rewardsStrategy : (milestone as Milestone).rewardsStrategy}
+          edit={isEdit}
+          onPatchRow={patchRow}
+          onRemoveRow={removeRow}
+          isRemoveDisabled={(i) => {
+            const r = draft.rewardsStrategy[i];
+            return r ? !isFlip(r) && prizeCount <= 1 : false;
+          }}
+        />
       </Section>
 
       {/* Milestone Winners — OPERATIONAL, read-only in EVERY mode (ruling). Omitted on Add (no winners
