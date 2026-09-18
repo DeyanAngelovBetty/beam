@@ -79,6 +79,11 @@ export interface CommunityJackpot {
 export const REWARD_STRATEGY_OPTIONS = ['Fixed'] as const;
 export const REWARD_ROW_TYPE_OPTIONS = ['Prize', 'MilestoneFlip'] as const;
 
+// DISPLAY map (data value → shown text). The stored value stays `MilestoneFlip` (drives `isFlip` logic +
+// the singleton rule); it RENDERS as "Milestone Flip" (section-goal.png), and the toolbar CTA reads
+// "Add Milestone Flip". Data untouched — TBD whether the backend value itself normalizes (pending Mariya).
+export const rewardTypeLabel = (v: string): string => (v === 'MilestoneFlip' ? 'Milestone Flip' : v);
+
 /**
  * Rewards Strategy business rule — UNDECIDED (pending Mariya): must every milestone carry a Milestone
  * Flip? Default NOT required. Flip this ONE constant to `true` when the answer lands (a one-line change):

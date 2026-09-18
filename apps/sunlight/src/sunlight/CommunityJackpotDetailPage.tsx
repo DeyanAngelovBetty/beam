@@ -44,6 +44,7 @@ import {
   fmtDateTimeET,
   toLocalInput,
   fromLocalInput,
+  rewardTypeLabel,
   type CommunityJackpot,
   type Milestone,
   type RewardStrategyRow,
@@ -219,14 +220,14 @@ export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | '
           <Table size="small" aria-label="Milestones">
             <TableHead>
               <TableRow>
-                <TableCell aria-hidden sx={{ width: 44 }} />
+                {/* Leading control rail — chevron + kebab (estate convention). */}
+                <TableCell aria-hidden sx={{ width: 88 }} />
                 <TableCell sx={{ ...meta }}>ID</TableCell>
                 <TableCell sx={{ ...meta }}>Name</TableCell>
                 <TableCell sx={{ ...meta }}>Reward Type</TableCell>
                 <TableCell sx={{ ...meta }}>Reward Strategy</TableCell>
                 <TableCell align="right" sx={{ ...meta }}>Threshold</TableCell>
                 <TableCell align="right" sx={{ ...meta }}>Jackpot Amount</TableCell>
-                <TableCell aria-hidden sx={{ width: 44 }} />
               </TableRow>
             </TableHead>
             <TableBody>
@@ -276,11 +277,15 @@ function MilestoneRow({
   return (
     <>
       <TableRow hover>
-        {/* Cell padding is owned by Section's embedded-table contract (bleed inset); no per-cell override. */}
+        {/* Leading control rail — chevron + kebab together (estate convention: rail leads, not trails).
+            Cell inline padding is owned by Section's embedded-table contract. */}
         <TableCell>
-          <IconButton size="small" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => setOpen((o) => !o)}>
-            {open ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
-          </IconButton>
+          <Stack direction="row" sx={{ alignItems: 'center' }}>
+            <IconButton size="small" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => setOpen((o) => !o)}>
+              {open ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
+            </IconButton>
+            <MilestoneKebab actions={actions} />
+          </Stack>
         </TableCell>
         <TableCell>{milestone.id}</TableCell>
         <TableCell component="th" scope="row">
@@ -290,13 +295,10 @@ function MilestoneRow({
         <TableCell>{milestone.rewardStrategy}</TableCell>
         <TableCell align="right">{milestone.threshold.toLocaleString()}</TableCell>
         <TableCell align="right">{milestone.jackpotAmount.toLocaleString()}</TableCell>
-        <TableCell align="right">
-          <MilestoneKebab actions={actions} />
-        </TableCell>
       </TableRow>
       {/* Expansion row — opted OUT of the twin-height rule so it can collapse to 0 (Section contract). */}
       <TableRow className="beam-detail-row">
-        <TableCell sx={{ p: 0, border: 0 }} colSpan={8}>
+        <TableCell sx={{ p: 0, border: 0 }} colSpan={7}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ px: 2, py: 1.5 }}>
               <Typography variant="overline" color="text.secondary">Rewards Strategy</Typography>
@@ -348,14 +350,17 @@ export function RewardsStrategyTable({
   const base = useId(); // unique header-cell ids per instance (aria-labelledby targets)
   const cid = (k: string) => `${base}-${k}`;
   const n = (v: number) => v.toLocaleString();
+  // `beam-twin-table` opts this table into the 57px twin-row height (Section contract); only active when
+  // it is a direct child of a bleed Section (the milestone page), inert when nested (jackpot expansion).
+  // Twin/field-list tables LEFT-align values + inputs under the header's left edge (BEAM.md §6 ruling).
   return (
-    <Table size="small" aria-label="Rewards strategy">
+    <Table size="small" aria-label="Rewards strategy" className="beam-twin-table">
       <TableHead>
         <TableRow>
           <TableCell id={cid('type')} sx={{ ...meta }}>Reward Type</TableCell>
-          <TableCell id={cid('num')} align="right" sx={{ ...meta }}># of Rewards</TableCell>
-          <TableCell id={cid('qual')} align="right" sx={{ ...meta }}>Qualification Amount</TableCell>
-          <TableCell id={cid('reward')} align="right" sx={{ ...meta }}>Reward Amount</TableCell>
+          <TableCell id={cid('num')} sx={{ ...meta }}># of Rewards</TableCell>
+          <TableCell id={cid('qual')} sx={{ ...meta }}>Qualification Amount</TableCell>
+          <TableCell id={cid('reward')} sx={{ ...meta }}>Reward Amount</TableCell>
           {/* Actions column exists in BOTH modes (empty in view) so the twins keep identical geometry. */}
           <TableCell aria-hidden sx={{ width: 48 }} />
         </TableRow>
@@ -372,14 +377,14 @@ export function RewardsStrategyTable({
             const removeDisabled = isRemoveDisabled?.(i) ?? false;
             return (
               <TableRow key={i} hover>
-                <TableCell>{r.rewardType}</TableCell>
-                <TableCell align="right">
+                <TableCell>{rewardTypeLabel(r.rewardType)}</TableCell>
+                <TableCell>
                   {edit ? <NumInput value={r.numRewards} labelledBy={cid('num')} onChange={(v) => onPatchRow?.(i, { numRewards: v })} /> : n(r.numRewards)}
                 </TableCell>
-                <TableCell align="right">
+                <TableCell>
                   {edit ? <NumInput value={r.qualificationAmount} labelledBy={cid('qual')} onChange={(v) => onPatchRow?.(i, { qualificationAmount: v })} /> : n(r.qualificationAmount)}
                 </TableCell>
-                <TableCell align="right">
+                <TableCell>
                   {edit ? <NumInput value={r.rewardAmount} labelledBy={cid('reward')} onChange={(v) => onPatchRow?.(i, { rewardAmount: v })} /> : n(r.rewardAmount)}
                 </TableCell>
                 <TableCell align="right">
@@ -402,8 +407,9 @@ export function RewardsStrategyTable({
   );
 }
 
-/** Unlabeled, compact number input for a columnar field cell — labelled by its column header (a11y). The
- *  compact height + centering come from Section's embedded-table contract. */
+/** Unlabeled, FULL-HEIGHT number input for a columnar field cell — labelled by its column header (a11y).
+ *  Full field height (matching DetailsPanel) sits inside the 57px twin row; left-aligned (twin-table
+ *  ruling). No compact variant. */
 function NumInput({ value, labelledBy, onChange }: { value: number; labelledBy: string; onChange: (v: number) => void }) {
   return (
     <BeamField
@@ -411,7 +417,7 @@ function NumInput({ value, labelledBy, onChange }: { value: number; labelledBy: 
       value={value}
       onChange={(e) => onChange(Number(e.target.value) || 0)}
       fullWidth
-      slotProps={{ htmlInput: { 'aria-labelledby': labelledBy, style: { textAlign: 'right' } } }}
+      slotProps={{ htmlInput: { 'aria-labelledby': labelledBy } }}
     />
   );
 }
