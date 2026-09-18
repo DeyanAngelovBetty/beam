@@ -36,6 +36,7 @@ import { MetaGamePresetsPage } from './sunlight/MetaGamePresetsPage';
 import { MetaGamePresetEditor } from './sunlight/MetaGamePresetEditor';
 import { CommunityJackpotsPage } from './sunlight/CommunityJackpotsPage';
 import { CommunityJackpotDetailPage } from './sunlight/CommunityJackpotDetailPage';
+import { CommunityJackpotMilestonePage } from './sunlight/CommunityJackpotMilestonePage';
 
 // Vite's base path becomes the router basename: '/' in dev, '/beam/sunlight/'
 // on Pages. Trailing slash trimmed (react-router matches without it).
@@ -137,6 +138,9 @@ const router = createBrowserRouter(
         { path: 'community-jackpots/new', element: <CommunityJackpotDetailPage mode="add" /> },
         { path: 'community-jackpots/:id', element: <CommunityJackpotDetailPage mode="view" /> },
         { path: 'community-jackpots/:id/edit', element: <CommunityJackpotDetailPage mode="edit" /> },
+        { path: 'community-jackpots/:id/milestones/new', element: <CommunityJackpotMilestonePage mode="add" /> },
+        { path: 'community-jackpots/:id/milestones/:mid', element: <CommunityJackpotMilestonePage mode="view" /> },
+        { path: 'community-jackpots/:id/milestones/:mid/edit', element: <CommunityJackpotMilestonePage mode="edit" /> },
         { path: 'users', element: <UsersPage /> },
         { path: 'users/:id', element: <UserPage /> },
         { path: 'users/:id/edit', element: <UserPage edit /> },
