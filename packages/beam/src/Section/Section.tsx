@@ -97,7 +97,9 @@ export function Section({ title, actions, toolbar, isEdit, bleed = false, childr
       }}
     >
       <Box sx={{ px: 2, pt: 2, pb: toolbar ? 1 : bleed ? 1.5 : 1 }}>
-        <Typography variant="subtitle2">{title}</Typography>
+        {/* Section title = `subtitle1` (16px/600 via the theme scale — a step above the 16/regular
+            BeamStat values; v2.2). A deliberate visual delta on a shared organism, flagged for upstream. */}
+        <Typography variant="subtitle1">{title}</Typography>
       </Box>
       {actions && <Box sx={{ px: 2, pb: 1 }}>{actions}</Box>}
       {/* Toolbar band — between header and body, at the field-twin datum (title → toolbar → body). Hosts

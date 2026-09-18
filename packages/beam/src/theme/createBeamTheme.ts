@@ -198,6 +198,14 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       h4: { fontFamily: titleFont, fontWeight: titleWeight },
       h5: { fontFamily: titleFont, fontWeight: titleWeight },
       h6: { fontFamily: titleFont, fontWeight: titleWeight },
+      // SECTION-TITLE step (v2.2): `subtitle1` keeps MUI's 16px (= 1rem, the same size as a `BeamStat`
+      // value) but steps the WEIGHT to 600 — one step above the 16/regular values below it, so a section
+      // title reads as a title. Weight lives HERE (theme scale), not in the Section organism (no
+      // fontWeight in organisms). `BeamStat` is the only other `subtitle1` consumer and pins its own
+      // weight (500) inline, so it is unaffected. DELIBERATE visual delta on a shared organism — flag for
+      // the Alex/upstream batch. (18px is the fallback if 16/600 reads too quiet on the deploy — not
+      // pre-built.)
+      subtitle1: { fontWeight: 600 },
     },
     components: {
       MuiCssBaseline: {

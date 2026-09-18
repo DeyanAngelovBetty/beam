@@ -203,11 +203,12 @@ export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | '
         )}
       </DetailsPanel>
 
-      {/* Milestones — a surfaceless child list (Section bleed). isEdit="auto": the section holds no field
-          twins (milestone fields live on the milestone page), so it stays borderless even in edit. The
-          Add CTA lives in the Section toolbar (edit only). */}
+      {/* Milestones — a surfaceless child list (Section bleed). isEdit passed EXPLICITLY so the section
+          shows its editability border in edit mode alongside the DetailsPanel (the child-list content has
+          no field twins, so "auto" would leave it borderless — v2.2 wiring). The Add CTA lives in the
+          Section toolbar (edit only). */}
       <Section
-        isEdit="auto"
+        isEdit={isEdit}
         title="Milestones"
         bleed
         toolbar={isEdit ? <Button variant="text" size="small" startIcon={<AddIcon />} onClick={addMilestone}>Add Milestone</Button> : undefined}

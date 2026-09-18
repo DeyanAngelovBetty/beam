@@ -211,15 +211,19 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      on a `<TableRow>` opts a row OUT of the height rule so an expansion/`Collapse` row collapses to 0.
      **Bleed is a first-level privilege** — a table inside a `.beam-detail-row` does NOT bleed; it
      reads as a bordered, rounded, inset card (depth-scoped in `Section`'s styles).
-   - **Borders — two principles (v2.1):** (a) **No static column separators.** Embedded-table header
-     cells carry no `border-right`; the estate convention (Gaspar transactions) is that vertical edge
+   - **Borders — the principle (v2.1, extended v2.2):** (a) **No static column separators.** Embedded-table
+     header cells carry no `border-right`; the estate convention (Gaspar transactions) is that vertical edge
      separators appear ONLY as the horizontal-scroll overflow affordance (`Table`'s `data-overflow-*`
      mechanism — a different thing, untouched). A Figma TH border-right is a component artifact, not a
-     code convention. (b) **A row bottom border exists only when something renders below it inside the
-     table.** Non-last rows keep it; the last rendered row drops it (the Section edge closes the table);
-     an expandable last row's border follows its expansion — gone while collapsed, restored while
-     expanded (it then separates the row from its expansion content). All in `Section`'s contract styles
-     (`:has()` + a `data-expanded` attr on the parent row) — never per-page inline border styles.
+     code convention. (b) **CONTENT-ROW borders follow the neighbor rule** — a row bottom border exists only
+     when something renders below it inside the table: non-last rows keep it; the last rendered row drops it
+     (the surface edge closes the table); an expandable last row's border follows its expansion — gone while
+     collapsed, restored while expanded (it then separates the row from its expansion content). All in
+     `Section`'s contract styles (`:has()` + a `data-expanded` attr on the parent row) — never per-page
+     inline border styles. (c) **CHROME BANDS own their borders** (not the neighbor rule): the header owns
+     its underline, and the footer/pagination band owns its **border-top** — always present, because a
+     chrome band is a frame element, not content. (`Table`'s footer carries it in both the
+     selection/manager and the plain-pagination layouts.)
 8. **Columnar fields are labeled by their column header, not per-cell labels.** In a columnar field
    context (an embedded editable table), inputs render UNLABELED — no notched/floating per-cell
    labels; the column header is the label, wired to each input via `aria-labelledby` (header cells

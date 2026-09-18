@@ -1161,9 +1161,12 @@ export function Table<Row>({
         </Box>
         {paginationEl ?? <Box />}
       </Box>
-    ) : (
-      paginationEl
-    );
+    ) : paginationEl ? (
+      // Standalone footer band owns its top border — a CHROME BAND owns its borders (BEAM.md §6 border
+      // principle: header owns its underline, footer its border-top). The selectable/manager branch above
+      // already carries it (from the density pass); this mirrors it for a plain paginated table.
+      <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }}>{paginationEl}</Box>
+    ) : null;
 
   const footerEl = effectiveSticky ? (
     // OUTER = the page floor: pins flush to the scrollport bottom (bottom: 0), and PAINTS the page's own
