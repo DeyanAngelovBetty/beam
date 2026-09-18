@@ -189,6 +189,19 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
    pixels with themed MUI atoms. We do not adopt pre-styled component libraries beyond MUI.
 6. **Accessibility is not optional:** every interactive organism takes/derives `aria-label`s;
    contrast is enforced at token level (see 3.4).
+7. **Twin invariant (view↔edit stability).** A twin-capable surface must not reflow when it
+   toggles between view and edit: a view row carries a `min-height` equal to the field-bearing
+   edit row's height, so nothing below shifts. **The toolbar appearing/disappearing is the ONLY
+   sanctioned height change.** Derive the row height from the field-geometry constants
+   (`FIELD_GEOMETRY` / `FIELD_TWIN_HEIGHT`) — never a new magic number. For embedded tables this is
+   owned by `Section`'s scoped styles (the same mechanism as the 44px header enforcement): the
+   header row stays in **both** modes, and body rows hold the field-twin height in both.
+8. **Columnar fields are labeled by their column header, not per-cell labels.** In a columnar field
+   context (an embedded editable table), inputs render UNLABELED — no notched/floating per-cell
+   labels; the column header is the label, wired to each input via `aria-labelledby` (header cells
+   carry ids) so the field is never label-less to a screen reader. Per-cell notched labels belong to
+   FREE-FORM section bodies (`DetailsPanel`, stat cards), where there is no column header to do the
+   labeling. *(Ruling agreed with Alex / official Beam frontend, 2026-09-19.)*
 
 ## 7. Figma ↔ code sync mechanics
 

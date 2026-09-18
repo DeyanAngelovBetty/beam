@@ -1,10 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useId, useState } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableBody from '@mui/material/TableBody';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
 import { Section } from './Section';
 
 /** The canonical toolbar control — a small `+`-prefixed text button (the designs' add-CTA). */
@@ -120,4 +128,87 @@ export const Toolbar: Story = {
       </Section>
     </Box>
   ),
+};
+
+/**
+ * TWIN INVARIANT harness — a live view↔edit toggle on the Rewards Strategy shape. The regression test
+ * for the twin invariant: toggling must reflow NOTHING below the toolbar. The header row stays in both
+ * modes; view rows and field-bearing edit rows carry the same field-twin height (Section's embedded-table
+ * contract); inputs are unlabeled (the column header labels them via aria-labelledby). The dashed ruler
+ * below the Section must not move when you flip the toggle. Compare against section-goal.png.
+ */
+export const TwinInvariant: Story = {
+  render: function TwinInvariantStory() {
+    const [edit, setEdit] = useState(false);
+    const [rows, setRows] = useState([
+      { type: 'Prize', num: 1, qual: 5, reward: 0 },
+      { type: 'MilestoneFlip', num: 1, qual: 5, reward: 0 },
+    ]);
+    const base = useId();
+    const cid = (k: string) => `${base}-${k}`;
+    const patch = (i: number, k: 'num' | 'qual' | 'reward', v: number) =>
+      setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+    const cap = { fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.4, color: 'text.secondary' } as const;
+    const Num = ({ i, k, v, label }: { i: number; k: 'num' | 'qual' | 'reward'; v: number; label: string }) =>
+      edit ? (
+        <TextField
+          size="small"
+          variant="outlined"
+          type="number"
+          value={v}
+          onChange={(e) => patch(i, k, Number(e.target.value) || 0)}
+          fullWidth
+          slotProps={{ htmlInput: { 'aria-labelledby': label, style: { textAlign: 'right' } } }}
+        />
+      ) : (
+        <>{v.toLocaleString()}</>
+      );
+
+    return (
+      <Box sx={{ maxWidth: 720 }}>
+        <Section
+          isEdit={edit}
+          bleed
+          title="Rewards Strategy"
+          toolbar={
+            <Button variant="text" size="small" onClick={() => setEdit((e) => !e)}>
+              {edit ? 'Switch to view' : 'Switch to edit'}
+            </Button>
+          }
+        >
+          <Table size="small" aria-label="Rewards strategy">
+            <TableHead>
+              <TableRow>
+                <TableCell id={cid('type')} sx={cap}>Reward Type</TableCell>
+                <TableCell id={cid('num')} align="right" sx={cap}># of Rewards</TableCell>
+                <TableCell id={cid('qual')} align="right" sx={cap}>Qualification Amount</TableCell>
+                <TableCell id={cid('reward')} align="right" sx={cap}>Reward Amount</TableCell>
+                <TableCell aria-hidden sx={{ width: 48 }} />
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((r, i) => (
+                <TableRow key={i} hover>
+                  <TableCell>{r.type}</TableCell>
+                  <TableCell align="right"><Num i={i} k="num" v={r.num} label={cid('num')} /></TableCell>
+                  <TableCell align="right"><Num i={i} k="qual" v={r.qual} label={cid('qual')} /></TableCell>
+                  <TableCell align="right"><Num i={i} k="reward" v={r.reward} label={cid('reward')} /></TableCell>
+                  <TableCell align="right">
+                    {edit && (
+                      <IconButton aria-label={`Remove ${r.type}`} color="error" size="small">
+                        <RemoveIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Section>
+        {/* Ruler — must not move when the toggle flips (the invariant). */}
+        <Box sx={{ mt: 2, borderTop: '1px dashed', borderColor: 'text.disabled' }} />
+        <Typography variant="caption" color="text.secondary">↑ Nothing below the toolbar should move when toggling view↔edit.</Typography>
+      </Box>
+    );
+  },
 };
