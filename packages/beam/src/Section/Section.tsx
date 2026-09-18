@@ -33,15 +33,20 @@ import type { SectionProps } from './Section.types';
 //    aria-labelledby on the page); alignment is the page's (twin/field-list tables left-align — BEAM.md §6).
 // 5. NESTED CONTAINMENT — a table inside an expansion row (`.beam-detail-row` content) is NOT first-level,
 //    so it does not bleed: it reads as a bordered, rounded, inset card within its parent region.
+// 6. HEADER has NO vertical column separators (v2.1) — the estate convention is Gaspar transactions: no
+//    static TH separators; edge separators are only the horizontal-scroll overflow affordance (Table's
+//    own `data-overflow-*` mechanism, untouched). The Figma TH's border-right is a component artifact.
+// 7. ROW BOTTOM BORDERS (v2.1) — a bottom border exists ONLY when something renders below it inside the
+//    table. Non-last rows keep it; the last rendered row drops it (the Section edge closes the table); an
+//    expandable row's border follows its expansion (gone while collapsed, restored while expanded).
 const T = '& > .beam-section-bleed > table';
 const bodyCell = `${T} > tbody > tr:not(.beam-detail-row) > .MuiTableCell-root`;
 const embeddedTableContractSx = {
   [T]: { width: '100%' },
-  // Header row (both modes) — chrome band at 44.
+  // Header row (both modes) — chrome band at 44. No vertical column separators (rule 6).
   [`${T} > thead > tr > .MuiTableCell-root`]: { height: FIELD_TWIN_HEIGHT, py: 0, px: 1 },
   [`${T} > thead > tr > .MuiTableCell-root:first-of-type`]: { pl: 2 },
   [`${T} > thead > tr > .MuiTableCell-root:last-of-type`]: { pr: 2 },
-  [`${T} > thead > tr > .MuiTableCell-root:not(:last-of-type)`]: { borderRight: '1px solid', borderRightColor: 'divider' },
   // Density body rows (default) — 44; content may stretch.
   [bodyCell]: { height: FIELD_TWIN_HEIGHT, verticalAlign: 'middle', px: 1 },
   [`${bodyCell}:first-of-type`]: { pl: 2 },
@@ -58,6 +63,19 @@ const embeddedTableContractSx = {
     borderSpacing: 0,
     overflow: 'hidden',
     my: 0.5,
+  },
+  // Row bottom borders (rule 7) — "a border only when something renders below it inside the table":
+  //  • Last rendered row (a plain table's last row, or an expandable table's last detail row — collapsed
+  //    or expanded): the Section edge closes it → no border.
+  [`${T} > tbody > tr:last-child > .MuiTableCell-root`]: { borderBottom: 0 },
+  //  • Last main row whose expansion is COLLAPSED (nothing below it either): no border.
+  [`${T} > tbody > tr:has(+ .beam-detail-row:last-child:not([data-expanded])) > .MuiTableCell-root`]: { borderBottom: 0 },
+  //  • Expansion rows: none by default (collapsed = nothing below) …
+  [`${T} > tbody > .beam-detail-row > .MuiTableCell-root`]: { borderBottom: 0 },
+  //    … restored only while EXPANDED and a sibling row still follows (separates it from the next row).
+  [`${T} > tbody > .beam-detail-row[data-expanded]:not(:last-child) > .MuiTableCell-root`]: {
+    borderBottom: '1px solid',
+    borderBottomColor: 'divider',
   },
 };
 

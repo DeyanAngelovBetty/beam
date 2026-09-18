@@ -296,9 +296,10 @@ function MilestoneRow({
         <TableCell align="right">{milestone.threshold.toLocaleString()}</TableCell>
         <TableCell align="right">{milestone.jackpotAmount.toLocaleString()}</TableCell>
       </TableRow>
-      {/* Expansion row — opted OUT of the twin-height rule so it can collapse to 0 (Section contract). */}
-      <TableRow className="beam-detail-row">
-        <TableCell sx={{ p: 0, border: 0 }} colSpan={7}>
+      {/* Expansion row — opted OUT of the twin-height rule so it can collapse to 0 (Section contract).
+          `data-expanded` drives the row bottom-border rule; border hacks live in the contract, not here. */}
+      <TableRow className="beam-detail-row" data-expanded={open || undefined}>
+        <TableCell sx={{ p: 0 }} colSpan={7}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ px: 2, py: 1.5 }}>
               <Typography variant="overline" color="text.secondary">Rewards Strategy</Typography>

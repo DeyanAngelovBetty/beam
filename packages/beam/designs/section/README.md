@@ -19,6 +19,14 @@ regression harness is the `Components/Section` → **TwinInvariant** Storybook s
 wins: unlabeled compact inputs, not notched. The twin invariant is unchanged — the view-row min-height is
 recomputed from the *unlabeled* edit-row height (derived from `FIELD_GEOMETRY`, never a literal).
 
+## ⚠️ Known-stale in the reference PNGs
+
+The header cells in `section-current.png` / `section-goal.png` show **vertical column separators**
+(`border-right` on each TH). These are a **Figma component artifact** — the Figma TH carries a border-right
+the code convention does not. The estate convention (Gaspar transactions) has **no static column
+separators**; edge separators appear only as the horizontal-scroll overflow affordance. The contract
+removed the TH separators in v2.1; the PNGs are stale on this point **pending a Figma component fix**.
+
 ## ⚠️ Missing file
 
 `section-amendment-unlabeled.png` was expected to land this task but is **still not present in this folder**
