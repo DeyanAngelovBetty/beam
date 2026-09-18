@@ -196,6 +196,12 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
    (`FIELD_GEOMETRY` / `FIELD_TWIN_HEIGHT`) — never a new magic number. For embedded tables this is
    owned by `Section`'s scoped styles (the same mechanism as the 44px header enforcement): the
    header row stays in **both** modes, and body rows hold the field-twin height in both.
+   - **Contract surface — `.beam-detail-row`:** the contract targets only the section's OWN direct-child
+     table (child combinators exclude nested tables). A body row that must NOT take the field-twin
+     height — an expansion/`Collapse` row that has to collapse to 0 — opts out by carrying the class
+     **`beam-detail-row`** on its `<TableRow>`. (Used by Community Jackpots' Milestones table.) The class
+     is the sanctioned opt-out; a page author has no other way to discover it, so it is doctrine, not an
+     incidental hook.
 8. **Columnar fields are labeled by their column header, not per-cell labels.** In a columnar field
    context (an embedded editable table), inputs render UNLABELED — no notched/floating per-cell
    labels; the column header is the label, wired to each input via `aria-labelledby` (header cells
