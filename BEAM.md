@@ -271,6 +271,22 @@ Design against the real model, not a generic BO:
   generations; small verified steps over big unverifiable ones.
 - **Verify, don't assume:** code changes are typechecked and built before handoff; Figma
   changes are screenshot-verified; token changes re-run the sync.
+- **Dev vs prod is a real gap — mode-switching fixes are confirmed under dev StrictMode, not
+  only on the production build.** The app runs in `<React.StrictMode>`, which (dev-only)
+  DOUBLE-INVOKES render. Two consequences that bit us (CJ jackpot edit, 2026-09-19):
+  - **Render-phase ref mutation is StrictMode-broken.** Mutating a `useRef` *during render* (e.g.
+    a "reset this state when a target changed" tracker) is an impure render side-effect: on the
+    paired second invocation the ref already holds the new value — refs are NOT reverted between
+    the two invocations, unlike state — so the reset is skipped and the state stays stale. It
+    *works in prod* (single invocation) and *fails in dev*. React's "adjust state while rendering"
+    pattern therefore REQUIRES a **state-based** previous-value tracker — or better, avoid the
+    pattern entirely: **mount-init the state + key the route** so a fresh mount does the init.
+  - **The `<Outlet>` reuses one fiber across routes of the same element type.** `/:id` (view) and
+    `/:id/edit` (edit) both rendering `<Page mode=… />` share a fiber — React updates the prop, it
+    does not remount, so a lazy `useState` keeps its mount-time value. Force a remount with a
+    `key` that captures everything the init depends on (`${mode}:${id}`), read from `useParams` in
+    a thin route wrapper. "Works on deploy" must mean "works in dev too," or localhost isn't a
+    trustworthy review surface.
 - **Decisions get written down here** the day they're made, with their reason. An undocumented
   decision doesn't exist.
 - **The Lab.** App-local patterns get bench stories under `Lab/<Product>/<Name>` for isolated

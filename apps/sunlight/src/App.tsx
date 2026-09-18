@@ -5,6 +5,7 @@ import {
   Outlet,
   useNavigate,
   useLocation,
+  useParams,
 } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, createBeamTheme, AppShell, Box, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
@@ -103,6 +104,18 @@ function Layout() {
   );
 }
 
+/**
+ * CJ jackpot detail route wrapper — keys the page by `mode:id` so every mode/id change REMOUNTS it
+ * (fresh mount-time draft init). Without the key the <Outlet> reuses ONE fiber across view↔edit, the
+ * add→edit redirect, and /:id1/edit → /:id2/edit, staling the header's mount-init (see BEAM.md §9 dev
+ * notes / CommunityJackpotDetailPage). The key lives here, not on the static route element, because the id
+ * is a route param read via `useParams`.
+ */
+function CommunityJackpotDetailRoute({ mode }: { mode: 'view' | 'edit' | 'add' }) {
+  const { id } = useParams();
+  return <CommunityJackpotDetailPage key={`${mode}:${id ?? 'new'}`} mode={mode} />;
+}
+
 // A data router (createBrowserRouter) — required for route guards (useBlocker
 // on the User edit page). Created once at module scope so it never resets.
 const router = createBrowserRouter(
@@ -135,9 +148,9 @@ const router = createBrowserRouter(
         { path: 'prize-wall/token-campaigns/:id/stages/:sid', element: <WallStagePage /> },
         { path: 'prize-wall/token-campaigns/:id/winners', element: <CampaignWinnersPage /> },
         { path: 'community-jackpots', element: <CommunityJackpotsPage /> },
-        { path: 'community-jackpots/new', element: <CommunityJackpotDetailPage mode="add" /> },
-        { path: 'community-jackpots/:id', element: <CommunityJackpotDetailPage mode="view" /> },
-        { path: 'community-jackpots/:id/edit', element: <CommunityJackpotDetailPage mode="edit" /> },
+        { path: 'community-jackpots/new', element: <CommunityJackpotDetailRoute mode="add" /> },
+        { path: 'community-jackpots/:id', element: <CommunityJackpotDetailRoute mode="view" /> },
+        { path: 'community-jackpots/:id/edit', element: <CommunityJackpotDetailRoute mode="edit" /> },
         { path: 'community-jackpots/:id/milestones/new', element: <CommunityJackpotMilestonePage mode="add" /> },
         { path: 'community-jackpots/:id/milestones/:mid', element: <CommunityJackpotMilestonePage mode="view" /> },
         { path: 'community-jackpots/:id/milestones/:mid/edit', element: <CommunityJackpotMilestonePage mode="edit" /> },

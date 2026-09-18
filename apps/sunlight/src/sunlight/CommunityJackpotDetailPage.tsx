@@ -78,6 +78,7 @@ interface ScalarDraft {
   endDate: string;
 }
 const makeDraft = (j: CommunityJackpot): ScalarDraft => ({ name: j.name, startDate: j.startDate, endDate: j.endDate });
+const EMPTY_SCALAR: ScalarDraft = { name: '', startDate: '', endDate: '' };
 
 export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | 'add' }) {
   const { id = '' } = useParams();
@@ -96,25 +97,16 @@ export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | '
   const isEdit = mode === 'edit';
   const jackpot = mode === 'add' ? undefined : getJackpot(id);
 
-  const [draft, setDraft] = useState<ScalarDraft | null>(null);
+  // Header edit-twins draft — a plain MOUNT-TIME init from the jackpot (milestone-page pattern: always a
+  // valid object, never null-gated, no render-time reset). Correctness rides on the route KEY
+  // (`${mode}:${id}` in App.tsx): every mode/id change REMOUNTS this component, so this initializer always
+  // runs with the right mode + jackpot and the <Outlet> can't reuse a stale fiber. This replaces the
+  // StrictMode-fragile render-phase ref reset the earlier fix used — render-phase ref mutation is defeated
+  // by StrictMode's double render (see BEAM.md §9 dev notes).
+  const [draft, setDraft] = useState<ScalarDraft>(() => (jackpot ? makeDraft(jackpot) : EMPTY_SCALAR));
   const [notice, setNotice] = useState<Notice>(null);
   const [, forceRender] = useState(0); // bump after on-page store mutations (milestone delete)
   const onChanged = () => forceRender((n) => n + 1);
-
-  // Edit twins draft — (re)built whenever the EDIT TARGET (mode + jackpot id) changes, via a render-time
-  // reset. This is load-bearing: the router REUSES this one component instance across view↔edit and the
-  // add→edit redirect (the <Outlet> renders the same `CommunityJackpotDetailPage` type, so React keeps the
-  // fiber and just updates the `mode` prop). A lazy `useState` would keep its MOUNT-time value — and the
-  // mount happens in view/add mode → null — so the twin branch (`isEdit && draft`) never lit and the
-  // header fell through to the STAT branch, showing em-dash nulls in edit. (This is exactly the interaction
-  // v2.2's audit missed: it read the static `isEdit && d ? fields : stats` and assumed a fresh mount per
-  // mode, not the instance reuse that left `d` stale.)
-  const draftTargetRef = useRef<string>('');
-  const draftTarget = isEdit && jackpot ? jackpot.id : '';
-  if (draftTargetRef.current !== draftTarget) {
-    draftTargetRef.current = draftTarget;
-    setDraft(isEdit && jackpot ? makeDraft(jackpot) : null);
-  }
 
   if (mode === 'add') return null; // redirecting
 
@@ -128,11 +120,9 @@ export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | '
   }
 
   const isDraftSession = jackpot.status === 'draft'; // an unsubmitted Add session
-  const d = draft;
-  const patch = (p: Partial<ScalarDraft>) => setDraft((prev) => (prev ? { ...prev, ...p } : prev));
-  const flush = () => {
-    if (d) updateJackpot(jackpot.id, d);
-  };
+  const d = draft; // always a valid ScalarDraft (never null)
+  const patch = (p: Partial<ScalarDraft>) => setDraft((prev) => ({ ...prev, ...p }));
+  const flush = () => updateJackpot(jackpot.id, d);
 
   const cancel = () => {
     if (isDraftSession) {
@@ -156,7 +146,7 @@ export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | '
     navigate(`${BASE}/${jackpot.id}/milestones/new`);
   };
 
-  const title = isEdit && d ? d.name : jackpot.name;
+  const title = isEdit ? d.name : jackpot.name;
 
   return (
     <Stack spacing={3}>
@@ -203,7 +193,7 @@ export function CommunityJackpotDetailPage({ mode }: { mode: 'view' | 'edit' | '
 
       {/* Header card — view twins ⇄ edit fields (DetailsPanel derives its editability border from the fields). */}
       <DetailsPanel aria-label="Community jackpot details">
-        {isEdit && d ? (
+        {isEdit ? (
           <>
             <BeamField label="Name" value={d.name} onChange={(e) => patch({ name: e.target.value })} />
             <BeamField label="Start Date" type="datetime-local" value={toLocalInput(d.startDate)} onChange={(e) => patch({ startDate: fromLocalInput(e.target.value) })} slotProps={{ inputLabel: { shrink: true } }} />
