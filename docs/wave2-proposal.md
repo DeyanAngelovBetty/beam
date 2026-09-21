@@ -341,6 +341,21 @@ through to no overlay. Evaluate seating `overlays` in `createBeamTheme` so the p
 resolves a real value instead of relying on the optional-chain fallback. (Ruling 2026-09-21, Wave 2 2a.1
 — accepted with the sorting gate.)
 
+**PARITY DUPLICATION registered by 2b (Gaspar migration), named-exit = this density consolidation.** The
+2a port was built on official's base styles; the organism Table carries three base treatments INLINE that
+official's don't, and all three are visible on Gaspar. To keep the migrated page indistinguishable, 2b
+re-seats them into the port (`TableNext/Table.tsx` + `Table.stickyChrome.tsx`), gated on `stickyChrome` so
+the official-subset path stays byte-identical:
+  1. **44px body-row density** — `height: FIELD_TWIN_HEIGHT` + `padding-block: 0` on body cells. This
+     consolidation moves it to the theme (see the blast-radius list above); when it lands, the port's inline
+     copy is deleted and body rows inherit theme density everywhere.
+  2. **EDGE_TINT rail scroll-affordance** (`railStickySx`) — the dual gradient/divider on `data-overflow-start`,
+     vs official's `actionRailCell` box-shadow. Evaluate then for lane-style vs theme placement.
+  3. **100cqw expanded-panel pinning** — keeps the expanded row pinned to the visible width during horizontal
+     scroll. Evaluate then for lane-style vs theme placement.
+Each is marked `PARITY DUPLICATION` in-code with a pointer here. Duplication is a tracked temporary with a
+named exit (this task), never silent permanence.
+
 ### (b) Official's `maxHeight` internal scroll vs stickyChrome's page-owns-scroll
 
 These are **opposite scroll architectures**:

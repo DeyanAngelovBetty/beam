@@ -93,6 +93,11 @@ ours      ActionMenu  { anchorEl, open, onClose, items: BeamRowAction[] (discrim
 Same name, opposite control model (trigger-driven vs controlled) + our items carry a nested-submenu shape
 official's flat `ActionMenuItem` lacks. The Wave-2 Table port's `TableMenu` is inlined self-contained
 (rendering official's flat `ActionMenuItem[]`) precisely to avoid colliding with our `ActionMenu`.
+**Update (2b, 2026-09-21):** the port's `ActionMenuItem` regained an OPTIONAL `options?` SUBMENU lane
+(inert when absent — official-subset flat behaviour unchanged) so Gaspar's row-kebab Export ▸ ports
+verbatim. So the reconciliation surface is now TWO deltas: (a) trigger-driven vs controlled, (b) the
+submenu shape our menu carries that official's flat item does not — both flagged for any menu-touching
+upstream exchange.
 
 **TableFilters / BeamFilterBar — declarative-typed vs composition; both have draft/applied.**
 ```

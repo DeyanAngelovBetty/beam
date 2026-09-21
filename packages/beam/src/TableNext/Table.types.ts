@@ -31,6 +31,14 @@ export type ActionMenuItem = {
   /** Tooltip shown when the item is disabled (explain why). */
   disabledTooltip?: string;
   onSelect: () => void;
+  /**
+   * SUBMENU (lane) — a nested list of options; when present the item opens a submenu instead of firing
+   * `onSelect`. ADDITIVE and inert when absent, so official-subset flat behaviour is unchanged (the same
+   * discipline as the `sortable` gate). Ported to preserve the organism Table's row-kebab Export ▸ submenu
+   * on Gaspar (2b) verbatim. Reconcile-before-upstream: see the ActionMenu divergence row in
+   * docs/beam-alignment.md (our menu now carries a submenu shape official's flat `ActionMenuItem` lacks).
+   */
+  options?: { id: string; label: string; onSelect: () => void }[];
 };
 
 /**
@@ -115,6 +123,12 @@ export type TableProps<TData extends RowData> = Pick<TableOptions<TData>, 'data'
   searchable?: boolean;
   /** "Page N of M" jump control in the footer. */
   jumpToPage?: boolean;
+  /**
+   * Rows-per-page choices (lane) — the per-grid override for the footer's size select. Absent ⇒ the port's
+   * default `TABLE_PAGE_SIZE_OPTIONS`. The controlled page size (from `pagination.pageSize`) is merged in so
+   * a grid never shows a size it isn't on.
+   */
+  pageSizeOptions?: number[];
   /** Per-row severity accent bar in the rail region (decorative; requires the rail). */
   rowAccent?: (row: TData) => BeamBadgeHue | undefined;
   /** Externally highlight a row (relational navigation — the DashboardBench cross-widget link). */

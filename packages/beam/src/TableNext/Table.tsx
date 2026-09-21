@@ -18,8 +18,10 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
 import Tooltip from '@mui/material/Tooltip';
+import { useTheme } from '@mui/material/styles';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -41,6 +43,35 @@ import { BeamColumnManager } from '../Table/BeamColumnManager';
 import { TABLE_PAGE_SIZE_OPTIONS } from './Table.constants';
 import { TableActions, TableHeaderActions } from './TableActions/TableActions';
 import type { BeamBulkAction, TableProps } from './Table.types';
+import {
+  CONTENT_BOTTOM,
+  CHROME_CEILING_BAND,
+  FIELD_TWIN_HEIGHT,
+  SHORT_VP_TIER1,
+  SHORT_VP_TIER2,
+  belowHeightQuery,
+  pageBackdropSx,
+} from '../theme/tokens';
+import {
+  useStickyChrome,
+  sortableHeaderContent,
+  headerCellSx,
+  railStickySx,
+  ceilingPaintSx,
+  bucketStuckSx,
+  footerStuckSx,
+  containerTypeScrollState,
+  SIDE_BORDER,
+  CARD_RADIUS,
+  SQUIRCLE,
+  EDGE_TINT,
+  EDGE_WIDTH,
+  Z_RAIL_BODY,
+  Z_RAIL_HEADER,
+  Z_CLONE_RAIL,
+  Z_EDGE,
+  Z_CHROME,
+} from './Table.stickyChrome';
 
 const ACTION_RAIL_ID = '__table_action_rail' as const;
 
@@ -55,12 +86,15 @@ const colId = (cd: ColumnDef<unknown, unknown>, i: number): string =>
  * official Beam's Table (thin themed renderer over a TanStack core). Everything past `actionRail` is a
  * LANE EXTENSION, inert when absent.
  *
- * SCOPE (batch 2a): official core + actionRail + the additive lanes (bulkActions, rowAccent, searchable,
- * jumpToPage, highlightRowId, columnManager) are re-seated and build-verified. The `stickyChrome` PINNING
- * mechanism (bucket/clone/tiers/snap) is NOT re-ported here — it is deferred to Gaspar TransactionsPage's
- * migration (2b), its sole consumer, where it is exercised + browser-verifiable. In 2a `stickyChrome` is
- * accepted and dev-warns against `maxHeight`, but does not yet pin. Exported under `TableNext` while it
- * coexists with the old organism `Table` (renamed to the canonical `Table` at 2f).
+ * STICKY CHROME (batch 2b): the full page-owns-scroll pinning mechanism (bucket/clone/tiers/snap/
+ * reachability/re-anchor) is re-ported from the organism Table into this render tree — see
+ * `./Table.stickyChrome`. It gates on `stickyChrome`/`effectiveSticky`, so the OFFICIAL-SUBSET (non-sticky)
+ * path stays byte-identical to 2a. Three organism BASE treatments are re-seated here ONLY under sticky, as
+ * PARITY DUPLICATION so Gaspar renders indistinguishably from today: (1) 44px body-row density, (2) the
+ * EDGE_TINT rail scroll-affordance (`railStickySx`), (3) the 100cqw expanded-panel pinning. Their named exit
+ * is the density-consolidation follow-up (wave2-proposal §6(a)) — when body density moves to the theme, the
+ * duplication collapses and the rail/expand treatments get evaluated for lane-style vs theme placement.
+ * Exported under `TableNext` while it coexists with the organism `Table` (canonical name at 2f).
  */
 function TableInner<TData extends RowData>(props: TableProps<TData>) {
   const {
@@ -84,6 +118,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     sortable = false,
     searchable = false,
     jumpToPage = false,
+    pageSizeOptions,
     rowAccent,
     highlightRowId,
     'aria-label': ariaLabel,
@@ -96,7 +131,15 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     // BEAM.md §6: either/or. stickyChrome (page-owns-scroll) wins; maxHeight (internal scroll) is ignored.
     console.warn('[beam Table] `maxHeight` and `stickyChrome` are mutually exclusive; ignoring `maxHeight` (stickyChrome wins).');
   }
-  const effectiveMaxHeight = stickyChrome ? undefined : maxHeight;
+  const sticky = Boolean(stickyChrome); // PARITY styling gate (density / rail / expand) — even when currently unreachable
+  const effectiveMaxHeight = sticky ? undefined : maxHeight;
+
+  const theme = useTheme();
+  // Rail state layers, composited over the rail's opaque base so the pinned column tracks hover/selected
+  // without ghosting (organism parity; sticky only).
+  const action = (theme.vars || theme).palette.action;
+  const hoverLayer = `linear-gradient(${action.hover}, ${action.hover})`;
+  const selectedLayer = `linear-gradient(${action.selected}, ${action.selected})`;
 
   const [scrolledX, setScrolledX] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -174,6 +217,18 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   const resolvedPaginationDisabled = Boolean(paginationDisabled || loading);
   const rows = table.getRowModel().rows;
   const displayRows = searchable ? table.getFilteredRowModel().rows : rows;
+  const leafColumns = table.getVisibleLeafColumns();
+  const headerCells = table.getHeaderGroups().at(-1)?.headers ?? [];
+
+  // ── Sticky chrome machinery (opt-in) ─────────────────────────────────────────────────────────────
+  const { effectiveSticky, refs, cloneWidths, cloneHeight } = useStickyChrome({
+    enabled: sticky,
+    rowsOnPage: displayRows.length,
+    hasPagination: pagination != null,
+    page: pagination?.page,
+    pageSize: pagination?.pageSize,
+    widthSyncKey: [cm.columnOrder, cm.columnVisibility, sorting, leafColumns.length],
+  });
 
   // ── Bulk strip (lane) ──────────────────────────────────────────────────────────────────────────
   const batchHintId = useId();
@@ -183,7 +238,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   const resolvedBulkActions = typeof bulkActions === 'function' ? bulkActions(selectedRows) : bulkActions;
   const stripEl =
     resolvedBulkActions && resolvedBulkActions.length > 0 ? (
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: 44, px: 1, borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: FIELD_TWIN_HEIGHT, px: sticky ? 2 : 1, borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
         {resolvedBulkActions.map((a) => (
           <BulkActionButton
             key={a.id}
@@ -214,6 +269,11 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     [table, cm.columnOrder, cm.columnVisibility],
   );
   const pageCount = pagination && totalCount != null ? Math.max(1, Math.ceil(totalCount / pagination.pageSize)) : 1;
+  // Rows-per-page choices: the per-grid override merged with the CONTROLLED page size (so a grid never shows
+  // a size it isn't on), else the port default. (Lane: `pageSizeOptions`.)
+  const rowsPerPageOptions = pagination
+    ? [...new Set([...(pageSizeOptions ?? (TABLE_PAGE_SIZE_OPTIONS as unknown as number[])), pagination.pageSize])].sort((a, b) => a - b)
+    : (TABLE_PAGE_SIZE_OPTIONS as unknown as number[]);
   const paginationEl = pagination ? (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
       {jumpToPage && <JumpToPage page={pagination.page} pageCount={pageCount} onJump={(p) => pagination.onChange({ page: p, pageSize: pagination.pageSize })} />}
@@ -222,7 +282,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
         count={totalCount ?? 0}
         page={Math.max(0, pagination.page - 1)}
         rowsPerPage={pagination.pageSize}
-        rowsPerPageOptions={TABLE_PAGE_SIZE_OPTIONS as unknown as number[]}
+        rowsPerPageOptions={rowsPerPageOptions}
         disabled={resolvedPaginationDisabled}
         onPageChange={(_, p) => pagination.onChange({ page: p + 1, pageSize: pagination.pageSize })}
         onRowsPerPageChange={(e) => pagination.onChange({ page: 1, pageSize: Number(e.target.value) })}
@@ -230,13 +290,20 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
       />
     </Box>
   ) : null;
+  // Selection count (organism parity; sticky only, so the official-subset footer is unchanged).
+  const selectionCountEl = sticky && railSelect ? (
+    <Typography variant="body2" aria-live="polite" sx={{ pl: cm.enabled ? 0 : 1.5, color: 'text.secondary' }}>
+      {selectedCount === 0 ? '' : `${selectedCount} selected`}
+    </Typography>
+  ) : null;
   const footerContent =
-    cm.enabled || paginationEl ? (
+    cm.enabled || selectionCountEl || paginationEl ? (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
           {cm.enabled && (
             <BeamColumnManager columns={managerColumns} catalog={cm.catalog} onToggle={(id) => toggleColumn(id)} onMove={(id, dir) => moveColumn(id, dir)} onReorder={(id, to) => reorderColumn(id, to)} onReset={cm.reset} />
           )}
+          {selectionCountEl}
         </Box>
         {paginationEl ?? <Box />}
       </Box>
@@ -263,17 +330,234 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     cm.onColumnOrderChange([ACTION_RAIL_ID, ...order]);
   }
 
+  // ── Sticky sub-elements (built only when effectiveSticky) ────────────────────────────────────────
+  const railOffset = hasRail ? 1 : 0;
+  const cloneEl = effectiveSticky ? (
+    <Box
+      className="beam-header-clone"
+      aria-hidden
+      sx={{
+        display: 'none',
+        '[data-stuck="top"] &': { display: 'block' },
+        '@container scroll-state(stuck: top)': { display: 'block' },
+        overflow: 'hidden',
+        position: 'relative',
+        containerType: 'inline-size',
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider',
+      }}
+    >
+      <Box
+        ref={refs.cloneTrackRef}
+        sx={{
+          display: 'flex',
+          minHeight: cloneHeight,
+          alignItems: 'center',
+          width: 'max-content',
+          willChange: 'transform',
+          '@keyframes beam-clone-scroll-sync': {
+            from: { transform: 'translateX(0)' },
+            to: { transform: 'translateX(calc(-100% + 100cqw))' },
+          },
+          '@supports (animation-timeline: scroll())': {
+            ...({
+              'animation-name': 'beam-clone-scroll-sync',
+              'animation-timing-function': 'linear',
+              'animation-duration': 'auto',
+              'animation-fill-mode': 'both',
+              'animation-timeline': '--beam-body-scroll',
+            } as object),
+          },
+        }}
+      >
+        {headerCells.map((header, idx) => {
+          if (header.column.id === ACTION_RAIL_ID) {
+            // Rail SPACER (transparent) — reserves the rail width so each column's track-offset matches the
+            // body; the VISIBLE rail is the static overlay below (outside the track).
+            return <Box key={header.id} sx={{ flex: '0 0 auto', width: cloneWidths[idx] ?? 0 }} />;
+          }
+          const meta = colMeta(header.column.columnDef as ColumnDef<unknown, unknown>);
+          const content = header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext());
+          return (
+            <Box
+              key={header.id}
+              sx={{
+                ...headerCellSx,
+                flex: '0 0 auto',
+                width: cloneWidths[idx] ?? 0,
+                boxSizing: 'border-box',
+                textAlign: meta.align ?? 'left',
+                ...(meta.align === 'right' ? { flexDirection: 'row-reverse' } : {}),
+              }}
+            >
+              {sortableHeaderContent(header.column, content, false)}
+            </Box>
+          );
+        })}
+      </Box>
+      {hasRail && (
+        // STATIC rail overlay — fixed at the clone's left exactly like the body's sticky rail. Mirrors the
+        // real header rail's select-all (pointer-only, aria-hidden) + the body rail's stuck-left dressing.
+        <Box
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: cloneWidths[0] ?? 0,
+            zIndex: Z_CLONE_RAIL,
+            bgcolor: 'background.paper',
+            display: 'flex',
+            alignItems: 'center',
+            pl: 0.5,
+            '&::before': {
+              content: '""', position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px',
+              backgroundColor: 'divider', opacity: 0, transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
+            },
+            '&::after': {
+              content: '""', position: 'absolute', left: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
+              background: `linear-gradient(to right, ${EDGE_TINT}, transparent)`, opacity: 0,
+              transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
+            },
+            '[data-overflow-start="true"] &::before': { opacity: 1 },
+            '[data-overflow-start="true"] &::after': { opacity: 1 },
+          }}
+        >
+          {railSelect && (
+            <Checkbox
+              checked={table.getIsAllRowsSelected()}
+              indeterminate={table.getIsSomeRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+              slotProps={{ input: { tabIndex: -1, 'aria-hidden': true } }}
+            />
+          )}
+        </Box>
+      )}
+    </Box>
+  ) : null;
+
+  const bucketEl = effectiveSticky ? (
+    <Box
+      ref={refs.bucketRef}
+      sx={{
+        position: 'sticky',
+        top: 0,
+        zIndex: Z_CHROME,
+        pt: `${CHROME_CEILING_BAND}px`,
+        pointerEvents: 'none',
+        ...ceilingPaintSx,
+        ...containerTypeScrollState,
+        [`@media ${belowHeightQuery(SHORT_VP_TIER2)}`]: { pt: 0 },
+      }}
+    >
+      <Box
+        className="beam-bucket-inner"
+        sx={{
+          position: 'relative',
+          pointerEvents: 'auto',
+          bgcolor: 'background.paper',
+          ...SIDE_BORDER,
+          borderTopStyle: 'solid',
+          borderTopWidth: '1px',
+          borderTopLeftRadius: CARD_RADIUS,
+          borderTopRightRadius: CARD_RADIUS,
+          ...SQUIRCLE,
+          '[data-stuck="top"] &': bucketStuckSx,
+          '@container scroll-state(stuck: top)': bucketStuckSx,
+        }}
+      >
+        {stripEl}
+        {cloneEl}
+      </Box>
+    </Box>
+  ) : (
+    stripEl
+  );
+
+  const footerEl = effectiveSticky ? (
+    <Box
+      ref={refs.footerRef}
+      sx={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: Z_CHROME,
+        pb: CONTENT_BOTTOM,
+        ...pageBackdropSx,
+        ...containerTypeScrollState,
+        [`@media ${belowHeightQuery(SHORT_VP_TIER1)}`]: { position: 'static' },
+      }}
+    >
+      <Box
+        className="beam-footer-inner"
+        sx={{
+          position: 'relative',
+          height: FIELD_TWIN_HEIGHT,
+          bgcolor: 'background.paper',
+          ...SIDE_BORDER,
+          borderBottomStyle: 'solid',
+          borderBottomWidth: '1px',
+          borderBottomLeftRadius: CARD_RADIUS,
+          borderBottomRightRadius: CARD_RADIUS,
+          ...SQUIRCLE,
+          '[data-stuck="bottom"] &': footerStuckSx,
+          '@container scroll-state(stuck: bottom)': footerStuckSx,
+        }}
+      >
+        {footerContent}
+      </Box>
+    </Box>
+  ) : (
+    footerContent
+  );
+
+  // Body-row parity treatments (organism density + rail state layers) — applied ONLY under sticky so the
+  // official-subset path is unchanged. PARITY DUPLICATION → density-consolidation follow-up (wave2 §6(a)).
+  const stickyRowSx = sticky
+    ? {
+        height: FIELD_TWIN_HEIGHT,
+        '& > .MuiTableCell-root': { paddingTop: 0, paddingBottom: 0 },
+        '& .beam-kebab': { opacity: 0.4, transition: 'opacity 120ms' },
+        '&:hover .beam-kebab, & .beam-kebab:focus-visible': { opacity: 1 },
+        '& .beam-rail .MuiCheckbox-root': { opacity: 1 },
+        '& .beam-rail .MuiIconButton-root:not(.beam-kebab)': { opacity: 1 },
+        '&:hover .beam-rail': { backgroundImage: hoverLayer },
+        '&.Mui-selected .beam-rail': { backgroundImage: selectedLayer },
+        '&.Mui-selected:hover .beam-rail': { backgroundImage: `${selectedLayer}, ${hoverLayer}` },
+      }
+    : undefined;
+
   return (
     <Paper
+      ref={refs.paperRef}
       aria-label={ariaLabel}
       elevation={elevation}
       variant={variant ?? 'outlined'}
-      data-beam-sticky-chrome={undefined /* 2a: stickyChrome pinning deferred to 2b; no contract emitted yet */}
-      sx={styles.tableWrapper(elevation)}
+      // CONTRACT: published when stickyChrome engages. AppShell's `main:has([data-beam-sticky-chrome])`
+      // cedes its bottom padding so the footer floor takes it over; stickyChromeGapSx cedes the top.
+      data-beam-sticky-chrome={effectiveSticky ? '' : undefined}
+      sx={{
+        ...(styles.tableWrapper(elevation) as object),
+        overflow: effectiveSticky ? 'visible' : 'hidden',
+        ...(effectiveSticky
+          ? ({
+              border: 'none',
+              borderRadius: 0,
+              backgroundColor: 'transparent',
+              'timeline-scope': '--beam-body-scroll',
+              scrollSnapAlign: 'start',
+              scrollMarginTop: `${CHROME_CEILING_BAND}px`,
+              [`@media ${belowHeightQuery(SHORT_VP_TIER2)}`]: { scrollMarginTop: 0 },
+            } as object)
+          : {}),
+      }}
     >
       <Loader loading={!!loading} placement="top" />
+      {effectiveSticky && <Box ref={refs.topSentinelRef} aria-hidden sx={{ height: 0 }} />}
+      {bucketEl}
       {searchable && (
-        <Toolbar variant="dense" sx={{ px: 1 }}>
+        <Toolbar variant="dense" sx={{ px: 1, borderBottom: 1, borderColor: 'divider' }}>
           <TextField
             size="small"
             placeholder="Search"
@@ -284,102 +568,145 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
           />
         </Toolbar>
       )}
-      {stripEl}
-      <TableContainer
-        className={scrolledX ? 'table-scrolledX' : undefined}
-        onScroll={hasRail ? (event) => setScrolledX(event.currentTarget.scrollLeft > 0) : undefined}
-        sx={styles.tableContainer(effectiveMaxHeight)}
+      <Box
+        ref={refs.wrapperRef}
+        sx={{
+          position: 'relative',
+          containerType: 'inline-size',
+          ...(effectiveSticky ? { ...SIDE_BORDER, bgcolor: 'background.paper' } : {}),
+          '& .beam-edge-right': { opacity: 0, transition: 'opacity var(--beam-motion-quick)' },
+          '&[data-overflow-end="true"] .beam-edge-right': { opacity: 1 },
+        }}
       >
-        <MuiTable size="small" stickyHeader={stickyHeader}>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  const isRail = header.column.id === ACTION_RAIL_ID;
-                  const meta = colMeta(header.column.columnDef as ColumnDef<unknown, unknown>);
-                  const canSort = header.column.getCanSort();
-                  const sortDir = header.column.getIsSorted();
-                  const content = header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext());
-                  return (
-                    <TableCell
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      align={meta.align}
-                      className={isRail ? 'table-actionRailCell' : undefined}
-                      sx={{ ...(isRail ? (styles.actionRailHeader as object) : {}), ...(meta.width ? { width: meta.width } : {}) }}
-                    >
-                      {canSort ? (
-                        <TableSortLabel active={Boolean(sortDir)} direction={sortDir || 'asc'} onClick={header.column.getToggleSortingHandler()}>
-                          {content}
-                        </TableSortLabel>
-                      ) : (
-                        content
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody sx={styles.body}>
-            {displayRows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={table.getVisibleLeafColumns().length} align="center" sx={styles.emptyTable}>
-                  {searchable && globalFilter ? `No results for "${globalFilter}".` : emptyMessage}
-                </TableCell>
-              </TableRow>
-            )}
-            {displayRows.map((row) => (
-              <Fragment key={row.id}>
-                <TableRow
-                  className="table-dataRow"
-                  selected={row.getIsSelected() || (highlightRowId != null && highlightRowId === row.id)}
-                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                  onMouseEnter={onRowHover ? () => onRowHover(row.original) : undefined}
-                  onMouseLeave={onRowLeave ? () => onRowLeave(row.original) : undefined}
-                  sx={styles.dataRow(Boolean(onRowClick))}
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const isRail = cell.column.id === ACTION_RAIL_ID;
-                    const meta = colMeta(cell.column.columnDef as ColumnDef<unknown, unknown>);
+        <TableContainer
+          ref={refs.scrollRef}
+          className={scrolledX ? 'table-scrolledX' : undefined}
+          onScroll={!sticky && hasRail ? (event: React.UIEvent<HTMLDivElement>) => setScrolledX(event.currentTarget.scrollLeft > 0) : undefined}
+          sx={{
+            ...(styles.tableContainer(effectiveMaxHeight) as object),
+            // Scroll-state container query for the rail's Chrome-native affordance (whenever sticky).
+            ...(sticky ? containerTypeScrollState : {}),
+            // The body's inline scroll-timeline the header clone animates along (effective only).
+            ...(effectiveSticky ? ({ 'scroll-timeline-name': '--beam-body-scroll', 'scroll-timeline-axis': 'inline' } as object) : {}),
+            // Sticky grids HIDE the in-content bar (it would float mid-page); affordance rides the edges + clone.
+            ...(sticky
+              ? {
+                  '@supports not selector(::-webkit-scrollbar)': { scrollbarWidth: effectiveSticky ? 'none' : 'thin' } as object,
+                  '&::-webkit-scrollbar': effectiveSticky ? { display: 'none' } : { height: 8, width: 8 },
+                }
+              : {}),
+          }}
+        >
+          <MuiTable size="small" stickyHeader={stickyHeader}>
+            <TableHead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} ref={refs.theadRowRef}>
+                  {headerGroup.headers.map((header) => {
+                    const isRail = header.column.id === ACTION_RAIL_ID;
+                    const meta = colMeta(header.column.columnDef as ColumnDef<unknown, unknown>);
+                    const canSort = header.column.getCanSort();
+                    const sortDir = header.column.getIsSorted();
+                    const content = header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext());
                     return (
                       <TableCell
-                        key={cell.id}
+                        key={header.id}
+                        colSpan={header.colSpan}
                         align={meta.align}
-                        className={isRail ? 'table-actionRailCell' : undefined}
-                        sx={{ ...(isRail ? (styles.actionRailCell as object) : {}), ...(meta.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : {}) }}
+                        className={isRail ? (sticky ? 'beam-rail' : 'table-actionRailCell') : undefined}
+                        sx={{
+                          ...(isRail ? (sticky ? { ...railStickySx, zIndex: Z_RAIL_HEADER } : (styles.actionRailHeader as object)) : {}),
+                          ...(meta.width ? { width: meta.width } : {}),
+                        }}
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {canSort ? (
+                          <TableSortLabel active={Boolean(sortDir)} direction={sortDir || 'asc'} onClick={header.column.getToggleSortingHandler()}>
+                            {content}
+                          </TableSortLabel>
+                        ) : (
+                          content
+                        )}
                       </TableCell>
                     );
                   })}
                 </TableRow>
-                {expand && (
-                  <TableRow className="table-detailsRow" selected={row.getIsSelected()}>
-                    <TableCell colSpan={row.getVisibleCells().length} sx={styles.expandCell(row.getIsExpanded())}>
-                      <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
-                        <Box sx={styles.expandWrapper}>
-                          {expand(row.original)}
-                          {menu && (
-                            <Box sx={styles.expandActionsWrapper}>
-                              {menu(row.original).map((menuItem) => (
-                                <Button key={menuItem.id} variant="outlined" disabled={menuItem.disabled} startIcon={menuItem.icon} color={menuItem.destructive ? 'error' : 'primary'} onClick={menuItem.onSelect} size="small">
-                                  {menuItem.label}
-                                </Button>
-                              ))}
-                            </Box>
-                          )}
-                        </Box>
-                      </Collapse>
-                    </TableCell>
+              ))}
+            </TableHead>
+            <TableBody sx={styles.body}>
+              {displayRows.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={table.getVisibleLeafColumns().length} align="center" sx={styles.emptyTable}>
+                    {searchable && globalFilter ? `No results for "${globalFilter}".` : emptyMessage}
+                  </TableCell>
+                </TableRow>
+              )}
+              {displayRows.map((row) => (
+                <Fragment key={row.id}>
+                  <TableRow
+                    className="table-dataRow"
+                    selected={row.getIsSelected() || (highlightRowId != null && highlightRowId === row.id)}
+                    onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                    onMouseEnter={onRowHover ? () => onRowHover(row.original) : undefined}
+                    onMouseLeave={onRowLeave ? () => onRowLeave(row.original) : undefined}
+                    sx={{ ...(styles.dataRow(Boolean(onRowClick)) as object), ...(stickyRowSx ?? {}) }}
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      const isRail = cell.column.id === ACTION_RAIL_ID;
+                      const meta = colMeta(cell.column.columnDef as ColumnDef<unknown, unknown>);
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          align={meta.align}
+                          className={isRail ? (sticky ? 'beam-rail' : 'table-actionRailCell') : undefined}
+                          onClick={isRail && sticky ? (e) => e.stopPropagation() : undefined}
+                          sx={{
+                            ...(isRail ? (sticky ? { ...railStickySx, zIndex: Z_RAIL_BODY, whiteSpace: 'nowrap' } : (styles.actionRailCell as object)) : {}),
+                            ...(meta.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : {}),
+                          }}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
-                )}
-              </Fragment>
-            ))}
-          </TableBody>
-        </MuiTable>
-      </TableContainer>
-      {footerContent}
+                  {expand && (
+                    <TableRow className="table-detailsRow" selected={row.getIsSelected()}>
+                      <TableCell colSpan={row.getVisibleCells().length} sx={styles.expandCell(row.getIsExpanded())}>
+                        <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
+                          {/* 100cqw sticky panel (organism parity; sticky only) so the expanded content stays
+                              pinned to the visible width during horizontal scroll. Absent → plain wrapper. */}
+                          <Box sx={sticky ? { position: 'sticky', left: 0, width: '100cqw' } : undefined}>
+                            <Box sx={styles.expandWrapper}>
+                              {expand(row.original)}
+                              {menu && (
+                                <Box sx={styles.expandActionsWrapper}>
+                                  {menu(row.original).map((menuItem) => (
+                                    <Button key={menuItem.id} variant="outlined" disabled={menuItem.disabled} startIcon={menuItem.icon} color={menuItem.destructive ? 'error' : 'primary'} onClick={menuItem.onSelect} size="small">
+                                      {menuItem.label}
+                                    </Button>
+                                  ))}
+                                </Box>
+                              )}
+                            </Box>
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
+              ))}
+            </TableBody>
+          </MuiTable>
+        </TableContainer>
+        {effectiveSticky && (
+          <Box
+            className="beam-edge-right"
+            aria-hidden
+            sx={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: EDGE_WIDTH, pointerEvents: 'none', zIndex: Z_EDGE, background: `linear-gradient(to left, ${EDGE_TINT}, transparent)` }}
+          />
+        )}
+      </Box>
+      {footerEl}
+      {effectiveSticky && <Box ref={refs.bottomSentinelRef} aria-hidden sx={{ height: 0 }} />}
     </Paper>
   );
 }
