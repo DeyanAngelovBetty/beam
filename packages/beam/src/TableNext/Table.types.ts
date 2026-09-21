@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { PaperProps } from '@mui/material/Paper';
-import type { RowData, TableOptions, ColumnDef } from '@tanstack/react-table';
+import type { RowData, TableOptions, ColumnDef, RowSelectionState, OnChangeFn } from '@tanstack/react-table';
 import type { BeamBadgeHue } from '../BeamBadge/BeamBadge.types';
 // LANE types reused from the current organism until 2f (when the old Table is deleted and these move
 // here). They ride the raw-ColumnDef model unchanged.
@@ -98,6 +98,22 @@ export type TableProps<TData extends RowData> = Pick<TableOptions<TData>, 'data'
   variant?: PaperProps['variant'];
   /** Optional per-row expand / select / menu controls (the leading action-rail column). */
   actionRail?: TableActionRail<TData>;
+  /**
+   * Show the header rail's expand-ALL caret (official). DEFAULT `true` — official-subset keeps official's
+   * caret. A consumer matching a pre-port surface that had no expand-all (Gaspar 2b) passes `false` for
+   * parity; it's a candidate deliberate-enable later (good UX, wrong moment). Only affects the HEADER caret;
+   * per-row expand carets are unaffected.
+   */
+  expandAll?: boolean;
+  /**
+   * CONTROLLED selection (the server-shaped pattern): the page OWNS the `RowSelectionState` keyed by
+   * `getRowId`, so selection — and the bulk bucket's count + action set — span pages the port never holds
+   * (it renders one page at a time). Omit both and selection is INTERNAL (per-page, 2a behaviour). Pair with
+   * `onRowSelectionChange`. The bulk factory still receives the current page's selected rows; a consumer that
+   * needs cross-page ELIGIBILITY resolves it from its own full dataset by the owned ids.
+   */
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 
   // ── LANE EXTENSIONS (additive; absent ⇒ official behavior) ───────────────────────────────────────
   /**

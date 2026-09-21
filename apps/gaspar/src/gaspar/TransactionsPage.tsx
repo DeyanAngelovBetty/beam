@@ -528,6 +528,12 @@ export function TransactionsPage() {
   const [snack, setSnack] = useState<string | null>(null);
   const onCopied = () => setSnack('Copied to clipboard');
 
+  // CONTROLLED selection (server-shaped): the page owns the selection set keyed by row id, so it survives
+  // paging — the port renders one page at a time, but the bulk bucket counts + acts across pages, and
+  // eligibility resolves from the full PAYMENTS set. (Restores the pre-port cross-page selection as the
+  // correct server-shaped pattern, not a parity hack — see the wave2 ledger.)
+  const [selection, setSelection] = useState<Record<string, boolean>>({});
+
   // Filter state — official useTableFilters controller (draft/applied/apply/clear + pagination). urlSync
   // mirrors applied filters + page/pageSize to the URL and restores on load / back-forward.
   const filters = useTableFilters<TxFilters>({ initialValues: EMPTY_TX_FILTERS, urlSync: true });
@@ -636,9 +642,11 @@ export function TransactionsPage() {
   // TASK A — selection + batch actions. Export is REAL (client-side JSON download); Complete/Decline
   // are PROPOSALS (confirm → snackbar, no mutation). Eligibility: Pending only (assumption).
   // Bulk actions are a FACTORY (Option C) so disabled/reason reflect the live selection.
-  const bulkActions = (selectedRows: PaymentRow[]) => {
+  const bulkActions = () => {
     // Export is present whenever the bulk strip is (v1.1+); Complete/Decline join the SAME strip only
-    // at Beyond (caps.actions). Export is a FORMAT MENU (JSON/CSV real, PDF/Excel proposals).
+    // at Beyond (caps.actions). Export is a FORMAT MENU (JSON/CSV real, PDF/Excel proposals). Eligibility
+    // resolves from the FULL set by the owned selection (cross-page), not the port's current-page arg.
+    const selectedRows = PAYMENTS.filter((r) => selection[r.id]);
     const noEligible = selectedRows.every((r) => r.status !== 'pending');
     return [
       { id: 'export', label: 'Export', options: EXPORT_FORMATS },
@@ -903,6 +911,11 @@ export function TransactionsPage() {
         // always on; the column manager is v1.2+. Beyond = every cap true = today's full behavior.
         bulkActions={caps.selection ? bulkActions : undefined}
         onBulkAction={caps.selection ? onBulkAction : undefined}
+        // Controlled selection so it spans pages (server-shaped). Only wired when selection is enabled.
+        rowSelection={caps.selection ? selection : undefined}
+        onRowSelectionChange={caps.selection ? setSelection : undefined}
+        // Parity: today's header rail had no expand-ALL caret (official-subset keeps it, default true).
+        expandAll={false}
         actionRail={{
           expand: (r) => <PaymentTimeline events={r.events} />,
           ...(caps.actions ? { menu: menuItems } : {}),

@@ -111,6 +111,9 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     elevation,
     variant,
     actionRail,
+    expandAll = true,
+    rowSelection: rowSelectionProp,
+    onRowSelectionChange: onRowSelectionChangeProp,
     stickyChrome,
     columnManager,
     bulkActions,
@@ -144,7 +147,12 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   const [scrolledX, setScrolledX] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  // Selection is CONTROLLED when the page owns it (rowSelectionProp) — the server-shaped cross-page pattern;
+  // else INTERNAL (per-page, 2a behaviour).
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
+  const selectionControlled = rowSelectionProp !== undefined;
+  const rowSelection = selectionControlled ? rowSelectionProp : internalRowSelection;
+  const setRowSelection = selectionControlled ? (onRowSelectionChangeProp ?? (() => undefined)) : setInternalRowSelection;
 
   const expand = actionRail?.expand;
   const menu = actionRail?.menu;
@@ -169,7 +177,9 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     if (!hasRail) return base;
     const railCol: ColumnDef<TData, unknown> = {
       id: ACTION_RAIL_ID,
-      header: ({ table }) => <TableHeaderActions table={table} expand={!!expand} select={railSelect} />,
+      // Header rail: the expand-ALL caret is lane-gated (expandAll, default true → official keeps it); the
+      // per-row expand carets below are unaffected.
+      header: ({ table }) => <TableHeaderActions table={table} expand={Boolean(expand) && expandAll} select={railSelect} />,
       cell: ({ row }) => {
         const hue = rowAccent?.(row.original);
         return (
@@ -188,7 +198,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
       enableHiding: false,
     };
     return [railCol, ...base];
-  }, [columns, expand, menu, railSelect, rowAccent, hasRail]);
+  }, [columns, expand, expandAll, menu, railSelect, rowAccent, hasRail]);
 
   const table = useReactTable<TData>({
     data,
@@ -232,9 +242,14 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
 
   // ── Bulk strip (lane) ──────────────────────────────────────────────────────────────────────────
   const batchHintId = useId();
+  // The bulk bucket counts + acts on the OWNED set: with controlled selection that spans every page
+  // (Object of the page-owned RowSelectionState); internal selection is per-page (current row model). The
+  // factory receives the CURRENT page's selected rows — a consumer needing cross-page eligibility resolves
+  // it from its own full dataset by the owned ids.
   const selectedRows = table.getSelectedRowModel().rows.map((r) => r.original);
-  const selectedIds = table.getSelectedRowModel().rows.map((r) => r.id);
+  const selectedIds = selectionControlled ? Object.keys(rowSelection).filter((id) => rowSelection[id]) : table.getSelectedRowModel().rows.map((r) => r.id);
   const selectedCount = selectedIds.length;
+  const resetSelection = () => (selectionControlled ? setRowSelection({}) : table.resetRowSelection());
   const resolvedBulkActions = typeof bulkActions === 'function' ? bulkActions(selectedRows) : bulkActions;
   const stripEl =
     resolvedBulkActions && resolvedBulkActions.length > 0 ? (
@@ -248,7 +263,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
             batchHintId={batchHintId}
             onFire={(optionId) => {
               onBulkAction?.(a.id, selectedIds, optionId);
-              table.resetRowSelection();
+              resetSelection();
             }}
           />
         ))}
