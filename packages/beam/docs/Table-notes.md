@@ -50,7 +50,7 @@ breakpoint media queries (48 landscape, 64 up-sm) — so the footer measured ~54
 The PAGE stays the scroll owner; the grid grows to content height; its chrome pins to the scrollport
 edges only while crossing them (sticky's natural content-height-when-short for free). No `maxBodyHeight`,
 no internal scroll region, no virtualization. Opt-in (`stickyChrome`); absent = byte-identical. **Story
-`Organisms/Table → StickyChromeBench` (1,200 rows / page 500) is the bench** — eyeballed before
+`Components/Table → StickyChromeBench` (1,200 rows / page 500) is the bench** — eyeballed before
 Gaspar wiring.
 
 - **The one overflow trap:** the grid `Paper`'s `overflow: hidden` → **`overflow: clip`** when

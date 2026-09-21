@@ -76,67 +76,6 @@ export const Empty: Story = {
 };
 
 /**
- * Yoda audit, answered in one story: paytables list with sorting,
- * global search (§2.7), pagination (§3.12), bulk selection (§3.12),
- * and inline payout expansion — progressive disclosure (§2.4) with
- * Expected Avg Payout verification (§2.2).
- */
-interface Paytable {
-  id: string;
-  name: string;
-  game: string;
-  avgPayout: number;
-  status: BeamStatus;
-  usedBy: number;
-  payouts: { reward: string; amount: number; probability: number }[];
-}
-
-const PAYTABLES: Paytable[] = [
-  {
-    id: 'pt-1', name: 'Member — Daily Wheel', game: 'RewardsWheel', avgPayout: 1140, status: 'active', usedBy: 4,
-    payouts: [
-      { reward: 'Betty Coins', amount: 500, probability: 0.5 },
-      { reward: 'Betty Coins', amount: 1000, probability: 0.3 },
-      { reward: 'Betty Coins', amount: 2500, probability: 0.15 },
-      { reward: 'Free Spins', amount: 10, probability: 0.05 },
-    ],
-  },
-  {
-    id: 'pt-2', name: 'VIP — Daily Wheel', game: 'RewardsWheel', avgPayout: 8625, status: 'active', usedBy: 2,
-    payouts: [
-      { reward: 'Betty Coins', amount: 5000, probability: 0.6 },
-      { reward: 'Betty Coins', amount: 12500, probability: 0.3 },
-      { reward: 'Mystery Box', amount: 1, probability: 0.1 },
-    ],
-  },
-  {
-    id: 'pt-3', name: 'Topaz — Daily Game Extra', game: 'Scratcher', avgPayout: 1215, status: 'paused', usedBy: 1,
-    payouts: [
-      { reward: 'Betty Coins', amount: 900, probability: 0.7 },
-      { reward: 'Betty Coins', amount: 1950, probability: 0.3 },
-    ],
-  },
-  {
-    id: 'pt-4', name: 'Shop High Volatility', game: 'RewardsWheel', avgPayout: 4310, status: 'draft', usedBy: 0,
-    payouts: [
-      { reward: 'Betty Coins', amount: 100, probability: 0.9 },
-      { reward: 'Betty Coins', amount: 42200, probability: 0.1 },
-    ],
-  },
-];
-
-const paytableColumns: BeamColumn<Paytable>[] = [
-  { key: 'name', header: 'Paytable', render: (r) => r.name, getValue: (r) => r.name },
-  { key: 'game', header: 'Game', render: (r) => r.game, getValue: (r) => r.game },
-  {
-    key: 'avg', header: 'Avg payout', align: 'right',
-    render: (r) => r.avgPayout.toLocaleString(), getValue: (r) => r.avgPayout,
-  },
-  { key: 'status', header: 'Status', render: (r) => <BeamStatusBadge status={r.status} /> },
-  { key: 'usedBy', header: 'Used by', align: 'right', render: (r) => `${r.usedBy} configs`, getValue: (r) => r.usedBy },
-];
-
-/**
  * The row-controls rail: expand + select + kebab in one pinned first column,
  * fixed order. Extra wide columns force horizontal scroll so the sticky rail
  * (and its hover/selected background) can be seen holding its ground. The
@@ -265,41 +204,6 @@ export const IdentityLink: StoryObj = {
       />
     );
   },
-};
-
-export const PaytablesYodaPatterns: StoryObj = {
-  render: () => (
-    <Table<Paytable>
-      columns={paytableColumns}
-      rows={PAYTABLES}
-      getRowId={(r) => r.id}
-      selectable
-      bulkActions={[
-        { id: 'pause', label: 'Pause' },
-        { id: 'archive', label: 'Archive', destructive: true },
-      ]}
-      searchable
-      paginated
-      renderExpanded={(r) => {
-        const sum = r.payouts.reduce((s, p) => s + p.probability, 0);
-        return (
-          <Stack spacing={1} sx={{ maxWidth: 480 }}>
-            {r.payouts.map((p, i) => (
-              <Stack key={i} direction="row" sx={{ justifyContent: 'space-between' }}>
-                <span>{p.reward} × {p.amount.toLocaleString()}</span>
-                <span>{Math.round(p.probability * 100)}%</span>
-              </Stack>
-            ))}
-            <Stack direction="row" sx={{ justifyContent: 'space-between', borderTop: 1, borderColor: 'divider', pt: 1 }}>
-              <strong>Probabilities sum to {sum}</strong>
-              <strong>Expected avg payout: {r.avgPayout.toLocaleString()}</strong>
-            </Stack>
-          </Stack>
-        );
-      }}
-      aria-label="Payout tables"
-    />
-  ),
 };
 
 /**
@@ -652,7 +556,10 @@ export const StickyChromeShortViewport: Story = {
   render: () => {
     // Load the existing sticky bench in each frame — a real viewport per iframe, full theme + menus. The
     // relative `iframe.html?id=…` resolves the same in dev and the static gh-pages build.
-    const src = 'iframe.html?id=organisms-beamdatatable--sticky-chrome-bench&viewMode=story';
+    // NOTE: this is an iframe-URL story ID — a STRING, invisible to typecheck. On any story rename/move it
+    // silently 404s the frames (the bench renders nothing). Post-Wave-0 the title is `Components/Table`, so
+    // the ID is `components-table--sticky-chrome-bench` (was the pre-Wave-0 `organisms-beamdatatable--*`).
+    const src = 'iframe.html?id=components-table--sticky-chrome-bench&viewMode=story';
     const tiers = [
       { h: 900, label: 'Normal 900px — PIN_REACHABLE: page size 10 → plain card; 50/500 → chrome engages' },
       { h: 360, label: 'Tier 1 · frame 360px (328–396) — footer unsticks' },

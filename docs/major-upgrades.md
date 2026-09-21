@@ -84,3 +84,16 @@ library where we override internals by slot name, class name, or CSS variable
 (today: dockview's `--dv-*` in the dashboard bench). Slot/class/var renames are
 a silent-audit problem; restyled defaults are a visual-diff problem. Gates are a
 floor for both, never proof.
+
+**Same class of break: iframe-URL story IDs.** A story can address another story
+by its Storybook ID as a plain string — `StickyChromeShortViewport` builds each
+viewport-tier frame as `<iframe src="iframe.html?id=components-table--sticky-chrome-bench">`
+(the tiers are viewport-based; a real iframe is the only way to give each frame
+its own viewport). That ID is derived from the meta `title` + export name, so
+**renaming or moving a story silently invalidates every iframe URL that targets
+it** — the frames 404 and render nothing, and `typecheck` / `build` /
+`build-storybook` all stay green. This bit us at Wave 0: the title moved
+`Organisms/BeamDataTable → Components/Table` and the Short-Viewport frames kept
+pointing at the dead `organisms-beamdatatable--*` ID (fixed Wave 2 2a.1).
+**On any future story rename/move, grep for `iframe.html?id=` and re-derive the
+targeted IDs by hand** — nothing else will catch it.
