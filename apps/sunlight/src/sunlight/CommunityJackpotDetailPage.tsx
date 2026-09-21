@@ -7,7 +7,6 @@ import {
   Alert,
   Button,
   IconButton,
-  Tooltip,
   MuiTable as Table,
   TableHead,
   TableBody,
@@ -346,17 +345,26 @@ export function RewardsStrategyTable({
   edit = false,
   onPatchRow,
   onRemoveRow,
-  isRemoveDisabled,
 }: {
   rows: Milestone['rewardsStrategy'];
   edit?: boolean;
   onPatchRow?: (index: number, patch: Partial<RewardStrategyRow>) => void;
   onRemoveRow?: (index: number) => void;
-  isRemoveDisabled?: (index: number) => boolean;
 }) {
   const base = useId(); // unique header-cell ids per instance (aria-labelledby targets)
   const cid = (k: string) => `${base}-${k}`;
   const n = (v: number) => v.toLocaleString();
+  // Empty rewards strategy is VALID (requiredness ruling, 2026-09-21): a quiet one-liner instead of an
+  // empty datagrid, matching the demo's empty-state convention. In edit the toolbar's Add CTAs remain.
+  if (rows.length === 0) {
+    return (
+      <Box sx={{ px: 2, pb: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          No rewards strategy — the milestone's jackpot amount is awarded.
+        </Typography>
+      </Box>
+    );
+  }
   // `beam-twin-table` opts this table into the 57px twin-row height (Section contract); only active when
   // it is a direct child of a bleed Section (the milestone page), inert when nested (jackpot expansion).
   // Twin/field-list tables LEFT-align values + inputs under the header's left edge (BEAM.md §6 ruling).
@@ -373,42 +381,28 @@ export function RewardsStrategyTable({
         </TableRow>
       </TableHead>
       <TableBody>
-        {rows.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={5}>
-              <Typography variant="body2" color="text.secondary">No reward strategies yet — add at least one prize.</Typography>
+        {rows.map((r, i) => (
+          <TableRow key={i} hover>
+            <TableCell>{rewardTypeLabel(r.rewardType)}</TableCell>
+            <TableCell>
+              {edit ? <NumInput value={r.numRewards} labelledBy={cid('num')} onChange={(v) => onPatchRow?.(i, { numRewards: v })} /> : n(r.numRewards)}
+            </TableCell>
+            <TableCell>
+              {edit ? <NumInput value={r.qualificationAmount} labelledBy={cid('qual')} onChange={(v) => onPatchRow?.(i, { qualificationAmount: v })} /> : n(r.qualificationAmount)}
+            </TableCell>
+            <TableCell>
+              {edit ? <NumInput value={r.rewardAmount} labelledBy={cid('reward')} onChange={(v) => onPatchRow?.(i, { rewardAmount: v })} /> : n(r.rewardAmount)}
+            </TableCell>
+            <TableCell align="right">
+              {/* Every row is freely removable — no min-1 (an empty strategy is valid). */}
+              {edit && (
+                <IconButton aria-label={`Remove ${r.rewardType}`} color="error" size="small" onClick={() => onRemoveRow?.(i)}>
+                  <RemoveCircleIcon fontSize="small" />
+                </IconButton>
+              )}
             </TableCell>
           </TableRow>
-        ) : (
-          rows.map((r, i) => {
-            const removeDisabled = isRemoveDisabled?.(i) ?? false;
-            return (
-              <TableRow key={i} hover>
-                <TableCell>{rewardTypeLabel(r.rewardType)}</TableCell>
-                <TableCell>
-                  {edit ? <NumInput value={r.numRewards} labelledBy={cid('num')} onChange={(v) => onPatchRow?.(i, { numRewards: v })} /> : n(r.numRewards)}
-                </TableCell>
-                <TableCell>
-                  {edit ? <NumInput value={r.qualificationAmount} labelledBy={cid('qual')} onChange={(v) => onPatchRow?.(i, { qualificationAmount: v })} /> : n(r.qualificationAmount)}
-                </TableCell>
-                <TableCell>
-                  {edit ? <NumInput value={r.rewardAmount} labelledBy={cid('reward')} onChange={(v) => onPatchRow?.(i, { rewardAmount: v })} /> : n(r.rewardAmount)}
-                </TableCell>
-                <TableCell align="right">
-                  {edit && (
-                    <Tooltip title={removeDisabled ? 'At least one prize is required' : ''}>
-                      <span>
-                        <IconButton aria-label={`Remove ${r.rewardType}`} color="error" size="small" onClick={() => onRemoveRow?.(i)} disabled={removeDisabled}>
-                          <RemoveCircleIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  )}
-                </TableCell>
-              </TableRow>
-            );
-          })
-        )}
+        ))}
       </TableBody>
     </Table>
   );

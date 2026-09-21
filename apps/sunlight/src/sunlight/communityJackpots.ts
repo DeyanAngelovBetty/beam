@@ -18,8 +18,10 @@
  *    Prize or a Milestone Flip via the toolbar's typed CTAs, and its type never changes. This is a
  *    TBD-RESOLUTION CANDIDATE pending Mariya — if Reward Type becomes editable per row, the static text
  *    reverts to a select.
- *  • REQUIREDNESS is UNDECIDED: must a milestone carry a Milestone Flip? Modelled as the single flag
- *    `MILESTONE_FLIP_REQUIRED` (default `false` = not required) so Mariya's answer is a one-line change.
+ *  • REQUIREDNESS — RESOLVED (Mariya, 2026-09-21): NEITHER Prize nor MilestoneFlip is required. A milestone
+ *    may have an EMPTY rewards strategy; the payout is then the milestone's configured Jackpot Amount. No
+ *    min-row rule and no flip-required flag. (The singleton-flip + flip-always-last rules still govern the
+ *    rows that DO exist.) A seeded fixture milestone carries an empty strategy so the state is visible.
  *
  * ── State model (demo) ────────────────────────────────────────────────────────────────────────────
  * Module-level mutable arrays, URL-backed pages. DRAFT model for Add: `createDraftJackpot()` assigns an
@@ -84,13 +86,6 @@ export const REWARD_ROW_TYPE_OPTIONS = ['Prize', 'MilestoneFlip'] as const;
 // "Add Milestone Flip". Data untouched — TBD whether the backend value itself normalizes (pending Mariya).
 export const rewardTypeLabel = (v: string): string => (v === 'MilestoneFlip' ? 'Milestone Flip' : v);
 
-/**
- * Rewards Strategy business rule — UNDECIDED (pending Mariya): must every milestone carry a Milestone
- * Flip? Default NOT required. Flip this ONE constant to `true` when the answer lands (a one-line change):
- * Save then blocks a milestone with no flip. See the milestone edit page's Rewards Strategy rules.
- */
-export const MILESTONE_FLIP_REQUIRED = false;
-
 // The rewards-strategy pair the PNGs show on every configured milestone.
 const DEFAULT_REWARDS: RewardStrategyRow[] = [
   { rewardType: 'Prize', numRewards: 1, qualificationAmount: 5, rewardAmount: 0 },
@@ -136,7 +131,7 @@ export function makeEmptyMilestone(): Omit<Milestone, 'id'> {
     rewardStrategy: 'Fixed',
     threshold: 100000,
     jackpotAmount: 5,
-    rewardsStrategy: [], // Add starts empty (per the add PNG); Save requires ≥1 (task: min 1 row)
+    rewardsStrategy: [], // Add starts empty (per the add PNG); empty is valid — Save accepts zero rows
     winners: [],
   };
 }
@@ -151,7 +146,9 @@ function makeJackpot(id: string, name: string, milestones: Milestone[]): Communi
 // (threshold 100000, the Didi_test winner) the milestone PNGs detail; its other milestone has NO winners.
 const bettyMaxMilestones: Milestone[] = [
   makeMilestone('1596', { threshold: 100000, winners: [DIDI_WINNER] }),
-  makeMilestone('1595', { threshold: 1000, winners: [] }),
+  // EMPTY rewards strategy (requiredness ruling) — the milestone's Jackpot Amount is awarded. Seeded in the
+  // showcase jackpot so the empty state is visible in validation (view, edit, and the jackpot expansion).
+  makeMilestone('1595', { threshold: 1000, winners: [], rewardsStrategy: [] }),
 ];
 
 const COMMUNITY_JACKPOTS: CommunityJackpot[] = [

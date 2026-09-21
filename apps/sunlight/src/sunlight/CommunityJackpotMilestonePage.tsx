@@ -35,7 +35,6 @@ import {
   makeEmptyMilestone,
   fmtDateTimeET,
   REWARD_STRATEGY_OPTIONS,
-  MILESTONE_FLIP_REQUIRED,
   type Milestone,
   type RewardStrategyRow,
 } from './communityJackpots';
@@ -122,7 +121,6 @@ export function CommunityJackpotMilestonePage({ mode }: { mode: 'view' | 'edit' 
 
   const rows = draft.rewardsStrategy;
   const hasFlip = rows.some(isFlip);
-  const prizeCount = rows.filter((r) => !isFlip(r)).length;
 
   const patch = (p: Partial<MilestoneDraft>) => setDraft((prev) => ({ ...prev, ...p }));
   const patchRow = (i: number, p: Partial<RewardStrategyRow>) =>
@@ -142,14 +140,9 @@ export function CommunityJackpotMilestonePage({ mode }: { mode: 'view' | 'edit' 
     setDraft((prev) => ({ ...prev, rewardsStrategy: prev.rewardsStrategy.filter((_, j) => j !== i) }));
 
   const save = () => {
-    if (prizeCount < 1) {
-      setNotice({ severity: 'warning', msg: 'Add at least one prize before saving.' }); // min-1 applies to prizes
-      return;
-    }
-    if (MILESTONE_FLIP_REQUIRED && !hasFlip) {
-      setNotice({ severity: 'warning', msg: 'A Milestone Flip is required for every milestone.' });
-      return;
-    }
+    // Requiredness ruling (Mariya, 2026-09-21): neither Prize nor MilestoneFlip is required — an EMPTY
+    // rewards strategy is valid; the milestone's configured Jackpot Amount is awarded. No min-row gate,
+    // no flip-required gate. (The singleton-flip + flip-always-last rules still govern rows that DO exist.)
     if (mode === 'add') {
       addMilestone(id, { ...makeEmptyMilestone(), ...draft, winners: [] });
       navigate(`${BASE}/${id}/edit`); // return to the jackpot edit session
@@ -239,16 +232,12 @@ export function CommunityJackpotMilestonePage({ mode }: { mode: 'view' | 'edit' 
         }
       >
         {/* One twin table for both modes (Section owns bleed + heights + compact inputs). Reward Type is
-            static text; min-1 applies to prizes independently of the flip (last prize's remove disabled). */}
+            static text; every row is freely removable (no min-1 — an empty strategy is valid). */}
         <RewardsStrategyTable
           rows={isEdit ? draft.rewardsStrategy : (milestone as Milestone).rewardsStrategy}
           edit={isEdit}
           onPatchRow={patchRow}
           onRemoveRow={removeRow}
-          isRemoveDisabled={(i) => {
-            const r = draft.rewardsStrategy[i];
-            return r ? !isFlip(r) && prizeCount <= 1 : false;
-          }}
         />
       </Section>
 
