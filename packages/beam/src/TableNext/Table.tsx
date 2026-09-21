@@ -736,7 +736,10 @@ function BulkActionButton({ action, disabled, zeroSelection, batchHintId, onFire
   const hasOptions = Boolean(action.options?.length);
   const button = (
     <Button
-      variant="outlined"
+      // Bulk-strip buttons are small TEXT/flat — the quietest tier of the button-hierarchy grammar
+      // (loudness descends with scope; a table toolbar sits below the page header + filter panel). See
+      // BEAM.md §6 button hierarchy. Lane-only code (official Table has no bulk actions).
+      variant="text"
       size="small"
       color={action.destructive ? 'error' : 'primary'}
       aria-disabled={disabled || undefined}

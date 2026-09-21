@@ -356,6 +356,15 @@ the official-subset path stays byte-identical:
 Each is marked `PARITY DUPLICATION` in-code with a pointer here. Duplication is a tracked temporary with a
 named exit (this task), never silent permanence.
 
+**Header-cell background — a THEME-layer neutralization (2b/5, permanent, NOT duplication).** Official's
+`Table.styles.ts` fills head cells with `background.paper` + MUI's dark-elevation overlay
+(`--mui-overlays-*`, auto-generated in dark schemes — official's elevation language, not ours). Rather than
+edit the port's official-pure styles, `createBeamTheme`'s `MuiTableCell.head` neutralizes it at the theme
+layer (transparent background, `background-image: none`, `&&&` specificity bump to win over the Paper-sx
+descendant rule) — the same §6(a) pattern as body density. The header's paint mechanism stays the sticky
+clone's stuck-gated backdrop (untouched). Because it lives in the theme, it **pre-protects the 18 remaining
+consumer migrations** (2c–2e) from paper-tinted headers — they inherit a transparent head for free.
+
 ### (b) Official's `maxHeight` internal scroll vs stickyChrome's page-owns-scroll
 
 These are **opposite scroll architectures**:

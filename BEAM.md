@@ -230,6 +230,17 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
    carry ids) so the field is never label-less to a screen reader. Per-cell notched labels belong to
    FREE-FORM section bodies (`DetailsPanel`, stat cards), where there is no column header to do the
    labeling. *(Ruling agreed with Alex / official Beam frontend, 2026-09-19.)*
+9. **Button hierarchy — loudness descends with scope.** Emphasis tracks how far a button's reach extends,
+   so a screen reads top-down without competing calls to action:
+   - **Page header actions** — `medium` `outlined`, with **at most one** `contained` primary (the page's
+     single loudest action, e.g. *Create*). Secondary header actions stay outlined.
+   - **Filter panel** — the **FILTER** commit button is `outlined` (it gains a `contained` fill only while
+     the draft is dirty, signalling an un-applied change); *Clear* is `text`.
+   - **Section / table toolbars, bulk-action strips, row-level actions** — `small` `text`/flat (a
+     destructive one carries `color="error"`, never a louder fill). A table toolbar sits below the page
+     header and the filter panel in the visual stack, so it is the quietest tier.
+   This is why the port's bulk strip (`TableNext`) renders small text buttons, and Gaspar's page-composed
+   FILTER is outlined while its bulk strip is flat. *(Ruling 2026-09-21, from the 2b Gaspar eyeball.)*
 
 ## 7. Figma ↔ code sync mechanics
 
