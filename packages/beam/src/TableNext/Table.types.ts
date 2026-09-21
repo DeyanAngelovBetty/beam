@@ -104,6 +104,13 @@ export type TableProps<TData extends RowData> = Pick<TableOptions<TData>, 'data'
   /** Batch actions (array, or a `(selectedRows) => …` factory). Renders the bulk strip; drives selection. */
   bulkActions?: BeamBulkAction[] | ((selectedRows: TData[]) => BeamBulkAction[]);
   onBulkAction?: (actionId: string, selectedIds: string[], optionId?: string) => void;
+  /**
+   * SORTABLE columns (lane) — OFF by default so official-subset props render NO sort affordance (official
+   * Table has no sorting; sortable-by-default would break subset-identical in the UI). When `true`, accessor
+   * columns become sortable (clickable `TableSortLabel` headers); a column opts OUT via its
+   * `meta.sortable === false`. Upstream-pitch note: official Table has no sorting at all.
+   */
+  sortable?: boolean;
   /** Built-in global search field above the grid (searches accessor values). */
   searchable?: boolean;
   /** "Page N of M" jump control in the footer. */

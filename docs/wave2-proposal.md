@@ -333,6 +333,14 @@ the ~9 app-local `MuiTable`-as-`Table` compositions that would inherit theme-sea
 several are dense editor grids that may not want 44px rows. Recorded here so the follow-up inherits the
 list.
 
+**Follow-up task (NOT this wave) — define `theme.vars.overlays` in our theme (evaluate alongside the
+density consolidation above).** The ported `TableNext/Table.styles.ts` optional-chains
+`t.vars.overlays?.[elevation]` (the elevation-overlay shadow map official's `Table.styles.ts` reads
+straight) because our cssVariables theme doesn't define an `overlays` map, so that path currently falls
+through to no overlay. Evaluate seating `overlays` in `createBeamTheme` so the ported Table's `elevation`
+resolves a real value instead of relying on the optional-chain fallback. (Ruling 2026-09-21, Wave 2 2a.1
+— accepted with the sorting gate.)
+
 ### (b) Official's `maxHeight` internal scroll vs stickyChrome's page-owns-scroll
 
 These are **opposite scroll architectures**:

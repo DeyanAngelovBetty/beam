@@ -81,6 +81,19 @@ ours      BeamDataTable<Row>  columns: BeamColumn[] (OUR shape: key/header/rende
                         → CLIENT-side internal pagination (getPaginationRowModel) + optional control
 ```
 
+**ActionMenu — SHARES THE NAME, NOT THE API** (flagged 2026-09-21, Wave 2 2a — reconcile BEFORE any menu-touching upstream exchange).
+```
+official  ActionMenu  { items: ActionMenuItem[] (FLAT — no submenu), renderTrigger(triggerProps, isOpen),
+                        closeOnSelect?, placement? }
+                       → TRIGGER-DRIVEN: caller owns the trigger element; ActionMenu owns anchor + open state
+ours      ActionMenu  { anchorEl, open, onClose, items: BeamRowAction[] (discriminated union WITH `options`
+                        submenu), 'aria-label'? }
+                       → CONTROLLED: caller owns anchorEl/open/onClose
+```
+Same name, opposite control model (trigger-driven vs controlled) + our items carry a nested-submenu shape
+official's flat `ActionMenuItem` lacks. The Wave-2 Table port's `TableMenu` is inlined self-contained
+(rendering official's flat `ActionMenuItem[]`) precisely to avoid colliding with our `ActionMenu`.
+
 **TableFilters / BeamFilterBar — declarative-typed vs composition; both have draft/applied.**
 ```
 official  TableFilters<TFilters>  { definitions: TableFilterDefinition[]  // typed control defs:
@@ -134,6 +147,7 @@ ours      BeamAppShell { navItems:BeamNavItem[](children-nested), brandMark, per
 - **44px FIELD_TWIN geometry (rows + chrome + footer converge on the field-twin datum)** · `tokens.ts` `FIELD_TWIN_HEIGHT` + `MuiTableCell`/`MuiTablePagination` overrides + `BeamDataTable` · **Adopting:** theme overrides + Table; official Table has no density datum.
 - **Column manager (show/hide + drag-reorder + "awaiting data" catalog)** · `BeamColumnManager.tsx` + `BeamDataTable` · **Adopting:** a new component + Table wiring; official `Table` has none.
 - **Bulk actions (eligibility + confirm + selection-aware factory), rowAccent (severity bar), jumpToPage** · `BeamDataTable.tsx` · **Adopting:** extends official Table's `actionRail` (which only has expand/select/menu).
+- **Sortable columns (opt-in lane — table-level `sortable` prop + per-column `meta.sortable` override)** · `TableNext` (Wave 2 port) · wires TanStack `getSortedRowModel` + `TableSortLabel` headers ONLY when `sortable` is passed. **OFF by default** so official-subset props render no sort affordance (subset-identical holds; sortable-by-default would break it silently in the UI). **Upstream-pitch note: official `Table` has NO sorting at all** — this is a standing lane capability (ruling 2026-09-21, Wave 2 2a.1).
 - **`BeamStatus` vocabulary + `BeamBadge`/`BeamStatusBadge` (lifecycle + settlement families)** · those files · **Adopting:** a status component + vocab; official passes status as a raw `ReactNode` on `Page`.
 - **`BeamEmptyState`** · that file · official has `ErrorScreen` (error, not empty-state) + `Table.emptyMessage`.
 - **`BeamField`/`BeamSwitchField` (44px field-twin wrappers)** · those files · official has the raw MUI inputs + `MoneyTextField`/date pickers, no generic field wrapper.

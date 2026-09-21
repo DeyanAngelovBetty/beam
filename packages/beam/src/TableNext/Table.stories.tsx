@@ -51,6 +51,15 @@ export const Empty: Story = {
   ),
 };
 
+/** Sorting is an explicit lane opt-in (`sortable`) — off by default, so official-subset renders no sort. */
+export const Sortable: Story = {
+  render: () => (
+    <Box sx={{ maxWidth: 720 }}>
+      <TableNext data={data} columns={columns} getRowId={(p) => p.name} sortable aria-label="People" />
+    </Box>
+  ),
+};
+
 export const Actions: Story = {
   render: () => (
     <Box sx={{ maxWidth: 720 }}>

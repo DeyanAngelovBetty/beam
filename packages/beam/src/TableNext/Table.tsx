@@ -44,8 +44,8 @@ import type { BeamBulkAction, TableProps } from './Table.types';
 
 const ACTION_RAIL_ID = '__table_action_rail' as const;
 
-/** Column meta channel — lane extensions (align/width/defaultHidden) ride here on the raw ColumnDef. */
-type ColMeta = { align?: 'left' | 'right' | 'center'; width?: number | string; defaultHidden?: boolean };
+/** Column meta channel — lane extensions (align/width/defaultHidden/sortable) ride here on the raw ColumnDef. */
+type ColMeta = { align?: 'left' | 'right' | 'center'; width?: number | string; defaultHidden?: boolean; sortable?: boolean };
 const colMeta = (cd: ColumnDef<unknown, unknown>): ColMeta => (cd.meta as ColMeta | undefined) ?? {};
 const colId = (cd: ColumnDef<unknown, unknown>, i: number): string =>
   cd.id ?? (cd as { accessorKey?: string }).accessorKey ?? String(i);
@@ -81,6 +81,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     columnManager,
     bulkActions,
     onBulkAction,
+    sortable = false,
     searchable = false,
     jumpToPage = false,
     rowAccent,
@@ -116,7 +117,12 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   const cm = useColumnManager(managerInput as never, columnManager);
 
   const resolvedColumns = useMemo<ColumnDef<TData, unknown>[]>(() => {
-    const base = columns as ColumnDef<TData, unknown>[];
+    // Per-column sort opt-out via `meta.sortable === false` (only bites when the table-level `sortable`
+    // lane is on; when off, `enableSorting: sortable` below makes all columns unsortable regardless).
+    const base = (columns as ColumnDef<TData, unknown>[]).map((cd) => {
+      const s = colMeta(cd as ColumnDef<unknown, unknown>).sortable;
+      return s === undefined ? cd : { ...cd, enableSorting: s };
+    });
     if (!hasRail) return base;
     const railCol: ColumnDef<TData, unknown> = {
       id: ACTION_RAIL_ID,
@@ -145,19 +151,21 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     data,
     columns: resolvedColumns,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    // Sorting is a LANE (off by default → official-subset renders no sort affordance).
+    ...(sortable ? { getSortedRowModel: getSortedRowModel() } : {}),
     ...(searchable ? { getFilteredRowModel: getFilteredRowModel() } : {}),
     ...(expand ? { getExpandedRowModel: getExpandedRowModel() } : {}),
     getRowCanExpand: () => Boolean(expand),
     getRowId,
     enableRowSelection: Boolean(railSelect),
+    enableSorting: sortable,
     state: {
-      sorting,
+      ...(sortable ? { sorting } : {}),
       ...(searchable ? { globalFilter } : {}),
       rowSelection,
       ...(cm.enabled ? { columnOrder: cm.columnOrder, columnVisibility: cm.columnVisibility } : {}),
     },
-    onSortingChange: setSorting,
+    ...(sortable ? { onSortingChange: setSorting } : {}),
     onRowSelectionChange: setRowSelection,
     ...(searchable ? { onGlobalFilterChange: setGlobalFilter } : {}),
     ...(cm.enabled ? { onColumnOrderChange: cm.onColumnOrderChange, onColumnVisibilityChange: cm.onColumnVisibilityChange } : {}),
@@ -289,7 +297,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                 {headerGroup.headers.map((header) => {
                   const isRail = header.column.id === ACTION_RAIL_ID;
                   const meta = colMeta(header.column.columnDef as ColumnDef<unknown, unknown>);
-                  const sortable = header.column.getCanSort();
+                  const canSort = header.column.getCanSort();
                   const sortDir = header.column.getIsSorted();
                   const content = header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext());
                   return (
@@ -300,7 +308,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                       className={isRail ? 'table-actionRailCell' : undefined}
                       sx={{ ...(isRail ? (styles.actionRailHeader as object) : {}), ...(meta.width ? { width: meta.width } : {}) }}
                     >
-                      {sortable ? (
+                      {canSort ? (
                         <TableSortLabel active={Boolean(sortDir)} direction={sortDir || 'asc'} onClick={header.column.getToggleSortingHandler()}>
                           {content}
                         </TableSortLabel>
