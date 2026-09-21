@@ -66,13 +66,6 @@ export type TableFiltersController<TFilters extends object> = {
   isDraft: boolean;
 };
 
-// DEVIATION (flagged): official imports `TablePaginationState` from `Table/Table.types` (Wave 2, not done).
-// Defined locally here to keep the port self-contained until the Table API converges. 1-based `page`, per
-// official.
-export type TablePaginationState = {
-  page: number;
-  pageSize: number;
-};
-export type TablePaginationController = TablePaginationState & {
-  onChange: (pagination: TablePaginationState) => void;
-};
+// Wave 2 (2a): the local copies are gone — `TablePaginationState`/`TablePaginationController` now live in
+// the official-shape Table port and are re-exported here so existing importers are unaffected.
+export type { TablePaginationState, TablePaginationController } from '../TableNext/Table.types';

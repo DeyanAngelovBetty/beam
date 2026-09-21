@@ -16,8 +16,8 @@ import {
   setPaginationParams,
   type TableFiltersUrlSync,
 } from '../TableFilters.helpers';
-
-const DEFAULT_TABLE_PAGE_SIZE = 10;
+// Wave 2 (2a): re-sourced from the Table port (was a local copy).
+import { DEFAULT_TABLE_PAGE_SIZE } from '../../TableNext/Table.constants';
 const eq = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
 function useTableFilters<TFilters extends object>({

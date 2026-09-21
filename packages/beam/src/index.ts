@@ -108,6 +108,13 @@ export type { BeamBadgeProps, BeamBadgeHue } from './BeamBadge/BeamBadge.types';
 export { BeamStatusBadge } from './BeamStatusBadge/BeamStatusBadge';
 export type { BeamStatusBadgeProps, BeamStatus } from './BeamStatusBadge/BeamStatusBadge.types';
 export { Table, stickyChromeGapSx, stickyChromeExitSx } from './Table/Table';
+// Wave 2 (2a) — the official-API Table port, COEXISTING with the organism `Table` above until the
+// migration batches flip consumers over (2b–2e) and `TableNext` takes the canonical name (2f). No
+// consumer uses it yet; the old `Table` serves all 19 consumers untouched.
+export { TableNext, beamCells, useClientPagination, DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from './TableNext';
+export type { TableProps as TableNextProps, TableActionRail, ActionMenuItem } from './TableNext/Table.types';
+export { Loader } from './Loader';
+export type { LoaderProps } from './Loader';
 export { PAGE_SECTION_GAP } from './theme/tokens';
 export { BeamChildList } from './BeamChildList/BeamChildList';
 export type { BeamChildListProps, BeamChildColumn } from './BeamChildList/BeamChildList.types';
