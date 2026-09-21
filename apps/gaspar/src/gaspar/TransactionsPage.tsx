@@ -13,16 +13,17 @@ import {
   Paper,
   Divider,
   ListItemText,
-  BeamBadge,
   useTableFilters,
-  Table,
+  TableNext,
+  beamCells,
+  useClientPagination,
   BeamPage,
   stickyChromeGapSx,
   stickyChromeExitSx,
   PAGE_SECTION_GAP,
 } from '@betty/beam';
-import type { BeamColumn, BeamBadgeProps, TableFilterDefinition } from '@betty/beam';
-import type { PaginationState } from '@tanstack/react-table';
+import type { BeamBadgeProps, TableFilterDefinition, ActionMenuItem } from '@betty/beam';
+import type { ColumnDef } from '@tanstack/react-table';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -530,13 +531,6 @@ export function TransactionsPage() {
   // Filter state — official useTableFilters controller (draft/applied/apply/clear + pagination). urlSync
   // mirrors applied filters + page/pageSize to the URL and restores on load / back-forward.
   const filters = useTableFilters<TxFilters>({ initialValues: EMPTY_TX_FILTERS, urlSync: true });
-  // Convert the controller's 1-based pagination to the Table's 0-based `pagination`/`onPaginationChange`
-  // (Wave-2 will align these). One writer — the hook — owns the URL.
-  const tablePagination: PaginationState = { pageIndex: filters.pagination.page - 1, pageSize: filters.pagination.pageSize };
-  const onTablePaginationChange = (updater: PaginationState | ((p: PaginationState) => PaginationState)) => {
-    const next = typeof updater === 'function' ? updater(tablePagination) : updater;
-    filters.pagination.onChange({ page: next.pageIndex + 1, pageSize: next.pageSize });
-  };
 
   // v1.2 `[+]` advanced fields — PAGE-LEVEL COMPOSITION. Official TableFilters has no addable-fields / `[+]` /
   // per-field-× shape (verified against beam-alex @ b40e815 — it's a plain definition-driven bar), so to
@@ -631,6 +625,14 @@ export function TransactionsPage() {
     });
   }, [applied]);
 
+  // Wave-2 port pagination: the Table is server-shaped (renders the page it's given), so the demo adapter
+  // slices the filtered rows. The URL source of truth is the SAME `useTableFilters` 1-based controller —
+  // no 0-based↔1-based seam anymore (the controller drops straight in).
+  const { pageRows, totalCount, pagination } = useClientPagination(rows, {
+    controller: filters.pagination,
+    defaultPageSize: DEFAULT_PAGE_SIZE,
+  });
+
   // TASK A — selection + batch actions. Export is REAL (client-side JSON download); Complete/Decline
   // are PROPOSALS (confirm → snackbar, no mutation). Eligibility: Pending only (assumption).
   // Bulk actions are a FACTORY (Option C) so disabled/reason reflect the live selection.
@@ -662,15 +664,15 @@ export function TransactionsPage() {
     setSnack(`${verb} — design proposal, no backend. ${eligible} eligible transaction(s) would be affected. Nothing was changed.`);
   };
 
-  // Same three actions on the row kebab (rail grammar) — Export as a format SUBMENU (JSON/CSV real per
-  // row, PDF/Excel proposal snackbar); Complete/Decline proposals with a per-row confirm. Disabled +
-  // reason when the row isn't Pending (BeamRowAction doctrine).
+  // Same three actions on the row kebab (rail grammar), as the port's ActionMenuItem[] — Export as a format
+  // SUBMENU via the `options` lane (JSON/CSV real per row, PDF/Excel proposal snackbar); Complete/Decline
+  // proposals with a per-row confirm. Disabled + `disabledTooltip` reason when the row isn't Pending.
   const exportProposal = (fmt: string) => setSnack(`${EXPORT_LABEL[fmt]} export — design proposal, no backend.`);
-  const rowActions = (row: PaymentRow) => {
+  const menuItems = (row: PaymentRow): ActionMenuItem[] => {
     const notPending = row.status !== 'pending';
     return [
       {
-        id: 'export', label: 'Export', options: [
+        id: 'export', label: 'Export', onSelect: () => undefined, options: [
           { id: 'json', label: 'JSON', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
           { id: 'csv', label: 'CSV', onSelect: () => { downloadCsv(`payment-${row.id}.csv`, [row]); setSnack('Exported 1 transaction to CSV.'); } },
           { id: 'pdf', label: 'PDF', onSelect: () => exportProposal('pdf') },
@@ -678,46 +680,44 @@ export function TransactionsPage() {
         ],
       },
       {
-        id: 'complete', label: 'Complete', disabled: notPending, disabledReason: ELIGIBILITY_REASON,
+        id: 'complete', label: 'Complete', disabled: notPending, disabledTooltip: ELIGIBILITY_REASON,
         onSelect: () => { if (window.confirm(`Complete transaction ${row.id}?`)) setSnack('Complete — design proposal, no backend. Nothing was changed.'); },
       },
       {
-        id: 'decline', label: 'Decline', destructive: true, disabled: notPending, disabledReason: ELIGIBILITY_REASON,
+        id: 'decline', label: 'Decline', destructive: true, disabled: notPending, disabledTooltip: ELIGIBILITY_REASON,
         onSelect: () => { if (window.confirm(`Decline transaction ${row.id}?`)) setSnack('Decline — design proposal, no backend. Nothing was changed.'); },
       },
     ];
   };
 
-  // Default-visible set, in spec order. (When bullet 3 lands, the CATALOG above joins these as the
-  // column manager's contents.)
-  const columns: BeamColumn<PaymentRow>[] = [
+  // Default-visible set, in spec order — Wave-2 raw `ColumnDef`s: `beamCells` where a cell maps to a helper
+  // (text / number / badge / timestamp), a bespoke display column (raw `cell`) where it doesn't (the
+  // copy-able IDs carry the page's `onCopied` snackbar; the MTI ErrorCodeCell; the Phase-B PaymentMethodCell).
+  // (When bullet 3 lands, the CATALOG above joins these as the column manager's contents.)
+  const columns: ColumnDef<PaymentRow, unknown>[] = [
     // Declared default order (2026-09-10 meeting): timestamps lead, then the transaction essentials,
-    // then customer + the rest. Persisted arrangements are untouched by the column-manager merge rule —
-    // browsers with a saved order need "Reset to defaults" to adopt this ORDER (the new Customer Email
-    // column alone appears via the merge, at its declared position after Customer).
-    { key: 'createdAt', header: 'Created At', align: 'right', getValue: (r) => r.createdAt, width: 150, render: (r) => <TimestampCell iso={r.createdAt} /> },
-    { key: 'updatedAt', header: 'Last Updated', align: 'right', getValue: (r) => r.updatedAt, width: 150, render: (r) => <TimestampCell iso={r.updatedAt} /> },
-    { key: 'id', header: 'Transaction ID', getValue: (r) => r.id, width: 168, render: (r) => <TruncateCopyCell value={r.id} onCopied={onCopied} /> },
+    // then customer + the rest. Persisted arrangements are untouched by the column-manager merge rule.
+    beamCells.timestamp({ id: 'createdAt', header: 'Created At', accessor: (r) => r.createdAt, format: (iso) => <TimestampCell iso={iso} />, width: 150 }),
+    beamCells.timestamp({ id: 'updatedAt', header: 'Last Updated', accessor: (r) => r.updatedAt, format: (iso) => <TimestampCell iso={iso} />, width: 150 }),
+    { id: 'id', header: 'Transaction ID', cell: ({ row }) => <TruncateCopyCell value={row.original.id} onCopied={onCopied} />, meta: { width: 168 } },
     // Direction is a CATEGORY, not a state — plain text, no badge (grammar: semantic hues are for states only).
-    { key: 'direction', header: 'Direction', getValue: (r) => r.direction, width: 124, render: (r) => r.direction },
-    { key: 'amount', header: 'Amount', align: 'right', getValue: (r) => r.amount, width: 110, render: (r) => r.amount.toFixed(2) },
-    { key: 'status', header: 'Status', getValue: (r) => r.status, width: 132, render: (r) => <BeamBadge {...statusTier(r.status)} size="small" /> },
-    { key: 'customerId', header: 'Customer', getValue: (r) => r.customerId, width: 130, render: (r) => r.customerId },
+    beamCells.text({ id: 'direction', header: 'Direction', accessor: (r) => r.direction, width: 124 }),
+    beamCells.number({ id: 'amount', header: 'Amount', accessor: (r) => r.amount, format: (n) => n.toFixed(2), width: 110 }),
+    beamCells.badge({ id: 'status', header: 'Status', accessor: (r) => r.status, tier: (r) => statusTier(r.status), width: 132 }),
+    beamCells.text({ id: 'customerId', header: 'Customer', accessor: (r) => r.customerId, width: 130 }),
     // Customer Email — copy-able like the ID cells, normal face, ellipsis only when width-constrained.
-    { key: 'customerEmail', header: 'Customer Email', getValue: (r) => r.customerEmail, width: 200, render: (r) => <TruncateCopyCell value={r.customerEmail} mode="auto" onCopied={onCopied} /> },
-    { key: 'pspTransactionId', header: 'PSP Transaction ID', getValue: (r) => r.pspTransactionId ?? '', width: 184, render: (r) => <TruncateCopyCell value={r.pspTransactionId} mono onCopied={onCopied} /> },
-    { key: 'paymentMethodId', header: 'Payment method', getValue: (r) => r.paymentMethodId, width: 168, render: (r) => <PaymentMethodCell row={r} onCopied={onCopied} /> },
-    { key: 'currency', header: 'Currency', getValue: (r) => r.currency, width: 96, render: (r) => r.currency },
+    { id: 'customerEmail', header: 'Customer Email', cell: ({ row }) => <TruncateCopyCell value={row.original.customerEmail} mode="auto" onCopied={onCopied} />, meta: { width: 200 } },
+    { id: 'pspTransactionId', header: 'PSP Transaction ID', cell: ({ row }) => <TruncateCopyCell value={row.original.pspTransactionId} mono onCopied={onCopied} />, meta: { width: 184 } },
+    { id: 'paymentMethodId', header: 'Payment method', cell: ({ row }) => <PaymentMethodCell row={row.original} onCopied={onCopied} />, meta: { width: 168 } },
+    beamCells.text({ id: 'currency', header: 'Currency', accessor: (r) => r.currency, width: 96 }),
     // Card Type is a CATEGORY, not a state — plain text, no badge (Direction/3DS grammar ruling).
-    // PROPOSED column — card brand lives on payment-methods, not the payments list (SPEC ledger). Persisted
-    // column arrangements gain it AT THIS POSITION via the manager's merge rule; nothing else moves, so no
-    // Reset needed (Reset only to adopt a changed default ORDER — unchanged here).
-    { key: 'cardType', header: 'Card Type', getValue: (r) => r.cardType, width: 120, render: (r) => r.cardType },
+    // PROPOSED column — card brand lives on payment-methods, not the payments list (SPEC ledger).
+    beamCells.text({ id: 'cardType', header: 'Card Type', accessor: (r) => r.cardType, width: 120 }),
     // PROPOSED column — errorCode has no data source in the payments API yet (see SPEC build-notes).
-    { key: 'errorCode', header: 'Error Code', getValue: (r) => r.errorCode ?? '', width: 110, render: (r) => <ErrorCodeCell code={r.errorCode} /> },
-    { key: 'psp', header: 'Provider', getValue: (r) => r.psp, width: 110, render: (r) => r.psp },
+    { id: 'errorCode', header: 'Error Code', cell: ({ row }) => <ErrorCodeCell code={row.original.errorCode} />, meta: { width: 110 } },
+    beamCells.text({ id: 'psp', header: 'Provider', accessor: (r) => r.psp, width: 110 }),
     // 3DS status is a CATEGORY, not a state — plain text, no badge.
-    { key: 'threeDsStatus', header: '3DS Status', getValue: (r) => r.threeDsStatus, width: 132, render: (r) => r.threeDsStatus },
+    beamCells.text({ id: 'threeDsStatus', header: '3DS Status', accessor: (r) => r.threeDsStatus, width: 132 }),
   ];
 
   // Page-composed field twins — mirror official TableFilters' renderFilter (text / dateTime / select) EXACTLY
@@ -876,35 +876,37 @@ export function TransactionsPage() {
         </Paper>
       </Box>
 
-      <Table
+      <TableNext
         columns={columns}
-        rows={rows}
+        // Server-shaped: the Table renders the page it's given (useClientPagination slices the filtered set).
+        data={pageRows}
         getRowId={(r) => r.id}
-        paginated
-        // Pagination is owned by useTableFilters (URL source of truth, coexisting with filter params). The
-        // controller is 1-based; converted to the Table's 0-based `pagination`/`onPaginationChange` here.
-        pagination={tablePagination}
-        onPaginationChange={onTablePaginationChange}
+        // Pagination is owned by useTableFilters (URL source of truth). The port takes the 1-based controller
+        // directly (no more 0-based↔1-based seam) plus totalCount (the port never slices).
+        pagination={pagination}
+        totalCount={totalCount}
         // Sticky chrome — the header bucket pins to the top, the footer to the bottom, the page owns the
         // scroll. NOT milestone-gated (layout is baseline UX). The Stack's stickyChromeGapSx + the shell's
-        // main:has() contract are already in place and activate off this grid's data-beam-sticky-chrome.
+        // main:has() contract activate off this grid's data-beam-sticky-chrome.
         stickyChrome
         // Pagination-at-500 (v1.2+, Ruslan's feedback): heavy page sizes + jump-to-page are opt-in and
-        // milestone-gated. v1.0/v1.1 keep the organism's light default ([5,10,25]); default size stays
-        // 10 so the severity story leads page one.
+        // milestone-gated. v1.0/v1.1 keep the light default; default size stays 10 so the severity story
+        // leads page one.
         pageSizeOptions={caps.paginationAt500 ? [10, 25, 50, 100, 250, 500] : undefined}
         jumpToPage={caps.paginationAt500}
-        // MILESTONE GATE — existence, not disablement. selection (checkboxes + bulk strip) is v1.1+;
-        // the row kebab (rowActions: Complete/Decline + per-row Export folded in) is Beyond-only; the
-        // column manager is v1.2+. Beyond = every cap true = today's full behavior.
-        selectable={caps.selection}
-        // Severity accent — failed rows get a leading danger bar (redundant reinforcement of the
-        // Status chip; the chip names, the accent locates). Grammar spatial-accents note.
+        // Severity accent — failed rows get a leading danger bar (redundant reinforcement of the Status
+        // chip; the chip names, the accent locates). Grammar spatial-accents note.
         rowAccent={(r) => (r.status === 'failed' ? 'danger' : undefined)}
+        // MILESTONE GATE — existence, not disablement. selection (checkboxes + bulk strip) is v1.1+ and is
+        // DRIVEN BY bulkActions in the port (passing it enables the rail checkboxes); the row kebab
+        // (actionRail.menu: Complete/Decline + Export ▸ submenu) is Beyond-only; expand (the timeline) is
+        // always on; the column manager is v1.2+. Beyond = every cap true = today's full behavior.
         bulkActions={caps.selection ? bulkActions : undefined}
         onBulkAction={caps.selection ? onBulkAction : undefined}
-        rowActions={caps.actions ? rowActions : undefined}
-        renderExpanded={(r) => <PaymentTimeline events={r.events} />}
+        actionRail={{
+          expand: (r) => <PaymentTimeline events={r.events} />,
+          ...(caps.actions ? { menu: menuItems } : {}),
+        }}
         emptyMessage="No transactions match these filters."
         // Column manager (bullet 3, v1.2+). Catalog = the bullet-1 columns with no data source yet —
         // shown in the manager disabled/"awaiting data" (option b). Payment Method Details is excluded:
