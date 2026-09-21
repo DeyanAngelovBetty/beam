@@ -697,19 +697,25 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // caps text centres in the 44 rather than adding to it. (Body rows carry their height on the data
           // TableRow in the organism, so the expanded/empty cells — which must grow or collapse — aren't
           // pinned to 44 here.)
+          // `background-image: none` on EVERY cell (head + body, rail included) — MUI auto-generates
+          // `--mui-overlays-*` vars in dark schemes and official Beam's `Table.styles.ts` consumes them as a
+          // cell `backgroundImage` (its dark-elevation language). We do NOT speak it: the overlay tint stays
+          // DEAD estate-wide, no exceptions. The `&&&` bump (0,3,0) wins over that file's Paper-sx descendant
+          // rule (`.css-paper .MuiTableCell-head`, 0,2,0) on specificity WITHOUT editing it (it stays
+          // official-pure) — the §6(a) theme-layer pattern, like body density. Per-instance rail hover/
+          // selected `backgroundImage` layers are `sx` at equal specificity + later source order, so they
+          // still win where they apply. Pre-protects the 18 remaining consumer migrations too.
+          root: { '&&&': { backgroundImage: 'none' } },
           head: {
             ...meta, height: FIELD_TWIN_HEIGHT, paddingTop: 0, paddingBottom: 0,
-            // Header cells are TRANSPARENT under the Beam theme. We do NOT speak MUI's dark-elevation
-            // overlay language: MUI auto-generates `--mui-overlays-*` vars in dark schemes, and official
-            // Beam's `Table.styles.ts` consumes them as the head `backgroundImage` (paper fill + overlay
-            // tint) — that's THEIR elevation language, not ours. This neutralises it at the THEME layer
-            // (the §6(a) pattern, like body density) so the port's Table.styles.ts stays OFFICIAL-PURE
-            // (unedited). The `&&&` bump (0,3,0) wins over that file's Paper-sx descendant rule
-            // (`.css-paper .MuiTableCell-head`, 0,2,0) on specificity alone. The header's paint mechanism
-            // is the sticky clone's stuck-gated backdrop (untouched Beam machinery); a scrolled real thead
-            // now matches the clone. Also pre-protects the 18 remaining consumer migrations from
-            // paper-tinted headers.
-            '&&&': { backgroundColor: 'transparent', backgroundImage: 'none' },
+            // Header cells are TRANSPARENT under the Beam theme (they show the card/band behind them) —
+            // EXCEPT the pinned action-rail cell, which keeps its DELIBERATE opaque backing so data columns
+            // can't show through as it sticks under horizontal scroll. The rail's backing IS the band it
+            // sits in (the card paper — matched paper-on-paper, exactly how the organism Table solved it;
+            // not a lazy fallback). Both rail variants are excluded: `.beam-rail` (sticky) keeps
+            // `railStickySx`'s `background.paper`, `.table-actionRailCell` (official non-sticky) keeps
+            // `actionRailCell`'s. The header's stuck paint is the sticky clone's backdrop (untouched).
+            '&&&:not(.beam-rail):not(.table-actionRailCell)': { backgroundColor: 'transparent' },
           },
           footer: { ...meta },
         },

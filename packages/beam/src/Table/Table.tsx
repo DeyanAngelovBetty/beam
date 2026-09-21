@@ -1332,8 +1332,11 @@ export function Table<Row>({
             <TableRow ref={theadRowRef}>
               {railEnabled && (
                 // Header sits above the body rail cells if stickyHeader is ever
-                // enabled, and above its own row's data cells now.
-                <TableCell sx={{ ...railStickySx, zIndex: Z_RAIL_HEADER }}>
+                // enabled, and above its own row's data cells now. `beam-rail` (matching the body rail cell)
+                // is the CSS contract that keeps its DELIBERATE opaque backing under the estate-wide
+                // transparent-head theme rule (createBeamTheme MuiTableCell.head) — else a sticky-left rail
+                // would let data columns show through on horizontal scroll. (Wave 2 2b/7.)
+                <TableCell className="beam-rail" sx={{ ...railStickySx, zIndex: Z_RAIL_HEADER }}>
                   {selectable && (
                     <Checkbox
                       checked={table.getIsAllRowsSelected()}
