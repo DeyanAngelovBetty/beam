@@ -96,35 +96,33 @@ export function getScrollParent(el: HTMLElement | null): HTMLElement | null {
  * by the ancestor wrapper's `data-overflow-start`. Applied only under stickyChrome; the official-subset path
  * keeps official's `actionRailCell`.
  */
-export const railStickySx = (leading: boolean) => {
-  const overflowAttr = leading ? 'data-overflow-start' : 'data-overflow-end';
-  const scrollState = leading ? 'inline-start' : 'inline-end';
-  return {
-    position: 'sticky' as const,
-    [leading ? 'left' : 'right']: 0,
-    ...(leading ? { pl: 0.5 } : { pr: 0.5 }),
-    width: '1%',
-    verticalAlign: 'middle',
-    // Sit at the row datum: zero the block padding so the rail cell never grows the row (the controls fit
-    // inside FIELD_TWIN_HEIGHT). The header row has no per-row density sx, so the rail cell must zero its own.
-    paddingTop: 0,
-    paddingBottom: 0,
-    backgroundColor: 'background.paper',
-    // Divider on the rail's INNER edge (right for leading, left for trailing); gradient fading AWAY from the
-    // content it occludes. Both fade in while content scrolls under that edge (data-overflow / scroll-state).
-    '&::before': {
-      content: '""', position: 'absolute', [leading ? 'right' : 'left']: 0, top: 0, bottom: 0, width: '1px',
-      backgroundColor: 'divider', opacity: 0, transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
-    },
-    '&::after': {
-      content: '""', position: 'absolute', [leading ? 'left' : 'right']: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
-      background: `linear-gradient(to ${leading ? 'right' : 'left'}, ${EDGE_TINT}, transparent)`, opacity: 0,
-      transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
-    },
-    [`@container scroll-state(scrollable: ${scrollState})`]: { '&::before': { opacity: 1 }, '&::after': { opacity: 1 } },
-    [`[${overflowAttr}="true"] &::before`]: { opacity: 1 },
-    [`[${overflowAttr}="true"] &::after`]: { opacity: 1 },
-  };
+// The rail is ALWAYS leading (official's placement; the estate bans a trailing control rail — BEAM.md §6),
+// so this pins `left: 0`. Two edge layers appear together while content scrolls under the rail's RIGHT edge:
+// a crisp 1px `divider` (::before) and a soft EDGE_TINT gradient (::after) fading rightward. Applied only
+// under stickyChrome; the official-subset path keeps official's `actionRailCell`.
+export const railStickySx = {
+  position: 'sticky' as const,
+  left: 0,
+  pl: 0.5,
+  width: '1%',
+  verticalAlign: 'middle',
+  // Sit at the row datum: zero the block padding so the rail cell never grows the row (the controls fit
+  // inside FIELD_TWIN_HEIGHT). The header row has no per-row density sx, so the rail cell must zero its own.
+  paddingTop: 0,
+  paddingBottom: 0,
+  backgroundColor: 'background.paper',
+  '&::before': {
+    content: '""', position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px',
+    backgroundColor: 'divider', opacity: 0, transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
+  },
+  '&::after': {
+    content: '""', position: 'absolute', left: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
+    background: `linear-gradient(to right, ${EDGE_TINT}, transparent)`, opacity: 0,
+    transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
+  },
+  '@container scroll-state(scrollable: inline-start)': { '&::before': { opacity: 1 }, '&::after': { opacity: 1 } },
+  '[data-overflow-start="true"] &::before': { opacity: 1 },
+  '[data-overflow-start="true"] &::after': { opacity: 1 },
 };
 
 export const containerTypeScrollState = { containerType: 'scroll-state' as 'normal' };

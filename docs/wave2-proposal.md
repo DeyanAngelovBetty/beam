@@ -353,6 +353,10 @@ the official-subset path stays byte-identical:
      vs official's `actionRailCell` box-shadow. Evaluate then for lane-style vs theme placement.
   3. **100cqw expanded-panel pinning** — keeps the expanded row pinned to the visible width during horizontal
      scroll. Evaluate then for lane-style vs theme placement.
+  4. **Heavier expanded-row cue (2b/8)** — the organism brackets an open row with a 2px top border on the
+     data row + a 3px bottom border on the detail row; official's cue is the light 1px (`expandCell`,
+     untouched). Restored sticky-gated so a migrated page reads as today; evaluate then for lane-style vs
+     theme placement.
 Each is marked `PARITY DUPLICATION` in-code with a pointer here. Duplication is a tracked temporary with a
 named exit (this task), never silent permanence.
 

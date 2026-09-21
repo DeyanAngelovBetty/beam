@@ -112,7 +112,6 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     variant,
     actionRail,
     expandAll = true,
-    railPosition = 'leading',
     rowSelection: rowSelectionProp,
     onRowSelectionChange: onRowSelectionChangeProp,
     stickyChrome,
@@ -160,7 +159,6 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   // Selection is on when the caller passes actionRail.select OR the bulkActions lane (which drives it).
   const railSelect = actionRail?.select ?? (bulkActions ? { onSelect: () => undefined, onSelectAll: () => undefined } : undefined);
   const hasRail = Boolean(expand || menu || railSelect || rowAccent);
-  const railLeading = railPosition === 'leading';
 
   // Column manager (lane) — adapt the raw ColumnDefs to the (BeamColumn-shaped) useColumnManager input.
   const managerInput = useMemo(
@@ -199,19 +197,21 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
       enableSorting: false,
       enableHiding: false,
     };
-    return railLeading ? [railCol, ...base] : [...base, railCol];
-  }, [columns, expand, expandAll, menu, railSelect, rowAccent, hasRail, railLeading]);
+    // Rail is ALWAYS leading — official's placement (beam-alex @ b40e815 composes `[railColumn, ...columns]`);
+    // the estate bans a trailing control rail (BEAM.md §6). Not a prop.
+    return [railCol, ...base];
+  }, [columns, expand, expandAll, menu, railSelect, rowAccent, hasRail]);
 
-  // Column order MUST place the rail deterministically at `railPosition` — never let TanStack append the
-  // unlisted rail column to the end (which silently flips it trailing whenever the column manager is
-  // active). Normalize the manager's order to DATA columns, then inject the rail at the chosen edge. The
-  // header, body, AND the sticky clone all read this one order → a placement disagreement is impossible.
+  // Column order MUST keep the rail LEADING — never let TanStack append the unlisted rail column to the end
+  // (which silently flipped it trailing whenever the column manager was active). Normalize the manager's
+  // order to DATA columns, then inject the rail at the front. The header, body, AND the sticky clone all read
+  // this one order → the rail can't drift.
   const dataColIds = useMemo(() => (columns as ColumnDef<unknown, unknown>[]).map((cd, i) => colId(cd, i)), [columns]);
   const effectiveColumnOrder = useMemo(() => {
     if (!cm.enabled) return undefined;
     const dataOrder = (cm.columnOrder.length ? cm.columnOrder : dataColIds).filter((id) => id !== ACTION_RAIL_ID);
-    return railLeading ? [ACTION_RAIL_ID, ...dataOrder] : [...dataOrder, ACTION_RAIL_ID];
-  }, [cm.enabled, cm.columnOrder, dataColIds, railLeading]);
+    return [ACTION_RAIL_ID, ...dataOrder];
+  }, [cm.enabled, cm.columnOrder, dataColIds]);
 
   const table = useReactTable<TData>({
     data,
@@ -343,7 +343,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     if (target?.visible && visibleCount <= 1) return; // keep ≥1 visible
     table.getColumn(id)?.toggleVisibility(); // routes through cm.onColumnVisibilityChange
   }
-  // Store the DATA order only — the rail is re-injected at `railPosition` by `effectiveColumnOrder`.
+  // Store the DATA order only — the rail is re-injected leading by `effectiveColumnOrder`.
   function moveColumn(id: string, dir: 'up' | 'down') {
     const order = managerColumns.map((c) => c.id);
     const from = order.indexOf(id);
@@ -360,8 +360,8 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   }
 
   // ── Sticky sub-elements (built only when effectiveSticky) ────────────────────────────────────────
-  // The rail's ACTUAL index in the visible order (leading = 0, trailing = last) — the clone overlay reads
-  // it, so clone + body place the rail from the one same source.
+  // The rail's index in the visible order — always 0 (leading), but read live so the clone overlay's width
+  // tracks the same measured column as the body rail.
   const railIndex = headerCells.findIndex((h) => h.column.id === ACTION_RAIL_ID);
   const cloneEl = effectiveSticky ? (
     <Box
@@ -428,14 +428,14 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
         })}
       </Box>
       {hasRail && (
-        // STATIC rail overlay — fixed at the clone's rail edge exactly like the body's sticky rail (leading
-        // → left, trailing → right), derived from `railLeading` + `railIndex` so it can't diverge from the
-        // body. Mirrors the real header rail's select-all (pointer-only, aria-hidden) + the stuck-edge dressing.
+        // STATIC rail overlay — fixed at the clone's LEFT (the rail is always leading), exactly like the body's
+        // sticky rail; width tracks the measured rail column (railIndex). Mirrors the real header rail's
+        // select-all (pointer-only, aria-hidden) + the stuck-left edge dressing.
         <Box
           aria-hidden
           sx={{
             position: 'absolute',
-            [railLeading ? 'left' : 'right']: 0,
+            left: 0,
             top: 0,
             bottom: 0,
             width: cloneWidths[railIndex] ?? 0,
@@ -443,18 +443,18 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
             bgcolor: 'background.paper',
             display: 'flex',
             alignItems: 'center',
-            ...(railLeading ? { pl: 0.5 } : { pr: 0.5 }),
+            pl: 0.5,
             '&::before': {
-              content: '""', position: 'absolute', [railLeading ? 'right' : 'left']: 0, top: 0, bottom: 0, width: '1px',
+              content: '""', position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px',
               backgroundColor: 'divider', opacity: 0, transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
             },
             '&::after': {
-              content: '""', position: 'absolute', [railLeading ? 'left' : 'right']: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
-              background: `linear-gradient(to ${railLeading ? 'right' : 'left'}, ${EDGE_TINT}, transparent)`, opacity: 0,
+              content: '""', position: 'absolute', left: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
+              background: `linear-gradient(to right, ${EDGE_TINT}, transparent)`, opacity: 0,
               transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
             },
-            [`[${railLeading ? 'data-overflow-start' : 'data-overflow-end'}="true"] &::before`]: { opacity: 1 },
-            [`[${railLeading ? 'data-overflow-start' : 'data-overflow-end'}="true"] &::after`]: { opacity: 1 },
+            '[data-overflow-start="true"] &::before': { opacity: 1 },
+            '[data-overflow-start="true"] &::after': { opacity: 1 },
           }}
         >
           {railSelect && (
@@ -646,7 +646,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                         align={meta.align}
                         className={isRail ? (sticky ? 'beam-rail' : 'table-actionRailCell') : undefined}
                         sx={{
-                          ...(isRail ? (sticky ? { ...railStickySx(railLeading), zIndex: Z_RAIL_HEADER } : (styles.actionRailHeader as object)) : {}),
+                          ...(isRail ? (sticky ? { ...railStickySx, zIndex: Z_RAIL_HEADER } : (styles.actionRailHeader as object)) : {}),
                           ...(meta.width ? { width: meta.width } : {}),
                         }}
                       >
@@ -679,7 +679,15 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                     onMouseEnter={onRowHover ? () => onRowHover(row.original) : undefined}
                     onMouseLeave={onRowLeave ? () => onRowLeave(row.original) : undefined}
-                    sx={{ ...(styles.dataRow(Boolean(onRowClick)) as object), ...(stickyRowSx ?? {}) }}
+                    sx={{
+                      ...(styles.dataRow(Boolean(onRowClick)) as object),
+                      ...(stickyRowSx ?? {}),
+                      // PARITY (sticky) — the organism Table's heavier expanded-row cue: a 2px top border on
+                      // the data row (paired with the 3px bottom on the detail cell) brackets the open row.
+                      // Official's cue is the light 1px (Table.styles.ts, untouched); this restores today's.
+                      // PARITY DUPLICATION → density-consolidation follow-up (wave2 §6(a)).
+                      ...(sticky && row.getIsExpanded() ? { borderTop: 2, borderColor: 'divider' } : {}),
+                    }}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const isRail = cell.column.id === ACTION_RAIL_ID;
@@ -691,7 +699,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                           className={isRail ? (sticky ? 'beam-rail' : 'table-actionRailCell') : undefined}
                           onClick={isRail && sticky ? (e) => e.stopPropagation() : undefined}
                           sx={{
-                            ...(isRail ? (sticky ? { ...railStickySx(railLeading), zIndex: Z_RAIL_BODY, whiteSpace: 'nowrap' } : (styles.actionRailCell as object)) : {}),
+                            ...(isRail ? (sticky ? { ...railStickySx, zIndex: Z_RAIL_BODY, whiteSpace: 'nowrap' } : (styles.actionRailCell as object)) : {}),
                             ...(meta.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : {}),
                           }}
                         >
@@ -702,7 +710,15 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                   </TableRow>
                   {expand && (
                     <TableRow className="table-detailsRow" selected={row.getIsSelected()}>
-                      <TableCell colSpan={row.getVisibleCells().length} sx={styles.expandCell(row.getIsExpanded())}>
+                      <TableCell
+                        colSpan={row.getVisibleCells().length}
+                        sx={{
+                          ...(styles.expandCell(row.getIsExpanded()) as object),
+                          // PARITY (sticky) — the organism's 3px bottom border on the open detail row (the
+                          // other half of the bracket); official keeps the 1px from expandCell above.
+                          ...(sticky && row.getIsExpanded() ? { borderBottom: 3, borderColor: 'divider' } : {}),
+                        }}
+                      >
                         <Collapse in={row.getIsExpanded()} timeout="auto" unmountOnExit>
                           {/* 100cqw sticky panel (organism parity; sticky only) so the expanded content stays
                               pinned to the visible width during horizontal scroll. Absent → plain wrapper. */}

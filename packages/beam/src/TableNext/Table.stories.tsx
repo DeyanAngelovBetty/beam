@@ -178,7 +178,7 @@ const benchColumns: ColumnDef<BenchRow, unknown>[] = [
  * The **Filters** panel above the grid scales + fades + lifts as it slides under the bucket (a `view()` exit
  * timeline, inset by the measured bucket height). Reduced-motion: the exit stops. Non-Chrome: no exit.
  */
-function StickyBench({ fancyBackdrop = false, railPosition = 'leading' }: { fancyBackdrop?: boolean; railPosition?: 'leading' | 'trailing' }) {
+function StickyBench({ fancyBackdrop = false }: { fancyBackdrop?: boolean }) {
   // The port is server-shaped; the demo adapter slices. Default 500, small end (10) included so the INERT
   // state is demonstrable (short grid = zero change). Internal controller (the bench has no URL sync).
   const { pageRows, pagination, totalCount } = useClientPagination(benchRows, { defaultPageSize: 500 });
@@ -216,7 +216,9 @@ function StickyBench({ fancyBackdrop = false, railPosition = 'leading' }: { fanc
           pageSizeOptions={[10, 50, 100, 250, 500]}
           jumpToPage
           stickyChrome
-          railPosition={railPosition}
+          // Estate pattern: the header expand-ALL caret is BANNED in estate UX (BEAM.md §6) — pass false, as
+          // every real page does (Gaspar too). Only official-subset fidelity stories keep the caret.
+          expandAll={false}
           // Bulk actions mirror Gaspar's shape (Export · Complete · Decline) so the bucket exercises its real
           // composition; passing bulkActions also drives the rail selection checkboxes (the port's model).
           bulkActions={(selectedRows) => {
@@ -254,18 +256,6 @@ export const StickyChromeBench: Story = {
 export const StickyChromeFancyBackdrop: Story = {
   parameters: { layout: 'fullscreen' },
   render: () => <StickyBench fancyBackdrop />,
-};
-
-/**
- * The TRAILING-rail mirror (`railPosition="trailing"`) — the same bench with the action rail pinned to the
- * RIGHT edge. Verifies the lane both ways: the rail sticks right, its EDGE_TINT affordance fades in on the
- * LEFT edge under horizontal scroll (data-overflow-end), and the sticky clone's rail overlay agrees with the
- * body (both trailing) — derived from the one `railPosition` source, so a header/body/clone disagreement is
- * structurally impossible. (Default is 'leading', official's placement; this exercises the mirror.)
- */
-export const StickyChromeRailTrailing: Story = {
-  parameters: { layout: 'fullscreen' },
-  render: () => <StickyBench railPosition="trailing" />,
 };
 
 /**

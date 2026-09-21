@@ -241,6 +241,16 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      header and the filter panel in the visual stack, so it is the quietest tier.
    This is why the port's bulk strip (`TableNext`) renders small text buttons, and Gaspar's page-composed
    FILTER is outlined while its bulk strip is flat. *(Ruling 2026-09-21, from the 2b Gaspar eyeball.)*
+10. **The control rail: always leading, expand-all banned.** The `Table`'s action rail (expand caret /
+    select / kebab) is **always the leading (pinned-first) column — never trailing** (official's placement:
+    beam-alex composes `[railColumn, ...columns]`, `actionRailCell` pins `left: 0`). It is not a prop; the
+    injected rail is kept leading even when the column manager reorders the data columns (the manager's order
+    is normalized to data columns and the rail re-injected at the front). The **header-rail expand-ALL caret
+    is banned in estate UX** — every real page and pattern story passes `expandAll={false}`; the prop
+    defaults to `true` only so official-subset fidelity stories stay byte-identical to official. Where the
+    caret does render (those fidelity stories), its geometry matches the row expand carets (same
+    `TableExpand` — small icon). *(Design ruling 2026-09-21; upstream feedback candidate — see
+    docs/beam-alignment.md.)*
 
 ## 7. Figma ↔ code sync mechanics
 

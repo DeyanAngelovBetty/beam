@@ -914,11 +914,9 @@ export function TransactionsPage() {
         // Controlled selection so it spans pages (server-shaped). Only wired when selection is enabled.
         rowSelection={caps.selection ? selection : undefined}
         onRowSelectionChange={caps.selection ? setSelection : undefined}
-        // Parity: today's header rail had no expand-ALL caret (official-subset keeps it, default true).
+        // Estate ban: the header-rail expand-ALL affordance is banned in estate UX (BEAM.md §6). The rail is
+        // always leading (official's placement) — not a prop.
         expandAll={false}
-        // Estate convention: chevron/select/kebab LEAD (same as the CJ pages). Also the port default, but
-        // explicit here — the single source the header, body, and sticky clone all derive placement from.
-        railPosition="leading"
         actionRail={{
           expand: (r) => <PaymentTimeline events={r.events} />,
           ...(caps.actions ? { menu: menuItems } : {}),
