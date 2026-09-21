@@ -99,6 +99,14 @@ export type TableProps<TData extends RowData> = Pick<TableOptions<TData>, 'data'
   /** Optional per-row expand / select / menu controls (the leading action-rail column). */
   actionRail?: TableActionRail<TData>;
   /**
+   * Which edge the action-rail column pins to. DEFAULT `'leading'` — official's placement (the rail is the
+   * pinned-first column; `actionRailCell` sticks `left: 0`). `'trailing'` mirrors it to the right edge. The
+   * SINGLE SOURCE of rail placement: the real header, the body, the column-manager order injection, AND the
+   * sticky header clone all derive from this — so a header/body/clone disagreement is structurally
+   * impossible. (Gaspar passes `'leading'` explicitly, the estate convention: chevron/select/kebab lead.)
+   */
+  railPosition?: 'leading' | 'trailing';
+  /**
    * Show the header rail's expand-ALL caret (official). DEFAULT `true` — official-subset keeps official's
    * caret. A consumer matching a pre-port surface that had no expand-all (Gaspar 2b) passes `false` for
    * parity; it's a candidate deliberate-enable later (good UX, wrong moment). Only affects the HEADER caret;

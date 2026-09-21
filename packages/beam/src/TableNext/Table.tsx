@@ -112,6 +112,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     variant,
     actionRail,
     expandAll = true,
+    railPosition = 'leading',
     rowSelection: rowSelectionProp,
     onRowSelectionChange: onRowSelectionChangeProp,
     stickyChrome,
@@ -159,6 +160,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   // Selection is on when the caller passes actionRail.select OR the bulkActions lane (which drives it).
   const railSelect = actionRail?.select ?? (bulkActions ? { onSelect: () => undefined, onSelectAll: () => undefined } : undefined);
   const hasRail = Boolean(expand || menu || railSelect || rowAccent);
+  const railLeading = railPosition === 'leading';
 
   // Column manager (lane) — adapt the raw ColumnDefs to the (BeamColumn-shaped) useColumnManager input.
   const managerInput = useMemo(
@@ -197,8 +199,19 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
       enableSorting: false,
       enableHiding: false,
     };
-    return [railCol, ...base];
-  }, [columns, expand, expandAll, menu, railSelect, rowAccent, hasRail]);
+    return railLeading ? [railCol, ...base] : [...base, railCol];
+  }, [columns, expand, expandAll, menu, railSelect, rowAccent, hasRail, railLeading]);
+
+  // Column order MUST place the rail deterministically at `railPosition` — never let TanStack append the
+  // unlisted rail column to the end (which silently flips it trailing whenever the column manager is
+  // active). Normalize the manager's order to DATA columns, then inject the rail at the chosen edge. The
+  // header, body, AND the sticky clone all read this one order → a placement disagreement is impossible.
+  const dataColIds = useMemo(() => (columns as ColumnDef<unknown, unknown>[]).map((cd, i) => colId(cd, i)), [columns]);
+  const effectiveColumnOrder = useMemo(() => {
+    if (!cm.enabled) return undefined;
+    const dataOrder = (cm.columnOrder.length ? cm.columnOrder : dataColIds).filter((id) => id !== ACTION_RAIL_ID);
+    return railLeading ? [ACTION_RAIL_ID, ...dataOrder] : [...dataOrder, ACTION_RAIL_ID];
+  }, [cm.enabled, cm.columnOrder, dataColIds, railLeading]);
 
   const table = useReactTable<TData>({
     data,
@@ -216,7 +229,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
       ...(sortable ? { sorting } : {}),
       ...(searchable ? { globalFilter } : {}),
       rowSelection,
-      ...(cm.enabled ? { columnOrder: cm.columnOrder, columnVisibility: cm.columnVisibility } : {}),
+      ...(cm.enabled ? { columnOrder: effectiveColumnOrder, columnVisibility: cm.columnVisibility } : {}),
     },
     ...(sortable ? { onSortingChange: setSorting } : {}),
     onRowSelectionChange: setRowSelection,
@@ -330,23 +343,26 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     if (target?.visible && visibleCount <= 1) return; // keep ≥1 visible
     table.getColumn(id)?.toggleVisibility(); // routes through cm.onColumnVisibilityChange
   }
+  // Store the DATA order only — the rail is re-injected at `railPosition` by `effectiveColumnOrder`.
   function moveColumn(id: string, dir: 'up' | 'down') {
     const order = managerColumns.map((c) => c.id);
     const from = order.indexOf(id);
     const to = dir === 'up' ? from - 1 : from + 1;
     if (to < 0 || to >= order.length) return;
     order.splice(to, 0, order.splice(from, 1)[0]);
-    cm.onColumnOrderChange([ACTION_RAIL_ID, ...order]);
+    cm.onColumnOrderChange(order);
   }
   function reorderColumn(id: string, to: number) {
     const order = managerColumns.map((c) => c.id);
     const from = order.indexOf(id);
     order.splice(to, 0, order.splice(from, 1)[0]);
-    cm.onColumnOrderChange([ACTION_RAIL_ID, ...order]);
+    cm.onColumnOrderChange(order);
   }
 
   // ── Sticky sub-elements (built only when effectiveSticky) ────────────────────────────────────────
-  const railOffset = hasRail ? 1 : 0;
+  // The rail's ACTUAL index in the visible order (leading = 0, trailing = last) — the clone overlay reads
+  // it, so clone + body place the rail from the one same source.
+  const railIndex = headerCells.findIndex((h) => h.column.id === ACTION_RAIL_ID);
   const cloneEl = effectiveSticky ? (
     <Box
       className="beam-header-clone"
@@ -412,32 +428,33 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
         })}
       </Box>
       {hasRail && (
-        // STATIC rail overlay — fixed at the clone's left exactly like the body's sticky rail. Mirrors the
-        // real header rail's select-all (pointer-only, aria-hidden) + the body rail's stuck-left dressing.
+        // STATIC rail overlay — fixed at the clone's rail edge exactly like the body's sticky rail (leading
+        // → left, trailing → right), derived from `railLeading` + `railIndex` so it can't diverge from the
+        // body. Mirrors the real header rail's select-all (pointer-only, aria-hidden) + the stuck-edge dressing.
         <Box
           aria-hidden
           sx={{
             position: 'absolute',
-            left: 0,
+            [railLeading ? 'left' : 'right']: 0,
             top: 0,
             bottom: 0,
-            width: cloneWidths[0] ?? 0,
+            width: cloneWidths[railIndex] ?? 0,
             zIndex: Z_CLONE_RAIL,
             bgcolor: 'background.paper',
             display: 'flex',
             alignItems: 'center',
-            pl: 0.5,
+            ...(railLeading ? { pl: 0.5 } : { pr: 0.5 }),
             '&::before': {
-              content: '""', position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px',
+              content: '""', position: 'absolute', [railLeading ? 'right' : 'left']: 0, top: 0, bottom: 0, width: '1px',
               backgroundColor: 'divider', opacity: 0, transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
             },
             '&::after': {
-              content: '""', position: 'absolute', left: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
-              background: `linear-gradient(to right, ${EDGE_TINT}, transparent)`, opacity: 0,
+              content: '""', position: 'absolute', [railLeading ? 'left' : 'right']: '100%', top: 0, bottom: 0, width: EDGE_WIDTH,
+              background: `linear-gradient(to ${railLeading ? 'right' : 'left'}, ${EDGE_TINT}, transparent)`, opacity: 0,
               transition: 'opacity var(--beam-motion-quick)', pointerEvents: 'none',
             },
-            '[data-overflow-start="true"] &::before': { opacity: 1 },
-            '[data-overflow-start="true"] &::after': { opacity: 1 },
+            [`[${railLeading ? 'data-overflow-start' : 'data-overflow-end'}="true"] &::before`]: { opacity: 1 },
+            [`[${railLeading ? 'data-overflow-start' : 'data-overflow-end'}="true"] &::after`]: { opacity: 1 },
           }}
         >
           {railSelect && (
@@ -629,7 +646,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                         align={meta.align}
                         className={isRail ? (sticky ? 'beam-rail' : 'table-actionRailCell') : undefined}
                         sx={{
-                          ...(isRail ? (sticky ? { ...railStickySx, zIndex: Z_RAIL_HEADER } : (styles.actionRailHeader as object)) : {}),
+                          ...(isRail ? (sticky ? { ...railStickySx(railLeading), zIndex: Z_RAIL_HEADER } : (styles.actionRailHeader as object)) : {}),
                           ...(meta.width ? { width: meta.width } : {}),
                         }}
                       >
@@ -674,7 +691,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                           className={isRail ? (sticky ? 'beam-rail' : 'table-actionRailCell') : undefined}
                           onClick={isRail && sticky ? (e) => e.stopPropagation() : undefined}
                           sx={{
-                            ...(isRail ? (sticky ? { ...railStickySx, zIndex: Z_RAIL_BODY, whiteSpace: 'nowrap' } : (styles.actionRailCell as object)) : {}),
+                            ...(isRail ? (sticky ? { ...railStickySx(railLeading), zIndex: Z_RAIL_BODY, whiteSpace: 'nowrap' } : (styles.actionRailCell as object)) : {}),
                             ...(meta.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : {}),
                           }}
                         >

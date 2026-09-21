@@ -916,6 +916,9 @@ export function TransactionsPage() {
         onRowSelectionChange={caps.selection ? setSelection : undefined}
         // Parity: today's header rail had no expand-ALL caret (official-subset keeps it, default true).
         expandAll={false}
+        // Estate convention: chevron/select/kebab LEAD (same as the CJ pages). Also the port default, but
+        // explicit here — the single source the header, body, and sticky clone all derive placement from.
+        railPosition="leading"
         actionRail={{
           expand: (r) => <PaymentTimeline events={r.events} />,
           ...(caps.actions ? { menu: menuItems } : {}),
