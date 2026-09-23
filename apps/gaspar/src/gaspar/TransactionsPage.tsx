@@ -111,9 +111,12 @@ interface PaymentRow {
 /**
  * CATALOG — columns known but NOT built (no data source in the `payments` list response). Documented
  * here so bullet 3's column manager inherits the full conversation; nothing below renders. Do not fake.
- *   • Transaction Type      — MN concept; new API has only `direction`. Until Konstantin answers
- *                             (is Type subsumed by direction, or a richer enum coming?), direction IS
- *                             the type column.
+ *   • Transaction Type      — RESOLVED (terminology decision 2026-09-24, [SOURCE: confirm — meeting/design
+ *                             call]): "Transaction Type" is the USER-FACING LABEL for the `direction` field
+ *                             (Konstantin's question answered — direction IS the type column). So it is NO
+ *                             LONGER an awaiting-data catalog entry; it's the renamed `direction` column
+ *                             below. DISPLAY-ONLY — the field, filter key `direction`, and cr.* URL param
+ *                             are unchanged (old URLs keep deserializing).
  *   • Name on Card          — absent from payments AND payment-methods. Backend ask.
  *   • Payment Method Details— brand/last4/etc. → becomes the Phase B card cell (above), not a column.
  *   • ProcessedBy           — no field in response. Source unknown.
@@ -275,7 +278,8 @@ const ADDABLE_ORDER: Addable[] = ['threeDs', 'errorCode', 'amount', 'currency'];
 const ADDABLE_LABEL: Record<Addable, string> = { threeDs: '3DS status', errorCode: 'Error code', amount: 'Amount', currency: 'Currency' };
 const ADDABLE_KEYS: Record<Addable, OptionalKey[]> = { threeDs: ['threeDs'], errorCode: ['errorCode'], amount: ['amountMin', 'amountMax'], currency: ['currency'] };
 const KEY_ADDABLE: Record<OptionalKey, Addable> = { threeDs: 'threeDs', errorCode: 'errorCode', amountMin: 'amount', amountMax: 'amount', currency: 'currency' };
-const AWAITING_DATA_FIELDS = ['Transaction Type', 'Name on Card', 'ProcessedBy', 'Fraud Rules Matched'];
+// 'Transaction Type' dropped 2026-09-24 — it's now the `direction` filter's label, not an awaiting-data field.
+const AWAITING_DATA_FIELDS = ['Name on Card', 'ProcessedBy', 'Fraud Rules Matched'];
 
 const ERROR_CODE_NONE = '__none__'; // sentinel value for "rows with no error code"
 
@@ -464,7 +468,7 @@ const CSV_FIELDS: { header: string; get: (r: PaymentRow) => string | number }[] 
   { header: 'Created At', get: (r) => r.createdAt },
   { header: 'Last Updated', get: (r) => r.updatedAt },
   { header: 'Transaction ID', get: (r) => r.id },
-  { header: 'Direction', get: (r) => r.direction },
+  { header: 'Transaction Type', get: (r) => r.direction }, // user-facing CSV header (terminology 2026-09-24); field unchanged
   { header: 'Amount', get: (r) => r.amount.toFixed(2) },
   { header: 'Status', get: (r) => r.status },
   { header: 'Customer', get: (r) => r.customerId },
@@ -580,7 +584,7 @@ export function TransactionsPage() {
       { key: 'createdFrom', control: 'dateTime', label: 'Created from' },
       { key: 'createdTo', control: 'dateTime', label: 'Created to' },
       { key: 'status', control: 'select', label: 'Status', options: [{ label: 'All', value: '' }, ...STATUS_OPTIONS.map((s) => ({ label: s, value: s }))] },
-      { key: 'direction', control: 'select', label: 'Direction', options: [{ label: 'All', value: '' }, ...DIRECTION_OPTIONS.map((d) => ({ label: d, value: d }))] },
+      { key: 'direction', control: 'select', label: 'Transaction Type', options: [{ label: 'All', value: '' }, ...DIRECTION_OPTIONS.map((d) => ({ label: d, value: d }))] }, // label renamed 2026-09-24; key 'direction' (cr.* URL param) UNCHANGED
       { key: 'provider', control: 'select', label: 'Provider', options: [{ label: 'All', value: '' }, ...PROVIDER_OPTIONS.map((p) => ({ label: p, value: p }))] },
       ...activeOptional.map(opt),
     ];
@@ -708,8 +712,10 @@ export function TransactionsPage() {
     beamCells.timestamp({ id: 'createdAt', header: 'Created At', accessor: (r) => r.createdAt, format: (iso) => <TimestampCell iso={iso} />, width: 150 }),
     beamCells.timestamp({ id: 'updatedAt', header: 'Last Updated', accessor: (r) => r.updatedAt, format: (iso) => <TimestampCell iso={iso} />, width: 150 }),
     { id: 'id', header: 'Transaction ID', cell: ({ row }) => <TruncateCopyCell value={row.original.id} onCopied={onCopied} />, meta: { width: 168 } },
-    // Direction is a CATEGORY, not a state — plain text, no badge (grammar: semantic hues are for states only).
-    beamCells.text({ id: 'direction', header: 'Direction', accessor: (r) => r.direction, width: 124 }),
+    // "Transaction Type" (terminology 2026-09-24) = the user-facing label for the `direction` field. The
+    // column `id` stays 'direction' (column-manager key + persisted arrangements). A CATEGORY, not a state —
+    // plain text, no badge (grammar: semantic hues are for states only).
+    beamCells.text({ id: 'direction', header: 'Transaction Type', accessor: (r) => r.direction, width: 140 }),
     beamCells.number({ id: 'amount', header: 'Amount', accessor: (r) => r.amount, format: (n) => n.toFixed(2), width: 110 }),
     beamCells.badge({ id: 'status', header: 'Status', accessor: (r) => r.status, tier: (r) => statusTier(r.status), width: 132 }),
     beamCells.text({ id: 'customerId', header: 'Customer', accessor: (r) => r.customerId, width: 130 }),
@@ -930,7 +936,8 @@ export function TransactionsPage() {
             ? {
                 storageKey: 'gaspar.transactions',
                 catalog: [
-                  { id: 'transactionType', label: 'Transaction Type' },
+                  // 'Transaction Type' dropped 2026-09-24 — it's now the `direction` column's label (real,
+                  // rendered), not an awaiting-data catalog entry (would have double-listed otherwise).
                   { id: 'nameOnCard', label: 'Name on Card' },
                   { id: 'processedBy', label: 'ProcessedBy' },
                   { id: 'fraudRulesMatched', label: 'Fraud Rules Matched' },
