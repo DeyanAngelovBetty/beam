@@ -783,7 +783,6 @@ function BulkActionButton({ action, disabled, zeroSelection, batchHintId, onFire
         if ((action.confirm || action.destructive) && !window.confirm(`${action.label}?`)) return;
         onFire();
       }}
-      sx={disabled ? { opacity: 0.5 } : undefined}
     >
       {action.label}
     </Button>

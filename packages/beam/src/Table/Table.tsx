@@ -267,7 +267,6 @@ function RowActionBarItem({ action }: { action: BeamRowAction }) {
         if (action.options) setAnchor(e.currentTarget);
         else action.onSelect();
       }}
-      sx={action.disabled ? { opacity: 0.5 } : undefined}
     >
       {action.label}
     </Button>
@@ -369,7 +368,6 @@ function BulkActionButton({
         }
         onFire();
       }}
-      sx={{ opacity: disabled ? 0.5 : 1 }}
     >
       {action.label}
     </Button>

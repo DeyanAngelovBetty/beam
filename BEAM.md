@@ -250,6 +250,13 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      hard-code the fraction — compose off the constants so the seat holds if MUI's padding changes. Result:
      the bulk strip's EXPORT, the select-all, the row checkboxes, and the footer's "Manage columns" share
      one vertical (a ~0.2px bulk/footer delta is acceptable).
+   - **Disabled state = colourless (2026-09-24).** A CTA's **semantic colour signals AVAILABLE CAPABILITY**
+     — so it must LEAVE with the capability: a disabled DECLINE must NOT read red. Disabled controls take
+     the theme's **`action.disabled` grey**, no variant colour, **no opacity trick**. Enforced at the theme
+     (`MuiButton` greys both `.Mui-disabled` AND our tooltip-able `[aria-disabled="true"]`); the old-Table
+     `opacity: 0.5` disabled fade is retired. Enabled = full semantic colour arrives with the capability —
+     the grey→colour ignition IS the affordance. (The rail kebab/expand `0.4→1` hover dim is a SEPARATE
+     mechanism — not a disabled state — and is untouched.)
 10. **The control rail: always leading, expand-all banned.** The `Table`'s action rail (expand caret /
     select / kebab) is **always the leading (pinned-first) column — never trailing** (official's placement:
     beam-alex composes `[railColumn, ...columns]`, `actionRailCell` pins `left: 0`). It is not a prop; the

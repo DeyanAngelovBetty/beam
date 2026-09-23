@@ -748,6 +748,19 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       MuiDialog: {
         styleOverrides: { paper: ({ theme }) => ({ backgroundColor: (theme.vars ?? theme).palette.background.paper }) },
       },
+      // DISABLED CONTROLS CARRY NO SEMANTIC COLOUR (BEAM.md §6.9). A CTA's variant colour signals AVAILABLE
+      // CAPABILITY, so it must LEAVE with the capability — a disabled DECLINE must not read red. MUI already
+      // greys real `.Mui-disabled`; extend the SAME `action.disabled` to our `[aria-disabled="true"]` pattern
+      // (used in chrome bands where a real `disabled` would kill the "why it's disabled" tooltip), and NEVER
+      // fade with opacity. Enabled = full semantic colour arrives with the capability — the grey→colour
+      // ignition IS the affordance. Estate-wide; retires the old-Table `opacity: 0.5` disabled trick.
+      MuiButton: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            '&[aria-disabled="true"]': { color: (theme.vars ?? theme).palette.action.disabled },
+          }),
+        },
+      },
       // The `meta` category rule (detail-page §3): keys everywhere speak one
       // caps voice. One definition (theme/textStyles), several bindings.
       MuiTableCell: {
