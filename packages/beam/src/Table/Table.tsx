@@ -255,7 +255,10 @@ function RowActionBarItem({ action }: { action: BeamRowAction }) {
   const hasOptions = Boolean(action.options);
   const button = (
     <Button
-      variant="outlined"
+      // Expanded-panel actions are small TEXT/flat — an expansion is deeper scope than the chrome band
+      // above it, so it must not run louder (BEAM.md §6.9, loudness-descends-with-scope). Disabled inherits
+      // the colourless rule (theme MuiButton greys aria-disabled).
+      variant="text"
       size="small"
       color={action.destructive ? 'error' : 'primary'}
       aria-disabled={action.disabled || undefined}

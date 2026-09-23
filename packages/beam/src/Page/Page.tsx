@@ -91,11 +91,15 @@ export function BeamPage({ title, back, subtitle, action, secondaryActions }: Be
               // Ladder inside this context, bottom → top: underline ::after (z1) · halo (z2)
               // · gradient (z3).
               isolation: 'isolate',
-              // Reserved block space — CONSTANT GEOMETRY: the ::after is out of flow and this
-              // padding is fixed, so the scaleX reveal never shifts layout.
-              pb: 'calc(var(--beam-title-underline-weight) + 4px)',
-              // UNDERLINE (z1, bottom) — tucked BEHIND the glyphs (marker posture) by
-              // --beam-title-underline-offset. Anchored left, spanning the text box up to
+              // No reserved padding-bottom (2026-09-24): the ::after underline is out of flow and now
+              // anchors to the TEXT BLOCK's bottom (bottom: 0), so it needs no phantom shelf — the
+              // title→filters gap becomes honest content rhythm. The scaleX reveal is transform-only (out
+              // of flow), so dropping the padding doesn't shift layout.
+              // UNDERLINE (z1, bottom) — seated at the text block's bottom (was tucked behind the glyphs).
+              // The HALO's skip-ink carves the gap between the underline and the glyph edges (incl. Quicksand
+              // 300's p/y descenders), so `bottom: 0` clears them; if a face ever collides, offset by a
+              // COMPOSED minimum (e.g. a fraction of --beam-title-underline-weight), never a magic number.
+              // Anchored left, spanning the text box up to
               // --beam-title-underline-max: on a SINGLE line it hugs the title; on a WRAPPING
               // title it stops at the cap and DISSOLVES (the fade-to-background far end reads as
               // an accent, not a ruler across the whole block) instead of running the full
@@ -108,7 +112,7 @@ export function BeamPage({ title, back, subtitle, action, secondaryActions }: Be
                 left: 0,
                 width: '100%',
                 maxWidth: 'var(--beam-title-underline-max)',
-                bottom: 'var(--beam-title-underline-offset)',
+                bottom: 0,
                 zIndex: 1,
                 height: 'var(--beam-title-underline-weight)',
                 borderRadius: 'var(--beam-title-underline-weight)',

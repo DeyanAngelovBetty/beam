@@ -723,7 +723,11 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                               {menu && (
                                 <Box sx={styles.expandActionsWrapper}>
                                   {menu(row.original).map((menuItem) => (
-                                    <Button key={menuItem.id} variant="outlined" disabled={menuItem.disabled} startIcon={menuItem.icon} color={menuItem.destructive ? 'error' : 'primary'} onClick={menuItem.onSelect} size="small">
+                                    // Expanded-panel actions are small TEXT/flat — an expansion is DEEPER
+                                    // scope than the chrome band above it, so it must not run louder
+                                    // (BEAM.md §6.9, loudness-descends-with-scope). Disabled inherits the
+                                    // colourless rule (theme MuiButton).
+                                    <Button key={menuItem.id} variant="text" disabled={menuItem.disabled} startIcon={menuItem.icon} color={menuItem.destructive ? 'error' : 'primary'} onClick={menuItem.onSelect} size="small">
                                       {menuItem.label}
                                     </Button>
                                   ))}
