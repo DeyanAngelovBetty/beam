@@ -49,6 +49,14 @@ export interface AppShellProps {
   /** Logos (grammar §3). Falls back to the `title` wordmark when omitted. */
   brandMark?: BeamBrandMark;
 
+  /**
+   * Show the brand mark in the COLLAPSED brand strip (the floating hamburger row when the sidebar is
+   * closed). Default `true`. Gaspar sets `false` as a density compromise (CEO, 2026-09-23): the collapsed
+   * rail carries only the expand/collapse control, reclaiming the top band for content. The EXPANDED
+   * panel keeps its brand mark regardless. (See docs/shell-grammar.md.)
+   */
+  showCollapsedBrandMark?: boolean;
+
   // ---- State model (grammar §1) — controlled OR uncontrolled ----
   /** Controlled lock state. When set, the parent owns it (no persistence). */
   locked?: boolean;

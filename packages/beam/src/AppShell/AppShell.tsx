@@ -225,6 +225,7 @@ export function AppShell({
   navItems,
   children,
   brandMark,
+  showCollapsedBrandMark = true,
   locked,
   defaultLocked,
   onLockedChange,
@@ -568,9 +569,14 @@ export function AppShell({
             <MenuIcon />
           </IconButton>
         </Tooltip>
-        <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
-          {colorMark}
-        </Box>
+        {/* Collapsed-strip brand mark — hidden when `showCollapsedBrandMark` is false (Gaspar density
+            compromise, CEO 2026-09-23): the collapsed rail shows only the expand/collapse control, so the
+            top band is reclaimed for content + the sticky chrome. Expanded panel keeps its mark. */}
+        {showCollapsedBrandMark && (
+          <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
+            {colorMark}
+          </Box>
+        )}
       </Stack>
 
       {/* Left-edge hover zone opens the peek (wide, closed). */}

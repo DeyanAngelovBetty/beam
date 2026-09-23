@@ -100,6 +100,14 @@ its closed state must still say which product it is. Therefore:
 - Logo variants are surface-dependent (color on content-adjacent chrome, mono
   for the ghost) and are supplied per product by the consuming app.
 
+**DECISION 2026-09-23 — Gaspar density compromise (CEO): closed-state mark is opt-OUT.** Gaspar drops the
+color logo from the CLOSED brand strip (`AppShell showCollapsedBrandMark={false}`); the strip carries only
+the hamburger. **Trade-off named:** the "which product am I" cue is forfeited in the closed state (the
+doctrine above) IN EXCHANGE FOR the reclaimed top band — the chrome and the toggle share one row, which is
+where the sticky-geometry rework (§ below / Table-notes) takes its vertical gain. The mark still appears
+the instant the sidebar is peeked or locked, so the loss is only while closed. Scoped to Gaspar via the
+prop (default stays `true` — the estate keeps the doctrine); revisit if the CEO/Vasco review reverses it.
+
 ## 4. Motion doctrine — the ignition (intent; values tuned on the bench)
 
 The lock gesture is the shell's signature moment: the panel grows flush and
