@@ -7,11 +7,9 @@ import ListItem from '@mui/material/ListItem';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import ViewColumnIcon from '@mui/icons-material/ViewColumnOutlined';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpwardRounded';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownwardRounded';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -113,11 +111,25 @@ export function BeamColumnManager({ columns, catalog, onToggle, onMove, onReorde
 
   return (
     <>
-      <Tooltip title="Manage columns">
-        <IconButton size="small" aria-label="Manage columns" onClick={(e) => setAnchorEl(e.currentTarget)}>
-          <ViewColumnIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      {/* Discoverability (UX ruling 2026-09-23): a LABELLED flat TEXT button, not icon-only — small text/flat
+          per the BEAM.md §9 button grammar (same tier as the bulk strip; a table-toolbar control is the
+          quietest loudness). Text-only (no glyph); the visible label is the accessible name (the `aria-label`
+          is kept as a belt-and-braces). No Tooltip — the label speaks. Shared across BOTH trees (organism
+          Table's 18 consumers + the Wave-2 port), so every column-manager surface gets it. Size `small`
+          (~31px) sits inside the 44px chrome-datum footer band with no growth. */}
+      <Button
+        size="small"
+        variant="text"
+        aria-label="Manage columns"
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        // Chrome-band alignment (BEAM.md §6): the LABEL — not the button box — aligns to the control-rail
+        // line. A `text`/`small` button carries 5px of left padding, so pull the whole button back by that
+        // 5px (keep the padding + hover shape) to seat "Manage columns" on the same vertical as the bulk
+        // strip's EXPORT label, the select-all, and the row checkboxes. (Optical; eyeball with a ruler.)
+        sx={{ ml: '-5px' }}
+      >
+        Manage columns
+      </Button>
       <Popover
         open={open}
         anchorEl={anchorEl}

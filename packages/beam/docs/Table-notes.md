@@ -3,6 +3,23 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-table-column-manager.md`.)
 
+## Column-manager trigger — labelled text button, not icon-only *(UX ruling 2026-09-23, CEO meeting)*
+
+Discoverability feedback: **icon-only affordances for primary view controls are considered insufficient.**
+The footer's column-manager trigger (`BeamColumnManager`) changes from an icon-only `IconButton` (the
+columns glyph) to a **flat TEXT button "Manage columns"** — small text/flat, the BEAM.md §6.9 button-grammar
+tier a table-toolbar control sits in (same as the bulk strip). Text-only (no glyph, per the follow-up);
+`aria-label` preserved; no tooltip (the label is the name). **Applied at the SHARED lane layer**, so ALL
+column-manager surfaces get it — the organism Table's 18 consumers AND the Wave-2 port — since discoverability
+is estate-wide by nature. It's the columnManager LANE's trigger only; the official-subset path is untouched
+(official has no column manager). The footer band stays at the 44px chrome datum (a `small` button is ~31px,
+no growth); the label ("Manage columns") doesn't truncate at 1440 or 13" laptop width (short, left-aligned,
+opposite pagination). The button is TEXT-ONLY (no glyph, per the follow-up). **Alignment:** the label sits on
+the control-rail line — a `-5px` inline-start margin cancels the text button's own left padding so "Manage
+columns" shares one vertical with the bulk strip's EXPORT, the select-all, and the row checkboxes
+(chrome-band label-alignment rule, BEAM.md §6.9). *(Source: CEO meeting 2026-09-23 — confirm.)*
+
+
 ## Sticky/page geometry rework — SUPERSEDES the ceiling-band design *(2026-09-23, CEO; calibrated 2026-09-24)*
 
 **CALIBRATION (2026-09-24, CEO by eye from the deploy):** the ONE-VALUE rule — `PAGE_TOP_GAP` (unstuck
