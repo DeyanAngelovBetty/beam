@@ -41,6 +41,11 @@ export const gasparOfficialOverrides = (brand: BrandName): ThemeSeedOverrides =>
   },
   secondary: { dark: { main: '#4BA8DA', light: '#5BB8EA', dark: '#3A8FC0' } },
   text: { dark: { primary: '#EDF2F7', secondary: '#A0AEC0' } },
+  // BRAND EXPLORATION (2026-09-24) — DIVERGES from Vasco's Figma (which maps the typeface to Inter). Trying
+  // Quicksand 300 for the DISPLAY scale (page titles h1–h6 + section titles subtitle1); body/data stays the
+  // body face. Pending Vasco's review — revert = drop this line. Self-hosted via @fontsource-variable in
+  // apps/gaspar. Gaspar-only (Sunlight untouched).
+  titleFont: { family: 'Quicksand Variable', weight: 300 },
   // surface anchor #041213 == shipped → omitted (no change). Gradient: keep shipped mesh, recolour the dark
   // hues toward the Figma palette + pin the official LOGO stops (light mesh untouched).
   gradient: {

@@ -45,6 +45,11 @@ export interface ThemeSeedOverrides {
   // keeps its default). Applied only for the scheme(s) present.
   secondary?: { light?: { main: string; light?: string; dark?: string }; dark?: { main: string; light?: string; dark?: string } };
   text?: { light?: { primary: string; secondary: string }; dark?: { primary: string; secondary: string } };
+  /**
+   * Heading typeface override (family + weight) for the DISPLAY scale — h1–h6 (page titles) + subtitle1
+   * (section titles). Body/data typeface is untouched. Used by the Gaspar Quicksand BRAND EXPLORATION.
+   */
+  titleFont?: { family: string; weight: number };
 }
 
 /**
@@ -52,7 +57,10 @@ export interface ThemeSeedOverrides {
  * (never per-component px): the body/data workhorse is 14 / 13 / 12 px. FLOOR: nothing dips below 12px —
  * the scaled small end (`caption`/`overline`) is pinned to 12. Body/data WEIGHT stays 400 always; density
  * comes from size + heading thinning (600→500 on headings, which are ≥16px) + `text.secondary` colour,
- * NEVER body weight on dark. Default `current` (14) → byte-identical to today; `compact`/`dense` are the
+ * NEVER body weight on dark. The 12px FLOOR applies to RUNNING TEXT (body/caption/overline); the `meta`
+ * caps KEYS (~10px, fixed at `0.65rem` in textStyles) are DELIBERATELY exempt — caps + 0.1em tracking carry
+ * legibility at that size (ruling 2026-09-24), and the scale doesn't touch them anyway (they're not rem-
+ * relative). Default `current` (14) → byte-identical to today; `compact`/`dense` are the
  * lab candidates Chavdar picks. The 44px field-twin + 57px twin-row datums are GEOMETRY constants and hold
  * at all three (at 12px, line-height ~1.43 → ~17px, well inside 44).
  *
@@ -91,6 +99,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   const bodyFont = `"${f.body}", "Helvetica", "Arial", sans-serif`;
   const titleFont = `"${f.title}", "Helvetica", "Arial", sans-serif`;
   const titleWeight = f.titleWeight; // seed (Figma twin product/font/titleWeight) → whole heading scale
+  // Heading-typeface override (the Gaspar Quicksand BRAND EXPLORATION) — display scale ONLY (h1–h6 +
+  // subtitle1); the body/data face is untouched. Absent on other products → shipped title face stands.
+  const effectiveTitleFont = overrides?.titleFont ? `"${overrides.titleFont.family}", "Helvetica", "Arial", sans-serif` : titleFont;
+  const effectiveTitleWeight = overrides?.titleFont?.weight ?? titleWeight;
   // Gradient title dials (BeamPage). tint is per-mode; underline weight/fade per-product.
   const ti = titleSeeds[product];
   // Product-scoped surface ramp. The step's PRODUCT half bakes here (per scheme);
@@ -233,13 +245,14 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       fontFamily: bodyFont,
       // TYPE SCALE base — shrinks the whole rem ramp (14 default / 13 / 12). `current` = MUI's 14 default.
       fontSize: TYPE_SCALE_BASE[typeScale],
-      // Headings THIN 600→500 at denser scales (they render ≥16px); `current` keeps the product titleWeight.
-      h1: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
-      h2: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
-      h3: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
-      h4: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
-      h5: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
-      h6: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
+      // Headings THIN toward 500 at denser scales (they render ≥16px) — `Math.min` so a heading whose
+      // face is already LIGHT (e.g. Quicksand 300) is never thickened; `current` keeps the title weight.
+      h1: { fontFamily: effectiveTitleFont, fontWeight: denserType ? Math.min(effectiveTitleWeight, 500) : effectiveTitleWeight },
+      h2: { fontFamily: effectiveTitleFont, fontWeight: denserType ? Math.min(effectiveTitleWeight, 500) : effectiveTitleWeight },
+      h3: { fontFamily: effectiveTitleFont, fontWeight: denserType ? Math.min(effectiveTitleWeight, 500) : effectiveTitleWeight },
+      h4: { fontFamily: effectiveTitleFont, fontWeight: denserType ? Math.min(effectiveTitleWeight, 500) : effectiveTitleWeight },
+      h5: { fontFamily: effectiveTitleFont, fontWeight: denserType ? Math.min(effectiveTitleWeight, 500) : effectiveTitleWeight },
+      h6: { fontFamily: effectiveTitleFont, fontWeight: denserType ? Math.min(effectiveTitleWeight, 500) : effectiveTitleWeight },
       // FLOOR — the base scaling would push the 12px small end below 12; pin caption/overline to 12px
       // (0.75rem @ htmlFontSize 16). Only when denser (current is untouched). Nothing dips below 12px.
       ...(denserType ? { caption: { fontSize: '0.75rem' }, overline: { fontSize: '0.75rem' } } : {}),
@@ -250,7 +263,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // weight (500) inline, so it is unaffected. DELIBERATE visual delta on a shared organism — flag for
       // the Alex/upstream batch. (18px is the fallback if 16/600 reads too quiet on the deploy — not
       // pre-built.)
-      subtitle1: { fontWeight: 600 },
+      // Section titles (subtitle1). Default = 16/600 in the body face. Under a heading-typeface override
+      // (Gaspar exploration) they join the display scale: the title face at its weight. (BeamStat, the only
+      // other subtitle1 consumer, re-pins the BODY face on its value so DATA never inherits the title face.)
+      subtitle1: overrides?.titleFont ? { fontFamily: effectiveTitleFont, fontWeight: effectiveTitleWeight } : { fontWeight: 600 },
     },
     components: {
       MuiCssBaseline: {

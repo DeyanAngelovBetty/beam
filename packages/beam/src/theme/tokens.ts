@@ -64,12 +64,14 @@ export const CONTENT_BOTTOM = { xs: 2, md: 3 };
 export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
 
 /**
- * PAGE_TOP_GAP — the gap above the first card (sx spacing). DENSITY REWORK 2026-09-23 (CEO): ordinary page
- * rhythm = 1 × spacing — sticky and non-sticky pages share it, so a sticky page no longer reserves the old
- * ~80px top band. The reclaimed vertical is the density win; the toggle now shares the top band with the
- * chrome (cleared horizontally by the collapsed LEFT gutter below). Replaces CONTENT_TOP at the page top.
+ * PAGE_TOP_GAP — the gap above the first card (sx spacing). DENSITY REWORK 2026-09-23 (CEO). Defined AS
+ * `CONTENT_BOTTOM` for STRUCTURAL SYMMETRY (2026-09-24): top gap === bottom gap (md 24px / xs 16px), so a
+ * page is vertically balanced. Still MUCH tighter than the old ~80px top band; `CHROME_PIN_OFFSET` (8px)
+ * stays the pinned-chrome offset and is UNAFFECTED (the tiers/snap key off it, not this). Replaces
+ * CONTENT_TOP at the page top (AppShell main + stickyChromeGapSx). snap-1 sits at the Stack's border-box
+ * top (scroll 0); this is padding INSIDE that box, so the snap point doesn't move.
  */
-export const PAGE_TOP_GAP = 1;
+export const PAGE_TOP_GAP = CONTENT_BOTTOM;
 
 /**
  * Horizontal gutters — NAV-STATE-AWARE (2026-09-23). EXPANDED shell keeps today's symmetric CONTENT_INLINE.
@@ -179,6 +181,9 @@ export const MIN_MEANINGFUL_ROWS = 4;
  */
 // DENSITY REWORK 2026-09-23: the tiers recompute from CHROME_PIN_OFFSET (8) instead of the old 64px band,
 // so they shift DOWN: T2 328→272, T1 396→340; T3 (no pin term) stays 264.
+// NOTE (2026-09-24): T2−T3 is now only CHROME_PIN_OFFSET (~8px), so the T2 "ceiling collapses" window is
+// inherently thin — ACCEPTED. A FUTURE simplification may MERGE T2 into T1 (drop the separate ceiling-
+// collapse step and let the footer-unstick tier own it), collapsing three tiers to two.
 export const SHORT_VP_TIER2 = CHROME_PIN_OFFSET + FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 272
 export const SHORT_VP_TIER3 = FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 264
 export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 316 (before floor)

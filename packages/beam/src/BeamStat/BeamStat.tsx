@@ -52,7 +52,13 @@ export function BeamStat({ label, value, caption, showCaption = true, severity }
             <BeamBool value={value as boolean} />
           </Box>
         ) : (
-          <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`, overflowWrap: 'anywhere' }}>
+          <Typography
+            variant="subtitle1"
+            // The value is DATA — re-pin the BODY face + weight so it can't inherit a heading-typeface
+            // override that the theme puts on `subtitle1` (the shared section-title variant). BeamStat is
+            // that variant's only other consumer.
+            sx={{ color: 'text.primary', fontFamily: (t) => t.typography.fontFamily, fontWeight: 500, lineHeight: `${FIELD_GEOMETRY.valueLineHeight}px`, overflowWrap: 'anywhere' }}
+          >
             {value}
           </Typography>
         )}

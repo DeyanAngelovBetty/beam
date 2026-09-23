@@ -10,6 +10,7 @@
   "dependencies": {
     "@betty/beam": "*",
     "@betty/beam-lab": "*",
+    "@fontsource-variable/quicksand": "^5.3.0",
     "@mui/icons-material": "^9.0.0",
     "@xyflow/react": "^12.11.3",
     "dockview-react": "^7.0.4",
