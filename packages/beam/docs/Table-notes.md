@@ -3,7 +3,15 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-table-column-manager.md`.)
 
-## Sticky/page geometry rework — SUPERSEDES the ceiling-band design *(2026-09-23, CEO ruling)*
+## Sticky/page geometry rework — SUPERSEDES the ceiling-band design *(2026-09-23, CEO; calibrated 2026-09-24)*
+
+**CALIBRATION (2026-09-24, CEO by eye from the deploy):** the ONE-VALUE rule — `PAGE_TOP_GAP` (unstuck
+top), `CHROME_PIN_OFFSET` (stuck offset), and `CONTENT_BOTTOM` are the SAME value, **24px md / 16px xs**
+(BEAM.md §6.11). The 8px `CHROME_PIN_OFFSET` probe below is SUPERSEDED by 24; 24 still reclaims ~56px of the
+original 80px band (real-estate ruling stands). Downstream recomputed: tiers moved UP 16px (T2 272→288,
+T1 340→356; T3 264); snap-2 pins at 24; the gap-surgery absorb-margin is now `24 − 24 = 0` (the 24px band
+IS the whole rest gap). The rest of this note keeps the 8px-probe numbers as history.
+
 
 Gaspar density compromise. The single ~80px top reservation (`CONTENT_TOP.md = 10`, which did double duty:
 unstuck page top + the logo-clearing pinned band) is **split into named constants, and both shrink to

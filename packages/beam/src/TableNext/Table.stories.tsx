@@ -261,11 +261,11 @@ export const StickyChromeFancyBackdrop: Story = {
 /**
  * Tiered disengagement on SHORT viewports (stickyChrome hardening). The tiers are VIEWPORT-height media
  * queries (+ a matchMedia for tier 3), so each frame below is a real `<iframe>` — its own viewport — loading
- * the sticky bench. Thresholds (strict `<`, composed from constants, no literals): T1 340 · T2 272 · T3 264.
- * (Density rework 2026-09-23: the pin offset shrank 64→8, so the tiers dropped — T1 396→340, T2 328→272 —
- * and the T2 "ceiling collapses" window is now only ~8px, the pin-offset height.)
- *   • Tier 1 (frame 300px, in 272–340): the FOOTER unsticks; ceiling + bucket still pinned.
- *   • Tier 2 (frame 268px, in 264–272): the 8px CEILING band collapses to 0 — chrome pins at the true top.
+ * the sticky bench. Thresholds (strict `<`, composed from constants, no literals): T1 356 · T2 288 · T3 264.
+ * (Density rework 2026-09-23 → CALIBRATED 2026-09-24: the pin offset is 24 — net vs pre-rework the tiers
+ * dropped T1 396→356, T2 328→288; the T2 "ceiling collapses" window is 24px, the pin-offset height.)
+ *   • Tier 1 (frame 320px, in 288–356): the FOOTER unsticks; ceiling + bucket still pinned.
+ *   • Tier 2 (frame 276px, in 264–288): the 24px CEILING band collapses to 0 — chrome pins at the true top.
  *   • Tier 3 (frame 240px, < 264): stickyChrome DISENGAGES — the grid renders as the plain card.
  * The **normal-height** frame (900px) is the PIN_REACHABLE check: at page size 10 the grid fits the viewport,
  * its pin is unreachable, so it renders as the PLAIN CARD; flip to 50/500 and the chrome engages. Expanding a
@@ -281,15 +281,15 @@ export const StickyChromeShortViewport: Story = {
     const src = 'iframe.html?id=components-table-wave-2-port--sticky-chrome-bench&viewMode=story';
     const tiers = [
       { h: 900, label: 'Normal 900px — PIN_REACHABLE: page size 10 → plain card; 50/500 → chrome engages' },
-      { h: 300, label: 'Tier 1 · frame 300px (272–340) — footer unsticks' },
-      { h: 268, label: 'Tier 2 · frame 268px (264–272) — 8px ceiling collapses to 0' },
+      { h: 320, label: 'Tier 1 · frame 320px (288–356) — footer unsticks' },
+      { h: 276, label: 'Tier 2 · frame 276px (264–288) — 24px ceiling collapses to 0' },
       { h: 240, label: 'Tier 3 · frame 240px (<264) — sticky disengages → plain card' },
     ];
     return (
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Each frame is its own viewport, so the viewport-height tiers + pin-reachability fire per frame. Flip
-          the footer page-size select (10 ↔ 50/500) inside each. Thresholds (strict &lt;): T1 340 · T2 272 · T3
+          the footer page-size select (10 ↔ 50/500) inside each. Thresholds (strict &lt;): T1 356 · T2 288 · T3
           264px; PIN_REACHABLE engages once the grid overflows the frame.
         </Typography>
         {tiers.map((t) => (

@@ -251,6 +251,17 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     caret does render (those fidelity stories), its geometry matches the row expand carets (same
     `TableExpand` — small icon). *(Design ruling 2026-09-21; upstream feedback candidate — see
     docs/beam-alignment.md.)*
+11. **Page vertical rhythm — ONE value (the density rework).** After the CEO density ruling (2026-09-23,
+    calibrated 2026-09-24) three page-geometry constants are DELIBERATELY the SAME value — **24px at `md`,
+    16px at `xs`** (`CONTENT_BOTTOM`): the **page-top gap** (`PAGE_TOP_GAP`, unstuck), the **pinned-chrome
+    top offset** (`CHROME_PIN_OFFSET`, stuck), and **`CONTENT_BOTTOM`** itself. So a page is vertically
+    symmetric (top gap = bottom gap) and the sticky chrome pins at the same rhythm. `PAGE_TOP_GAP` is the
+    responsive sx object; `CHROME_PIN_OFFSET` is its md rung as a px number (the sticky arithmetic — tiers,
+    `pt`, `scrollMarginTop`, the gap-surgery absorb-margin, pin-reachability — is breakpoint-invariant px).
+    This SUPERSEDES the old ~80px top band + 64px logo-clearing ceiling: the chrome now SHARES the top band
+    with the (logo-less, in Gaspar) floating toggle, cleared HORIZONTALLY by the collapsed LEFT gutter, not
+    vertically by a tall band. **Accepted trade:** a vertical jump on the nav toggle; real estate wins.
+    Tiers/snap all recompute from these constants — never hard-code the numbers. *(See Table-notes.md.)*
 
 ## 7. Figma ↔ code sync mechanics
 

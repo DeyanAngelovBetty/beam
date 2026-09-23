@@ -98,14 +98,16 @@ export const PAGE_SECTION_GAP = 3;
 export const LOGO_BAR_HEIGHT = 56;
 
 /**
- * CHROME_PIN_OFFSET — the pinned sticky chrome's top offset (px). DENSITY REWORK 2026-09-23 (CEO): = 1 ×
- * spacing (8px), a thin breath, NOT the old brand-strip-clearing band (was `LOGO_BAR_HEIGHT + 8 = 64`). The
- * chrome pins ~8px from the true top and shares the top band with the (now logo-less) toggle; the toggle is
- * cleared HORIZONTALLY by the collapsed LEFT gutter, not vertically by a tall band. The bucket still pins at
- * `top: 0` (constant geometry, no jump); this is its constant `padding-top`. Tiers T1/T2/T3, snap-2, and
- * pin-reachability all recompute from THIS. (Renamed from `CHROME_CEILING_BAND`.)
+ * CHROME_PIN_OFFSET — the pinned sticky chrome's top offset (px). CALIBRATED 2026-09-24 (CEO, by eye from
+ * the deploy): = `CONTENT_BOTTOM.md · 8` = 24px, so it is the SAME VALUE as PAGE_TOP_GAP and CONTENT_BOTTOM
+ * (the one-value rule — see BEAM.md §6 / Table-notes). The earlier 8px probe is superseded; 24px still
+ * reclaims ~56px of the original 80px band (the real-estate ruling stands, just calibrated). Px (not the
+ * responsive object) because the sticky arithmetic — tiers, `pt`, `scrollMarginTop`, the gap-surgery
+ * absorb-margin, pin-reachability — is breakpoint-invariant px; it takes CONTENT_BOTTOM's md rung. The
+ * bucket still pins at `top: 0` (constant geometry, no jump); this is its constant `padding-top`.
+ * (Renamed from `CHROME_CEILING_BAND`, which was 64.)
  */
-export const CHROME_PIN_OFFSET = 8;
+export const CHROME_PIN_OFFSET = CONTENT_BOTTOM.md * 8;
 
 /**
  * pageBackdropSx — the page's FIXED backdrop as a shared source, ONE definition two consumers: the
@@ -179,20 +181,21 @@ export const MIN_MEANINGFUL_ROWS = 4;
  * width-dependent term — an 8px xs/md swing, noise against a 44px row). `SHORT_VP_TIER1_BASE` is T1 minus
  * that floor. All three fire STRICTLY BELOW their threshold (the −epsilon in `belowHeightQuery`).
  */
-// DENSITY REWORK 2026-09-23: the tiers recompute from CHROME_PIN_OFFSET (8) instead of the old 64px band,
-// so they shift DOWN: T2 328→272, T1 396→340; T3 (no pin term) stays 264.
-// NOTE (2026-09-24): T2−T3 is now only CHROME_PIN_OFFSET (~8px), so the T2 "ceiling collapses" window is
-// inherently thin — ACCEPTED. A FUTURE simplification may MERGE T2 into T1 (drop the separate ceiling-
-// collapse step and let the footer-unstick tier own it), collapsing three tiers to two.
-export const SHORT_VP_TIER2 = CHROME_PIN_OFFSET + FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 272
+// DENSITY REWORK 2026-09-23, CALIBRATED 2026-09-24: the tiers recompute from CHROME_PIN_OFFSET (now 24)
+// instead of the old 64px band. Net vs pre-rework: T2 328→288, T1 396→356; T3 (no pin term) stays 264.
+// (The 8px-probe step shifted them further down; the 24px calibration moves them back UP by the 16px delta.)
+// NOTE (2026-09-24): T2−T3 is CHROME_PIN_OFFSET (24px) — the T2 "ceiling collapses" window is still thin
+// (ACCEPTED). A FUTURE simplification may MERGE T2 into T1 (drop the separate ceiling-collapse step and let
+// the footer-unstick tier own it), collapsing three tiers to two.
+export const SHORT_VP_TIER2 = CHROME_PIN_OFFSET + FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 288
 export const SHORT_VP_TIER3 = FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 264
-export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 316 (before floor)
+export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 332 (before floor)
 // T1 = base + floor (CONTENT_BOTTOM.md). PURE-px module constant like T2/T3 — the earlier in-component
 // `parseFloat(theme.spacing(CONTENT_BOTTOM.md))` returned NaN under this theme's `cssVariables` (spacing()
 // yields `calc(3 * var(--mui-spacing, 8px))`, not `"24px"`), which made the media query `max-height: NaNpx`
 // — present but never matching, so the footer never unstuck. `* 8` = the MUI spacing base, the same units→px
-// idiom `stickyChromeGapSx` already uses for its absorb-margin. 316 + 3·8 = 340.
-export const SHORT_VP_TIER1 = SHORT_VP_TIER1_BASE + CONTENT_BOTTOM.md * 8; // 340
+// idiom `stickyChromeGapSx` already uses for its absorb-margin. 332 + 3·8 = 356.
+export const SHORT_VP_TIER1 = SHORT_VP_TIER1_BASE + CONTENT_BOTTOM.md * 8; // 356
 
 /**
  * belowHeightQuery — the ONE strict-`<` boundary convention, shared by all three tier consumers (the CSS

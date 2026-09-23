@@ -75,10 +75,9 @@ export const stickyChromeGapSx = {
     '& > *:not(:has(+ [data-beam-sticky-chrome])):not(:last-child)': { mb: PAGE_SECTION_GAP },
     // The section immediately BEFORE the grid carries `PAGE_SECTION_GAP − the pin offset` as its margin, so
     // the visible rest gap stays PAGE_SECTION_GAP (24px): the bucket's ceiling `pt` is a CONSTANT
-    // CHROME_PIN_OFFSET (8px), and mb (24−8 = 16px) + band (8px) = 24px. Post-rework the offset (8) is now
-    // SMALLER than the section gap, so this is a normal positive margin (no overlap); the band paints
-    // TRANSPARENT at rest (::before fades in only when stuck). (px: the spacing×8 − offset arithmetic can't
-    // be an sx spacing multiple.)
+    // CHROME_PIN_OFFSET (now 24px = the section gap), so mb (24−24 = 0) + band (24px) = 24px. The band IS
+    // the whole rest gap; the section sits flush against it, and the band paints TRANSPARENT at rest
+    // (::before fades in only when stuck). (px: the spacing×8 − offset arithmetic can't be an sx multiple.)
     '& > *:has(+ [data-beam-sticky-chrome])': { mb: `${PAGE_SECTION_GAP * 8 - CHROME_PIN_OFFSET}px` },
     // SNAP POINT 1 (hardening #2): the TRUE page top (scroll 0) is the snap position, NOT the first section.
     // The Stack's border-box top sits at scroll 0 (the shell donates its pt, so `main` pt:0; the Stack's own
