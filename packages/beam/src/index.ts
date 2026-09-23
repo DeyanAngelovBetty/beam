@@ -26,7 +26,7 @@ export { brandLogos, brandLogoMaskSx, logoGradient, LOGO_ENVELOPE_ASPECT, LOGO_W
 export { beamGradientBorder } from './theme/gradientBorder';
 export { usePointerAngleTracking } from './theme/usePointerAngleTracking';
 export { meta } from './theme/textStyles';
-export { products, derived, roleRamp, roleColor } from './theme/tokens';
+export { products, derived, roleRamp, roleColor, gradientSeeds } from './theme/tokens';
 export type {
   BrandName,
   ProductName,

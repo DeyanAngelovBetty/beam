@@ -29,14 +29,22 @@ const logoStopVars = (g: (typeof gradientSeeds)['gaspar']['dark']) => ({
  * (reads the shipped tokens). This is the seam the Theme Lab's candidate-variant registry uses to
  * build an alternate theme WITHOUT touching the shipped per-product tokens — nothing in app code
  * passes it. Each field, when present, replaces the corresponding seed source for THIS build only:
- *   - `primary`  → the per-(product,brand) primary token set (`products[product][brand]`)
- *   - `surface`  → the per-product surface seed (`surfaceSeeds[product]`)
- *   - `gradient` → the per-product page-mesh seed (`gradientSeeds[product]`)
+ *   - `primary`   → the per-(product,brand) primary token set (`products[product][brand]`)
+ *   - `surface`   → the per-product surface seed (`surfaceSeeds[product]`)
+ *   - `gradient`  → the per-product page-mesh seed (`gradientSeeds[product]`)
+ *   - `secondary` → MUI `palette.secondary` (our shipped themes don't set it; MUI default stands unless a
+ *                   variant supplies one — added for the Vasco/Figma candidate, which specifies a blue)
+ *   - `text`      → MUI `palette.text.{primary,secondary}` (else MUI's scheme defaults)
+ * The last two are applied ONLY when present, so the shipped (no-overrides) build is byte-identical.
  */
 export interface ThemeSeedOverrides {
   primary?: (typeof products)[ProductName][BrandName];
   surface?: (typeof surfaceSeeds)[ProductName];
   gradient?: (typeof gradientSeeds)[ProductName];
+  // Per-scheme OPTIONAL (a dark-only candidate like Vasco/Figma supplies only `dark`; the other scheme
+  // keeps its default). Applied only for the scheme(s) present.
+  secondary?: { light?: { main: string; light?: string; dark?: string }; dark?: { main: string; light?: string; dark?: string } };
+  text?: { light?: { primary: string; secondary: string }; dark?: { primary: string; secondary: string } };
 }
 
 /**
@@ -53,6 +61,9 @@ export interface ThemeSeedOverrides {
  */
 export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlight', overrides?: ThemeSeedOverrides): Theme {
   const t = overrides?.primary ?? products[product][brand];
+  // Optional variant seams — applied ONLY when a Theme Lab variant supplies them (shipped build unchanged).
+  const sc = overrides?.secondary;
+  const tx = overrides?.text;
   // Product-scoped typeface pair. Every stack ends in a system sans.
   const f = productFonts[product];
   const bodyFont = `"${f.body}", "Helvetica", "Arial", sans-serif`;
@@ -122,6 +133,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             light: t.light.primaryUp1,
             contrastText: t.light.contrastText,
           },
+          // Variant-only seams (Vasco/Figma). Absent on shipped builds → MUI defaults stand.
+          ...(sc?.light ? { secondary: { main: sc.light.main, ...(sc.light.light ? { light: sc.light.light } : {}), ...(sc.light.dark ? { dark: sc.light.dark } : {}) } } : {}),
+          ...(tx?.light ? { text: { primary: tx.light.primary, secondary: tx.light.secondary } } : {}),
           // Severity contrastText — AA repair. MAINS ARE THE MUI DEFAULTS, UNCHANGED (the repair is
           // text colour, not new fills); we only fix contrastText so each fill clears AA 4.5:1 at
           // base. Light info/warning are mid-sat → white text fails, so they take dark ink;
@@ -159,6 +173,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             light: t.dark.primaryUp1,
             contrastText: t.dark.contrastText,
           },
+          // Variant-only seams (Vasco/Figma). Absent on shipped builds → MUI defaults stand.
+          ...(sc?.dark ? { secondary: { main: sc.dark.main, ...(sc.dark.light ? { light: sc.dark.light } : {}), ...(sc.dark.dark ? { dark: sc.dark.dark } : {}) } } : {}),
+          ...(tx?.dark ? { text: { primary: tx.dark.primary, secondary: tx.dark.secondary } } : {}),
           // Severity contrastText (see the light block for doctrine + Figma-twin note). Dark scheme:
           // every fill takes dark ink — info/warning/success already did under MUI; error FLIPS from
           // white to dark for AA (5.17:1). Mains are the MUI dark-scheme defaults, unchanged.

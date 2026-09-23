@@ -189,11 +189,19 @@ function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
         setVar(s, '--beam-star-pitch', `${g.starPitch}px`);
         setVar(s, '--beam-star-size-ratio', String(g.starSizeRatio));
         setVar(s, '--beam-star-mask', starMaskUri(g.starSizeRatio));
+        // Logo gradient stops (the four registered slots) — when a variant pins them (Vasco/Figma).
+        if (g.logoStops) ([1, 2, 3, 4] as const).forEach((i) => { const c = g.logoStops![i]; if (c) setVar(s, `--beam-logo-stop-${i}`, c); });
       });
     }
     // Primary is per-jurisdiction (undefined = fall through to shipped, e.g. Alberta magenta). Ramp:
     // main = primary0, light = up1, dark = down1 — with matching channel triples for alpha states.
     if (ov.primary) {
+      // State washes → MUI action opacities (the primary carries them; mode-invariant, write both schemes).
+      const st = ov.primary.states;
+      if (st) schemes.forEach((s) => {
+        setVar(s, '--mui-palette-action-hoverOpacity', String(st.hover));
+        setVar(s, '--mui-palette-action-selectedOpacity', String(st.selected));
+      });
       schemes.forEach((s) => {
         const p = ov.primary![s];
         const ramp = { main: p.primary0, light: p.primaryUp1, dark: p.primaryDown1 } as const;
@@ -203,6 +211,23 @@ function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
         });
       });
     }
+    // Secondary (Vasco/Figma) — MUI generates these vars even though our shipped theme leaves secondary
+    // default. Per-scheme optional (a dark-only candidate touches only `dark`).
+    if (ov.secondary) schemes.forEach((s) => {
+      const sec = ov.secondary![s];
+      if (!sec) return;
+      setVar(s, '--mui-palette-secondary-main', sec.main);
+      setVar(s, '--mui-palette-secondary-mainChannel', channelTriple(sec.main));
+      if (sec.light) { setVar(s, '--mui-palette-secondary-light', sec.light); setVar(s, '--mui-palette-secondary-lightChannel', channelTriple(sec.light)); }
+      if (sec.dark) { setVar(s, '--mui-palette-secondary-dark', sec.dark); setVar(s, '--mui-palette-secondary-darkChannel', channelTriple(sec.dark)); }
+    });
+    // Text (Vasco/Figma) — per-scheme optional.
+    if (ov.text) schemes.forEach((s) => {
+      const txt = ov.text![s];
+      if (!txt) return;
+      setVar(s, '--mui-palette-text-primary', txt.primary);
+      setVar(s, '--mui-palette-text-secondary', txt.secondary);
+    });
   };
 
   // Load a preset: clear the sheet, apply the variant's overrides, re-hydrate the controls, then take
