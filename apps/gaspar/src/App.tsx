@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, AppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, gasparOfficialOverrides, AppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
 import type { BrandName, BeamNavItem } from '@betty/beam';
 import { GASPAR_NAV, VIEW_PATH, allowedViews, landingView, pruneNav, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
@@ -80,7 +80,12 @@ function GasparApp() {
   const { milestone } = useMilestone();
   const [brand, setBrand] = useState<BrandName>('ontario');
   const [labOpen, setLabOpen] = useState(false); // Theme Lab drawer (Gaspar only)
-  const theme = useMemo(() => createBeamTheme(brand, 'gaspar'), [brand]);
+  // TEMPORARY DEFAULT-SWAP SEAM (deliberate, against the "apps never pass overrides" doctrine): the Gaspar
+  // default is flipped to the Vasco/Figma official palette. NAMED EXIT — graduates into token seeds once the
+  // Gaspar colour direction is ratified (pending CEO/brand meeting); then this override is deleted and the
+  // tokens carry it. Revert (to today's teal) = drop the third arg. The Theme Lab's "Teal (previous shipped)"
+  // renders today's teal without a revert.
+  const theme = useMemo(() => createBeamTheme(brand, 'gaspar', gasparOfficialOverrides(brand)), [brand]);
 
   // MILESTONE NAV GATE — the views this phase HAS (Boryana's phasing + Deyan's ruling). Hidden =
   // absent: the nav is pruned to allowed views (+ their ancestors), and routes outside the phase
