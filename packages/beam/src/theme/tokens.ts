@@ -59,9 +59,26 @@ const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, ou
  * sticky-chrome contract — see the notes). Split from the former single `CONTENT_VERTICAL`.
  * (Provisional home — migrates to BeamPage's rhythm once that organism leaves placeholder.)
  */
-export const CONTENT_TOP = { xs: 2, md: 10 };
+export const CONTENT_TOP = { xs: 2, md: 10 }; // SUPERSEDED for the page top by PAGE_TOP_GAP (2026-09-23); kept for the SpacingBoard doc.
 export const CONTENT_BOTTOM = { xs: 2, md: 3 };
 export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
+
+/**
+ * PAGE_TOP_GAP — the gap above the first card (sx spacing). DENSITY REWORK 2026-09-23 (CEO): ordinary page
+ * rhythm = 1 × spacing — sticky and non-sticky pages share it, so a sticky page no longer reserves the old
+ * ~80px top band. The reclaimed vertical is the density win; the toggle now shares the top band with the
+ * chrome (cleared horizontally by the collapsed LEFT gutter below). Replaces CONTENT_TOP at the page top.
+ */
+export const PAGE_TOP_GAP = 1;
+
+/**
+ * Horizontal gutters — NAV-STATE-AWARE (2026-09-23). EXPANDED shell keeps today's symmetric CONTENT_INLINE.
+ * COLLAPSED shell (closed/narrow): the LEFT gutter opens to clear the floating toggle (so chrome + toggle
+ * share the top band — the vertical gain), the RIGHT tightens. sx spacing values; the shell gates on its
+ * own collapsed state (data-beam-nav-collapsed), never viewport width alone.
+ */
+export const CONTENT_GUTTER_LEFT_COLLAPSED = 7; // 56px — clears the ~48px floating toggle + breath
+export const CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5; // 12px
 
 /**
  * PAGE_SECTION_GAP — the gap between a page's stacked sections (an sx spacing value). SHARED so the
@@ -72,22 +89,21 @@ export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
 export const PAGE_SECTION_GAP = 3;
 
 /**
- * LOGO_BAR_HEIGHT — the floating brand strip's height (AppShell's `STRIP_HEIGHT`), promoted here as
- * the ONE source so a sticky-chrome grid can clear it without the shell and the grid drifting apart. The
- * shell imports it as `STRIP_HEIGHT`; the grid derives `CHROME_CEILING_BAND` from it.
+ * LOGO_BAR_HEIGHT — the floating brand strip's height (AppShell's `STRIP_HEIGHT`). Still the shell's strip
+ * height; NO LONGER the derivation base for the sticky chrome's pin offset (density rework 2026-09-23 —
+ * the chrome no longer sits BELOW the strip, it shares the top band with the toggle).
  */
 export const LOGO_BAR_HEIGHT = 56;
 
 /**
- * CHROME_CEILING_BAND — the height (px) of the sticky bucket's painted ceiling band: the page the logo
- * floats over when the chrome is pinned. = the brand strip's height + an 8px breath, so the card (batch
- * strip + header) sits clear BELOW the floating logo. The bucket pins at `top: 0` ALWAYS (sticky's contract
- * is CONSTANT geometry through the pin — no jump); this band is a CONSTANT `padding-top`, and its extra
- * height over the section gap is absorbed at rest by the pre-grid section's negative margin (against
- * PAGE_SECTION_GAP — NOT CONTENT_TOP, whose nav-shift duty disqualifies it), keeping the rest gap
- * pixel-identical. See Table's ceiling paint + stickyChromeGapSx.
+ * CHROME_PIN_OFFSET — the pinned sticky chrome's top offset (px). DENSITY REWORK 2026-09-23 (CEO): = 1 ×
+ * spacing (8px), a thin breath, NOT the old brand-strip-clearing band (was `LOGO_BAR_HEIGHT + 8 = 64`). The
+ * chrome pins ~8px from the true top and shares the top band with the (now logo-less) toggle; the toggle is
+ * cleared HORIZONTALLY by the collapsed LEFT gutter, not vertically by a tall band. The bucket still pins at
+ * `top: 0` (constant geometry, no jump); this is its constant `padding-top`. Tiers T1/T2/T3, snap-2, and
+ * pin-reachability all recompute from THIS. (Renamed from `CHROME_CEILING_BAND`.)
  */
-export const CHROME_CEILING_BAND = LOGO_BAR_HEIGHT + 8;
+export const CHROME_PIN_OFFSET = 8;
 
 /**
  * pageBackdropSx — the page's FIXED backdrop as a shared source, ONE definition two consumers: the
@@ -161,15 +177,17 @@ export const MIN_MEANINGFUL_ROWS = 4;
  * width-dependent term — an 8px xs/md swing, noise against a 44px row). `SHORT_VP_TIER1_BASE` is T1 minus
  * that floor. All three fire STRICTLY BELOW their threshold (the −epsilon in `belowHeightQuery`).
  */
-export const SHORT_VP_TIER2 = CHROME_CEILING_BAND + FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 328
+// DENSITY REWORK 2026-09-23: the tiers recompute from CHROME_PIN_OFFSET (8) instead of the old 64px band,
+// so they shift DOWN: T2 328→272, T1 396→340; T3 (no pin term) stays 264.
+export const SHORT_VP_TIER2 = CHROME_PIN_OFFSET + FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 272
 export const SHORT_VP_TIER3 = FIELD_TWIN_HEIGHT * (2 + MIN_MEANINGFUL_ROWS); // 264
-export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 372 (before floor)
+export const SHORT_VP_TIER1_BASE = SHORT_VP_TIER2 + FIELD_TWIN_HEIGHT; // 316 (before floor)
 // T1 = base + floor (CONTENT_BOTTOM.md). PURE-px module constant like T2/T3 — the earlier in-component
 // `parseFloat(theme.spacing(CONTENT_BOTTOM.md))` returned NaN under this theme's `cssVariables` (spacing()
 // yields `calc(3 * var(--mui-spacing, 8px))`, not `"24px"`), which made the media query `max-height: NaNpx`
 // — present but never matching, so the footer never unstuck. `* 8` = the MUI spacing base, the same units→px
-// idiom `stickyChromeGapSx` already uses for its absorb-margin. 372 + 3·8 = 396.
-export const SHORT_VP_TIER1 = SHORT_VP_TIER1_BASE + CONTENT_BOTTOM.md * 8; // 396
+// idiom `stickyChromeGapSx` already uses for its absorb-margin. 316 + 3·8 = 340.
+export const SHORT_VP_TIER1 = SHORT_VP_TIER1_BASE + CONTENT_BOTTOM.md * 8; // 340
 
 /**
  * belowHeightQuery — the ONE strict-`<` boundary convention, shared by all three tier consumers (the CSS

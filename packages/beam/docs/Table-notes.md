@@ -3,6 +3,30 @@
 Decisions and additive changes to the organism, newest first. (Column-manager capability has its own
 spec: `SPEC-table-column-manager.md`.)
 
+## Sticky/page geometry rework — SUPERSEDES the ceiling-band design *(2026-09-23, CEO ruling)*
+
+Gaspar density compromise. The single ~80px top reservation (`CONTENT_TOP.md = 10`, which did double duty:
+unstuck page top + the logo-clearing pinned band) is **split into named constants, and both shrink to
+1×spacing**. All sticky math now recomputes from composition — no CSS literals:
+
+- **`PAGE_TOP_GAP` (= 1 spacing, 8px)** — the unstuck gap above the first card. Sticky pages no longer
+  reserve extra top; a sticky page's top rhythm is identical to a non-sticky page's. Replaces `CONTENT_TOP`
+  at the page top (AppShell `main` + `stickyChromeGapSx`).
+- **`CHROME_PIN_OFFSET` (= 8px)** — the pinned chrome's top offset (renamed from `CHROME_CEILING_BAND`,
+  was 64). The chrome pins ~8px from the true top and SHARES the top band with the toggle; it no longer
+  sits below the floating logo. The tiers, snap-2 `scrollMarginTop`, pin-reachability arithmetic, and
+  `stickyChromeGapSx`'s absorb-margin all recompute from this — **tiers dropped: T1 396→340, T2 328→272**
+  (T3 264 unchanged; the T2 "ceiling collapses" window is now only ~8px, the pin-offset height).
+- **Horizontal gutters became NAV-STATE-AWARE.** Collapsed shell → `CONTENT_GUTTER_LEFT_COLLAPSED = 7`
+  (56px, clears the floating toggle so chrome + toggle share the top band — the vertical gain),
+  `CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5` (12px). Expanded → today's symmetric `contentGutter`, unchanged.
+  Gated on `AppShell`'s collapsed state (`data-beam-nav-collapsed` / `effectiveLocked`), not viewport width.
+
+**Accepted trade-off (named):** a VERTICAL JUMP on the nav lock/unlock toggle (the gutter + reflow shift),
+and a DENSER stuck band (8px, no logo clearance). **Real estate wins** (CEO 2026-09-23). Estate-wide (shared
+shell + tokens); the Gaspar-only pieces are the collapsed-logo removal (item 1) and the type scale (item 3).
+Older notes below still describe the pre-rework ceiling band (64px / `CONTENT_TOP`) — read them as history.
+
 ## Footer toolbar height — finishing the density pass *(2026-09-14)*
 
 The density pass pinned `.beam-footer-inner` to `FIELD_TWIN_HEIGHT` but MISSED the inner MUI pagination

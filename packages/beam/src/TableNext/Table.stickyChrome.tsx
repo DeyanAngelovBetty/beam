@@ -3,7 +3,7 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import type { Column } from '@tanstack/react-table';
 import {
   CONTENT_BOTTOM,
-  CHROME_CEILING_BAND,
+  CHROME_PIN_OFFSET,
   FIELD_TWIN_HEIGHT,
   SHORT_VP_TIER2,
   SHORT_VP_TIER3,
@@ -220,7 +220,7 @@ export function useStickyChrome(opts: {
   }, [enabled]);
 
   // PIN REACHABILITY — arithmetic (never measured height), so expanding a row can't toggle engagement.
-  const pinThreshold = FIELD_TWIN_HEIGHT * (3 + rowsOnPage) + CONTENT_BOTTOM.md * 8 + CHROME_CEILING_BAND;
+  const pinThreshold = FIELD_TWIN_HEIGHT * (3 + rowsOnPage) + CONTENT_BOTTOM.md * 8 + CHROME_PIN_OFFSET;
   const [pinUnreachable, setPinUnreachable] = useState(() =>
     typeof window !== 'undefined' && enabled ? window.matchMedia(aboveHeightQuery(pinThreshold)).matches : false,
   );
@@ -349,9 +349,9 @@ export function useStickyChrome(opts: {
     }
     const sp = getScrollParent(paperRef.current);
     if (!sp || !paperRef.current) return;
-    const reachable = FIELD_TWIN_HEIGHT * (3 + rowsOnPage) + CONTENT_BOTTOM.md * 8 + CHROME_CEILING_BAND >= window.innerHeight;
+    const reachable = FIELD_TWIN_HEIGHT * (3 + rowsOnPage) + CONTENT_BOTTOM.md * 8 + CHROME_PIN_OFFSET >= window.innerHeight;
     const willStick = enabled && !tooShortForSticky && reachable;
-    const snapMargin = window.matchMedia(belowHeightQuery(SHORT_VP_TIER2)).matches ? 0 : CHROME_CEILING_BAND;
+    const snapMargin = window.matchMedia(belowHeightQuery(SHORT_VP_TIER2)).matches ? 0 : CHROME_PIN_OFFSET;
     const target = willStick
       ? sp.scrollTop + paperRef.current.getBoundingClientRect().top - sp.getBoundingClientRect().top - snapMargin
       : 0;

@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../ActionMenu/ActionMenu.types';
 import type { BeamColumn, TableProps, BeamIdentityLinkProps, BeamBulkAction } from './Table.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { CONTENT_TOP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_CEILING_BAND, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, aboveHeightQuery, pageBackdropSx } from '../theme/tokens';
+import { PAGE_TOP_GAP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_PIN_OFFSET, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, aboveHeightQuery, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -67,20 +67,19 @@ const EDGE_WIDTH = 24; // px band width, shared by both edges so they read as si
  */
 export const stickyChromeGapSx = {
   '&:has(> [data-beam-sticky-chrome])': {
-    // Adopt the TOP padding the shell donated (CONTENT_TOP — one shared source, like the floor's
-    // CONTENT_BOTTOM). Owned by the Stack it now SCROLLS with the content, so the bucket pins flush at
-    // the true viewport top; at rest the space is identical (incl. the nav dock/undock shift).
-    pt: CONTENT_TOP,
+    // Adopt the TOP padding the shell donated (PAGE_TOP_GAP — ordinary page rhythm, 1×spacing; density
+    // rework 2026-09-23). Owned by the Stack it now SCROLLS with the content, so the bucket pins flush near
+    // the true viewport top; at rest the space is identical to a non-sticky page.
+    pt: PAGE_TOP_GAP,
     gap: 0,
     '& > *:not(:has(+ [data-beam-sticky-chrome])):not(:last-child)': { mb: PAGE_SECTION_GAP },
-    // The section immediately BEFORE the grid carries a NEGATIVE margin = PAGE_SECTION_GAP − the ceiling
-    // band, so the rest gap stays pixel-identical: the bucket's ceiling `pt` is a CONSTANT CHROME_CEILING_BAND
-    // (64) — taller than the 24px section gap — and this −40px pulls the bucket up to absorb the extra at
-    // rest (visible gap = −40 + 64 = 24). The band paints TRANSPARENT at rest (its ::before fades in only
-    // when stuck), so this overlap is invisible; the bucket is pointer-events:none over it. This is the
-    // budget the proposal settled on — PAGE_SECTION_GAP, NOT CONTENT_TOP (nav-shift duty). (px: the
-    // spacing×8 − band arithmetic can't be an sx spacing multiple.)
-    '& > *:has(+ [data-beam-sticky-chrome])': { mb: `${PAGE_SECTION_GAP * 8 - CHROME_CEILING_BAND}px` },
+    // The section immediately BEFORE the grid carries `PAGE_SECTION_GAP − the pin offset` as its margin, so
+    // the visible rest gap stays PAGE_SECTION_GAP (24px): the bucket's ceiling `pt` is a CONSTANT
+    // CHROME_PIN_OFFSET (8px), and mb (24−8 = 16px) + band (8px) = 24px. Post-rework the offset (8) is now
+    // SMALLER than the section gap, so this is a normal positive margin (no overlap); the band paints
+    // TRANSPARENT at rest (::before fades in only when stuck). (px: the spacing×8 − offset arithmetic can't
+    // be an sx spacing multiple.)
+    '& > *:has(+ [data-beam-sticky-chrome])': { mb: `${PAGE_SECTION_GAP * 8 - CHROME_PIN_OFFSET}px` },
     // SNAP POINT 1 (hardening #2): the TRUE page top (scroll 0) is the snap position, NOT the first section.
     // The Stack's border-box top sits at scroll 0 (the shell donates its pt, so `main` pt:0; the Stack's own
     // pt is INSIDE its border box), so snap-align on the Stack ITSELF makes scroll 0 a snap point — at rest
@@ -570,10 +569,10 @@ export function Table<Row>({
   // (visibleRows.length), never measured height — so expanding a row (measured taller, same row count) can
   // NEVER toggle engagement (no flicker at the boundary). Pure px, same constants discipline as the tiers
   // (NOT theme.spacing — cssVariables makes it return a calc() string → NaN; CONTENT_BOTTOM.md·8 instead):
-  //   PIN_REACHABLE ⇔ FIELD_TWIN_HEIGHT·(3 + rowsOnPage) + CONTENT_BOTTOM.md·8 + CHROME_CEILING_BAND ≥ vh
+  //   PIN_REACHABLE ⇔ FIELD_TWIN_HEIGHT·(3 + rowsOnPage) + CONTENT_BOTTOM.md·8 + CHROME_PIN_OFFSET ≥ vh
   // where 3 = strip + header + footer. `aboveHeightQuery` (min-height + ε) detects the strict-`>` unreachable
   // case; the threshold re-subscribes when rows-on-page changes (page-size flip / filter), so it re-evaluates.
-  const pinThreshold = FIELD_TWIN_HEIGHT * (3 + visibleRows.length) + CONTENT_BOTTOM.md * 8 + CHROME_CEILING_BAND;
+  const pinThreshold = FIELD_TWIN_HEIGHT * (3 + visibleRows.length) + CONTENT_BOTTOM.md * 8 + CHROME_PIN_OFFSET;
   const [pinUnreachable, setPinUnreachable] = useState(() =>
     typeof window !== 'undefined' && stickyChrome
       ? window.matchMedia(aboveHeightQuery(pinThreshold)).matches
@@ -752,7 +751,7 @@ export function Table<Row>({
   // rows-on-page (fresh this render) via the SAME arithmetic as the gate — never the (async, one-render-late)
   // pinUnreachable state, never measured height. The pinned target subtracts the Paper's active scroll-margin-
   // top so it lands exactly where proximity-snap rests (else proximity would fight it) — inheriting whichever
-  // snap-2 offset constant is live (CHROME_CEILING_BAND, or 0 once the ceiling collapses at tier 2). Skips the
+  // snap-2 offset constant is live (CHROME_PIN_OFFSET, or 0 once the ceiling collapses at tier 2). Skips the
   // first mount so a shared URL / refresh keeps its position.
   useLayoutEffect(() => {
     // Scoped to stickyChrome grids (the pin/snap machinery) — non-sticky grids keep their scroll position on
@@ -765,10 +764,10 @@ export function Table<Row>({
     const sp = getScrollParent(paperRef.current);
     if (!sp || !paperRef.current) return;
     const reachable =
-      FIELD_TWIN_HEIGHT * (3 + visibleRows.length) + CONTENT_BOTTOM.md * 8 + CHROME_CEILING_BAND >= window.innerHeight;
+      FIELD_TWIN_HEIGHT * (3 + visibleRows.length) + CONTENT_BOTTOM.md * 8 + CHROME_PIN_OFFSET >= window.innerHeight;
     const willStick = stickyChrome && !tooShortForSticky && reachable;
-    // Match the Paper's scroll-margin-top (0 once the ceiling collapses at tier 2, else CHROME_CEILING_BAND).
-    const snapMargin = window.matchMedia(belowHeightQuery(SHORT_VP_TIER2)).matches ? 0 : CHROME_CEILING_BAND;
+    // Match the Paper's scroll-margin-top (0 once the ceiling collapses at tier 2, else CHROME_PIN_OFFSET).
+    const snapMargin = window.matchMedia(belowHeightQuery(SHORT_VP_TIER2)).matches ? 0 : CHROME_PIN_OFFSET;
     const target = willStick
       ? sp.scrollTop + paperRef.current.getBoundingClientRect().top - sp.getBoundingClientRect().top - snapMargin
       : 0;
@@ -874,7 +873,7 @@ export function Table<Row>({
     },
   };
   // CEILING PAINT — the opaque page band the logo floats over, stuck-gated with an opacity FADE. The band
-  // is a CONSTANT CHROME_CEILING_BAND tall (the bucket's `pt`), so the card sits a fixed distance below the
+  // is a CONSTANT CHROME_PIN_OFFSET tall (the bucket's `pt`), so the card sits a fixed distance below the
   // bucket top — continuous through the pin, NO jump (sticky's contract IS constant geometry). At rest the
   // band overlaps the pre-grid section (the negative margin keeping the rest gap pixel-identical), so it must
   // paint TRANSPARENT there — hence a `::before` carrying pageBackdropSx at opacity 0, fading to 1 only when
@@ -1079,7 +1078,7 @@ export function Table<Row>({
   const bucketEl = effectiveSticky ? (
     // OUTER = the page CEILING. Pins at `top: 0` ALWAYS — sticky's contract is CONSTANT geometry through
     // the pin, so the card sits a fixed distance below the bucket top at every scroll position: no jump.
-    // Logo clearance is the BAND HEIGHT, not a pin offset: `pt` is a constant CHROME_CEILING_BAND (strip
+    // Logo clearance is the BAND HEIGHT, not a pin offset: `pt` is a constant CHROME_PIN_OFFSET (strip
     // height + breath), so the card clears the floating brand strip; the pre-grid section's negative margin
     // (stickyChromeGapSx) absorbs the extra at rest, keeping the rest gap pixel-identical. The band paints
     // via `ceilingPaintSx`'s stuck-gated ::before (opaque pageBackdropSx, opacity fade) — transparent at
@@ -1092,7 +1091,7 @@ export function Table<Row>({
         position: 'sticky',
         top: 0,
         zIndex: Z_CHROME,
-        pt: `${CHROME_CEILING_BAND}px`,
+        pt: `${CHROME_PIN_OFFSET}px`,
         pointerEvents: 'none',
         ...ceilingPaintSx,
         ...containerTypeScrollState,
@@ -1253,10 +1252,10 @@ export function Table<Row>({
                 // to the sibling header clone. The Paper is the common ancestor of both.
                 'timeline-scope': '--beam-body-scroll',
                 // SNAP POINT 2 (A): the grid Paper is a snap target (proximity, set on the scroll owner via
-                // the shell contract). scroll-margin-top: CHROME_CEILING_BAND resolves the snap to the pinned
+                // the shell contract). scroll-margin-top: CHROME_PIN_OFFSET resolves the snap to the pinned
                 // position; it collapses to 0 at TIER 2 in step with the ceiling band (dead sync otherwise).
                 scrollSnapAlign: 'start',
-                scrollMarginTop: `${CHROME_CEILING_BAND}px`,
+                scrollMarginTop: `${CHROME_PIN_OFFSET}px`,
                 [`@media ${belowHeightQuery(SHORT_VP_TIER2)}`]: { scrollMarginTop: 0 },
               } as object)
             : {}),

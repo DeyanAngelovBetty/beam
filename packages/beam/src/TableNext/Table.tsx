@@ -44,7 +44,7 @@ import { TableActions, TableHeaderActions } from './TableActions/TableActions';
 import type { BeamBulkAction, TableProps } from './Table.types';
 import {
   CONTENT_BOTTOM,
-  CHROME_CEILING_BAND,
+  CHROME_PIN_OFFSET,
   FIELD_TWIN_HEIGHT,
   SHORT_VP_TIER1,
   SHORT_VP_TIER2,
@@ -469,7 +469,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
         position: 'sticky',
         top: 0,
         zIndex: Z_CHROME,
-        pt: `${CHROME_CEILING_BAND}px`,
+        pt: `${CHROME_PIN_OFFSET}px`,
         pointerEvents: 'none',
         ...ceilingPaintSx,
         ...containerTypeScrollState,
@@ -570,7 +570,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
               backgroundColor: 'transparent',
               'timeline-scope': '--beam-body-scroll',
               scrollSnapAlign: 'start',
-              scrollMarginTop: `${CHROME_CEILING_BAND}px`,
+              scrollMarginTop: `${CHROME_PIN_OFFSET}px`,
               [`@media ${belowHeightQuery(SHORT_VP_TIER2)}`]: { scrollMarginTop: 0 },
             } as object)
           : {}),

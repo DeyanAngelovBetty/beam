@@ -22,12 +22,12 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { CONTENT_TOP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT } from '../theme/tokens';
+import { PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, CONTENT_GUTTER_LEFT_COLLAPSED, CONTENT_GUTTER_RIGHT_COLLAPSED, LOGO_BAR_HEIGHT } from '../theme/tokens';
 
 const DRAWER_WIDTH = 264;
-// ONE source with the sticky-chrome ceiling: a grid derives its top offset from this same height so the
-// pinned bucket's ceiling band clears the strip (tokens.ts LOGO_BAR_HEIGHT → CHROME_CEILING_BAND). Kept as
-// the local name.
+// The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
+// derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
+// cleared horizontally by the collapsed gutter). Local name for the shell's own strip height.
 const STRIP_HEIGHT = LOGO_BAR_HEIGHT;
 
 // timing: Deyan tunes on the bench
@@ -500,17 +500,26 @@ export function AppShell({
       // Named for the ignition (grammar §4): morphs full-width ↔ right column on
       // lock/unlock. Present in both states, so its group genuinely reflows.
       style={{ viewTransitionName: VT_CONTENT }}
+      // Collapsed-state marker for CSS/:has consumers (density rework 2026-09-23). Present only when the
+      // sidebar is collapsed (closed/narrow); absent when the panel is locked (expanded).
+      data-beam-nav-collapsed={effectiveLocked ? undefined : ''}
       sx={{
         // The SCROLL OWNER (chrome posture): the app scrolls INSIDE main, so the app-alert bar
-        // (root's first row) and the rail stay put while content scrolls. Fills appFrame; the
-        // gutter is the horizontal rhythm (CONTENT_INLINE), CONTENT_TOP / CONTENT_BOTTOM the vertical.
+        // (root's first row) and the rail stay put while content scrolls. Fills appFrame.
         minWidth: 0,
         minHeight: 0,
         height: '100%',
         overflowY: 'auto',
-        px: contentGutter,
+        // Horizontal gutter is NAV-STATE-AWARE (density rework 2026-09-23): EXPANDED (locked) keeps the
+        // symmetric `contentGutter`; COLLAPSED opens the LEFT to clear the floating toggle (chrome + toggle
+        // share the top band — the vertical gain) and tightens the RIGHT. Gated on the shell's collapsed
+        // state (`effectiveLocked`), not viewport width.
+        ...(effectiveLocked
+          ? { px: contentGutter }
+          : { pl: CONTENT_GUTTER_LEFT_COLLAPSED, pr: CONTENT_GUTTER_RIGHT_COLLAPSED }),
         pb: CONTENT_BOTTOM,
-        pt: CONTENT_TOP,
+        // PAGE_TOP_GAP — ordinary page rhythm (1×spacing); sticky pages no longer reserve the old ~80px top.
+        pt: PAGE_TOP_GAP,
         // STICKY-CHROME CONTRACT: a grid with `stickyChrome` publishes `data-beam-sticky-chrome`; it takes
         // over the page's TOP + BOTTOM spacing (footer floor, header ceiling), so main gives up BOTH its
         // top and bottom padding (side rhythm untouched). Padding on the SCROLL OWNER is fixed under a
