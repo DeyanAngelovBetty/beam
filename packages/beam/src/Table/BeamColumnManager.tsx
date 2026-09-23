@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { BUTTON_PAD_X } from '../theme/tokens';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Popover from '@mui/material/Popover';
@@ -122,11 +123,13 @@ export function BeamColumnManager({ columns, catalog, onToggle, onMove, onReorde
         variant="text"
         aria-label="Manage columns"
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        // Chrome-band alignment (BEAM.md §6): the LABEL — not the button box — aligns to the control-rail
-        // line. A `text`/`small` button carries 5px of left padding, so pull the whole button back by that
-        // 5px (keep the padding + hover shape) to seat "Manage columns" on the same vertical as the bulk
-        // strip's EXPORT label, the select-all, and the row checkboxes. (Optical; eyeball with a ruler.)
-        sx={{ ml: '-5px' }}
+        // Chrome-band alignment (BEAM.md §6.9): the LABEL — not the button box — seats on the control-rail
+        // line (RAIL_SEAT). The footer actions Box pads to RAIL_SEAT; this negative inline-start margin =
+        // −BUTTON_PAD_X (the text button's own left padding, kept for the hover shape) cancels that padding
+        // so "Manage columns" lands on the seat, sharing one vertical with the bulk strip's EXPORT label,
+        // the select-all, and the row checkboxes. Composed off the constant so the seat holds if MUI's pad
+        // changes.
+        sx={{ ml: `${-BUTTON_PAD_X}px` }}
       >
         Manage columns
       </Button>

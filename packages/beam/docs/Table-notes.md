@@ -14,10 +14,13 @@ column-manager surfaces get it — the organism Table's 18 consumers AND the Wav
 is estate-wide by nature. It's the columnManager LANE's trigger only; the official-subset path is untouched
 (official has no column manager). The footer band stays at the 44px chrome datum (a `small` button is ~31px,
 no growth); the label ("Manage columns") doesn't truncate at 1440 or 13" laptop width (short, left-aligned,
-opposite pagination). The button is TEXT-ONLY (no glyph, per the follow-up). **Alignment:** the label sits on
-the control-rail line — a `-5px` inline-start margin cancels the text button's own left padding so "Manage
-columns" shares one vertical with the bulk strip's EXPORT, the select-all, and the row checkboxes
-(chrome-band label-alignment rule, BEAM.md §6.9). *(Source: CEO meeting 2026-09-23 — confirm.)*
+opposite pagination). The button is TEXT-ONLY (no glyph, per the follow-up). **Alignment (measured
+2026-09-24):** labels seat on `RAIL_SEAT = 2×spacing (16px)`, the checkbox-rail vertical. Chrome-band
+containers derive their inline-start padding from it, compensating each text button's `BUTTON_PAD_X` (5px):
+the bulk strip pads to `RAIL_SEAT − BUTTON_PAD_X`; the footer pads to `RAIL_SEAT` and the manage-columns
+button carries a `−BUTTON_PAD_X` margin. Composed off the constants (never literal), so the seat holds if
+MUI's padding changes. Result: EXPORT, select-all, row checkboxes, and "Manage columns" share one vertical
+(chrome-band rule, BEAM.md §6.9). *(Source: CEO meeting 2026-09-23 — confirm.)*
 
 
 ## Sticky/page geometry rework — SUPERSEDES the ceiling-band design *(2026-09-23, CEO; calibrated 2026-09-24)*

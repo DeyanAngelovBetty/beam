@@ -48,6 +48,8 @@ import {
   FIELD_TWIN_HEIGHT,
   SHORT_VP_TIER1,
   SHORT_VP_TIER2,
+  RAIL_SEAT,
+  BUTTON_PAD_X,
   belowHeightQuery,
   pageBackdropSx,
 } from '../theme/tokens';
@@ -258,7 +260,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   const resolvedBulkActions = typeof bulkActions === 'function' ? bulkActions(selectedRows) : bulkActions;
   const stripEl =
     resolvedBulkActions && resolvedBulkActions.length > 0 ? (
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: FIELD_TWIN_HEIGHT, px: sticky ? 2 : 1, borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: FIELD_TWIN_HEIGHT, pl: `${RAIL_SEAT - BUTTON_PAD_X}px`, pr: sticky ? 2 : 1, borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
         {resolvedBulkActions.map((a) => (
           <BulkActionButton
             key={a.id}
@@ -319,7 +321,9 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   const footerContent =
     cm.enabled || selectionCountEl || paginationEl ? (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
+        {/* Footer actions seat at RAIL_SEAT (16px); the "Manage columns" button's own −BUTTON_PAD_X margin
+            (in BeamColumnManager) cancels its left padding so its LABEL lands on the seat too. */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: `${RAIL_SEAT}px` }}>
           {cm.enabled && (
             <BeamColumnManager columns={managerColumns} catalog={cm.catalog} onToggle={(id) => toggleColumn(id)} onMove={(id, dir) => moveColumn(id, dir)} onReorder={(id, to) => reorderColumn(id, to)} onReset={cm.reset} />
           )}

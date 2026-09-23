@@ -241,11 +241,15 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      header and the filter panel in the visual stack, so it is the quietest tier.
    This is why the port's bulk strip (`TableNext`) renders small text buttons, and Gaspar's page-composed
    FILTER is outlined while its bulk strip is flat. *(Ruling 2026-09-21, from the 2b Gaspar eyeball.)*
-   - **Chrome-band label alignment (2026-09-23):** in table chrome bands (bulk strip, footer), action
-     **LABELS** align to the **control-rail line** (optical) — NOT button boxes to the container edge. A flat
-     text button's own left padding would otherwise push its label inboard, so compensate with a negative
-     inline-start margin equal to that padding (keep the padding + hover shape). Result: the bulk strip's
-     EXPORT, the select-all, the row checkboxes, and the footer's "Manage columns" share one vertical.
+   - **Chrome-band label alignment (2026-09-23, measured 2026-09-24):** in table chrome bands (bulk strip,
+     footer), action **LABELS** seat on the **control-rail line** — the constant **`RAIL_SEAT = 2 × spacing
+     (16px)`**, the checkbox rail's optical vertical — NOT button boxes to the container edge. Container
+     inline-start paddings DERIVE from `RAIL_SEAT`, compensating each flat text button's own left padding
+     (`BUTTON_PAD_X`): a bulk strip pads to `RAIL_SEAT − BUTTON_PAD_X` (the label falls on the seat); the
+     footer pads to `RAIL_SEAT` and its button carries a `−BUTTON_PAD_X` margin (same result). Never
+     hard-code the fraction — compose off the constants so the seat holds if MUI's padding changes. Result:
+     the bulk strip's EXPORT, the select-all, the row checkboxes, and the footer's "Manage columns" share
+     one vertical (a ~0.2px bulk/footer delta is acceptable).
 10. **The control rail: always leading, expand-all banned.** The `Table`'s action rail (expand caret /
     select / kebab) is **always the leading (pinned-first) column — never trailing** (official's placement:
     beam-alex composes `[railColumn, ...columns]`, `actionRailCell` pins `left: 0`). It is not a prop; the

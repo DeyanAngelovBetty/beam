@@ -46,7 +46,7 @@ import type { BeamRowAction } from '../ActionMenu/ActionMenu.types';
 import type { BeamColumn, TableProps, BeamIdentityLinkProps, BeamBulkAction } from './Table.types';
 import { useColumnManager } from './useColumnManager';
 import { BeamColumnManager, type ManagerColumn } from './BeamColumnManager';
-import { PAGE_TOP_GAP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_PIN_OFFSET, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, belowHeightQuery, aboveHeightQuery, pageBackdropSx } from '../theme/tokens';
+import { PAGE_TOP_GAP, CONTENT_BOTTOM, PAGE_SECTION_GAP, CHROME_PIN_OFFSET, FIELD_TWIN_HEIGHT, SHORT_VP_TIER1, SHORT_VP_TIER2, SHORT_VP_TIER3, RAIL_SEAT, BUTTON_PAD_X, belowHeightQuery, aboveHeightQuery, pageBackdropSx } from '../theme/tokens';
 import { meta } from '../theme/textStyles';
 
 // Scroll-affordance edge shadows — truth-conditional cues shown only while content actually scrolls
@@ -1043,7 +1043,7 @@ export function Table<Row>({
   // Section-sectioning pattern; DetailsPanel/PrizeWall precedent). Persistent when bulkActions is set;
   // constant geometry, variable enablement — every action renders, disabled at zero selection.
   const stripEl = resolvedBulkActions.length > 0 ? (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, px: 2, minHeight: FIELD_TWIN_HEIGHT, borderBottom: 1, borderColor: 'divider' }}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', gap: 1, pl: `${RAIL_SEAT - BUTTON_PAD_X}px`, pr: 2, minHeight: FIELD_TWIN_HEIGHT, borderBottom: 1, borderColor: 'divider' }}>
       {resolvedBulkActions.map((a) => (
         <BulkActionButton
           key={a.id}
@@ -1139,7 +1139,7 @@ export function Table<Row>({
   const footerContent =
     selectable || cm.enabled ? (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: `${RAIL_SEAT}px` }}>{/* footer actions seat at RAIL_SEAT; the manage-columns button's −BUTTON_PAD_X margin lands its label on it */}
           {cm.enabled && (
             <BeamColumnManager
               columns={managerColumns}

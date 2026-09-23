@@ -83,6 +83,18 @@ export const CONTENT_GUTTER_LEFT_COLLAPSED = 7; // 56px — clears the ~48px flo
 export const CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5; // 12px
 
 /**
+ * RAIL_SEAT — the optical vertical (px) where TABLE CHROME-BAND action LABELS seat: **2 × spacing = 16px**,
+ * the same line the checkbox control rail sits on (measured, 2026-09-24). The bulk strip's EXPORT, the
+ * select-all, the row checkboxes, and the footer's "Manage columns" all share it. Chrome-band containers
+ * DERIVE their inline-start padding from this, compensating each flat text button's own left padding
+ * (`BUTTON_PAD_X`) so the LABEL — not the button box — lands on the seat (BEAM.md §6.9). `BUTTON_PAD_X` is
+ * MUI's `text`/`small` Button left padding; if it ever changes, the seat holds because paddings are
+ * composed off these two, never hard-coded.
+ */
+export const RAIL_SEAT = 2 * 8; // 16px
+export const BUTTON_PAD_X = 5; // px — MUI text/small Button left padding
+
+/**
  * PAGE_SECTION_GAP — the gap between a page's stacked sections (an sx spacing value). SHARED so the
  * sticky-chrome CEILING can't drift: the page's section `Stack` uses it as `spacing`, the gap-surgery
  * `:has` rule re-adds it as the sections' `margin-bottom`, and the sticky bucket's ceiling takes it over
