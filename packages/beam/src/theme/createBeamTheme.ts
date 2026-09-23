@@ -48,6 +48,23 @@ export interface ThemeSeedOverrides {
 }
 
 /**
+ * TYPE SCALE — a density DIMENSION (Theme Lab, Gaspar; CEO 2026-09-23). Scales the theme typography RAMP
+ * (never per-component px): the body/data workhorse is 14 / 13 / 12 px. FLOOR: nothing dips below 12px —
+ * the scaled small end (`caption`/`overline`) is pinned to 12. Body/data WEIGHT stays 400 always; density
+ * comes from size + heading thinning (600→500 on headings, which are ≥16px) + `text.secondary` colour,
+ * NEVER body weight on dark. Default `current` (14) → byte-identical to today; `compact`/`dense` are the
+ * lab candidates Chavdar picks. The 44px field-twin + 57px twin-row datums are GEOMETRY constants and hold
+ * at all three (at 12px, line-height ~1.43 → ~17px, well inside 44).
+ *
+ * TRADE-OFF NAMED (CEO ruling 2026-09-23): denser type fits more data per screen, at the cost of
+ * legibility headroom — 12px body on dark back-office monitors is the floor, which is exactly why nothing
+ * goes below it, body weight stays 400 (never thinned on dark), and de-emphasis is done with size + heading
+ * weight + secondary colour, not by starving the body. Kept OFF by default (a lab candidate) until ratified.
+ */
+export type TypeScale = 'current' | 'compact' | 'dense';
+const TYPE_SCALE_BASE: Record<TypeScale, number> = { current: 14, compact: 13, dense: 12 };
+
+/**
  * Beam theme factory.
  *
  * BRAND is deploy-time (token set selection); MODE is runtime (MUI
@@ -59,8 +76,13 @@ export interface ThemeSeedOverrides {
  *
  * `overrides` is the Theme Lab variant seam (see ThemeSeedOverrides) — omit it everywhere in app code.
  */
-export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlight', overrides?: ThemeSeedOverrides): Theme {
+export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlight', overrides?: ThemeSeedOverrides, typeScale: TypeScale = 'current'): Theme {
   const t = overrides?.primary ?? products[product][brand];
+  // Type scale — density dimension. `current` leaves the ramp at MUI's 14-base default (byte-identical);
+  // denser scales shrink the whole rem ramp via `fontSize`, then FLOOR caption/overline at 12px and THIN
+  // the headings 600→500 (they're ≥16px). Body/data weight is untouched (stays 400). `headingWeight` is
+  // resolved in the typography block below (needs `titleWeight`).
+  const denserType = typeScale !== 'current';
   // Optional variant seams — applied ONLY when a Theme Lab variant supplies them (shipped build unchanged).
   const sc = overrides?.secondary;
   const tx = overrides?.text;
@@ -209,12 +231,18 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // the whole heading scale h1–h6 exactly as the face is — one edit restyles every
       // heading. No fontWeight appears in any organism. TODO: sync the rest (sizes).
       fontFamily: bodyFont,
-      h1: { fontFamily: titleFont, fontWeight: titleWeight },
-      h2: { fontFamily: titleFont, fontWeight: titleWeight },
-      h3: { fontFamily: titleFont, fontWeight: titleWeight },
-      h4: { fontFamily: titleFont, fontWeight: titleWeight },
-      h5: { fontFamily: titleFont, fontWeight: titleWeight },
-      h6: { fontFamily: titleFont, fontWeight: titleWeight },
+      // TYPE SCALE base — shrinks the whole rem ramp (14 default / 13 / 12). `current` = MUI's 14 default.
+      fontSize: TYPE_SCALE_BASE[typeScale],
+      // Headings THIN 600→500 at denser scales (they render ≥16px); `current` keeps the product titleWeight.
+      h1: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
+      h2: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
+      h3: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
+      h4: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
+      h5: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
+      h6: { fontFamily: titleFont, fontWeight: denserType ? 500 : titleWeight },
+      // FLOOR — the base scaling would push the 12px small end below 12; pin caption/overline to 12px
+      // (0.75rem @ htmlFontSize 16). Only when denser (current is untouched). Nothing dips below 12px.
+      ...(denserType ? { caption: { fontSize: '0.75rem' }, overline: { fontSize: '0.75rem' } } : {}),
       // SECTION-TITLE step (v2.2): `subtitle1` keeps MUI's 16px (= 1rem, the same size as a `BeamStat`
       // value) but steps the WEIGHT to 600 — one step above the 16/regular values below it, so a section
       // title reads as a title. Weight lives HERE (theme scale), not in the Section organism (no

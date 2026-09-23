@@ -18,7 +18,7 @@
 // Apps consume the theme through this entry, never by deep-importing
 // ./theme/* — same seam rule as atoms (BEAM.md §6.2).
 export { createBeamTheme } from './theme/createBeamTheme';
-export type { ThemeSeedOverrides } from './theme/createBeamTheme';
+export type { ThemeSeedOverrides, TypeScale } from './theme/createBeamTheme';
 // Gaspar official (Vasco/Figma) palette override — the app's temporary default-swap seam + the Theme Lab
 // "Current (shipped)" candidate. See theme/gasparOfficial.ts for provenance + the named exit.
 export { gasparOfficialOverrides } from './theme/gasparOfficial';

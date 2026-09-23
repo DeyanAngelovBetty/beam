@@ -18,6 +18,7 @@ import {
   logoGradient,
   type ThemeSeedOverrides,
   type BrandName,
+  type TypeScale,
 } from '@betty/beam';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
@@ -100,6 +101,13 @@ type LabProps = {
   product: 'gaspar' | 'sunlight';
   /** The app's current brand/jurisdiction (apps hold it as `brand`; pass it) → scope.jurisdiction. */
   jurisdiction: string;
+  /**
+   * TYPE SCALE dimension (density; Gaspar). Unlike the colour combo (live CSS vars), the type scale
+   * REBUILDS the theme, so the app owns it: pass the current value + a setter. When omitted, the Type
+   * scale control is hidden. (CEO density compromise 2026-09-23 — the lab is where Chavdar picks.)
+   */
+  typeScale?: TypeScale;
+  onTypeScaleChange?: (scale: TypeScale) => void;
 };
 
 /**
@@ -115,7 +123,7 @@ export function ThemeLabDrawer(props: LabProps) {
   );
 }
 
-function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
+function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeScaleChange }: LabProps) {
   const { mode, setMode } = useColorScheme();
   const editing: Scheme = mode === 'light' ? 'light' : 'dark';
   const counterpart: Scheme = editing === 'dark' ? 'light' : 'dark';
@@ -602,6 +610,24 @@ function ThemeLabBody({ open, onClose, product, jurisdiction }: LabProps) {
                   Unsaved tuning — switch again to discard.
                 </Typography>
               )}
+            </Stack>
+          )}
+
+          {/* Type scale — a DENSITY dimension (Gaspar; CEO 2026-09-23). Unlike the colour combo (live CSS
+              vars), it REBUILDS the theme, so the app owns it (via onTypeScaleChange). Rendered only when
+              the app wires it. Default `current` (14) until Chavdar/the review ratifies a denser scale. */}
+          {onTypeScaleChange && (
+            <Stack spacing={0.5}>
+              <Typography variant="overline" color="text.secondary">
+                Type scale
+              </Typography>
+              <FormControl size="small" fullWidth>
+                <Select value={typeScale ?? 'current'} onChange={(e) => onTypeScaleChange(e.target.value as TypeScale)} aria-label="Type scale">
+                  <MenuItem value="current">Current (14)</MenuItem>
+                  <MenuItem value="compact">Compact (13)</MenuItem>
+                  <MenuItem value="dense">Dense (12)</MenuItem>
+                </Select>
+              </FormControl>
             </Stack>
           )}
 
