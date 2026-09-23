@@ -278,6 +278,20 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     with the (logo-less, in Gaspar) floating toggle, cleared HORIZONTALLY by the collapsed LEFT gutter, not
     vertically by a tall band. **Accepted trade:** a vertical jump on the nav toggle; real estate wins.
     Tiers/snap all recompute from these constants — never hard-code the numbers. *(See Table-notes.md.)*
+12. **Row states paint as ONE surface — washes are mode-aware CSS vars, never theme literals.** On any row
+    state (hover / selected / selected+hover / external highlight) the opaque leading **rail cell** and the
+    transparent **data cells** must read as a single continuous surface — same resolved colour, no seam — in
+    **both modes**. The rail can't go transparent (it would show data columns through as it sticks under
+    horizontal scroll), so its wash is **layered over its paper** via `background-image` (createBeamTheme
+    `MuiTable`); the data cells simply take the row's `background-color`. The two only match if **both use
+    CSS custom properties** (`var(--mui-palette-action-hover)`, `rgba(var(--mui-palette-primary-mainChannel)
+    / var(--mui-palette-action-selectedOpacity))`) — which track `data-beam-mode` — **never** colours read
+    off `theme.palette.*`/`alpha()` in a style function, which bake the default (light) scheme and go
+    invisible on a dark surface. The organism `Table` gets this free (its rows carry MUI's `hover`/`selected`
+    props → MUI paints from `theme.vars`); the port's `styles.body` must mirror the same var expressions. The
+    regression harness is **Table/Row states** (both trees, every state, one frame). *(Regression fix
+    2026-09-23: the port's 2a literal washes split the row on Gaspar's dark surface once the rail went
+    var-based in 2b/9.)*
 
 ## 7. Figma ↔ code sync mechanics
 

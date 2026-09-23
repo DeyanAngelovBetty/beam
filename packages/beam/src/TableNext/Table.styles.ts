@@ -1,6 +1,21 @@
-import { alpha, type Theme } from '@mui/material/styles';
+import { type Theme } from '@mui/material/styles';
 import type { SxProps } from '@mui/material/styles';
 import type { CSSProperties } from 'react';
+
+// ROW-STATE WASHES — CSS VARS, mode-aware. IDENTICAL expressions to createBeamTheme's `MuiTable` rail
+// wash (2b/9), so a hovered/selected row's rail cell and its data cells resolve to ONE surface — same
+// colour, no seam — in every mode. REGRESSION FIX (2026-09-23): the 2a port shipped these as theme-
+// LITERAL colours (`theme.palette.action.hover`, `alpha(theme.palette.primary.main, …)`), which bake the
+// DEFAULT (light) scheme's values and don't track `data-beam-mode`. On Gaspar (defaultMode="dark") the
+// light literal went invisible on the dark surface while the var-based rail lit — the row split in two.
+// `action.hover` (neutral) for hover; `primary @ selectedOpacity` for selected (MUI's own selected-row
+// colour, so the rest-state data cells — painted by MUI's built-in `.Mui-selected` — match exactly);
+// their sum for selected+hover. The organism Table needs no equivalent: its rows carry MUI's `hover`/
+// `selected` props, so MUI already paints them from `theme.vars` (mode-aware) — it was never broken.
+const ROW_WASH_HOVER = 'var(--mui-palette-action-hover)';
+const ROW_WASH_SELECTED = 'rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity))';
+const ROW_WASH_SELECTED_HOVER =
+  'rgba(var(--mui-palette-primary-mainChannel) / calc(var(--mui-palette-action-selectedOpacity) + var(--mui-palette-action-hoverOpacity)))';
 
 // PORTED from official Beam (beam-alex @ b40e815) `Table/Table.styles.ts`, adapting official-theme
 // helpers (`t.vars.overlays`, `theme.alpha`) to MUI's `alpha` + palette. All of the Table's sx lives
@@ -62,22 +77,16 @@ export const actionRailCell: SxProps<Theme> = {
 
 export const actionRailHeader: SxProps<Theme> = { ...(actionRailCell as object), zIndex: 3 };
 
-export const body: SxProps<Theme> = (theme: Theme) => {
-  const palette = theme.palette;
-  const sel = alpha(palette.primary.main, palette.action.selectedOpacity + palette.action.hoverOpacity);
-  return {
-    '& > .table-dataRow:hover, & > .table-dataRow:has(+ .table-detailsRow:hover), & > .table-dataRow:hover + .table-detailsRow, & > .table-detailsRow:hover':
-      { backgroundColor: palette.action.hover },
-    '& > .table-dataRow.Mui-selected:hover, & > .table-dataRow.Mui-selected:has(+ .table-detailsRow:hover), & > .table-dataRow.Mui-selected:hover + .table-detailsRow.Mui-selected, & > .table-detailsRow.Mui-selected:hover':
-      { backgroundColor: sel },
-    '& > .table-dataRow.Mui-selected > .table-actionRailCell::before': {
-      backgroundColor: alpha(palette.primary.main, palette.action.selectedOpacity),
-    },
-    '& > .table-dataRow:hover > .table-actionRailCell::before, & > .table-dataRow:has(+ .table-detailsRow:hover) > .table-actionRailCell::before':
-      { backgroundColor: palette.action.hover },
-    '& > .table-dataRow.Mui-selected:hover > .table-actionRailCell::before, & > .table-dataRow.Mui-selected:has(+ .table-detailsRow:hover) > .table-actionRailCell::before':
-      { backgroundColor: sel },
-  };
+export const body: SxProps<Theme> = {
+  '& > .table-dataRow:hover, & > .table-dataRow:has(+ .table-detailsRow:hover), & > .table-dataRow:hover + .table-detailsRow, & > .table-detailsRow:hover':
+    { backgroundColor: ROW_WASH_HOVER },
+  '& > .table-dataRow.Mui-selected:hover, & > .table-dataRow.Mui-selected:has(+ .table-detailsRow:hover), & > .table-dataRow.Mui-selected:hover + .table-detailsRow.Mui-selected, & > .table-detailsRow.Mui-selected:hover':
+    { backgroundColor: ROW_WASH_SELECTED_HOVER },
+  '& > .table-dataRow.Mui-selected > .table-actionRailCell::before': { backgroundColor: ROW_WASH_SELECTED },
+  '& > .table-dataRow:hover > .table-actionRailCell::before, & > .table-dataRow:has(+ .table-detailsRow:hover) > .table-actionRailCell::before':
+    { backgroundColor: ROW_WASH_HOVER },
+  '& > .table-dataRow.Mui-selected:hover > .table-actionRailCell::before, & > .table-dataRow.Mui-selected:has(+ .table-detailsRow:hover) > .table-actionRailCell::before':
+    { backgroundColor: ROW_WASH_SELECTED_HOVER },
 };
 
 export const emptyTable: SxProps<Theme> = { py: 6, color: 'text.secondary' };
