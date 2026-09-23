@@ -720,6 +720,33 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           footer: { ...meta },
         },
       },
+      // RAIL STATE-PAINT MEMBERSHIP — the sticky/opaque action-rail cell (`.beam-rail`, used by BOTH the
+      // organism Table and the Wave-2 port) must wear the SAME row-level state wash the rest of the row
+      // wears; otherwise a hovered/selected row splits into two surfaces (the rail keeps its rest paper).
+      // The wash is LAYERED over the rail's opaque paper via `background-image` (STATE PAINT) — never a
+      // `background-color` swap, which would re-open horizontal-scroll show-through (the opaque-rail
+      // constraint from the MuiTableCell overlays-tint ban stands). This is EXEMPT from that ban
+      // (`background-image: none` on every cell): state paint is not an elevation tint, and these
+      // `MuiTable`-scoped descendant selectors outrank the ban's `&&&` so they win. Washes mirror the row:
+      // hover = action.hover; selected = primary @ selectedOpacity (MUI's default selected row); both
+      // mode-aware through CSS vars. (Ruling 2026-09-23.)
+      MuiTable: {
+        styleOverrides: {
+          root: {
+            '& .MuiTableRow-root:hover > .beam-rail': {
+              backgroundImage: 'linear-gradient(var(--mui-palette-action-hover), var(--mui-palette-action-hover))',
+            },
+            '& .MuiTableRow-root.Mui-selected > .beam-rail': {
+              backgroundImage:
+                'linear-gradient(rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity)), rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity)))',
+            },
+            '& .MuiTableRow-root.Mui-selected:hover > .beam-rail': {
+              backgroundImage:
+                'linear-gradient(rgba(var(--mui-palette-primary-mainChannel) / calc(var(--mui-palette-action-selectedOpacity) + var(--mui-palette-action-hoverOpacity))), rgba(var(--mui-palette-primary-mainChannel) / calc(var(--mui-palette-action-selectedOpacity) + var(--mui-palette-action-hoverOpacity))))',
+            },
+          },
+        },
+      },
       // Our pagination renders as a <div>, not a footer cell — same recipe here
       MuiTablePagination: {
         styleOverrides: {

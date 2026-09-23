@@ -21,7 +21,6 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
 import Tooltip from '@mui/material/Tooltip';
-import { useTheme } from '@mui/material/styles';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -136,13 +135,6 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   }
   const sticky = Boolean(stickyChrome); // PARITY styling gate (density / rail / expand) — even when currently unreachable
   const effectiveMaxHeight = sticky ? undefined : maxHeight;
-
-  const theme = useTheme();
-  // Rail state layers, composited over the rail's opaque base so the pinned column tracks hover/selected
-  // without ghosting (organism parity; sticky only).
-  const action = (theme.vars || theme).palette.action;
-  const hoverLayer = `linear-gradient(${action.hover}, ${action.hover})`;
-  const selectedLayer = `linear-gradient(${action.selected}, ${action.selected})`;
 
   const [scrolledX, setScrolledX] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -554,9 +546,8 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
         '&:hover .beam-kebab, & .beam-kebab:focus-visible': { opacity: 1 },
         '& .beam-rail .MuiCheckbox-root': { opacity: 1 },
         '& .beam-rail .MuiIconButton-root:not(.beam-kebab)': { opacity: 1 },
-        '&:hover .beam-rail': { backgroundImage: hoverLayer },
-        '&.Mui-selected .beam-rail': { backgroundImage: selectedLayer },
-        '&.Mui-selected:hover .beam-rail': { backgroundImage: `${selectedLayer}, ${hoverLayer}` },
+        // The rail's hover/selected state wash lives in the THEME now (createBeamTheme MuiTable — serves
+        // both trees, and beats the overlays-tint ban); no per-row backgroundImage composite here.
       }
     : undefined;
 
