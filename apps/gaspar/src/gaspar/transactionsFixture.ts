@@ -68,6 +68,10 @@ export interface TransactionsEnvelope {
 }
 
 // ── STATUS vocabulary — ONE source of truth (badge tier + proposed eligibility + failure accent) ──────
+// TIER MEMBERSHIP by OPERATOR ATTENTION-WORTHINESS, not outcome sentiment (Boryana 2026-09-24): LOUD = Failed
+// (scan + act), NOTED = PendingChallenge (a stuck 3DS wants a look), QUIET/colourless = everything FLOWING
+// NORMALLY — Initiated, Processing, AND Succeeded (a success needs no operator attention). So Succeeded is
+// transient/neutral, NOT a "positive" success chip. (Grammar MEMBERSHIP update, not a grammar change.)
 // Keyed by the wire status [Q3, the real five]. `eligible` is the Complete/Decline anchor — a DESIGN
 // PROPOSAL only [Q4, RESOLVED-as-gated]: the API has no operator actions, so this is speculative and the
 // workflow is milestone-gated (Beyond). `danger` drives the row severity accent. Everything downstream
@@ -85,7 +89,7 @@ export const STATUS_META: Record<WireStatus, StatusMeta> = {
   // group it with the transient Initiated/Processing states.
   PendingChallenge: { badge: { hue: 'warning', volume: 'noted', label: 'Pending challenge' }, eligible: false, danger: false },
   Processing: { badge: { hue: 'neutral', label: 'Processing' }, eligible: false, danger: false },
-  Succeeded: { badge: { hue: 'success', volume: 'noted', label: 'Succeeded' }, eligible: false, danger: false },
+  Succeeded: { badge: { hue: 'neutral', label: 'Succeeded' }, eligible: false, danger: false }, // TRANSIENT/quiet (Boryana 2026-09-24) — flowing normally, no operator attention
   Failed: { badge: { hue: 'danger', volume: 'loud', label: 'Failed' }, eligible: true, danger: true }, // [Q4] proposal
 };
 /** Unobserved status → silent with its raw label (the estate honesty rule). */
@@ -258,7 +262,10 @@ function generate(count: number): WireTransaction[] {
   }
   const trimmed = drafts.slice(0, count);
   // Assign ids in chronological order, then reverse to newest-first.
-  return trimmed.map((d, i) => ({ ...d, id: i + 1 })).reverse();
+  // Ids in Konstantin's stated PRODUCTION range (100K–90M; ~152792-like — Konstantin, 2026-09-24), not the
+  // sample's 1–30. Monotonic increasing with chronological order (newest = highest, like the wire int PK) and
+  // strictly unique (step ≥ 1001). Copy / URL still carry the RAW integer ([Q9]).
+  return trimmed.map((d, i) => ({ ...d, id: 152003 + i * 5000 + ((i * 137) % 4000) })).reverse();
 }
 
 const WIRE_ROWS: WireTransaction[] = generate(1200);

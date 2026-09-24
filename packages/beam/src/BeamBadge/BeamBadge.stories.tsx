@@ -66,13 +66,15 @@ export const Grammar: Story = {
 
 type Row = { label: string; hue: BeamBadgeHue | 'neutral'; volume?: 'noted' | 'loud' };
 const ROWS: Row[] = [
-  // Wire statuses (Gaspar transactions — the real five, 2026-09-24)
+  // Wire statuses (Gaspar transactions — the real five). TIER by operator attention-worthiness, not outcome
+  // sentiment (Boryana 2026-09-24): only Failed (loud) + Pending challenge (noted) are coloured; Succeeded
+  // is TRANSIENT/colourless like Initiated/Processing (a success flowing normally needs no attention).
   { label: 'Failed', hue: 'danger', volume: 'loud' },
   { label: 'Pending challenge', hue: 'warning', volume: 'noted' }, // 3DS challenge outstanding (PendingChallenge)
   { label: 'Processing', hue: 'neutral' },
-  { label: 'Succeeded', hue: 'success', volume: 'noted' },
+  { label: 'Succeeded', hue: 'neutral' }, // TRANSIENT (Boryana 2026-09-24) — was success/noted
   { label: 'Initiated', hue: 'neutral' },
-  // Sunlight lifecycle (loyalty / CJ inherit)
+  // Sunlight lifecycle (loyalty / CJ inherit) — its Active/Completed success semantics are ITS OWN, untouched.
   { label: 'Active', hue: 'success', volume: 'loud' },
   { label: 'Paused', hue: 'warning', volume: 'loud' },
   { label: 'Scheduled', hue: 'in-progress', volume: 'loud' }, // severity coverage (in-progress)

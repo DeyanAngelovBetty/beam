@@ -319,7 +319,7 @@ const EXPORT_LABEL: Record<string, string> = Object.fromEntries(EXPORT_FORMATS.m
 const CSV_FIELDS: { header: string; get: (r: TransactionRow) => string | number }[] = [
   { header: 'Created At', get: (r) => r.createdAt },
   { header: 'Last Updated', get: (r) => r.updatedAt },
-  { header: 'Transaction ID', get: (r) => r.id },
+  { header: 'Gaspar Transaction ID', get: (r) => r.id }, // renamed 2026-09-24 (Boryana); still the raw int PK
   { header: 'Transaction Type', get: (r) => r.direction }, // user-facing CSV header (terminology 2026-09-24); field unchanged
   { header: 'Amount', get: (r) => r.amount.toFixed(2) },
   { header: 'Status', get: (r) => r.status },
@@ -542,43 +542,53 @@ export function TransactionsPage() {
   // SUBMENU via the `options` lane (JSON/CSV real per row, PDF/Excel proposal snackbar); Complete/Decline
   // proposals with a per-row confirm. Disabled + `disabledTooltip` reason when the row isn't Pending.
   const exportProposal = (fmt: string) => setSnack(`${EXPORT_LABEL[fmt]} export — design proposal, no backend.`);
-  // Kebab: EXPORT is a read action → present at every milestone (incl. v1.0 read-only). Complete/Decline
-  // are OPERATOR ACTIONS — the API has none (read-only BO, 2026-09-24), so they are a DESIGN PROPOSAL gated
-  // to Beyond (caps.actions). At v1.0 the kebab carries Export alone (no orphan operator affordances).
+  // Kebab items. v1.0 is READ-ONLY (Boryana 2026-09-24): NO Export (bulk OR per-row) — Export returns at
+  // v1.1+ (gated on caps.selection, the v1.1 marker). Complete/Decline are OPERATOR ACTIONS the API doesn't
+  // have — a DESIGN PROPOSAL gated to Beyond (caps.actions). So at v1.0 this returns [] → the kebab is dropped
+  // entirely below (rail = chevron only, no dead menu).
   const menuItems = (row: TransactionRow): ActionMenuItem[] => {
     const notEligible = !isEligible(row.status); // DESIGN PROPOSAL anchor = Failed ([Q4], no wire semantics)
-    const exportAction: ActionMenuItem = {
-      id: 'export', label: 'Export', onSelect: () => undefined, options: [
-        { id: 'json', label: 'JSON', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
-        { id: 'csv', label: 'CSV', onSelect: () => { downloadCsv(`payment-${row.id}.csv`, [row]); setSnack('Exported 1 transaction to CSV.'); } },
-        { id: 'pdf', label: 'PDF', onSelect: () => exportProposal('pdf') },
-        { id: 'excel', label: 'Excel', onSelect: () => exportProposal('excel') },
-      ],
-    };
-    if (!caps.actions) return [exportAction]; // v1.0/v1.1 read-only: Export only
-    return [
-      exportAction,
-      {
-        id: 'complete', label: 'Complete', disabled: notEligible, disabledTooltip: ELIGIBILITY_REASON,
-        onSelect: () => { if (window.confirm(`Complete transaction ${row.id}?`)) setSnack('Complete — design proposal, no backend. Nothing was changed.'); },
-      },
-      {
-        id: 'decline', label: 'Decline', destructive: true, disabled: notEligible, disabledTooltip: ELIGIBILITY_REASON,
-        onSelect: () => { if (window.confirm(`Decline transaction ${row.id}?`)) setSnack('Decline — design proposal, no backend. Nothing was changed.'); },
-      },
-    ];
+    const items: ActionMenuItem[] = [];
+    if (caps.selection) {
+      items.push({
+        id: 'export', label: 'Export', onSelect: () => undefined, options: [
+          { id: 'json', label: 'JSON', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
+          { id: 'csv', label: 'CSV', onSelect: () => { downloadCsv(`payment-${row.id}.csv`, [row]); setSnack('Exported 1 transaction to CSV.'); } },
+          { id: 'pdf', label: 'PDF', onSelect: () => exportProposal('pdf') },
+          { id: 'excel', label: 'Excel', onSelect: () => exportProposal('excel') },
+        ],
+      });
+    }
+    if (caps.actions) {
+      items.push(
+        {
+          id: 'complete', label: 'Complete', disabled: notEligible, disabledTooltip: ELIGIBILITY_REASON,
+          onSelect: () => { if (window.confirm(`Complete transaction ${row.id}?`)) setSnack('Complete — design proposal, no backend. Nothing was changed.'); },
+        },
+        {
+          id: 'decline', label: 'Decline', destructive: true, disabled: notEligible, disabledTooltip: ELIGIBILITY_REASON,
+          onSelect: () => { if (window.confirm(`Decline transaction ${row.id}?`)) setSnack('Decline — design proposal, no backend. Nothing was changed.'); },
+        },
+      );
+    }
+    return items;
   };
+  // The kebab exists only when it would carry something (Export at v1.1+, Complete/Decline at Beyond); v1.0
+  // has neither → no menu, so the rail is the chevron alone (no dead kebab). (Boryana 2026-09-24.)
+  const hasRowMenu = caps.selection || caps.actions;
 
   // Default-visible set, in spec order — Wave-2 raw `ColumnDef`s: `beamCells` where a cell maps to a helper
   // (text / number / badge / timestamp), a bespoke display column (raw `cell`) where it doesn't (the
   // copy-able IDs carry the page's `onCopied` snackbar; the MTI ErrorCodeCell; the Phase-B PaymentMethodCell).
   // (When bullet 3 lands, the CATALOG above joins these as the column manager's contents.)
   const columns: ColumnDef<TransactionRow, unknown>[] = [
-    // Declared default order (2026-09-10 meeting): timestamps lead, then the transaction essentials,
-    // then customer + the rest. Persisted arrangements are untouched by the column-manager merge rule.
+    // Default order — timestamps lead, then transaction essentials, customer + the rest (2026-09-10 meeting).
+    // ⚠️ SUPERSEDED for the id column (Boryana 2026-09-24): the 09-10 order put 'Transaction ID' 3rd, here,
+    // with the timestamps; it is now RELOCATED to after 'PSP Transaction ID' and RENAMED 'Gaspar Transaction
+    // ID' (below). Flagged as a conflict with the earlier order, resolved toward the newer PM spec. Persisted
+    // column arrangements are untouched by the column-manager merge rule (the column id stays 'id').
     beamCells.timestamp({ id: 'createdAt', header: 'Created At', accessor: (r) => r.createdAt, format: (iso) => <TimestampCell iso={iso} />, width: 150 }),
     beamCells.timestamp({ id: 'updatedAt', header: 'Last Updated', accessor: (r) => r.updatedAt, format: (iso) => <TimestampCell iso={iso} />, width: 150 }),
-    { id: 'id', header: 'Transaction ID', cell: ({ row }) => <TruncateCopyCell value={row.original.id} onCopied={onCopied} />, meta: { width: 168 } },
     // "Transaction Type" (terminology 2026-09-24) = the user-facing label for the `direction` field. The
     // column `id` stays 'direction' (column-manager key + persisted arrangements). A CATEGORY, not a state —
     // plain text, no badge (grammar: semantic hues are for states only).
@@ -589,6 +599,9 @@ export function TransactionsPage() {
     // Customer Email — copy-able like the ID cells, normal face, ellipsis only when width-constrained.
     { id: 'customerEmail', header: 'Customer Email', cell: ({ row }) => <TruncateCopyCell value={row.original.customerEmail} mode="auto" onCopied={onCopied} />, meta: { width: 200 } },
     { id: 'pspTransactionId', header: 'PSP Transaction ID', cell: ({ row }) => <TruncateCopyCell value={row.original.pspTransactionId} mono onCopied={onCopied} />, meta: { width: 184 } },
+    // 'Gaspar Transaction ID' (Boryana 2026-09-24) — the wire integer PK, RELOCATED here (was 3rd) + RENAMED.
+    // Same cell as before: the RAW integer, copy + URL raw ([Q9]); column id stays 'id' (keys / saved orders).
+    { id: 'id', header: 'Gaspar Transaction ID', cell: ({ row }) => <TruncateCopyCell value={row.original.id} onCopied={onCopied} />, meta: { width: 184 } },
     { id: 'paymentMethodId', header: 'Payment method', cell: ({ row }) => <PaymentMethodCell row={row.original} />, meta: { width: 168 } },
     beamCells.text({ id: 'currency', header: 'Currency', accessor: (r) => r.currency, width: 96 }),
     // Card Type is a CATEGORY, not a state — plain text, no badge (Direction/3DS grammar ruling).
@@ -798,12 +811,11 @@ export function TransactionsPage() {
         // positioning; holds under horizontal scroll, ducks under the sticky chrome. Progressive enhancement
         // (Chromium-first); Firefox/Safari render exactly today's in-flow accent.
         accentCrowns
-        // MILESTONE GATE — existence, not disablement (2026-09-24: the API is READ-ONLY, so the operator
-        // WORKFLOW is what gates). v1.0 = read-only: NO bulk strip / checkboxes (selection undefined → the
-        // rail has no orphan checkbox estate), and the kebab carries EXPORT alone (read action). v1.1+ adds
-        // selection + the bulk strip (Export-bulk); Beyond (caps.actions) adds the Complete/Decline DESIGN
-        // PROPOSAL to both the kebab and the strip. The kebab itself is ALWAYS present (Export); expand (the
-        // timeline) is always on; the column manager is v1.2+.
+        // MILESTONE GATE — existence, not disablement (READ-ONLY API → the operator WORKFLOW gates). v1.0 =
+        // fully read-only (Boryana 2026-09-24): NO bulk strip / checkboxes, and NO Export anywhere — the kebab
+        // is DROPPED (no dead menu), so the rail is the chevron alone. v1.1+ brings selection + the bulk strip
+        // AND Export returns (bulk + per-row kebab). Beyond (caps.actions) adds the Complete/Decline DESIGN
+        // PROPOSAL. Expand (the timeline) is always on; the column manager is v1.2+.
         bulkActions={caps.selection ? bulkActions : undefined}
         onBulkAction={caps.selection ? onBulkAction : undefined}
         // Controlled selection so it spans pages (server-shaped). Only wired when selection is enabled.
@@ -814,9 +826,9 @@ export function TransactionsPage() {
         expandAll={false}
         actionRail={{
           expand: (r) => <PaymentTimeline events={r.events} />,
-          // Kebab always present — carries Export at every milestone; menuItems adds Complete/Decline only
-          // at Beyond (caps.actions). So v1.0 keeps a read kebab, not an empty rail.
-          menu: menuItems,
+          // Kebab only when it carries something (Export at v1.1+, Complete/Decline at Beyond). v1.0 has
+          // neither → no `menu` → the rail is the chevron alone (no dead kebab).
+          ...(hasRowMenu ? { menu: menuItems } : {}),
         }}
         emptyMessage="No transactions match these filters."
         // Column manager (bullet 3, v1.2+). Catalog = the bullet-1 columns with no data source yet —

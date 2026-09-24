@@ -49,10 +49,11 @@ export interface MilestoneCaps {
 
 const RANK: Record<Milestone, number> = { v1_0: 0, v1_1: 1, v1_2: 2, beyond: 3 };
 
-// Cumulative, per the requirements doc: each phase assumes everything before it. 2026-09-24 (read-only API):
-// the row kebab is ALWAYS present carrying per-row EXPORT (a read action); `actions` gates only the extra
-// Complete/Decline items (Beyond, DESIGN PROPOSAL). `selection` (v1.1+) is the bulk strip + checkboxes; at
-// v1.0 the grid is fully read-only (no strip, no checkboxes, kebab = Export only).
+// Cumulative, per the requirements doc: each phase assumes everything before it. 2026-09-24 (Boryana —
+// read-only means read-only): v1.0 is FULLY read-only — NO Export anywhere (bulk OR per-row), so the row
+// kebab is DROPPED (rail = chevron only, no dead menu). EXPORT returns at v1.1+ (rides `selection`, the v1.1
+// marker — the bulk strip AND the per-row kebab); `actions` (Beyond) adds the Complete/Decline DESIGN
+// PROPOSAL. `selection` (v1.1+) is also the bulk strip + checkboxes.
 export const capsFor = (m: Milestone): MilestoneCaps => ({
   selection: RANK[m] >= RANK.v1_1,
   advancedFilters: RANK[m] >= RANK.v1_2,
