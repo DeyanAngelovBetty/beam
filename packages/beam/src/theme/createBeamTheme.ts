@@ -387,7 +387,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // the data-beam-mode rules flip them. Painted on a fixed layer in
             // AppShell — behind everything, occluded by the opaque ramp surfaces.
             '--beam-page-mesh': derived.pageMesh,
-            // Scroll-affordance edge-shadow tint (mode-agnostic; see derived.edgeShadow).
+            // Scroll-affordance edge-shadow tint — :root default = DARK (22%); the data-beam-mode blocks
+            // below flip it per scheme (light = 5%). PER-SCHEME (§6.12; see derived.edgeShadow).
             '--beam-edge-shadow': derived.edgeShadow,
             '--beam-gradient-hue-b': g.dark.hueB,
             // hue-c: officiated override SEED if present (gaspar candy), else the derived
@@ -523,6 +524,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // formula var stays in :root; only its input flips here.
           '[data-beam-mode="light"]': {
             colorScheme: 'light',
+            // Scroll-affordance edge shadow — LIGHT strength (5%; the dark 22% overpowers on light). §6.12.
+            '--beam-edge-shadow': derived.edgeShadowLight,
             '--beam-surface-anchor': s.light.anchor,
             '--beam-surface-step': String(s.light.step),
             '--beam-surface-nav-offset': String(s.light.navOffset),
@@ -551,6 +554,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
           '[data-beam-mode="dark"]': {
             colorScheme: 'dark',
+            // Scroll-affordance edge shadow — DARK strength (22%, unchanged). §6.12.
+            '--beam-edge-shadow': derived.edgeShadow,
             // Status-chip: DARK ink (light tints) + the denser dark-surface fill alpha.
             ...statusInkVars('dark'),
             '--beam-status-fill-alpha': String(STATUS_CHIP.fillAlpha.dark),

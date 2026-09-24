@@ -300,6 +300,12 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     **pairing is retired** — hovering an expansion lights nothing (not itself, not its master), the master
     hovers independently, and a **nested table inside an expansion keeps its own body-row hovers** while the
     container stays flat. Harness covers the three negative cases.
+    **Family rule — edge/shadow STRENGTHS are per-scheme (2026-09-24):** a black-alpha tuned so black-on-black
+    reads as depth OVERPOWERS on a light surface, so it must split on the `data-beam-mode` seam like the
+    washes above. `--beam-edge-shadow` (the whole scroll-affordance family — container-right + rail-left
+    h-scroll shadows and the stuck-chrome bands, both trees, all via `EDGE_TINT`) is now **dark 22% / light
+    5%**. *(Sibling flagged, not changed: the rail `::after` box-shadow uses `text-primary @ 22%` — mode-AWARE
+    already, so it self-flips, but its light value is ~22% near-black; revisit if it also smears.)*
 13. **Status chips — the TWO-LEVER construction (hue × volume → three tiers).** `BeamBadge` expresses
     loudness through the fill/outline lever, colour through the hue:
     - **LOUD** (semantic hue + `loud`, e.g. Failed) → **filled colour**: a **dark solid + white text**. The
