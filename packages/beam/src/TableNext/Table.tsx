@@ -765,47 +765,41 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
           />
         )}
       </Box>
-      {/* FAILURE CROWNS layer — a Paper child (OUTSIDE the overflow-x clip), so its bars aren't translated by
-          horizontal scroll. @supports-gated: no anchor-name support → display:none (no stray boxes), the
-          in-flow accent stands alone. zIndex 1 < Z_CHROME (4) so crowns duck under the pinned bucket/footer.
-          One bar per accented row on THIS page, regenerated free on repagination (from displayRows). */}
-      {crownsActive && (
-        <Box
-          aria-hidden
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            zIndex: 1,
-            display: 'none',
-            '@supports (anchor-name: --a)': { display: 'block' },
-          }}
-        >
-          {displayRows.map((row) => {
-            const hue = rowAccent?.(row.original);
-            if (!hue) return null;
-            return (
-              <Box
-                key={row.id}
-                aria-hidden
-                sx={{
-                  position: 'absolute',
-                  // STATIC x at the card's left edge — ignores horizontal scroll (the point). A hair of
-                  // radius so the bar reads as a projecting crown, not the table's own border.
-                  left: 0,
-                  width: `${styles.ACCENT_WIDTH + 1}px`,
-                  bgcolor: `${styles.ACCENT_PALETTE[hue]}.main`,
-                  borderRadius: '0 2px 2px 0',
-                  // Anchor positioning: top/height track the row; x does NOT. KEBAB keys — emotion doesn't
-                  // auto-hyphenate `position-anchor` (too new for its known-property list), so it must be
-                  // written as the literal CSS property name. (Spread as `object` — csstype has no types yet.)
-                  ...({ 'position-anchor': crownAnchorName(row.id), top: 'anchor(top)', bottom: 'anchor(bottom)' } as object),
-                }}
-              />
-            );
-          })}
-        </Box>
-      )}
+      {/* FAILURE CROWNS — one bar per accented row on THIS page (regenerated free on repagination from
+          displayRows). Each is a DIRECT child of the Paper, NOT wrapped in a positioned layer: `anchor()`
+          only sees an anchor that is a DESCENDANT of the querying element's CONTAINING BLOCK, and the rows
+          live under the Paper — so the crown's containing block MUST be the Paper (tableWrapper is
+          position:relative), which an intermediate absolute wrapper would have stolen (that was the bug: the
+          rows aren't descendants of a sibling layer). Outside the overflow-x wrapper, so horizontal scroll
+          doesn't translate them. @supports-gated per crown (no support → display:none, no stray boxes); the
+          in-flow accent stands alone. zIndex 1 < Z_CHROME (4) so crowns duck under the pinned bucket/footer. */}
+      {crownsActive &&
+        displayRows.map((row) => {
+          const hue = rowAccent?.(row.original);
+          if (!hue) return null;
+          return (
+            <Box
+              key={`crown-${row.id}`}
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                // STATIC x at the card's left edge — ignores horizontal scroll (the point). A hair of radius
+                // so the bar reads as a projecting crown, not the table's own border.
+                left: 0,
+                width: `${styles.ACCENT_WIDTH + 1}px`,
+                bgcolor: `${styles.ACCENT_PALETTE[hue]}.main`,
+                borderRadius: '0 2px 2px 0',
+                pointerEvents: 'none',
+                zIndex: 1,
+                display: 'none',
+                '@supports (anchor-name: --a)': { display: 'block' },
+                // Anchor positioning: top/height track the row; x does NOT. KEBAB key — emotion doesn't
+                // auto-hyphenate `position-anchor` (too new for its known list). (Spread as `object`.)
+                ...({ 'position-anchor': crownAnchorName(row.id), top: 'anchor(top)', bottom: 'anchor(bottom)' } as object),
+              }}
+            />
+          );
+        })}
       {footerEl}
       {effectiveSticky && <Box ref={refs.bottomSentinelRef} aria-hidden sx={{ height: 0 }} />}
     </Paper>

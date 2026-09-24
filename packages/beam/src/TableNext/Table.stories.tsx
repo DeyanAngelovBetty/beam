@@ -263,6 +263,54 @@ export const StickyChromeFancyBackdrop: Story = {
 };
 
 /**
+ * FAILURE-CROWN debug (§6.15) — the anchor LAYER in isolation: a hardcoded crown anchored to a STATIC box,
+ * NO data plumbing, NO table. It uses the SAME construction as production — the crown is a direct child of a
+ * relative container (its containing block), the anchor box is another child of that container (so the anchor
+ * is a descendant of the crown's containing block → in scope) — so "the layer works" is separable at a glance
+ * from "the data reaches the layer" (StickyChromeFancyBackdrop). If the RED bar hugs the grey box's left edge
+ * and matches its height, anchor positioning works in this browser; then any dark PRODUCTION crown is a data/
+ * scope issue, not the mechanism. Chromium 125+; unsupported browsers show the note instead (no stray bar).
+ */
+export const CrownAnchorDebug: Story = {
+  render: () => (
+    <Box sx={{ p: 3, maxWidth: 560 }}>
+      <Typography variant="body2" gutterBottom>
+        Hardcoded crown anchored to a static box (no data). Red bar tracks the grey box → the anchor layer
+        works. <code>anchor-name</code> is set via React inline <code>style</code> (hyphenated for us);{' '}
+        <code>position-anchor</code> via the kebab sx key — the same two hazards production dodges.
+      </Typography>
+      <Box sx={{ position: 'relative', height: 200, border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+        {/* the ANCHOR — a static box; anchor-name via inline style (React hyphenates anchorName → anchor-name). */}
+        <Box
+          style={{ anchorName: '--debug-crown' } as React.CSSProperties}
+          sx={{ mt: 8, ml: 12, width: 260, height: 56, bgcolor: 'action.hover', border: 1, borderColor: 'divider', borderRadius: 1, display: 'flex', alignItems: 'center', px: 1.5 }}
+        >
+          <Typography variant="caption" color="text.secondary">anchor box · anchor-name: --debug-crown</Typography>
+        </Box>
+        {/* the CROWN — direct child of the relative container (containing block); @supports-gated like production. */}
+        <Box
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            left: 4,
+            width: 6,
+            bgcolor: 'error.main',
+            borderRadius: '0 3px 3px 0',
+            display: 'none',
+            '@supports (anchor-name: --a)': { display: 'block' },
+            ...({ 'position-anchor': '--debug-crown', top: 'anchor(top)', bottom: 'anchor(bottom)' } as object),
+          }}
+        />
+        {/* unsupported-browser note — only paints when anchor-name is NOT supported. */}
+        <Box sx={{ position: 'absolute', left: 8, bottom: 8, display: 'none', '@supports not (anchor-name: --a)': { display: 'block' } }}>
+          <Typography variant="caption" color="warning.main">anchor-name UNSUPPORTED here — production shows today&apos;s in-flow accent, no crowns.</Typography>
+        </Box>
+      </Box>
+    </Box>
+  ),
+};
+
+/**
  * Tiered disengagement on SHORT viewports (stickyChrome hardening). The tiers are VIEWPORT-height media
  * queries (+ a matchMedia for tier 3), so each frame below is a real `<iframe>` — its own viewport — loading
  * the sticky bench. Thresholds (strict `<`, composed from constants, no literals): T1 356 · T2 288 · T3 264.
