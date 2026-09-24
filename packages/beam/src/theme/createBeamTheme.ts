@@ -204,22 +204,24 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
     light: s.light.navOffset + s.light.navSpread + EDGE.light.lift,
   };
 
-  // STATUS-CHIP TINTED GRAMMAR (2026-09-24; CEO + broad feedback on the red chip). A mid-saturated fill is a
-  // contrast DEAD ZONE — no text colour passes AA on error.main (white ≈3.7:1, black ≈5:1 and vibrating); a
-  // colour-math failure can't be fixed with weight. So the chip is TINTED: a faint severity WASH for the
-  // background (severity.main @ a low alpha over the surface — stays near the surface, calm) + the severity's
-  // FAR-FROM-SURFACE ramp end for the INK (dark surface → light tint, light surface → dark shade — the
-  // contrast lands high). Ink is per-MODE, emitted as theme vars (NEVER a baked literal in the component —
-  // same §6.12 discipline as the row-wash fix); fill alpha flips per mode too (a denser wash reads on dark).
-  // AA (4.5:1) VERIFIED for every severity over BOTH Gaspar (#041213) and Sunlight surfaces, both modes —
-  // ratio = ink vs (severity.main @ fill-alpha over background.paper), WCAG 2 relative luminance:
-  //   danger   dark #FCA5A5 → 7.3 gaspar / 7.3 sun   ·  light #B91C1C → 5.1 / 5.1
-  //   warning  dark #FCD34D → 8.3 / 8.4               ·  light #92400E → 5.9 / 5.8
-  //   success  dark #86EFAC → 8.7 / 8.8               ·  light #166534 → 5.8 / 5.8
-  //   in-prog  dark #93C5FD → 6.7 / 6.9               ·  light #1D4ED8 → 5.5 / 5.5
-  // Border = severity.main @ 40% (a definition edge on the wash); the borderless variant is in the harness
-  // (Friday pick). The failed-ROW rail accent stays: the accent carries the alarm, the chip the state (§6).
+  // STATUS-CHIP GRAMMAR — the TWO-LEVER construction (final, 2026-09-24; §6.13). Volume is expressed again:
+  //   • LOUD (Failed)                → FILLED colour, a DARK solid + white text. Deep enough to pass AAA and
+  //     be mode-INVARIANT (the fill reads the same on Gaspar #041213 and Sunlight surfaces).
+  //   • NOTED (Succeeded, Pending…)  → OUTLINED colour: the severity's far-from-surface INK for text+border
+  //     over a transparent chip (mode-aware; high contrast on either surface).
+  //   • TRANSIENT (Initiated, Proc.) → OUTLINED colourless (the neutral silent tier).
+  // All routed through THEME VARS (no inline colour literals in the component).
+  //   `solid`  — the LOUD fill, mode-invariant. White text @ WCAG relative luminance:
+  //     danger #98231B → 8.10  ·  success #1B5E20 → 7.87  ·  warning #7A3E00 → 8.34  ·  in-prog #1A4A8A → 8.79
+  //     (all AAA ≥7:1; onSolid = #fff.)
+  //   `ink`    — the NOTED text/border, per-MODE far-from-surface (dark tint / light shade). Over the pure
+  //     surface (transparent chip) the contrast only rises above the tinted-pass numbers, so AA holds.
+  //   `fillAlpha`/`borderAlpha` — retained ONLY for the harness's evaluated TINTED alternative (not shipped).
+  // The failed-ROW rail accent stays: with Failed loud again the accent + chip DOUBLE-signal (scan + read) —
+  // intentional (§6.13 / §6.4).
   const STATUS_CHIP = {
+    solid: { danger: '#98231B', success: '#1B5E20', warning: '#7A3E00', 'in-progress': '#1A4A8A' },
+    onSolid: '#fff',
     ink: {
       dark: { danger: '#FCA5A5', warning: '#FCD34D', success: '#86EFAC', 'in-progress': '#93C5FD' },
       light: { danger: '#B91C1C', warning: '#92400E', success: '#166534', 'in-progress': '#1D4ED8' },
@@ -229,6 +231,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   } as const;
   const statusInkVars = (mode: 'dark' | 'light') =>
     Object.fromEntries(Object.entries(STATUS_CHIP.ink[mode]).map(([hue, hex]) => [`--beam-status-${hue}-ink`, hex]));
+  const statusSolidVars = () =>
+    Object.fromEntries(Object.entries(STATUS_CHIP.solid).map(([hue, hex]) => [`--beam-status-${hue}-solid`, hex]));
 
   const action = {
     hoverOpacity: t.states.hover,
@@ -435,6 +439,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // Status-chip tinted grammar (see STATUS_CHIP). :root default = DARK (defaultMode); the mode
             // selectors below flip the ink + fill-alpha. Border alpha is scheme-invariant → :root only.
             ...statusInkVars('dark'),
+            // LOUD solid fills + on-solid text — mode-INVARIANT (dark by design), so :root only.
+            ...statusSolidVars(),
+            '--beam-status-on-solid': STATUS_CHIP.onSolid,
             '--beam-status-fill-alpha': String(STATUS_CHIP.fillAlpha.dark),
             '--beam-status-border-alpha': String(STATUS_CHIP.borderAlpha),
             // Mono face following body weight (Gaspar only; scheme-invariant → :root). See monoWghtValue.

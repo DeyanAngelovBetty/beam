@@ -300,20 +300,27 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     **pairing is retired** — hovering an expansion lights nothing (not itself, not its master), the master
     hovers independently, and a **nested table inside an expansion keeps its own body-row hovers** while the
     container stays flat. Harness covers the three negative cases.
-13. **Status chips are TINTED, not filled — a mid-saturated fill is a contrast dead zone.** No text colour
-    passes AA on `error.main` (white ≈3.7:1, black ≈5:1 and vibrating); weight cannot fix a colour-math
-    failure. So `BeamBadge` renders **one construction for every severity**: a faint severity **wash**
-    (`severity.main` @ `--beam-status-fill-alpha` over the surface — stays near the surface, calm) + the
-    severity's **far-from-surface ink** (`--beam-status-<hue>-ink`) + a 40% definition border, weight 500.
-    The ink is **mode-aware via theme vars, never a baked literal** (dark surface → light tint / light
-    surface → dark shade; the fill alpha flips per mode too — the §6.12 discipline). AA (4.5:1) is
-    **computed and commented** for all four severities over Gaspar + Sunlight, both modes, next to the values
-    (createBeamTheme `STATUS_CHIP`). `volume` (loud/noted) no longer changes the semantic fill — **the row
-    severity accent carries the alarm; the chip carries the state, legibly.** `neutral` stays the hue-less
-    silent (outlined) tier. Pages pass only `hue` (e.g. Gaspar's `STATUS_META`, Sunlight's `BeamStatusBadge`
-    map) — **no colour literal in a cell.** Evidence harness: **Components/BeamBadge → StatusChipRework**
-    (tinted bordered vs borderless vs the Option-A darkened-fill fallback, every severity, both modes). *(CEO
-    + broad feedback 2026-09-24; the border-vs-borderless pick is on the harness for Friday.)*
+13. **Status chips — the TWO-LEVER construction (hue × volume → three tiers).** `BeamBadge` expresses
+    loudness through the fill/outline lever, colour through the hue:
+    - **LOUD** (semantic hue + `loud`, e.g. Failed) → **filled colour**: a **dark solid + white text**. The
+      solids are deep enough to pass **AAA (≥7:1)** with white and are **mode-invariant** (they read the same
+      on Gaspar `#041213` and Sunlight surfaces): `danger #98231B` (8.10:1) · `success #1B5E20` (7.87) ·
+      `warning #7A3E00` (8.34) · `in-progress #1A4A8A` (8.79). (Solving the earlier red-chip dead zone by
+      **darkening the fill**, not tinting.)
+    - **NOTED** (semantic hue + `noted`, e.g. Succeeded, Pending challenge) → **outlined colour**: the
+      severity's **far-from-surface ink** (`--beam-status-<hue>-ink`, mode-aware) for text + border over a
+      transparent chip.
+    - **TRANSIENT** (`neutral`, e.g. Initiated, Processing) → **outlined colourless** (the silent tier).
+
+    All colours route through **theme vars** — `--beam-status-<hue>-solid` / `--beam-status-on-solid` (loud,
+    mode-invariant) and `--beam-status-<hue>-ink` (noted, mode-aware); **no colour literal in a component or a
+    cell.** Pages pass only `(hue, volume)` (Gaspar's `STATUS_META`, Sunlight's `BeamStatusBadge` map).
+    fontWeight 500. The **row severity accent stays** — with Failed loud again, accent + chip **double-signal
+    (scan + read)**, intentional (pairs with §6.4). Evidence harness: **Components/BeamBadge →
+    StatusChipRework** — the shipped two-lever beside the evaluated **tinted alternative** (kept for
+    reference, not shipped), every severity, both modes, plus a Failed dark shape-check (borderless vs a
+    subtle `danger @ 50%` border — the loud fill's pill edge is only ~2:1 on `#041213`). *(Final construction
+    2026-09-24; supersedes the brief tinted pass.)*
 14. **Gaspar body/data default is wght 240 (Roboto Flex).** CEO preference 2026-09-24 — likability over
     a11y conservatism, **DESIGN-REPO SCOPE**: flagged for explicit re-evaluation before any product handoff
     (the **340** recommendation stands as the ops-shift value). Weight is a live CSS var (`--beam-body-wght`,
