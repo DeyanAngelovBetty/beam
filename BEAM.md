@@ -306,6 +306,11 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     map) — **no colour literal in a cell.** Evidence harness: **Components/BeamBadge → StatusChipRework**
     (tinted bordered vs borderless vs the Option-A darkened-fill fallback, every severity, both modes). *(CEO
     + broad feedback 2026-09-24; the border-vs-borderless pick is on the harness for Friday.)*
+14. **Gaspar body/data default is wght 240 (Roboto Flex).** CEO preference 2026-09-24 — likability over
+    a11y conservatism, **DESIGN-REPO SCOPE**: flagged for explicit re-evaluation before any product handoff
+    (the **340** recommendation stands as the ops-shift value). Weight is a live CSS var (`--beam-body-wght`,
+    a registered axis) so the Theme Lab thins it with no rebuild; caption clamps to `max(wght − 40, 200)`.
+    Headings (Quicksand 300) untouched; Sunlight rides none of this (gasparOfficial seam only).
 
 ## 7. Figma ↔ code sync mechanics
 

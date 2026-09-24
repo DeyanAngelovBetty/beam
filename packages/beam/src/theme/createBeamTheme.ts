@@ -59,11 +59,14 @@ export interface ThemeSeedOverrides {
    */
   bodyFont?: {
     family: string;
-    weight?: number;
-    secondaryWeight?: number;
-    /** Full `font-variation-settings` for a multi-axis variable face (Roboto Flex: wght/wdth/GRAD). May
-     *  reference CSS vars (`var(--beam-body-wdth, 104)`) so a live slider can drive an axis with no rebuild.
-     *  When set it carries `wght`, so `weight` is left unset. Applied to body/data only (never headings). */
+    /** Body/data weight → `fontWeightRegular` (which MUI's body2 spread carries into table cells). `wght` is
+     *  a REGISTERED axis (driven by CSS `font-weight`), so a CSS-var string here (`var(--beam-body-wght,
+     *  240)`) lets a live slider thin body/data with no rebuild — variable faces AND static Geist (snapping)
+     *  respond. */
+    weight?: number | string;
+    secondaryWeight?: number | string;
+    /** `font-variation-settings` for CUSTOM (unregistered) axes only — Roboto Flex `wdth` + `GRAD`. `wght`
+     *  is NOT here (it's font-weight, above). May reference CSS vars for live sliders. Body/data only. */
     variationSettings?: string;
     /** `font-optical-sizing` — `auto` engages the `opsz` axis by font-size (needs a build that ships opsz). */
     opticalSizing?: 'auto' | 'none';
@@ -316,12 +319,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       fontFamily: effectiveBodyFont,
       // TYPE SCALE base — shrinks the whole rem ramp (14 default / 13 / 12). `current` = MUI's 14 default.
       fontSize: TYPE_SCALE_BASE[typeScale],
-      // "THINNER OVER SMALLER" (Gaspar body-face, 2026-09-24): the density lever is WEIGHT, not size. Size
-      // stays 14 (a11y-preserving — rows are datum-fixed at 44px, so shrinking text gains ZERO vertical
-      // space; only weight buys lightness). Body/data → ~380 on a variable face (fontWeightRegular carries
-      // body1/body2 + inheriting table cells; `meta` caps keys keep their own ~300, exempt). FLOOR: nothing
-      // below `secondaryWeight` (~340) on dark. Applied only under a bodyFont override → shipped build (400)
-      // unchanged. tabular-nums stays per numeric cell (page-side), untouched by weight.
+      // "THINNER OVER SMALLER" (Gaspar body-face): the density lever is WEIGHT, not size. Size stays 14
+      // (a11y-preserving — rows are datum-fixed at 44px, so shrinking text gains ZERO vertical space; only
+      // weight buys lightness). Body/data weight is a CSS-VAR string (`var(--beam-body-wght, D)`) so the
+      // Theme Lab slider thins it LIVE with no rebuild; `fontWeightRegular` carries body1/body2 AND table
+      // cells (MUI's body2 spread). DEFAULT now 240 (CEO 2026-09-24, Roboto Flex); `meta` caps keys keep
+      // their own ~300 (exempt). Applied only under a bodyFont override → shipped build (400) unchanged.
+      // tabular-nums stays per numeric cell (page-side), untouched by weight.
       ...(bodyWeight ? { fontWeightRegular: bodyWeight } : {}),
       // Body/data RENDER props (axis + air) on the running-text variants — never headings (see bodyFaceRender).
       // Table cells get them too, via MuiTableCell below (they don't inherit body2). Empty → nothing emitted.

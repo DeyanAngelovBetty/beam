@@ -83,9 +83,9 @@ function GasparApp() {
   // Type scale — density dimension picked in the Theme Lab (CEO compromise, 2026-09-23). Rebuilds the
   // theme (not a live CSS-var edit), so the app owns it. Default 'current' (14) until ratified.
   const [typeScale, setTypeScale] = useState<TypeScale>('current');
-  // Body face — the font-seam dimension (2026-09-24). Inter (candidate default, aligns with Vasco's Figma) /
-  // IBM Plex Sans / Geist (previous). Rebuilds the theme like the type scale, so the app owns it.
-  const [bodyFace, setBodyFace] = useState<BodyFace>('inter');
+  // Body face — the font-seam dimension. DEFAULT Roboto Flex @ wght 240 (CEO 2026-09-24 thinner-body
+  // direction); Inter (Figma-aligned) / Plex / Geist are the lab alternates. Rebuilds the theme, app-owned.
+  const [bodyFace, setBodyFace] = useState<BodyFace>('roboto-flex');
   // TEMPORARY DEFAULT-SWAP SEAM (deliberate, against the "apps never pass overrides" doctrine): the Gaspar
   // default is flipped to the Vasco/Figma official palette. NAMED EXIT — graduates into token seeds once the
   // Gaspar colour direction is ratified (pending CEO/brand meeting); then this override is deleted and the

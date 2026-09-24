@@ -17,6 +17,9 @@ import {
   starMaskUri,
   logoGradient,
   GASPAR_BODY_FACE_LABEL,
+  GASPAR_BODY_WGHT,
+  BODY_WGHT_VAR,
+  BODY_WGHT_SEC_VAR,
   BODY_WDTH_VAR,
   BODY_GRAD_VAR,
   ROBOTO_FLEX_PRESET,
@@ -140,15 +143,35 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const counterpart: Scheme = editing === 'dark' ? 'light' : 'dark';
 
   const [selected, setSelected] = useState<Target>('anchor');
-  // Roboto Flex live axes (wdth + GRAD). Written straight onto <html> as CSS vars — the body face's
-  // font-variation-settings reads them, so the text re-renders with NO theme rebuild and (for GRAD, a
-  // grade not a weight) NO layout shift. Init from the preset; the var() fallback matches until first move.
+  // Live body-axis sliders — written straight onto <html> as CSS vars, which the body face reads
+  // (font-weight for wght, font-variation-settings for wdth/GRAD). Text re-renders with NO theme rebuild;
+  // GRAD (a grade, not a weight) and wght thinning re-paint without changing metrics → the live-thinning
+  // demo. Init from each preset; the var() fallbacks match until first move.
+  const faceWght = GASPAR_BODY_WGHT[bodyFace ?? 'inter'];
+  const [bodyWght, setBodyWght] = useState(faceWght.default);
   const [wdth, setWdth] = useState(ROBOTO_FLEX_PRESET.wdth);
   const [grad, setGrad] = useState(ROBOTO_FLEX_PRESET.grad);
   const writeAxis = (varName: string, value: number, set: (n: number) => void) => {
     set(value);
     document.documentElement.style.setProperty(varName, String(value));
   };
+  // wght writes BOTH the body var and the clamped secondary (caption) — max(wght − 40, 200) — so hierarchy
+  // survives without the caption falling off the axis floor.
+  const writeWght = (value: number) => {
+    setBodyWght(value);
+    document.documentElement.style.setProperty(BODY_WGHT_VAR, String(value));
+    document.documentElement.style.setProperty(BODY_WGHT_SEC_VAR, String(Math.max(value - 40, 200)));
+  };
+  // On face switch (a theme rebuild) clear the live vars so each face falls back to ITS preset default,
+  // and reset the slider readouts to that face's values (no cross-face var contamination).
+  useEffect(() => {
+    setBodyWght(GASPAR_BODY_WGHT[bodyFace ?? 'inter'].default);
+    setWdth(ROBOTO_FLEX_PRESET.wdth);
+    setGrad(ROBOTO_FLEX_PRESET.grad);
+    for (const v of [BODY_WGHT_VAR, BODY_WGHT_SEC_VAR, BODY_WDTH_VAR, BODY_GRAD_VAR]) {
+      document.documentElement.style.removeProperty(v);
+    }
+  }, [bodyFace]);
   // Which logo stop (1–4) the shared L/C/H group edits when selected === 'logo'.
   const [logoStop, setLogoStop] = useState(1);
   const [ch, setCh] = useState({ l: 0, c: 0, h: 0 });
@@ -669,21 +692,28 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                 </Select>
               </FormControl>
 
-              {/* Roboto Flex live axes — the Friday demo: thin the running text with the GRAD slider and
-                  watch it lighten with ZERO layout shift (grade ≠ weight, metrics hold); width nudges via
-                  wdth. Only shown for Roboto Flex (the only face whose variation-settings reads these vars). */}
-              {bodyFace === 'roboto-flex' && (
-                <Stack spacing={1} sx={{ pl: 0.5, pt: 0.5 }}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Width (wdth) · {wdth}</Typography>
-                    <Slider size="small" value={wdth} min={75} max={125} step={0.5} aria-label="Roboto Flex width axis" onChange={(_, v) => writeAxis(BODY_WDTH_VAR, v as number, setWdth)} />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Grade (GRAD) · {grad} — thinness, no reflow</Typography>
-                    <Slider size="small" value={grad} min={-150} max={100} step={1} aria-label="Roboto Flex grade axis" onChange={(_, v) => writeAxis(BODY_GRAD_VAR, v as number, setGrad)} />
-                  </Box>
-                </Stack>
-              )}
+              {/* Live body-axis sliders — the Friday moment: drag to thin the running text live. wght is the
+                  weight (every face; capped at each build's REAL floor so the matrix never lies — Geist floors
+                  at 300). For Roboto Flex, GRAD is the ZERO-REFLOW lever beside it (grade ≠ weight, metrics
+                  hold); wdth nudges width. All write CSS vars → no theme rebuild. */}
+              <Stack spacing={1} sx={{ pl: 0.5, pt: 0.5 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Weight (wght) · {bodyWght}</Typography>
+                  <Slider size="small" value={bodyWght} min={faceWght.min} max={faceWght.max} step={1} aria-label="Body weight axis" onChange={(_, v) => writeWght(v as number)} />
+                </Box>
+                {bodyFace === 'roboto-flex' && (
+                  <>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Width (wdth) · {wdth}</Typography>
+                      <Slider size="small" value={wdth} min={75} max={125} step={0.5} aria-label="Roboto Flex width axis" onChange={(_, v) => writeAxis(BODY_WDTH_VAR, v as number, setWdth)} />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Grade (GRAD) · {grad} — thinness, no reflow</Typography>
+                      <Slider size="small" value={grad} min={-150} max={100} step={1} aria-label="Roboto Flex grade axis" onChange={(_, v) => writeAxis(BODY_GRAD_VAR, v as number, setGrad)} />
+                    </Box>
+                  </>
+                )}
+              </Stack>
             </Stack>
           )}
 
