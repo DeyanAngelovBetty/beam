@@ -1,0 +1,51 @@
+{
+  "version": 3,
+  "name": "gaspar-bumped-intensity",
+  "scope": {
+    "product": "gaspar",
+    "jurisdiction": "ontario"
+  },
+  "createdAt": "2026-09-24T12:15:58.479Z",
+  "brand": {
+    "primary": {
+      "dark": {
+        "main": "#57ddcc",
+        "light": "#57ddcc",
+        "dark": "#209486"
+      },
+      "light": {
+        "main": "#0f766e",
+        "light": "#3f918b",
+        "dark": "#0b534d"
+      }
+    }
+  },
+  "surface": {
+    "dark": {
+      "anchor": "#041213"
+    },
+    "light": {
+      "anchor": "#edf1f1"
+    }
+  },
+  "gradient": {
+    "dark": {
+      "hueB": "#57ddcc",
+      "intensity": "25%"
+    },
+    "light": {
+      "hueB": "#17760f",
+      "intensity": "25%"
+    }
+  },
+  "star": {
+    "pitch": "40px",
+    "sizeRatio": 0.22,
+    "dark": {
+      "intensity": "5%"
+    },
+    "light": {
+      "intensity": "6%"
+    }
+  }
+}

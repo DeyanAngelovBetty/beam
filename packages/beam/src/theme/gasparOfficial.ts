@@ -118,8 +118,19 @@ export const gasparOfficialOverrides = (brand: BrandName): ThemeSeedOverrides =>
   // Quicksand 300 display over the thin body.
   // surface anchor #041213 == shipped → omitted (no change). Gradient: keep shipped mesh, recolour the dark
   // hues toward the Figma palette + pin the official LOGO stops (light mesh untouched).
+  // INTENSITY BUMP (Theme Lab export v3 "gaspar-bumped-intensity", Deyan 2026-09-24 — "too pale" feedback;
+  // source apps/gaspar/theme/seeds/2026-09-24-gaspar-bumped-intensity.json). Only the gradient + star DIALS
+  // moved: mesh tint intensity 22→25 (dark) / 14→25 (light), star dark intensity 4→5. VERIFIED UNCHANGED
+  // vs the seed and said so: hueB (#57DDCC dark / #17760F light), hueC, star pitch (40) + sizeRatio (0.22),
+  // light star intensity (6). brand.primary + surface.anchor in the export are byte-identical to shipped
+  // (not touched). AA WORST-CASE recompute over the 25% mesh's darkest/lightest patches (both modes): dark
+  // all pass (≥6.6); LIGHT — the four NOTED chip inks slip to 3.9–4.3 over the darkest patch (25% dark-green
+  // #17760F), BELOW their ~5.1–5.9 baselines. FLAGGED, not retuned — and note the noted chips render on the
+  // OPAQUE card paper in the grid (baseline ~5.1–5.7, AA holds); the slip bites only if a noted chip sits
+  // over the translucent mesh. (§6.13 inks / gaspar-notes.)
   gradient: {
     ...gradientSeeds.gaspar,
-    dark: { ...gradientSeeds.gaspar.dark, hueB: '#57DDCC', hueC: '#4BA8DA', logoStops: { 1: '#0076A5', 2: '#4BA8DA', 3: '#57DDCC', 4: '#209486' } },
+    dark: { ...gradientSeeds.gaspar.dark, hueB: '#57DDCC', hueC: '#4BA8DA', intensity: 25, starIntensity: 5, logoStops: { 1: '#0076A5', 2: '#4BA8DA', 3: '#57DDCC', 4: '#209486' } },
+    light: { ...gradientSeeds.gaspar.light, intensity: 25 },
   },
 });
