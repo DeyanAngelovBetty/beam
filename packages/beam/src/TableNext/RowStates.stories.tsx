@@ -103,7 +103,26 @@ export const RowStates: Story = {
             <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2.5 }}>
               <li>the forced rows show a continuous wash across the rail cell AND the data cells;</li>
               <li>hover any row (incl. the selected one, and under horizontal scroll) — still one surface;</li>
-              <li>expand a row — the nested table's rows tint the same way.</li>
+              <li>expand a row — the nested table&apos;s rows tint the same way.</li>
+            </Box>
+            <Box sx={{ mt: 1 }}>
+              <strong>Hover doctrine (§6.12) — these must NOT hover:</strong>
+              <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2.5 }}>
+                <li>
+                  <strong>Header rail</strong> — hover the <em>header row&apos;s</em> rail cell: it stays
+                  flat (chrome band). The select-all checkbox keeps its own control hover; the cell/band
+                  doesn&apos;t wash.
+                </li>
+                <li>
+                  <strong>Expansion</strong> — expand a row, then hover the expansion container / its padding:
+                  <em>nothing</em> lights (not itself, not the master above). The master row still hovers
+                  independently.
+                </li>
+                <li>
+                  <strong>Nested table in a flat container</strong> — inside the expansion, hover the nested
+                  rows: they hover <em>individually</em> while the container around them stays flat.
+                </li>
+              </Box>
             </Box>
           </Typography>
         </Paper>

@@ -292,6 +292,14 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     regression harness is **Table/Row states** (both trees, every state, one frame). *(Regression fix
     2026-09-23: the port's 2a literal washes split the row on Gaspar's dark surface once the rail went
     var-based in 2b/9.)*
+    **Addendum — WHO hovers (2026-09-24):** the row hover wash belongs to **interactive DATA rows only** —
+    body rows of a table (`tbody`), at **any nesting depth**. **Chrome bands** (header/footer, real or stuck
+    clone) and **expansion containers** (the detail row + its padding regions) **never hover.** So: the
+    rail-wash theme rule is scoped to `.MuiTableBody-root` rows (the real thead rail no longer lights — the
+    select-all checkbox keeps its own *control* hover, the band does not); and the master↔expansion hover
+    **pairing is retired** — hovering an expansion lights nothing (not itself, not its master), the master
+    hovers independently, and a **nested table inside an expansion keeps its own body-row hovers** while the
+    container stays flat. Harness covers the three negative cases.
 13. **Status chips are TINTED, not filled — a mid-saturated fill is a contrast dead zone.** No text colour
     passes AA on `error.main` (white ≈3.7:1, black ≈5:1 and vibrating); weight cannot fix a colour-math
     failure. So `BeamBadge` renders **one construction for every severity**: a faint severity **wash**

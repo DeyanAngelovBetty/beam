@@ -925,17 +925,22 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // `MuiTable`-scoped descendant selectors outrank the ban's `&&&` so they win. Washes mirror the row:
       // hover = action.hover; selected = primary @ selectedOpacity (MUI's default selected row); both
       // mode-aware through CSS vars. (Ruling 2026-09-23.)
+      // SCOPED TO `tbody` (hover doctrine §6.12): the rail wash belongs to interactive DATA rows only, at
+      // any nesting depth (`.MuiTableBody-root` descendant → nested tables included). The REAL thead's rail
+      // cell must NOT light on hover (chrome bands never wash — the select-all checkbox keeps its own
+      // control hover); the stuck clone is a separate DOM outside any data tbody, so it stays flat too. The
+      // detail row lives in the tbody but carries no `.beam-rail`, so it matches nothing here.
       MuiTable: {
         styleOverrides: {
           root: {
-            '& .MuiTableRow-root:hover > .beam-rail': {
+            '& .MuiTableBody-root .MuiTableRow-root:hover > .beam-rail': {
               backgroundImage: 'linear-gradient(var(--mui-palette-action-hover), var(--mui-palette-action-hover))',
             },
-            '& .MuiTableRow-root.Mui-selected > .beam-rail': {
+            '& .MuiTableBody-root .MuiTableRow-root.Mui-selected > .beam-rail': {
               backgroundImage:
                 'linear-gradient(rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity)), rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity)))',
             },
-            '& .MuiTableRow-root.Mui-selected:hover > .beam-rail': {
+            '& .MuiTableBody-root .MuiTableRow-root.Mui-selected:hover > .beam-rail': {
               backgroundImage:
                 'linear-gradient(rgba(var(--mui-palette-primary-mainChannel) / calc(var(--mui-palette-action-selectedOpacity) + var(--mui-palette-action-hoverOpacity))), rgba(var(--mui-palette-primary-mainChannel) / calc(var(--mui-palette-action-selectedOpacity) + var(--mui-palette-action-hoverOpacity))))',
             },

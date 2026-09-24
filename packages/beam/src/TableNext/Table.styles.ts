@@ -84,15 +84,16 @@ export const actionRailCell: SxProps<Theme> = {
 export const actionRailHeader: SxProps<Theme> = { ...(actionRailCell as object), zIndex: 3 };
 
 export const body: SxProps<Theme> = {
-  '& > .table-dataRow:hover, & > .table-dataRow:has(+ .table-detailsRow:hover), & > .table-dataRow:hover + .table-detailsRow, & > .table-detailsRow:hover':
-    { backgroundColor: ROW_WASH_HOVER },
-  '& > .table-dataRow.Mui-selected:hover, & > .table-dataRow.Mui-selected:has(+ .table-detailsRow:hover), & > .table-dataRow.Mui-selected:hover + .table-detailsRow.Mui-selected, & > .table-detailsRow.Mui-selected:hover':
-    { backgroundColor: ROW_WASH_SELECTED_HOVER },
+  // Hover doctrine (§6.12): ONLY the interactive DATA row (`.table-dataRow`) washes on hover/selection. The
+  // master↔expansion PAIRING is retired — hovering the `.table-detailsRow` (expansion container + its
+  // padding) lights NOTHING, and hovering a master no longer tints its detail; the master hovers
+  // independently. Nested tables inside the expansion keep their OWN body-row hovers (their own `styles.body`
+  // / MUI hover), while this container stays flat.
+  '& > .table-dataRow:hover': { backgroundColor: ROW_WASH_HOVER },
+  '& > .table-dataRow.Mui-selected:hover': { backgroundColor: ROW_WASH_SELECTED_HOVER },
   '& > .table-dataRow.Mui-selected > .table-actionRailCell::before': { backgroundColor: ROW_WASH_SELECTED },
-  '& > .table-dataRow:hover > .table-actionRailCell::before, & > .table-dataRow:has(+ .table-detailsRow:hover) > .table-actionRailCell::before':
-    { backgroundColor: ROW_WASH_HOVER },
-  '& > .table-dataRow.Mui-selected:hover > .table-actionRailCell::before, & > .table-dataRow.Mui-selected:has(+ .table-detailsRow:hover) > .table-actionRailCell::before':
-    { backgroundColor: ROW_WASH_SELECTED_HOVER },
+  '& > .table-dataRow:hover > .table-actionRailCell::before': { backgroundColor: ROW_WASH_HOVER },
+  '& > .table-dataRow.Mui-selected:hover > .table-actionRailCell::before': { backgroundColor: ROW_WASH_SELECTED_HOVER },
 };
 
 export const emptyTable: SxProps<Theme> = { py: 6, color: 'text.secondary' };
