@@ -284,9 +284,10 @@ function PaymentMethodCell({ row }: { row: TransactionRow }) {
   );
 }
 
-// Complete/Decline eligibility — INTERIM anchor = Failed ([Q4], flag-5 pending; the wire has no Pending
-// state). Encoded in STATUS_META.eligible, surfaced via isEligible; this string is the disabled reason.
-const ELIGIBILITY_REASON = 'INTERIM: eligibility anchored to Failed pending the product ruling (the wire has no Pending state) — see gaspar-api-notes.md flag 5.';
+// Complete/Decline eligibility — a DESIGN PROPOSAL ([Q4], 2026-09-24): the API has NO operator actions, so
+// the whole workflow is gated to Beyond and the Failed anchor is speculative (no wire semantics to anchor
+// on). Encoded in STATUS_META.eligible, surfaced via isEligible; this string is the disabled reason.
+const ELIGIBILITY_REASON = 'Design proposal — the API has no operator actions today; Complete/Decline are speculative (anchored to Failed as a placeholder). See gaspar-api-notes.md §6 (Q4).';
 
 /** Client-side file download (no backend). */
 function triggerDownload(filename: string, blob: Blob) {
@@ -541,17 +542,22 @@ export function TransactionsPage() {
   // SUBMENU via the `options` lane (JSON/CSV real per row, PDF/Excel proposal snackbar); Complete/Decline
   // proposals with a per-row confirm. Disabled + `disabledTooltip` reason when the row isn't Pending.
   const exportProposal = (fmt: string) => setSnack(`${EXPORT_LABEL[fmt]} export — design proposal, no backend.`);
+  // Kebab: EXPORT is a read action → present at every milestone (incl. v1.0 read-only). Complete/Decline
+  // are OPERATOR ACTIONS — the API has none (read-only BO, 2026-09-24), so they are a DESIGN PROPOSAL gated
+  // to Beyond (caps.actions). At v1.0 the kebab carries Export alone (no orphan operator affordances).
   const menuItems = (row: TransactionRow): ActionMenuItem[] => {
-    const notEligible = !isEligible(row.status); // [Q4] interim anchor = Failed
+    const notEligible = !isEligible(row.status); // DESIGN PROPOSAL anchor = Failed ([Q4], no wire semantics)
+    const exportAction: ActionMenuItem = {
+      id: 'export', label: 'Export', onSelect: () => undefined, options: [
+        { id: 'json', label: 'JSON', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
+        { id: 'csv', label: 'CSV', onSelect: () => { downloadCsv(`payment-${row.id}.csv`, [row]); setSnack('Exported 1 transaction to CSV.'); } },
+        { id: 'pdf', label: 'PDF', onSelect: () => exportProposal('pdf') },
+        { id: 'excel', label: 'Excel', onSelect: () => exportProposal('excel') },
+      ],
+    };
+    if (!caps.actions) return [exportAction]; // v1.0/v1.1 read-only: Export only
     return [
-      {
-        id: 'export', label: 'Export', onSelect: () => undefined, options: [
-          { id: 'json', label: 'JSON', onSelect: () => { downloadJson(`payment-${row.id}.json`, row); setSnack('Exported 1 transaction to JSON.'); } },
-          { id: 'csv', label: 'CSV', onSelect: () => { downloadCsv(`payment-${row.id}.csv`, [row]); setSnack('Exported 1 transaction to CSV.'); } },
-          { id: 'pdf', label: 'PDF', onSelect: () => exportProposal('pdf') },
-          { id: 'excel', label: 'Excel', onSelect: () => exportProposal('excel') },
-        ],
-      },
+      exportAction,
       {
         id: 'complete', label: 'Complete', disabled: notEligible, disabledTooltip: ELIGIBILITY_REASON,
         onSelect: () => { if (window.confirm(`Complete transaction ${row.id}?`)) setSnack('Complete — design proposal, no backend. Nothing was changed.'); },
@@ -788,10 +794,12 @@ export function TransactionsPage() {
         // Severity accent — failed rows get a leading danger bar (redundant reinforcement of the Status
         // chip; the chip names, the accent locates). Grammar spatial-accents note.
         rowAccent={(r) => (isDanger(r.status) ? 'danger' : undefined)}
-        // MILESTONE GATE — existence, not disablement. selection (checkboxes + bulk strip) is v1.1+ and is
-        // DRIVEN BY bulkActions in the port (passing it enables the rail checkboxes); the row kebab
-        // (actionRail.menu: Complete/Decline + Export ▸ submenu) is Beyond-only; expand (the timeline) is
-        // always on; the column manager is v1.2+. Beyond = every cap true = today's full behavior.
+        // MILESTONE GATE — existence, not disablement (2026-09-24: the API is READ-ONLY, so the operator
+        // WORKFLOW is what gates). v1.0 = read-only: NO bulk strip / checkboxes (selection undefined → the
+        // rail has no orphan checkbox estate), and the kebab carries EXPORT alone (read action). v1.1+ adds
+        // selection + the bulk strip (Export-bulk); Beyond (caps.actions) adds the Complete/Decline DESIGN
+        // PROPOSAL to both the kebab and the strip. The kebab itself is ALWAYS present (Export); expand (the
+        // timeline) is always on; the column manager is v1.2+.
         bulkActions={caps.selection ? bulkActions : undefined}
         onBulkAction={caps.selection ? onBulkAction : undefined}
         // Controlled selection so it spans pages (server-shaped). Only wired when selection is enabled.
@@ -802,7 +810,9 @@ export function TransactionsPage() {
         expandAll={false}
         actionRail={{
           expand: (r) => <PaymentTimeline events={r.events} />,
-          ...(caps.actions ? { menu: menuItems } : {}),
+          // Kebab always present — carries Export at every milestone; menuItems adds Complete/Decline only
+          // at Beyond (caps.actions). So v1.0 keeps a read kebab, not an empty rail.
+          menu: menuItems,
         }}
         emptyMessage="No transactions match these filters."
         // Column manager (bullet 3, v1.2+). Catalog = the bullet-1 columns with no data source yet —

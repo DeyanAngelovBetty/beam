@@ -11,27 +11,31 @@ import type { BeamBadgeProps } from '@betty/beam';
  * page's only adapter is `toDisplayRow` (thin field rename + the ENRICHED fields), applied to the page
  * the store already sliced.
  *
- * ── INTERIM RULINGS (docs/gaspar-api-notes.md §4/§5; each cites its open-question number) ──────────────
- *  • [Q1] currency = CAD. Spec §2.4 wins; the sample's EUR is flagged test-env, pending confirm.
+ * ── RULINGS (RESOLVED with Konstantin + Boryana, 2026-09-24; full log in docs/gaspar-api-notes.md §6) ──
+ *  • [Q1 RESOLVED] currency = CAD — MARKET-SCOPED, fixed per deployment (CA=CAD, UK=GBP, PT=EUR per K.).
+ *         Fixtures stay single-market (CA/CAD).
  *  • [Q2] amount = MAJOR units, 2 decimal places (not minor/cents).
- *  • [Q3] status vocabulary = the wire's four, PascalCase: Initiated · Processing · Succeeded · Failed.
- *         (Our old created/pending/completed vocabulary is retired.)
- *  • [Q4] eligibility anchor = Failed — INTERIM. The wire has no Pending, so Complete/Decline temporarily
- *         target Failed. Encoded ONCE in STATUS_META.eligible (not scattered literals); revisit on the
- *         real product ruling.
- *  • [Q5] customerEmail = ENRICHED (not on the wire row) — kept displayed + searchable, derived here.
+ *  • [Q3 RESOLVED] status vocabulary = the real FIVE (Gaspar/docs/payment-transaction-model.md): Initiated ·
+ *         PendingChallenge · Processing · Succeeded · Failed. (Refunds explicitly OUT OF SCOPE for now.)
+ *  • [Q4 RESOLVED-as-GATED] the API has NO operator actions today (read-only BO). Complete/Decline are a
+ *         DESIGN PROPOSAL, gated behind the milestone switcher (Beyond, caps.actions); the Failed
+ *         eligibility anchor is a speculative proposal (no wire semantics exist to anchor on).
+ *  • [Q5 RESOLVED] customerEmail = INTEGRATOR-SIDE (deliberately NOT stored backend-side; customerId is the
+ *         join key). Kept displayed + searchable; the column's v1.0 SURVIVAL is an open PRODUCT question for
+ *         Boryana (see §6 questions) — not resolved here.
  *  • [Q6] paymentMethodId = the wire integer FK, KEPT alongside an ENRICHED card summary derived from it.
- *  • [Q7] psp vocabulary = Nuvei · Worldpay (sample + spec agree; Adyen dropped).
- *  • [Q9 RESOLVED] id = the wire integer PK. The copy-id cell copies the RAW int and URLs carry the RAW id
- *         (the `pay_` display prefix is retired per the fixtures-task rider) — `id` is `String(wireId)`, so
- *         getRowId / selection / ?cr.searchId all key on the raw PK. `wireId` (number) kept alongside.
+ *  • [Q7 RESOLVED] psp vocabulary = Nuvei · Worldpay.
+ *  • [Q9 RESOLVED] id = the RAW wire integer PK everywhere (display, copy, URLs) — `pay_` prefix dropped
+ *         (K. + B. concur). `id` is `String(wireId)`; getRowId / selection / ?cr.searchId key on the raw PK.
+ *  • [Q11 RESOLVED] envelope shape confirmed STABLE across Gaspar list endpoints.
  *
- * pspTransactionId nullability follows the sample exactly: SET only for Succeeded; null for Initiated /
- * Processing / Failed (those never reached a PSP assignment in the sample). [Q10 timeline shape stays open.]
+ * pspTransactionId nullability: SET only for Succeeded; null for Initiated / PendingChallenge / Processing /
+ * Failed (pre-PSP). [Q10 timeline shape stays open.]
  */
 
 // ── Wire contract (mirrors the sample's item + envelope) ─────────────────────────────────────────────
-export type WireStatus = 'Initiated' | 'Processing' | 'Succeeded' | 'Failed';
+// The real five (Gaspar/docs/payment-transaction-model.md, confirmed 2026-09-24). Refunds out of scope.
+export type WireStatus = 'Initiated' | 'PendingChallenge' | 'Processing' | 'Succeeded' | 'Failed';
 export type WirePsp = 'Nuvei' | 'Worldpay';
 export type WireDirection = 'Deposit' | 'Withdrawal';
 
@@ -42,7 +46,7 @@ export interface WireTransaction {
   customerId: string;
   paymentMethodId: number; // FK int → payment-methods
   amount: number; // major units, 2dp [Q2]
-  currency: string; // 'CAD' [Q1]
+  currency: string; // [Q1 RESOLVED] market-scoped, fixed per deployment (CA=CAD/UK=GBP/PT=EUR); fixtures = CA/CAD
   direction: WireDirection;
   psp: WirePsp;
   status: WireStatus;
@@ -63,19 +67,26 @@ export interface TransactionsEnvelope {
   hasNextPage: boolean;
 }
 
-// ── STATUS vocabulary — ONE source of truth (badge tier + interim eligibility + failure accent) ──────
-// Keyed by the wire status [Q3]. `eligible` is the Complete/Decline anchor [Q4, INTERIM = Failed].
-// `danger` drives the row severity accent. Everything downstream reads this map, never a status literal.
+// ── STATUS vocabulary — ONE source of truth (badge tier + proposed eligibility + failure accent) ──────
+// Keyed by the wire status [Q3, the real five]. `eligible` is the Complete/Decline anchor — a DESIGN
+// PROPOSAL only [Q4, RESOLVED-as-gated]: the API has no operator actions, so this is speculative and the
+// workflow is milestone-gated (Beyond). `danger` drives the row severity accent. Everything downstream
+// reads this map, never a status literal.
 export interface StatusMeta {
   badge: BeamBadgeProps;
-  eligible: boolean; // may be Completed/Declined (INTERIM: Failed only — [Q4])
+  eligible: boolean; // Complete/Decline anchor — DESIGN PROPOSAL (no wire operator actions — [Q4])
   danger: boolean; // severity accent + the loud/scan target
 }
 export const STATUS_META: Record<WireStatus, StatusMeta> = {
   Initiated: { badge: { hue: 'neutral', label: 'Initiated' }, eligible: false, danger: false },
+  // PendingChallenge (3DS challenge outstanding, awaiting the cardholder). PICK: warning/noted — a quiet
+  // attention hue so a cluster of stuck challenges is visible, without the LOUD scan-target reserved for
+  // Failed; it's not ops-actionable (the cardholder acts). FLAG: flip to neutral/silent if ops would rather
+  // group it with the transient Initiated/Processing states.
+  PendingChallenge: { badge: { hue: 'warning', volume: 'noted', label: 'Pending challenge' }, eligible: false, danger: false },
   Processing: { badge: { hue: 'neutral', label: 'Processing' }, eligible: false, danger: false },
   Succeeded: { badge: { hue: 'success', volume: 'noted', label: 'Succeeded' }, eligible: false, danger: false },
-  Failed: { badge: { hue: 'danger', volume: 'loud', label: 'Failed' }, eligible: true, danger: true }, // [Q4]
+  Failed: { badge: { hue: 'danger', volume: 'loud', label: 'Failed' }, eligible: true, danger: true }, // [Q4] proposal
 };
 /** Unobserved status → silent with its raw label (the estate honesty rule). */
 export const statusBadge = (s: string): BeamBadgeProps => STATUS_META[s as WireStatus]?.badge ?? { hue: 'neutral', label: s };
@@ -177,11 +188,17 @@ function emitSession(clockMs: number): { rows: Draft[]; nextClockMs: number } {
       const p = rand();
       status = p < 0.55 ? 'Succeeded' : p < 0.72 ? 'Failed' : p < 0.85 ? 'Processing' : 'Initiated';
     }
+    // PendingChallenge (3DS): ~5% of card DEPOSITS in the pre-settle band carry an outstanding 3DS challenge
+    // (sits between Initiated and Processing — the retry sequences are the natural home). Deposits only.
+    if (direction === 'Deposit' && (status === 'Initiated' || status === 'Processing') && rand() < 0.09) {
+      status = 'PendingChallenge';
+    }
     const created = new Date(t);
     // Un-progressed (Initiated) rows: updatedAt == createdAt (sample rule). Others: a few sec–min later.
     const progressed = status !== 'Initiated';
     const updated = new Date(t + (progressed ? int(2, 70) * 1000 : 0));
-    const threeDs = rand() < 0.15 ? 'Authenticated' : 'NotRequired';
+    // A PendingChallenge is definitionally a 3DS transaction; others 3DS ~15% of the time.
+    const threeDs = status === 'PendingChallenge' ? 'Authenticated' : rand() < 0.15 ? 'Authenticated' : 'NotRequired';
     rows.push({
       customerId: customer,
       paymentMethodId: pmId,
@@ -247,7 +264,9 @@ function generate(count: number): WireTransaction[] {
 const WIRE_ROWS: WireTransaction[] = generate(1200);
 
 // ── The adapter (thin rename + ENRICHED fields) ──────────────────────────────────────────────────────
-const emailFor = (customerId: string) => `player${customerId}@example.com`; // [Q5] ENRICHED
+// [Q5 RESOLVED] customerEmail is INTEGRATOR-SIDE — deliberately NOT stored backend-side; customerId is the
+// join key. Displayed + searchable here; whether the column survives v1.0 is an open PRODUCT question (§6).
+const emailFor = (customerId: string) => `player${customerId}@example.com`; // ENRICHED (integrator-side)
 const cardFor = (paymentMethodId: number): CardSummary => {
   const brand: 'Visa' | 'Mastercard' = paymentMethodId % 2 === 1 ? 'Visa' : 'Mastercard';
   const last4 = String(4000 + paymentMethodId * 111).slice(-4);
@@ -261,11 +280,13 @@ const buildEvents = (w: WireTransaction): PaymentEvent[] => {
   const assigned: PaymentEvent = { eventType: 'PspAssigned', occurredOnUtc: at(1), details: `Routed to ${w.psp}` };
   const submitted: PaymentEvent = { eventType: 'SubmittedToProvider', occurredOnUtc: at(2), details: `Submitted to ${w.psp}`, pspTransactionId: w.pspTransactionId };
   const approved: PaymentEvent = { eventType: 'Approved', occurredOnUtc: w.updatedAt, amountModifier: w.amount, pspTransactionId: w.pspTransactionId };
-  // Observed types only, increasing depth. Failed STOPS at PspAssigned — the sample's Failed rows carry no
-  // pspTransactionId (never submitted), and no failure event type has been observed ([Q10], honest gap).
+  const challenge: PaymentEvent = { eventType: 'ChallengeIssued', occurredOnUtc: at(1), details: '3DS challenge issued — awaiting cardholder' };
+  // Observed types only, increasing depth. Failed STOPS at PspAssigned; PendingChallenge stops at the 3DS
+  // challenge (awaiting the cardholder). No failure event type has been observed ([Q10], honest gap).
   switch (w.status) {
     case 'Succeeded': return [initiated, assigned, submitted, approved];
     case 'Processing': return [initiated, assigned, submitted];
+    case 'PendingChallenge': return [initiated, assigned, challenge];
     case 'Failed': return [initiated, assigned];
     default: return [initiated]; // Initiated
   }

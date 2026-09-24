@@ -39,7 +39,8 @@ export interface MilestoneCaps {
   columnManager: boolean;
   /** Heavy page sizes (up to 500) + jump-to-page. (v1.2 — Ruslan's pagination-at-500 feedback) */
   paginationAt500: boolean;
-  /** Complete / Decline — bulk-strip options AND the row kebab. (Beyond) */
+  /** Complete / Decline (operator actions) — bulk-strip options AND the extra row-kebab items. (Beyond)
+   *  2026-09-24: the API has NO operator actions, so these are a DESIGN PROPOSAL — gated here, not shipped. */
   actions: boolean;
   /** The COMPOUND search field (one input across id/PSP/customer/email). At v1.0 it doesn't exist yet —
    *  the page shows 4 individual search fields instead. (v1.1+) */
@@ -48,9 +49,10 @@ export interface MilestoneCaps {
 
 const RANK: Record<Milestone, number> = { v1_0: 0, v1_1: 1, v1_2: 2, beyond: 3 };
 
-// Cumulative, per the requirements doc: each phase assumes everything before it. Note the row kebab
-// (rowActions) lives ONLY at Beyond — it houses Complete/Decline, and per-row Export folds in there
-// too (the spec's export scope is filtered-set-or-selection, i.e. bulk-only, at v1.1/v1.2).
+// Cumulative, per the requirements doc: each phase assumes everything before it. 2026-09-24 (read-only API):
+// the row kebab is ALWAYS present carrying per-row EXPORT (a read action); `actions` gates only the extra
+// Complete/Decline items (Beyond, DESIGN PROPOSAL). `selection` (v1.1+) is the bulk strip + checkboxes; at
+// v1.0 the grid is fully read-only (no strip, no checkboxes, kebab = Export only).
 export const capsFor = (m: Milestone): MilestoneCaps => ({
   selection: RANK[m] >= RANK.v1_1,
   advancedFilters: RANK[m] >= RANK.v1_2,

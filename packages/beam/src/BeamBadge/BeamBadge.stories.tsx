@@ -65,8 +65,9 @@ export const Grammar: Story = {
 
 type Row = { label: string; hue: BeamBadgeHue | 'neutral'; volume?: 'noted' | 'loud' };
 const ROWS: Row[] = [
-  // Wire statuses (Gaspar transactions)
+  // Wire statuses (Gaspar transactions — the real five, 2026-09-24)
   { label: 'Failed', hue: 'danger', volume: 'loud' },
+  { label: 'Pending challenge', hue: 'warning', volume: 'noted' }, // 3DS challenge outstanding (PendingChallenge)
   { label: 'Processing', hue: 'neutral' },
   { label: 'Succeeded', hue: 'success', volume: 'noted' },
   { label: 'Initiated', hue: 'neutral' },

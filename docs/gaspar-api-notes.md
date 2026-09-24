@@ -165,20 +165,26 @@ Secondary (lower stakes, still worth a line): **`id` as int vs string** (URL/det
 
 ## 6. Interim rulings applied — Task 2 (2026-09-24)
 
-Task 2 shipped under these documented INTERIM rulings (fixtures regenerated to the wire shape + envelope
-in `apps/gaspar/src/gaspar/transactionsFixture.ts`; each ruling is ledgered in-code against its flag):
+**RESOLVED with Konstantin + Boryana, 2026-09-24** (fixtures at
+`apps/gaspar/src/gaspar/transactionsFixture.ts`; each ruling ledgered in-code against its flag):
 
-| Flag | Interim ruling | Status |
+| Flag | Answer | By / status |
 |---|---|---|
-| Q1 currency | **CAD** (spec wins); sample EUR flagged test-env | pending confirm |
-| Q2 amount | **major units, 2dp** | pending confirm |
-| Q3 status | **wire's four, PascalCase** — Initiated/Processing/Succeeded/Failed (via `STATUS_META`) | adopted |
-| Q4 eligibility | **anchor = Failed** — Complete/Decline + failure-accent + gating read `STATUS_META`, no literals | INTERIM, product ruling pending |
-| Q5 email | **ENRICHED** in the adapter (kept displayed + searchable) | provenance pending |
-| Q6 paymentMethodId | **FK kept**, card summary ENRICHED from it (shown in the Payment method cell + reveal) | lookup mechanism pending |
-| Q7 psp | **Nuvei / Worldpay** (Adyen dropped) | adopted (sample+spec agree) |
-| Q9 id | wire **int PK** — copy-id cell + URLs carry the **RAW int** (`id = String(wireId)`); `pay_` prefix retired | RESOLVED (2026-09-24 rider) |
+| Q1 currency | **CAD**, but **market-scoped, fixed per deployment** (CA=CAD, UK=GBP, PT=EUR). Fixtures stay single-market (CA/CAD). | Konstantin — **RESOLVED** |
+| Q2 amount | **major units, 2dp** | Konstantin — **RESOLVED** |
+| Q3 status | the **real five**: Initiated / **PendingChallenge** / Processing / Succeeded / Failed — source `Gaspar/docs/payment-transaction-model.md` (product repo). **Refunds explicitly out of scope for now.** | Konstantin — **RESOLVED** |
+| Q4 eligibility / operator actions | the API has **NO operator actions today** (read-only BO; Complete/Decline possibly-future, possibly Midnight-level). The workflow is **milestone-gated** (v1.0 read-only; v1.1+/Beyond the full bulk workflow) and the Failed anchor is re-ledgered a **DESIGN PROPOSAL** (no wire semantics to anchor on). | Konstantin + Boryana — **RESOLVED-as-gated** |
+| Q5 email | **INTEGRATOR-SIDE** — deliberately NOT stored backend-side; `customerId` is the join key. Column kept displayed; **whether it survives v1.0 is an open PRODUCT question** (see below). | Konstantin — **RESOLVED** (backend); Boryana — product Q open |
+| Q6 paymentMethodId | **FK kept**, card summary ENRICHED from it (Payment method cell + reveal) | adopted |
+| Q7 psp | **Nuvei / Worldpay** (Adyen dropped) | Konstantin — **RESOLVED** |
+| Q9 id | **RAW integer PK** everywhere (display, copy, URLs) — `pay_` prefix dropped | Konstantin + Boryana concur — **RESOLVED** |
+| Q11 envelope | `{ items, pageNumber, pageSize, totalPages, totalItems, hasPreviousPage, hasNextPage }` **confirmed STABLE** across Gaspar list endpoints | Konstantin — **RESOLVED** |
 
-Q8 (3DS roster), Q10 (events/failure event), Q11 (envelope stability) unchanged — still open, still to
-confirm with Konstantin. The pagination path is now the envelope consumed 1-based with no client slicing
-(the convergence dividend, §3); `useClientPagination` is retired from this page.
+Still open: **Q8** (full 3DS roster), **Q10** (events/failure event type). And one NEW product question:
+
+- **Email column v1.0 survival (for Boryana):** email is integrator-side (not a backend field). Does the
+  v1.0 transactions grid keep the Customer Email column + search, or defer it until there's a first-party
+  source? (We keep displaying it for now, marked integrator-side.)
+
+The pagination path is the envelope consumed 1-based with no client slicing (the convergence dividend, §3);
+`useClientPagination` is retired from this page.
