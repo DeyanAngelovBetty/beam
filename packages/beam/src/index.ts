@@ -118,7 +118,7 @@ export { TableNext, beamCells, useClientPagination, DEFAULT_TABLE_PAGE_SIZE, TAB
 export type { TableProps as TableNextProps, TableActionRail, ActionMenuItem } from './TableNext/Table.types';
 export { Loader } from './Loader';
 export type { LoaderProps } from './Loader';
-export { PAGE_SECTION_GAP } from './theme/tokens';
+export { PAGE_SECTION_GAP, BUTTON_PAD_X } from './theme/tokens';
 export { BeamChildList } from './BeamChildList/BeamChildList';
 export type { BeamChildListProps, BeamChildColumn } from './BeamChildList/BeamChildList.types';
 export { Section } from './Section/Section';

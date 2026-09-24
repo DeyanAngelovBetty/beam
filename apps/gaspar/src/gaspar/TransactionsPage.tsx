@@ -20,6 +20,7 @@ import {
   stickyChromeGapSx,
   stickyChromeExitSx,
   PAGE_SECTION_GAP,
+  BUTTON_PAD_X,
 } from '@betty/beam';
 import type { TableFilterDefinition, ActionMenuItem } from '@betty/beam';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -416,7 +417,9 @@ export function TransactionsPage() {
   // range, the base selects, then the active v1.2 optional fields.
   const definitions = useMemo<TableFilterDefinition<TxFilters>[]>(() => {
     const search: TableFilterDefinition<TxFilters>[] = caps.compoundSearch
-      ? [{ key: 'q', control: 'text', label: 'Search', placeholder: 'Search ID, PSP ID, customer, email' }]
+      // Placeholder shortened for the 6-col width (the full hint ellipsized at ~210px). PSP ID is still
+      // searched (compound), just dropped from the visible hint to fit. (2026-09-24.)
+      ? [{ key: 'q', control: 'text', label: 'Search', placeholder: 'Search ID, customer, email…' }]
       : [
           { key: 'searchId', control: 'text', label: 'ID' },
           { key: 'searchPsp', control: 'text', label: 'PSP ID' },
@@ -674,7 +677,16 @@ export function TransactionsPage() {
             sx={{
               display: 'grid',
               gap: 2,
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+              // 6 across at wide (≥lg 1200): the base field set fills one row and the optional (v1.2 [+])
+              // fields wrap to a second — 3 rows → 2. Below lg, the current wrap (3-col md, 2-col sm, 1 xs).
+              // Fields FLOW: the count varies by milestone version; the grid doesn't care. (The [+] left the
+              // grid — 6 fields fill the row — and is now the trailing action below.)
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, minmax(0, 1fr))',
+                md: 'repeat(3, minmax(0, 1fr))',
+                lg: 'repeat(6, minmax(0, 1fr))',
+              },
             }}
           >
             {definitions.map((def) => {
@@ -707,20 +719,35 @@ export function TransactionsPage() {
                 </Box>
               );
             })}
-            {/* The `[+]` — a square outlined IconButton flowing as the grid cell AFTER the last field (it
-                moves as fields are added). Its menu lists the addable-not-active fields (clickable) then the
-                awaiting-data catalog (disabled, "awaiting data" subtitle — the column-manager pattern). */}
+          </Box>
+          {/* Actions row. LEFT cluster acts on filter VALUES — FILTER (apply draft→applied) + CLEAR ALL
+              (reset). ADD FILTER edits the PANEL itself, so it sits in the TRAILING zone (continuity with
+              the [+]'s old in-grid trailing position; reserves the right zone for a future applied-filters
+              summary). Its label seats to the panel's right content inset — the MIRROR of RAIL_SEAT: the
+              −BUTTON_PAD_X margin cancels the text button's own right padding so the label's right edge
+              lands on the p:2 content edge, not the button box. */}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button variant={filters.isDraft ? 'contained' : 'outlined'} type="submit">
+              Filter
+            </Button>
+            <Button variant="text" onClick={filters.clear} disabled={!filters.canClear} type="button">
+              Clear All
+            </Button>
+            <Box sx={{ flex: 1 }} />
             {caps.advancedFilters && (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Tooltip title="Add filter">
-                  <IconButton
-                    aria-label="Add filter"
-                    onClick={(e) => setAddAnchor(e.currentTarget)}
-                    sx={{ border: 1, borderColor: 'divider', borderRadius: 1, width: 40, height: 40 }}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                </Tooltip>
+              <>
+                {/* Small text/flat per §6.9 (the quietest tier — it edits the panel, not the data). Disabled
+                    when every optional filter is already added; disabled inherits the colourless rule. */}
+                <Button
+                  size="small"
+                  variant="text"
+                  startIcon={<AddIcon />}
+                  onClick={(e) => setAddAnchor(e.currentTarget)}
+                  disabled={remainingAddables.length === 0}
+                  sx={{ mr: `${-BUTTON_PAD_X}px` }}
+                >
+                  Add filter
+                </Button>
                 <Menu anchorEl={addAnchor} open={Boolean(addAnchor)} onClose={() => setAddAnchor(null)}>
                   {remainingAddables.map((a) => (
                     <MenuItem key={a} onClick={() => addAddable(a)}>
@@ -734,16 +761,8 @@ export function TransactionsPage() {
                     </MenuItem>
                   ))}
                 </Menu>
-              </Box>
+              </>
             )}
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Button variant={filters.isDraft ? 'contained' : 'outlined'} type="submit">
-              Filter
-            </Button>
-            <Button variant="text" onClick={filters.clear} disabled={!filters.canClear} type="button">
-              Clear All
-            </Button>
           </Box>
         </Paper>
       </Box>
