@@ -4,10 +4,16 @@ import type { CSSProperties } from 'react';
 
 // ROW-STATE WASHES — CSS VARS, mode-aware. IDENTICAL expressions to createBeamTheme's `MuiTable` rail
 // wash (2b/9), so a hovered/selected row's rail cell and its data cells resolve to ONE surface — same
-// colour, no seam — in every mode. REGRESSION FIX (2026-09-23): the 2a port shipped these as theme-
-// LITERAL colours (`theme.palette.action.hover`, `alpha(theme.palette.primary.main, …)`), which bake the
-// DEFAULT (light) scheme's values and don't track `data-beam-mode`. On Gaspar (defaultMode="dark") the
-// light literal went invisible on the dark surface while the var-based rail lit — the row split in two.
+// colour, no seam — in every mode.
+//
+// ⚠️ DIVERGENCE FROM OFFICIAL (deliberate; upstream-pitch candidate — see docs/beam-alignment.md §4).
+// This EDITS the ported `body` below, it is NOT a marked LANE addition: official's `body` paints these
+// washes from theme LITERALS (`theme.palette.action.hover`, `alpha(theme.palette.primary.main, …)`) —
+// resolved ONCE from the default scheme. That is latently broken under MUI `cssVariables` + any NON-default
+// colour scheme: the literal bakes the default (light) values and can't track `data-beam-mode`. REGRESSION
+// (2026-09-23): on Gaspar (defaultMode="dark") the light literal went invisible on the dark surface while
+// the var-based rail lit — the row split in two. Pitch to upstream: read `theme.vars` here.
+//
 // `action.hover` (neutral) for hover; `primary @ selectedOpacity` for selected (MUI's own selected-row
 // colour, so the rest-state data cells — painted by MUI's built-in `.Mui-selected` — match exactly);
 // their sum for selected+hover. The organism Table needs no equivalent: its rows carry MUI's `hover`/
