@@ -17,6 +17,9 @@ import {
   starMaskUri,
   logoGradient,
   GASPAR_BODY_FACE_LABEL,
+  BODY_WDTH_VAR,
+  BODY_GRAD_VAR,
+  ROBOTO_FLEX_PRESET,
   type ThemeSeedOverrides,
   type BrandName,
   type TypeScale,
@@ -137,6 +140,15 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const counterpart: Scheme = editing === 'dark' ? 'light' : 'dark';
 
   const [selected, setSelected] = useState<Target>('anchor');
+  // Roboto Flex live axes (wdth + GRAD). Written straight onto <html> as CSS vars — the body face's
+  // font-variation-settings reads them, so the text re-renders with NO theme rebuild and (for GRAD, a
+  // grade not a weight) NO layout shift. Init from the preset; the var() fallback matches until first move.
+  const [wdth, setWdth] = useState(ROBOTO_FLEX_PRESET.wdth);
+  const [grad, setGrad] = useState(ROBOTO_FLEX_PRESET.grad);
+  const writeAxis = (varName: string, value: number, set: (n: number) => void) => {
+    set(value);
+    document.documentElement.style.setProperty(varName, String(value));
+  };
   // Which logo stop (1–4) the shared L/C/H group edits when selected === 'logo'.
   const [logoStop, setLogoStop] = useState(1);
   const [ch, setCh] = useState({ l: 0, c: 0, h: 0 });
@@ -656,6 +668,22 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                   ))}
                 </Select>
               </FormControl>
+
+              {/* Roboto Flex live axes — the Friday demo: thin the running text with the GRAD slider and
+                  watch it lighten with ZERO layout shift (grade ≠ weight, metrics hold); width nudges via
+                  wdth. Only shown for Roboto Flex (the only face whose variation-settings reads these vars). */}
+              {bodyFace === 'roboto-flex' && (
+                <Stack spacing={1} sx={{ pl: 0.5, pt: 0.5 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Width (wdth) · {wdth}</Typography>
+                    <Slider size="small" value={wdth} min={75} max={125} step={0.5} aria-label="Roboto Flex width axis" onChange={(_, v) => writeAxis(BODY_WDTH_VAR, v as number, setWdth)} />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Grade (GRAD) · {grad} — thinness, no reflow</Typography>
+                    <Slider size="small" value={grad} min={-150} max={100} step={1} aria-label="Roboto Flex grade axis" onChange={(_, v) => writeAxis(BODY_GRAD_VAR, v as number, setGrad)} />
+                  </Box>
+                </Stack>
+              )}
             </Stack>
           )}
 

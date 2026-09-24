@@ -57,16 +57,28 @@ export interface ThemeSeedOverrides {
    * over smaller" density lever (2026-09-24): SIZE stays 14; WEIGHT carries the lightness (see the
    * typography block). The `meta` caps keys keep their own ~300 (exempt, like the type-scale floor).
    */
-  bodyFont?: { family: string; weight?: number; secondaryWeight?: number };
+  bodyFont?: {
+    family: string;
+    weight?: number;
+    secondaryWeight?: number;
+    /** Full `font-variation-settings` for a multi-axis variable face (Roboto Flex: wght/wdth/GRAD). May
+     *  reference CSS vars (`var(--beam-body-wdth, 104)`) so a live slider can drive an axis with no rebuild.
+     *  When set it carries `wght`, so `weight` is left unset. Applied to body/data only (never headings). */
+    variationSettings?: string;
+    /** `font-optical-sizing` — `auto` engages the `opsz` axis by font-size (needs a build that ships opsz). */
+    opticalSizing?: 'auto' | 'none';
+    /** Body/data letter-spacing (e.g. Inter `0.15px` — thin-on-dark air). Body/data sizes only. */
+    letterSpacing?: string;
+  };
 }
 
 /**
  * BODY FACE — a Theme Lab dimension (Gaspar; 2026-09-24), the family half of the bodyFont seam. Inter is
  * the candidate default (aligns the body face with Vasco's Figma, closing the Geist discrepancy); IBM Plex
- * Sans is the alternate; Geist is the previous face, kept for comparison. Family + weights are supplied by
- * the app (gasparBodyFont) into `overrides.bodyFont`.
+ * Sans is the alternate; Geist is the previous face; Roboto Flex is the axis-rich candidate (live wdth/GRAD
+ * thinning). Family + weights/axes are supplied by the app (gasparBodyFont) into `overrides.bodyFont`.
  */
-export type BodyFace = 'inter' | 'plex' | 'geist';
+export type BodyFace = 'inter' | 'plex' | 'geist' | 'roboto-flex';
 
 /**
  * TYPE SCALE — a density DIMENSION (Theme Lab, Gaspar; CEO 2026-09-23). Scales the theme typography RAMP
@@ -125,6 +137,17 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   const effectiveBodyFont = overrides?.bodyFont ? `"${overrides.bodyFont.family}", "Helvetica", "Arial", sans-serif` : bodyFont;
   const bodyWeight = overrides?.bodyFont?.weight;
   const bodySecondaryWeight = overrides?.bodyFont?.secondaryWeight;
+  // Per-face RENDER props (variation-settings / optical-sizing / letter-spacing) — the axis + air controls.
+  // Applied to BODY/DATA surfaces ONLY (body1/body2/caption/overline + table cells), never headings, so the
+  // Quicksand display face keeps its own weight (a body `font-variation-settings: 'wght' …` would otherwise
+  // override it) and the display scale stays untracked. Empty for faces that set none → byte-identical.
+  const bf = overrides?.bodyFont;
+  const bodyFaceRender: Record<string, string> = {
+    ...(bf?.variationSettings ? { fontVariationSettings: bf.variationSettings } : {}),
+    ...(bf?.opticalSizing ? { fontOpticalSizing: bf.opticalSizing } : {}),
+    ...(bf?.letterSpacing ? { letterSpacing: bf.letterSpacing } : {}),
+  };
+  const hasBodyFaceRender = Object.keys(bodyFaceRender).length > 0;
   // Gradient title dials (BeamPage). tint is per-mode; underline weight/fade per-product.
   const ti = titleSeeds[product];
   // Product-scoped surface ramp. The step's PRODUCT half bakes here (per scheme);
@@ -300,6 +323,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // below `secondaryWeight` (~340) on dark. Applied only under a bodyFont override → shipped build (400)
       // unchanged. tabular-nums stays per numeric cell (page-side), untouched by weight.
       ...(bodyWeight ? { fontWeightRegular: bodyWeight } : {}),
+      // Body/data RENDER props (axis + air) on the running-text variants — never headings (see bodyFaceRender).
+      // Table cells get them too, via MuiTableCell below (they don't inherit body2). Empty → nothing emitted.
+      ...(hasBodyFaceRender ? { body1: { ...bodyFaceRender }, body2: { ...bodyFaceRender } } : {}),
       // Headings THIN toward 500 at denser scales (they render ≥16px) — `Math.min` so a heading whose
       // face is already LIGHT (e.g. Quicksand 300) is never thickened; `current` keeps the title weight.
       h1: { fontFamily: effectiveTitleFont, fontWeight: denserType ? Math.min(effectiveTitleWeight, 500) : effectiveTitleWeight },
@@ -312,10 +338,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
       // 12px small end at 0.75rem, never below); fontWeight → `secondaryWeight` (~340) under a bodyFont
       // override (the thinner de-emphasis axis, kept ≥340 on dark). Emitted only when one applies, so the
       // shipped build stays byte-identical.
-      ...(denserType || bodySecondaryWeight
+      ...(denserType || bodySecondaryWeight || hasBodyFaceRender
         ? {
-            caption: { ...(denserType ? { fontSize: '0.75rem' } : {}), ...(bodySecondaryWeight ? { fontWeight: bodySecondaryWeight } : {}) },
-            overline: { ...(denserType ? { fontSize: '0.75rem' } : {}), ...(bodySecondaryWeight ? { fontWeight: bodySecondaryWeight } : {}) },
+            caption: { ...(denserType ? { fontSize: '0.75rem' } : {}), ...(bodySecondaryWeight ? { fontWeight: bodySecondaryWeight } : {}), ...bodyFaceRender },
+            overline: { ...(denserType ? { fontSize: '0.75rem' } : {}), ...(bodySecondaryWeight ? { fontWeight: bodySecondaryWeight } : {}), ...bodyFaceRender },
           }
         : {}),
       // SECTION-TITLE step (v2.2): `subtitle1` keeps MUI's 16px (= 1rem, the same size as a `BeamStat`
@@ -852,7 +878,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           // official-pure) — the §6(a) theme-layer pattern, like body density. Per-instance rail hover/
           // selected `backgroundImage` layers are `sx` at equal specificity + later source order, so they
           // still win where they apply. Pre-protects the 18 remaining consumer migrations too.
-          root: { '&&&': { backgroundImage: 'none' } },
+          // Body/data render props (axis + air) reach DATA cells here — table cells don't inherit body2, so
+          // the letter-spacing / variation-settings / optical-sizing are re-applied at the cell. Empty → none.
+          root: { '&&&': { backgroundImage: 'none' }, ...bodyFaceRender },
           head: {
             ...meta, height: FIELD_TWIN_HEIGHT, paddingTop: 0, paddingBottom: 0,
             // Header cells are TRANSPARENT under the Beam theme (they show the card/band behind them) —

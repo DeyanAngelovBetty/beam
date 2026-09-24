@@ -8,12 +8,29 @@ import type { ThemeSeedOverrides, BodyFace } from './createBeamTheme';
 // to eyeball is Dense (12) × 340 on #041213 — if it shimmers, lift the secondary weight to 360.
 const BODY_WEIGHT = 380; // body/data workhorse (variable axis)
 const BODY_SECONDARY_WEIGHT = 340; // caption/overline de-emphasis (≥340 on dark)
-export const GASPAR_BODY_FACES: Record<BodyFace, { family: string; weight: number; secondaryWeight: number }> = {
-  inter: { family: 'Inter Variable', weight: BODY_WEIGHT, secondaryWeight: BODY_SECONDARY_WEIGHT }, // candidate default (aligns with Vasco's Figma)
-  plex: { family: 'IBM Plex Sans Variable', weight: BODY_WEIGHT, secondaryWeight: BODY_SECONDARY_WEIGHT }, // alternate
-  geist: { family: 'Geist', weight: 400, secondaryWeight: 400 }, // PREVIOUS — static Google face (no variable axis) → previous look
+// The live wdth/GRAD CSS vars the Theme Lab sliders drive (Roboto Flex only). The var() FALLBACKS are the
+// preset (wdth 104, GRAD −30), so the face renders correctly before any slider moves. GRAD carries the
+// THINNESS as a GRADE (stroke contrast, NOT weight) → metrics don't reflow → live thinning with zero layout
+// shift (the Friday demo). opsz is left to `font-optical-sizing: auto` (not pinned in variation-settings).
+export const BODY_WDTH_VAR = '--beam-body-wdth';
+export const BODY_GRAD_VAR = '--beam-body-grad';
+export const ROBOTO_FLEX_PRESET = { wdth: 104, grad: -30 };
+type BodyFontSeed = NonNullable<ThemeSeedOverrides['bodyFont']>;
+export const GASPAR_BODY_FACES: Record<BodyFace, BodyFontSeed> = {
+  // Candidate default (aligns with Vasco's Figma). opsz ENGAGED via font-optical-sizing:auto (the
+  // @fontsource inter/opsz build ships the opsz axis); +0.15px tracking = thin-on-dark air on body/data.
+  inter: { family: 'Inter Variable', weight: BODY_WEIGHT, secondaryWeight: BODY_SECONDARY_WEIGHT, opticalSizing: 'auto', letterSpacing: '0.15px' },
+  plex: { family: 'IBM Plex Sans Variable', weight: BODY_WEIGHT, secondaryWeight: BODY_SECONDARY_WEIGHT }, // alternate (kept in the matrix)
+  geist: { family: 'Geist', weight: 400, secondaryWeight: 400 }, // PREVIOUS — static Google face (no variable axis)
+  // Axis-rich candidate: wght 400 with THINNESS via GRAD (grade, not weight → no reflow), wdth 104, opsz
+  // auto. wdth + GRAD read live CSS vars so the lab sliders thin the text with zero layout shift.
+  'roboto-flex': {
+    family: 'Roboto Flex Variable',
+    variationSettings: `'wght' 400, 'wdth' var(${BODY_WDTH_VAR}, ${ROBOTO_FLEX_PRESET.wdth}), 'GRAD' var(${BODY_GRAD_VAR}, ${ROBOTO_FLEX_PRESET.grad})`,
+    opticalSizing: 'auto',
+  },
 };
-export const GASPAR_BODY_FACE_LABEL: Record<BodyFace, string> = { inter: 'Inter', plex: 'IBM Plex Sans', geist: 'Geist (previous)' };
+export const GASPAR_BODY_FACE_LABEL: Record<BodyFace, string> = { inter: 'Inter', plex: 'IBM Plex Sans', geist: 'Geist (previous)', 'roboto-flex': 'Roboto Flex' };
 /** The `overrides.bodyFont` seam value for a chosen Body face (Theme Lab dimension). */
 export const gasparBodyFont = (face: BodyFace) => GASPAR_BODY_FACES[face];
 
@@ -63,9 +80,11 @@ export const gasparOfficialOverrides = (brand: BrandName): ThemeSeedOverrides =>
   //
   // ⚠️ FONT SEAM — VASCO REVIEW LIST (decide once, together — one brand conversation; his confirm due Fri):
   //   (a) TITLE face: this Quicksand 300 exploration  vs  Vasco's Figma Inter. STILL DIVERGENT (exploration).
-  //   (b) BODY face: NOW Inter Variable @ 380/340 — ALIGNED WITH VASCO'S FIGMA (Inter), closing the prior
-  //       Geist-vs-Figma discrepancy in Inter's favour. Geist retired to a Theme Lab comparison option
-  //       (GASPAR_BODY_FACES); IBM Plex Sans is the alternate. Pending Vasco's Friday confirm.
+  //   (b) BODY face: NOW Inter Variable @ 380/340 + opsz auto + 0.15px tracking — ALIGNED WITH VASCO'S
+  //       FIGMA (Inter), closing the prior Geist-vs-Figma discrepancy in Inter's favour. The Theme Lab
+  //       Body-face dimension also carries IBM Plex Sans (alternate), Geist (previous), and Roboto Flex
+  //       (axis-rich candidate — live wdth/GRAD sliders, thinness via grade with no reflow). Default stays
+  //       Inter; the pick happens on the transactions grid. Pending Vasco's Friday confirm.
   // The BODY face is now a Theme Lab DIMENSION (Body face = Inter/Plex/Geist), the family half of the
   // bodyFont seam; the app injects the chosen face into `overrides.bodyFont`. Default below = Inter.
   titleFont: { family: 'Quicksand Variable', weight: 300 },
