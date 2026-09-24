@@ -164,6 +164,32 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
     light: s.light.navOffset + s.light.navSpread + EDGE.light.lift,
   };
 
+  // STATUS-CHIP TINTED GRAMMAR (2026-09-24; CEO + broad feedback on the red chip). A mid-saturated fill is a
+  // contrast DEAD ZONE — no text colour passes AA on error.main (white ≈3.7:1, black ≈5:1 and vibrating); a
+  // colour-math failure can't be fixed with weight. So the chip is TINTED: a faint severity WASH for the
+  // background (severity.main @ a low alpha over the surface — stays near the surface, calm) + the severity's
+  // FAR-FROM-SURFACE ramp end for the INK (dark surface → light tint, light surface → dark shade — the
+  // contrast lands high). Ink is per-MODE, emitted as theme vars (NEVER a baked literal in the component —
+  // same §6.12 discipline as the row-wash fix); fill alpha flips per mode too (a denser wash reads on dark).
+  // AA (4.5:1) VERIFIED for every severity over BOTH Gaspar (#041213) and Sunlight surfaces, both modes —
+  // ratio = ink vs (severity.main @ fill-alpha over background.paper), WCAG 2 relative luminance:
+  //   danger   dark #FCA5A5 → 7.3 gaspar / 7.3 sun   ·  light #B91C1C → 5.1 / 5.1
+  //   warning  dark #FCD34D → 8.3 / 8.4               ·  light #92400E → 5.9 / 5.8
+  //   success  dark #86EFAC → 8.7 / 8.8               ·  light #166534 → 5.8 / 5.8
+  //   in-prog  dark #93C5FD → 6.7 / 6.9               ·  light #1D4ED8 → 5.5 / 5.5
+  // Border = severity.main @ 40% (a definition edge on the wash); the borderless variant is in the harness
+  // (Friday pick). The failed-ROW rail accent stays: the accent carries the alarm, the chip the state (§6).
+  const STATUS_CHIP = {
+    ink: {
+      dark: { danger: '#FCA5A5', warning: '#FCD34D', success: '#86EFAC', 'in-progress': '#93C5FD' },
+      light: { danger: '#B91C1C', warning: '#92400E', success: '#166534', 'in-progress': '#1D4ED8' },
+    },
+    fillAlpha: { dark: 0.14, light: 0.09 },
+    borderAlpha: 0.4,
+  } as const;
+  const statusInkVars = (mode: 'dark' | 'light') =>
+    Object.fromEntries(Object.entries(STATUS_CHIP.ink[mode]).map(([hue, hex]) => [`--beam-status-${hue}-ink`, hex]));
+
   const action = {
     hoverOpacity: t.states.hover,
     selectedOpacity: t.states.selected,
@@ -362,6 +388,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-spine-default': derived.spine.default,
             '--beam-spine-warning': derived.spine.warning,
             '--beam-spine-error': derived.spine.error,
+            // Status-chip tinted grammar (see STATUS_CHIP). :root default = DARK (defaultMode); the mode
+            // selectors below flip the ink + fill-alpha. Border alpha is scheme-invariant → :root only.
+            ...statusInkVars('dark'),
+            '--beam-status-fill-alpha': String(STATUS_CHIP.fillAlpha.dark),
+            '--beam-status-border-alpha': String(STATUS_CHIP.borderAlpha),
             // Surface ramp (§9), now LOAD-BEARING and MATERIALIZED as a chain: the anchor
             // SEED (the ONE hex, per scheme) → the registered ramp (formula once per slot) →
             // aliases. The anchor + step :root defaults are this product's DARK values
@@ -461,9 +492,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-mark-l': String(markLightness.light),
             '--beam-title-tint': ti.tint.light,
             '--beam-title-halo': ti.halo.light,
+            // Status-chip: LIGHT ink (dark shades) + the calmer light-surface fill alpha.
+            ...statusInkVars('light'),
+            '--beam-status-fill-alpha': String(STATUS_CHIP.fillAlpha.light),
           },
           '[data-beam-mode="dark"]': {
             colorScheme: 'dark',
+            // Status-chip: DARK ink (light tints) + the denser dark-surface fill alpha.
+            ...statusInkVars('dark'),
+            '--beam-status-fill-alpha': String(STATUS_CHIP.fillAlpha.dark),
             '--beam-surface-anchor': s.dark.anchor,
             '--beam-surface-step': String(s.dark.step),
             '--beam-surface-nav-offset': String(s.dark.navOffset),

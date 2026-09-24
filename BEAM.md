@@ -292,6 +292,20 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     regression harness is **Table/Row states** (both trees, every state, one frame). *(Regression fix
     2026-09-23: the port's 2a literal washes split the row on Gaspar's dark surface once the rail went
     var-based in 2b/9.)*
+13. **Status chips are TINTED, not filled — a mid-saturated fill is a contrast dead zone.** No text colour
+    passes AA on `error.main` (white ≈3.7:1, black ≈5:1 and vibrating); weight cannot fix a colour-math
+    failure. So `BeamBadge` renders **one construction for every severity**: a faint severity **wash**
+    (`severity.main` @ `--beam-status-fill-alpha` over the surface — stays near the surface, calm) + the
+    severity's **far-from-surface ink** (`--beam-status-<hue>-ink`) + a 40% definition border, weight 500.
+    The ink is **mode-aware via theme vars, never a baked literal** (dark surface → light tint / light
+    surface → dark shade; the fill alpha flips per mode too — the §6.12 discipline). AA (4.5:1) is
+    **computed and commented** for all four severities over Gaspar + Sunlight, both modes, next to the values
+    (createBeamTheme `STATUS_CHIP`). `volume` (loud/noted) no longer changes the semantic fill — **the row
+    severity accent carries the alarm; the chip carries the state, legibly.** `neutral` stays the hue-less
+    silent (outlined) tier. Pages pass only `hue` (e.g. Gaspar's `STATUS_META`, Sunlight's `BeamStatusBadge`
+    map) — **no colour literal in a cell.** Evidence harness: **Components/BeamBadge → StatusChipRework**
+    (tinted bordered vs borderless vs the Option-A darkened-fill fallback, every severity, both modes). *(CEO
+    + broad feedback 2026-09-24; the border-vs-borderless pick is on the harness for Friday.)*
 
 ## 7. Figma ↔ code sync mechanics
 
