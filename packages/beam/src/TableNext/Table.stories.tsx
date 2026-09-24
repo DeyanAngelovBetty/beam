@@ -231,6 +231,10 @@ function StickyBench({ fancyBackdrop = false }: { fancyBackdrop?: boolean }) {
           }}
           onBulkAction={() => {}}
           rowAccent={(r) => (r.status === 'expired' ? 'danger' : undefined)}
+          // FAILURE CROWNS exploration (§6.15) — proven on the FancyBackdrop surface: crowns hold at the card
+          // edge under horizontal scroll, duck under the chrome on pin, re-seat on repagination. Progressive
+          // enhancement (@supports anchor-name); StickyChromeBench (no crowns) is the plain reference.
+          accentCrowns={fancyBackdrop}
           actionRail={{
             expand: (r) => <Box sx={{ py: 1 }}>Transaction {r.id} — {r.type} {r.amount.toFixed(2)} via {r.provider}</Box>,
             menu: () => [{ id: 'view', label: 'View', onSelect: () => {} }],

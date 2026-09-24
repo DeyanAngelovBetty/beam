@@ -330,6 +330,17 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     kinship), weight = `clamp(100, --beam-body-wght + 20, 700)` — one slider thins body + mono in lockstep,
     no split at 240 (the `+20` compensates mono's lighter per-nominal stroke). Gaspar-scoped; Sunlight's
     `monospace` untouched.
+15. **Failure crowns — CSS anchor-positioning EXPLORATION (fun lane, 2026-09-24).** The `rowAccent` bar
+    projected OUTSIDE the horizontal-scroll clip to the card's left edge: each accented row declares an
+    `anchor-name`; a crown per accented row (rendered as a Paper child, outside the overflow-x wrapper) takes
+    `top`/`bottom` from the row anchor and a **static** left at the card edge — so it **tracks the row
+    vertically but ignores horizontal scroll** (`z-index` below `Z_CHROME`, so it ducks under the pinned
+    band). **PROGRESSIVE ENHANCEMENT ONLY:** the whole crown layer is `@supports (anchor-name)`-gated and the
+    in-flow rail accent is the untouched base — no geometry constants touched (paint outside the flow, sticky
+    tiers unaffected). Opt-in via `TableNext accentCrowns`; proven in **StickyChromeFancyBackdrop**, enabled
+    on Gaspar transactions. **Chromium-first** (Chrome/Edge ~125+ ship anchor positioning; Firefox &
+    Safari as of 2026-08 do not — those render exactly today's accent). *(Not a shipped pattern — an
+    exploration; revisit if/when anchor positioning is Baseline.)*
 
 ## 7. Figma ↔ code sync mechanics
 

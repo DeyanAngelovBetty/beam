@@ -794,6 +794,10 @@ export function TransactionsPage() {
         // Severity accent — failed rows get a leading danger bar (redundant reinforcement of the Status
         // chip; the chip names, the accent locates). Grammar spatial-accents note.
         rowAccent={(r) => (isDanger(r.status) ? 'danger' : undefined)}
+        // FAILURE CROWNS (exploration §6.15) — the danger accent projected to the card edge via CSS anchor
+        // positioning; holds under horizontal scroll, ducks under the sticky chrome. Progressive enhancement
+        // (Chromium-first); Firefox/Safari render exactly today's in-flow accent.
+        accentCrowns
         // MILESTONE GATE — existence, not disablement (2026-09-24: the API is READ-ONLY, so the operator
         // WORKFLOW is what gates). v1.0 = read-only: NO bulk strip / checkboxes (selection undefined → the
         // rail has no orphan checkbox estate), and the kebab carries EXPORT alone (read action). v1.1+ adds

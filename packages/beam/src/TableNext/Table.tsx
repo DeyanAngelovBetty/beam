@@ -124,6 +124,7 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
     jumpToPage = false,
     pageSizeOptions,
     rowAccent,
+    accentCrowns = false,
     highlightRowId,
     'aria-label': ariaLabel,
   } = props;
@@ -137,6 +138,15 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
   }
   const sticky = Boolean(stickyChrome); // PARITY styling gate (density / rail / expand) — even when currently unreachable
   const effectiveMaxHeight = sticky ? undefined : maxHeight;
+
+  // FAILURE CROWNS (exploration — §6.15 ledger). The rail accent projected OUTSIDE the horizontal-scroll
+  // clip, to the card's left edge, via CSS anchor positioning. PROGRESSIVE ENHANCEMENT ONLY: the crown layer
+  // is @supports(anchor-name)-gated, and the in-flow accent (in the rail cell) stays the untouched base. Each
+  // accented row gets a unique `anchor-name`; a crown per accented row (this page) anchors its top/bottom to
+  // the row but takes a STATIC left at the card edge — vertical tracks the row, horizontal ignores the scroll.
+  const crownScope = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const crownAnchorName = (rowId: string) => `--beam-crown-${crownScope}-${rowId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+  const crownsActive = accentCrowns && Boolean(rowAccent);
 
   const [scrolledX, setScrolledX] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -674,6 +684,9 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                     onMouseEnter={onRowHover ? () => onRowHover(row.original) : undefined}
                     onMouseLeave={onRowLeave ? () => onRowLeave(row.original) : undefined}
+                    // Accented rows declare an anchor-name (harmless where unsupported) — the crown layer
+                    // below (gated) references it. Only accented rows carry one; nothing else changes.
+                    style={crownsActive && rowAccent?.(row.original) ? ({ anchorName: crownAnchorName(row.id) } as React.CSSProperties) : undefined}
                     sx={{
                       ...(styles.dataRow(Boolean(onRowClick)) as object),
                       ...(stickyRowSx ?? {}),
@@ -752,6 +765,47 @@ function TableInner<TData extends RowData>(props: TableProps<TData>) {
           />
         )}
       </Box>
+      {/* FAILURE CROWNS layer — a Paper child (OUTSIDE the overflow-x clip), so its bars aren't translated by
+          horizontal scroll. @supports-gated: no anchor-name support → display:none (no stray boxes), the
+          in-flow accent stands alone. zIndex 1 < Z_CHROME (4) so crowns duck under the pinned bucket/footer.
+          One bar per accented row on THIS page, regenerated free on repagination (from displayRows). */}
+      {crownsActive && (
+        <Box
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 1,
+            display: 'none',
+            '@supports (anchor-name: --a)': { display: 'block' },
+          }}
+        >
+          {displayRows.map((row) => {
+            const hue = rowAccent?.(row.original);
+            if (!hue) return null;
+            return (
+              <Box
+                key={row.id}
+                aria-hidden
+                sx={{
+                  position: 'absolute',
+                  // STATIC x at the card's left edge — ignores horizontal scroll (the point). A hair of
+                  // radius so the bar reads as a projecting crown, not the table's own border.
+                  left: 0,
+                  width: `${styles.ACCENT_WIDTH + 1}px`,
+                  bgcolor: `${styles.ACCENT_PALETTE[hue]}.main`,
+                  borderRadius: '0 2px 2px 0',
+                  // Anchor positioning: top/height track the row; x does NOT. KEBAB keys — emotion doesn't
+                  // auto-hyphenate `position-anchor` (too new for its known-property list), so it must be
+                  // written as the literal CSS property name. (Spread as `object` — csstype has no types yet.)
+                  ...({ 'position-anchor': crownAnchorName(row.id), top: 'anchor(top)', bottom: 'anchor(bottom)' } as object),
+                }}
+              />
+            );
+          })}
+        </Box>
+      )}
       {footerEl}
       {effectiveSticky && <Box ref={refs.bottomSentinelRef} aria-hidden sx={{ height: 0 }} />}
     </Paper>

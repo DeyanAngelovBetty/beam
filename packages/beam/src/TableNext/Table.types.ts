@@ -147,6 +147,13 @@ export type TableProps<TData extends RowData> = Pick<TableOptions<TData>, 'data'
   pageSizeOptions?: number[];
   /** Per-row severity accent bar in the rail region (decorative; requires the rail). */
   rowAccent?: (row: TData) => BeamBadgeHue | undefined;
+  /**
+   * EXPLORATION (§6.15): project the `rowAccent` bar OUTSIDE the horizontal-scroll clip, to the card's left
+   * edge, via CSS anchor positioning — the crown tracks the row vertically but holds at the card edge under
+   * horizontal scroll. PROGRESSIVE ENHANCEMENT only (`@supports(anchor-name)`); the in-flow accent is the
+   * untouched base. Designed for `stickyChrome` grids. Chromium-first (Chrome/Edge 125+); no-op elsewhere.
+   */
+  accentCrowns?: boolean;
   /** Externally highlight a row (relational navigation — the DashboardBench cross-widget link). */
   highlightRowId?: string | null;
   /** Additive-optional (NOT required — requiring it would break subset-identical construction). */
