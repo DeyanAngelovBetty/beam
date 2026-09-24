@@ -161,6 +161,24 @@ Secondary (lower stakes, still worth a line): **`id` as int vs string** (URL/det
 
 ---
 
-*Next (Task 2, on rulings): regenerate the 1,200-row fixtures to the wire shape + envelope, wire the thin
-field-name adapter at the fixture boundary (display maps stay: `direction` → "Transaction Type", em-dash
-nulls), and make the fixture store's response the envelope the port consumes 1-based without slicing.*
+---
+
+## 6. Interim rulings applied — Task 2 (2026-09-24)
+
+Task 2 shipped under these documented INTERIM rulings (fixtures regenerated to the wire shape + envelope
+in `apps/gaspar/src/gaspar/transactionsFixture.ts`; each ruling is ledgered in-code against its flag):
+
+| Flag | Interim ruling | Status |
+|---|---|---|
+| Q1 currency | **CAD** (spec wins); sample EUR flagged test-env | pending confirm |
+| Q2 amount | **major units, 2dp** | pending confirm |
+| Q3 status | **wire's four, PascalCase** — Initiated/Processing/Succeeded/Failed (via `STATUS_META`) | adopted |
+| Q4 eligibility | **anchor = Failed** — Complete/Decline + failure-accent + gating read `STATUS_META`, no literals | INTERIM, product ruling pending |
+| Q5 email | **ENRICHED** in the adapter (kept displayed + searchable) | provenance pending |
+| Q6 paymentMethodId | **FK kept**, card summary ENRICHED from it (shown in the Payment method cell + reveal) | lookup mechanism pending |
+| Q7 psp | **Nuvei / Worldpay** (Adyen dropped) | adopted (sample+spec agree) |
+| Q9 id | wire **int PK** kept as `wireId`; **`pay_`-prefixed display id** for continuity (my call) | flagged — drop prefix if int is the identifier |
+
+Q8 (3DS roster), Q10 (events/failure event), Q11 (envelope stability) unchanged — still open, still to
+confirm with Konstantin. The pagination path is now the envelope consumed 1-based with no client slicing
+(the convergence dividend, §3); `useClientPagination` is retired from this page.

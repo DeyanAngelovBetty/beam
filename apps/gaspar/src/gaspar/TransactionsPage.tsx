@@ -16,23 +16,40 @@ import {
   useTableFilters,
   TableNext,
   beamCells,
-  useClientPagination,
   BeamPage,
   stickyChromeGapSx,
   stickyChromeExitSx,
   PAGE_SECTION_GAP,
 } from '@betty/beam';
-import type { BeamBadgeProps, TableFilterDefinition, ActionMenuItem } from '@betty/beam';
+import type { TableFilterDefinition, ActionMenuItem } from '@betty/beam';
 import type { ColumnDef } from '@tanstack/react-table';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import { useMilestone } from './milestone';
+// The WIRE-shaped fixture store (Task 2) — the "server". The page's only data adapter is the store's
+// `toDisplayRow`; pagination is the store's native envelope, consumed 1-based without slicing. Interim
+// rulings + their open-question numbers are ledgered in transactionsFixture.ts.
+import {
+  type TransactionRow,
+  type PaymentEvent,
+  queryTransactions,
+  toDisplayRow,
+  findTransactions,
+  statusBadge,
+  isEligible,
+  isDanger,
+  STATUS_OPTIONS,
+  DIRECTION_OPTIONS,
+  PROVIDER_OPTIONS,
+  CURRENCY_OPTIONS,
+  THREEDS_OPTIONS,
+  ERROR_CODE_OPTIONS,
+} from './transactionsFixture';
 
-// Pagination persisted in the URL (the source of truth) — survives the nav-toggle remount + refresh, and
-// back/forward + link-sharing work. Defaults stay OUT of the URL (clean URL at 10 / page 1). 1-based `page`
-// for humans; `pageSize` matches the grid's default. See Table's controlled `pagination` prop.
-const DEFAULT_PAGE_SIZE = 10;
+// Pagination lives in the URL (source of truth) via useTableFilters — survives the nav-toggle remount +
+// refresh; back/forward + link-sharing work. Defaults stay OUT of the URL (clean URL at 10 / page 1, the
+// hook's DEFAULT_TABLE_PAGE_SIZE). 1-based `page`; the store's envelope is 1-based too (no seam).
 
 /**
  * Gaspar Transactions — the payments list grid.
@@ -54,180 +71,23 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 
 /**
- * Phase B seam (spec §"Payment method column"): a card summary lives on the payment-methods resource,
- * NOT in the payments list response today. The cell ACCEPTS this optional object and falls back to the
- * Phase A GUID when it is absent. No client-side joins, no per-row fetch, no faking — the branch is
- * simply unreachable until the backend embeds a card summary in the list row.
+ * Data source (Task 2, 2026-09-24): the WIRE-shaped fixture store in `transactionsFixture.ts` — 1,200
+ * rows in Konstantin's `payments` shape, served through its envelope. `TransactionRow` (imported) is the
+ * ENRICHED display shape the columns/filters below consume; the store's `toDisplayRow` is the only
+ * adapter. All interim rulings (currency CAD, amount 2dp, the wire's four PascalCase statuses, Failed as
+ * the interim eligibility anchor, ENRICHED email + card summary, Nuvei/Worldpay, `pay_`-prefixed display
+ * id over the int PK) are ledgered there with their open-question numbers.
+ *
+ * CATALOG — columns known but NOT built (no data source in the `payments` list response). Documented so
+ * bullet 3's column manager inherits the full conversation; nothing below renders them. Do not fake.
+ *   • Transaction Type — RESOLVED (terminology 2026-09-24): the USER-FACING LABEL for the `direction`
+ *                        field, so it's the renamed `direction` column below (not a catalog entry).
+ *                        DISPLAY-ONLY — field, filter key `direction`, cr.* URL param unchanged.
+ *   • Name on Card / ProcessedBy / Fraud Rules Matched — no field in payments; backend asks.
+ *   • Payment Method Details — brand/last4 → the ENRICHED card cell (kept, [Q6]), not a column of its own.
+ * Also intentionally not shown: threeDsSessionReference (detail material), the wire int id (surfaced via
+ * the display id).
  */
-interface CardSummary {
-  brand: string;
-  last4: string;
-  bin?: string;
-  expiry?: string;
-  prepaid?: boolean;
-}
-
-/**
- * One entry of the payment-details `events[]` timeline (Task B, interim details-as-expandable-row).
- * Observed event types only — see `buildEvents`. Shape mirrors the payment-details resource.
- */
-interface PaymentEvent {
-  eventType: string;
-  occurredOnUtc: string;
-  details?: string;
-  amountModifier?: number | null;
-  pspTransactionId?: string | null;
-}
-
-/** Mirrors the `payments` list response row (spec §"Data source"). */
-interface PaymentRow {
-  id: string;
-  organizationId: string; // context-scoped — not a column
-  marketId: string; // context-scoped — not a column
-  idempotencyKey: string; // not a column
-  customerId: string;
-  customerEmail: string;
-  paymentMethodId: string;
-  amount: number;
-  currency: string;
-  // PROPOSED column — card brand lives on the payment-methods resource, NOT the payments list response
-  // today (rides the embedded-card-summary ask; see SPEC ledger). Rendered proposal with real data TBD.
-  cardType: 'Visa' | 'Mastercard';
-  direction: string;
-  psp: string;
-  status: string;
-  threeDsStatus: string;
-  threeDsSessionReference: string | null; // detail material — not a column
-  pspTransactionId: string | null;
-  // PROPOSED column — no such field in the payments API today (vocabulary TBD: MTI vs response/decline
-  // vs PSP codes, an open backend question). Optional/nullable; null or absent renders an em-dash.
-  errorCode?: string | null;
-  createdAt: string; // ISO 8601 with offset
-  updatedAt: string; // ISO 8601 with offset
-  cardSummary?: CardSummary; // Phase B seam — absent in the list response today
-  events: PaymentEvent[]; // detail timeline (Task B) — seeded from status, observed types only
-}
-
-/**
- * CATALOG — columns known but NOT built (no data source in the `payments` list response). Documented
- * here so bullet 3's column manager inherits the full conversation; nothing below renders. Do not fake.
- *   • Transaction Type      — RESOLVED (terminology decision 2026-09-24, [SOURCE: confirm — meeting/design
- *                             call]): "Transaction Type" is the USER-FACING LABEL for the `direction` field
- *                             (Konstantin's question answered — direction IS the type column). So it is NO
- *                             LONGER an awaiting-data catalog entry; it's the renamed `direction` column
- *                             below. DISPLAY-ONLY — the field, filter key `direction`, and cr.* URL param
- *                             are unchanged (old URLs keep deserializing).
- *   • Name on Card          — absent from payments AND payment-methods. Backend ask.
- *   • Payment Method Details— brand/last4/etc. → becomes the Phase B card cell (above), not a column.
- *   • ProcessedBy           — no field in response. Source unknown.
- *   • Fraud Rules Matched   — no field. Presumably future rules-engine integration.
- * Also intentionally not shown: organizationId, marketId (context-scoped), idempotencyKey,
- * threeDsSessionReference (detail material).
- */
-
-// Mock of the server-paginated payments response (no real endpoint reachable in this app). Real status
-// vocabulary (phase-3 reseed): created/processing/pending/failed/completed; providers Nuvei/Adyen.
-// Currency is CAD everywhere — Boryana's MCP is single-currency CAD (spec §2.4). Mostly-completed;
-// created/pending carry a null pspTransactionId (pre-submit); failed rows carry distinct MTI errorCodes;
-// amounts span magnitudes; createdAt spreads across ~3 weeks.
-const AMOUNT_MAGNITUDES = [12.5, 47.99, 149, 320, 899.5, 1200, 2450, 4800, 75, 18.25];
-const FAILED_MTI = ['0400', '0100', '0200', '0210', '0230', '0800', '0120', '0330']; // distinct observed codes
-// ~1,200 rows (was 40) so 500-per-page and jump-to-page demo across multiple pages (Ruslan's v1.2
-// pagination feedback). Same generator, same enum discipline — NO new vocabulary; stageForDemo still
-// leads page one with the severity story at the default size.
-const RAW_PAYMENTS: Omit<PaymentRow, 'events'>[] = Array.from({ length: 1200 }, (_, i) => {
-  // Real vocabulary (phase-3 reseed): completed 0–3 · pending 4–5 · processing 6 · created 7 · failed
-  // 8–9 → mostly-completed, pending prominent (the loud/actionable one), 8 failed rows (distinct codes).
-  const bucket = i % 10;
-  const status =
-    bucket <= 3 ? 'completed'
-    : bucket <= 5 ? 'pending'
-    : bucket === 6 ? 'processing'
-    : bucket === 7 ? 'created'
-    : 'failed';
-  const psp = i % 2 === 0 ? 'Nuvei' : 'Adyen';
-  const currency = 'CAD'; // single-currency CAD (spec §2.4); the filter/[+] selects collapse to one option
-  const cardType: 'Visa' | 'Mastercard' = i % 2 === 0 ? 'Visa' : 'Mastercard'; // ~half/half, stable per row
-  const direction = i % 3 === 0 ? 'Withdrawal' : 'Deposit';
-  const amount = Number((AMOUNT_MAGNITUDES[i % AMOUNT_MAGNITUDES.length] + (i % 5) * 3.5).toFixed(2));
-  const created = new Date(Date.UTC(2026, 7, 20, 8, 0, 0) + ((i * 13) % 21) * 86_400_000 + (i % 24) * 3_600_000);
-  const updated = new Date(created.getTime() + (2 + (i % 40)) * 1_000);
-  const failedIdx = Math.floor(i / 10) * 2 + (bucket - 8); // 0,1,2,3,… across the failed rows
-  const token = (100000 + i * 37).toString(36).toUpperCase().padStart(10, '0');
-  return {
-    id: `pay_${token}`,
-    organizationId: 'org_betty',
-    marketId: 'mkt_ca',
-    idempotencyKey: `idm_${(4000 + i * 7).toString(16)}`,
-    customerId: `cus_${74120 + i}`,
-    customerEmail: `player${74120 + i}@example.com`, // stable, derived from the customer id
-
-    paymentMethodId: `pm_${token}`,
-    amount,
-    currency,
-    cardType,
-    direction,
-    psp,
-    status,
-    threeDsStatus: i % 6 === 0 ? 'Authenticated' : 'NotRequired',
-    threeDsSessionReference: i % 6 === 0 ? `tds_ref_${5500 + i}` : null,
-    // No PSP transaction id before submit — created/pending are pre-SubmittedToProvider.
-    pspTransactionId: status === 'created' || status === 'pending' ? null : `${psp.toLowerCase()}_txn_${88213400 + i * 7}`,
-    errorCode: status === 'failed' ? FAILED_MTI[failedIdx % FAILED_MTI.length] : null,
-    createdAt: created.toISOString(),
-    updatedAt: updated.toISOString(),
-  };
-});
-
-/**
- * Seed a row's event timeline using ONLY observed event types (Initiated, PspAssigned,
- * SubmittedToProvider, Approved), increasing depth per status: created → Initiated; pending →
- * +PspAssigned; processing → +SubmittedToProvider; completed → +Approved. failed stops at
- * SubmittedToProvider — no failure event type has ever been observed, so the visibly incomplete
- * timeline is the honest rendering (a deliberate open question, not a bug).
- */
-const buildEvents = (r: Omit<PaymentRow, 'events'>): PaymentEvent[] => {
-  const t0 = new Date(r.createdAt).getTime();
-  const at = (min: number) => new Date(t0 + min * 60_000).toISOString();
-  const initiated: PaymentEvent = { eventType: 'Initiated', occurredOnUtc: at(0), details: `${r.direction} initiated` };
-  const assigned: PaymentEvent = { eventType: 'PspAssigned', occurredOnUtc: at(1), details: `Routed to ${r.psp}` };
-  const submitted: PaymentEvent = { eventType: 'SubmittedToProvider', occurredOnUtc: at(2), details: `Submitted to ${r.psp}`, pspTransactionId: r.pspTransactionId };
-  const approved: PaymentEvent = { eventType: 'Approved', occurredOnUtc: r.updatedAt, amountModifier: r.amount, pspTransactionId: r.pspTransactionId };
-  // Observed event types only; increasing depth (ASSUMPTION — see the SPEC backend ledger, incl. the
-  // open question of whether `pending` is pre-submit (awaiting ops) or post-submit (awaiting PSP)).
-  if (r.status === 'completed') return [initiated, assigned, submitted, approved];
-  if (r.status === 'processing') return [initiated, assigned, submitted];
-  if (r.status === 'pending') return [initiated, assigned];
-  if (r.status === 'failed') return [initiated, assigned, submitted]; // STOP — no failure event observed
-  if (r.status === 'created') return [initiated];
-  return [initiated]; // any other status: only what we can honestly assert
-};
-
-// DEMO STAGING (not a sort feature): reorder the mock so page one leads with the severity story
-// top-down — ~4 failed, ~3 pending, a processing, a created, a completed — then the remainder tapers
-// severity-descending across later pages. This is mock-data ordering only; the grid has no default-sort
-// state and no sort logic — a real product sort is not being claimed here.
-const stageForDemo = (rows: Omit<PaymentRow, 'events'>[]): Omit<PaymentRow, 'events'>[] => {
-  const of = (s: string) => rows.filter((r) => r.status === s);
-  const failed = of('failed'), pending = of('pending'), processing = of('processing'), created = of('created'), completed = of('completed');
-  return [
-    // Page one — the headline mix.
-    ...failed.slice(0, 4), ...pending.slice(0, 3), ...processing.slice(0, 1), ...created.slice(0, 1), ...completed.slice(0, 1),
-    // Onward — remaining rows, severity-descending (completed dominates the tail).
-    ...failed.slice(4), ...pending.slice(3), ...processing.slice(1), ...created.slice(1), ...completed.slice(1),
-  ];
-};
-const PAYMENTS: PaymentRow[] = stageForDemo(RAW_PAYMENTS).map((r) => ({ ...r, events: buildEvents(r) }));
-
-// Select options DERIVED from the mock rows — the filter offers exactly the values present, never a
-// hardcoded vocabulary. (Direction happens to be Deposit/Withdrawal today; still derived, not assumed.)
-const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
-const STATUS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.status));
-const DIRECTION_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.direction));
-const PROVIDER_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.psp));
-const CURRENCY_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.currency));
-const THREEDS_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.threeDsStatus));
-const ERROR_CODE_OPTIONS = uniqueSorted(PAYMENTS.map((r) => r.errorCode).filter((c): c is string => Boolean(c)));
 
 /**
  * Filter model — official TableFilters + useTableFilters (Wave 1): the controller owns `draft` (edited by
@@ -400,42 +260,26 @@ function TruncateCopyCell({ value, mono, mode = 'middle', onCopied }: { value: s
   );
 }
 
-/**
- * Status grammar map — this page's vocabulary → (hue, volume) via BeamBadge (state-rendering-grammar.md;
- * the grammar's Gaspar worked example, now OPS-VALIDATED — Boryana/PM confirmed the read). One LOUD
- * state: `failed` — failures are what ops SCANS for and acts on (investigate / retry); `pending` is
- * noted because it largely resolves itself. Note the loud slot (scan-target = failed) is NOT the bulk-
- * action eligibility target (pending) — scan-target and action-target differ by design. `pending` is
- * `warning` here (payment awaiting ops) — a HOMONYM of Sunlight's in-progress `Pending` anchor, not the
- * same word; word-hue consistency scopes per product vocabulary. created/processing are silent.
- */
-const STATUS_TIER: Record<string, BeamBadgeProps> = {
-  created: { hue: 'neutral', label: 'Created' },
-  processing: { hue: 'neutral', label: 'Processing' },
-  pending: { hue: 'warning', volume: 'noted', label: 'Pending' },
-  failed: { hue: 'danger', volume: 'loud', label: 'Failed' },
-  completed: { hue: 'success', volume: 'noted', label: 'Completed' },
-};
-/** Unobserved status → silent with its raw label (the estate's honesty rule, now canonical). */
-const statusTier = (s: string): BeamBadgeProps => STATUS_TIER[s] ?? { hue: 'neutral', label: s };
+// The status grammar map (vocabulary → hue/volume, plus the eligibility + danger flags) now lives ONCE in
+// transactionsFixture.ts's STATUS_META — read via `statusBadge` / `isEligible` / `isDanger` here — so the
+// wire vocabulary [Q3] and the interim Failed eligibility anchor [Q4] have a single source, not literals
+// scattered across the badge, the accent, and the action guards.
 
-/** Phase A: the payment-method GUID. Phase B (unreachable today): a composite card cell when the row
- *  carries an embedded card summary — falls back to Phase A when absent (spec §"two phases"). */
-function PaymentMethodCell({ row, onCopied }: { row: PaymentRow; onCopied: () => void }) {
-  if (row.cardSummary) {
-    const { brand, last4, bin, expiry, prepaid } = row.cardSummary;
-    const detail = [bin && `BIN ${bin}`, expiry && `exp ${expiry}`, prepaid && 'prepaid'].filter(Boolean).join(' · ');
-    return (
-      <Tooltip title={detail || ''}>
-        <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{brand} •••• {last4}</Box>
-      </Tooltip>
-    );
-  }
-  return <TruncateCopyCell value={row.paymentMethodId} onCopied={onCopied} />;
+/** The card summary is now ENRICHED onto every row [Q6]: brand •••• last4, with the FK kept in the reveal
+ *  (Payment method column). The former Phase-A GUID fallback is retired — the summary is always present. */
+function PaymentMethodCell({ row }: { row: TransactionRow }) {
+  const { brand, last4, bin, expiry, paymentMethodId } = row.cardSummary;
+  const detail = [`pm #${paymentMethodId} (FK)`, bin && `BIN ${bin}`, expiry && `exp ${expiry}`].filter(Boolean).join(' · ');
+  return (
+    <Tooltip title={detail}>
+      <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{brand} •••• {last4}</Box>
+    </Tooltip>
+  );
 }
 
-// Eligibility for Complete/Decline is an ASSUMPTION (Pending only) — validate with backend.
-const ELIGIBILITY_REASON = 'Only Pending transactions can be completed or declined (assumption — backend eligibility rules TBD).';
+// Complete/Decline eligibility — INTERIM anchor = Failed ([Q4], flag-5 pending; the wire has no Pending
+// state). Encoded in STATUS_META.eligible, surfaced via isEligible; this string is the disabled reason.
+const ELIGIBILITY_REASON = 'INTERIM: eligibility anchored to Failed pending the product ruling (the wire has no Pending state) — see gaspar-api-notes.md flag 5.';
 
 /** Client-side file download (no backend). */
 function triggerDownload(filename: string, blob: Blob) {
@@ -464,7 +308,7 @@ const EXPORT_FORMATS = [
 const EXPORT_LABEL: Record<string, string> = Object.fromEntries(EXPORT_FORMATS.map((f) => [f.id, f.label]));
 
 // CSV of the visible-catalog fields (the 13 default columns, in order). Real, RFC-4180 quoting.
-const CSV_FIELDS: { header: string; get: (r: PaymentRow) => string | number }[] = [
+const CSV_FIELDS: { header: string; get: (r: TransactionRow) => string | number }[] = [
   { header: 'Created At', get: (r) => r.createdAt },
   { header: 'Last Updated', get: (r) => r.updatedAt },
   { header: 'Transaction ID', get: (r) => r.id },
@@ -485,7 +329,7 @@ const csvCell = (v: string | number) => {
   const s = String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; // quote + escape only when needed (RFC 4180)
 };
-function downloadCsv(filename: string, rows: PaymentRow[]) {
+function downloadCsv(filename: string, rows: TransactionRow[]) {
   const lines = [CSV_FIELDS.map((f) => csvCell(f.header)).join(','), ...rows.map((r) => CSV_FIELDS.map((f) => csvCell(f.get(r))).join(','))];
   triggerDownload(filename, new Blob([`${lines.join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' }));
 }
@@ -592,9 +436,12 @@ export function TransactionsPage() {
 
   const applied = filters.applied;
 
-  const rows = useMemo(() => {
+  // Server-side filter predicate over the DISPLAY shape — handed to the store's query. (In the real API
+  // these are server params; the fixture store enriches internally to evaluate it — the interim stand-in
+  // while email provenance is open, flag [Q5].)
+  const matchRow = useMemo(() => {
     const q = applied.q.trim().toLowerCase();
-    return PAYMENTS.filter((r) => {
+    return (r: TransactionRow): boolean => {
       // Search: id, pspTransactionId, customerId, customerEmail (email added 2026-09-10 — ops flow).
       // COMPOUND (v1.1+): one field across all four. Empty at v1.0.
       if (q) {
@@ -632,16 +479,21 @@ export function TransactionsPage() {
       if (applied.amountMin.trim() !== '' && Number.isFinite(min) && r.amount < min) return false;
       if (applied.amountMax.trim() !== '' && Number.isFinite(max) && r.amount > max) return false;
       return true;
-    });
+    };
   }, [applied]);
 
-  // Wave-2 port pagination: the Table is server-shaped (renders the page it's given), so the demo adapter
-  // slices the filtered rows. The URL source of truth is the SAME `useTableFilters` 1-based controller —
-  // no 0-based↔1-based seam anymore (the controller drops straight in).
-  const { pageRows, totalCount, pagination } = useClientPagination(rows, {
-    controller: filters.pagination,
-    defaultPageSize: DEFAULT_PAGE_SIZE,
-  });
+  // Pagination is the STORE'S NATIVE ENVELOPE — the "server" filters + slices and returns
+  // { items, pageNumber, pageSize, totalItems, … } (Konstantin's shape). The port consumes it 1-based with
+  // NO slicing here; the only per-page work is mapping the wire items through the adapter. `pagination` is
+  // the same URL-owned 1-based useTableFilters controller (no 0↔1 seam). THIS is the convergence dividend
+  // (gaspar-api-notes.md §3) — swap the store for the real endpoint and this block is unchanged.
+  const pagination = filters.pagination;
+  const envelope = useMemo(
+    () => queryTransactions({ pageNumber: pagination.page, pageSize: pagination.pageSize, match: matchRow }),
+    [pagination.page, pagination.pageSize, matchRow],
+  );
+  const pageRows = useMemo(() => envelope.items.map(toDisplayRow), [envelope]);
+  const totalCount = envelope.totalItems;
 
   // TASK A — selection + batch actions. Export is REAL (client-side JSON download); Complete/Decline
   // are PROPOSALS (confirm → snackbar, no mutation). Eligibility: Pending only (assumption).
@@ -650,8 +502,8 @@ export function TransactionsPage() {
     // Export is present whenever the bulk strip is (v1.1+); Complete/Decline join the SAME strip only
     // at Beyond (caps.actions). Export is a FORMAT MENU (JSON/CSV real, PDF/Excel proposals). Eligibility
     // resolves from the FULL set by the owned selection (cross-page), not the port's current-page arg.
-    const selectedRows = PAYMENTS.filter((r) => selection[r.id]);
-    const noEligible = selectedRows.every((r) => r.status !== 'pending');
+    const selectedRows = findTransactions(Object.keys(selection).filter((id) => selection[id]));
+    const noEligible = selectedRows.every((r) => !isEligible(r.status)); // [Q4] interim anchor = Failed
     return [
       { id: 'export', label: 'Export', options: EXPORT_FORMATS },
       ...(caps.actions
@@ -663,7 +515,7 @@ export function TransactionsPage() {
     ];
   };
   const onBulkAction = (actionId: string, selectedIds: string[], optionId?: string) => {
-    const selected = PAYMENTS.filter((r) => selectedIds.includes(r.id));
+    const selected = findTransactions(selectedIds);
     if (actionId === 'export') {
       if (optionId === 'json') { downloadJson(`transactions-${selected.length}.json`, selected); setSnack(`Exported ${selected.length} transaction(s) to JSON.`); }
       else if (optionId === 'csv') { downloadCsv(`transactions-${selected.length}.csv`, selected); setSnack(`Exported ${selected.length} transaction(s) to CSV.`); }
@@ -671,7 +523,7 @@ export function TransactionsPage() {
       return;
     }
     // Complete/Decline already passed the organism's confirm (confirm / destructive).
-    const eligible = selected.filter((r) => r.status === 'pending').length;
+    const eligible = selected.filter((r) => isEligible(r.status)).length;
     const verb = actionId === 'complete' ? 'Complete' : 'Decline';
     setSnack(`${verb} — design proposal, no backend. ${eligible} eligible transaction(s) would be affected. Nothing was changed.`);
   };
@@ -680,8 +532,8 @@ export function TransactionsPage() {
   // SUBMENU via the `options` lane (JSON/CSV real per row, PDF/Excel proposal snackbar); Complete/Decline
   // proposals with a per-row confirm. Disabled + `disabledTooltip` reason when the row isn't Pending.
   const exportProposal = (fmt: string) => setSnack(`${EXPORT_LABEL[fmt]} export — design proposal, no backend.`);
-  const menuItems = (row: PaymentRow): ActionMenuItem[] => {
-    const notPending = row.status !== 'pending';
+  const menuItems = (row: TransactionRow): ActionMenuItem[] => {
+    const notEligible = !isEligible(row.status); // [Q4] interim anchor = Failed
     return [
       {
         id: 'export', label: 'Export', onSelect: () => undefined, options: [
@@ -692,11 +544,11 @@ export function TransactionsPage() {
         ],
       },
       {
-        id: 'complete', label: 'Complete', disabled: notPending, disabledTooltip: ELIGIBILITY_REASON,
+        id: 'complete', label: 'Complete', disabled: notEligible, disabledTooltip: ELIGIBILITY_REASON,
         onSelect: () => { if (window.confirm(`Complete transaction ${row.id}?`)) setSnack('Complete — design proposal, no backend. Nothing was changed.'); },
       },
       {
-        id: 'decline', label: 'Decline', destructive: true, disabled: notPending, disabledTooltip: ELIGIBILITY_REASON,
+        id: 'decline', label: 'Decline', destructive: true, disabled: notEligible, disabledTooltip: ELIGIBILITY_REASON,
         onSelect: () => { if (window.confirm(`Decline transaction ${row.id}?`)) setSnack('Decline — design proposal, no backend. Nothing was changed.'); },
       },
     ];
@@ -706,7 +558,7 @@ export function TransactionsPage() {
   // (text / number / badge / timestamp), a bespoke display column (raw `cell`) where it doesn't (the
   // copy-able IDs carry the page's `onCopied` snackbar; the MTI ErrorCodeCell; the Phase-B PaymentMethodCell).
   // (When bullet 3 lands, the CATALOG above joins these as the column manager's contents.)
-  const columns: ColumnDef<PaymentRow, unknown>[] = [
+  const columns: ColumnDef<TransactionRow, unknown>[] = [
     // Declared default order (2026-09-10 meeting): timestamps lead, then the transaction essentials,
     // then customer + the rest. Persisted arrangements are untouched by the column-manager merge rule.
     beamCells.timestamp({ id: 'createdAt', header: 'Created At', accessor: (r) => r.createdAt, format: (iso) => <TimestampCell iso={iso} />, width: 150 }),
@@ -717,12 +569,12 @@ export function TransactionsPage() {
     // plain text, no badge (grammar: semantic hues are for states only).
     beamCells.text({ id: 'direction', header: 'Transaction Type', accessor: (r) => r.direction, width: 140 }),
     beamCells.number({ id: 'amount', header: 'Amount', accessor: (r) => r.amount, format: (n) => n.toFixed(2), width: 110 }),
-    beamCells.badge({ id: 'status', header: 'Status', accessor: (r) => r.status, tier: (r) => statusTier(r.status), width: 132 }),
+    beamCells.badge({ id: 'status', header: 'Status', accessor: (r) => r.status, tier: (r) => statusBadge(r.status), width: 132 }),
     beamCells.text({ id: 'customerId', header: 'Customer', accessor: (r) => r.customerId, width: 130 }),
     // Customer Email — copy-able like the ID cells, normal face, ellipsis only when width-constrained.
     { id: 'customerEmail', header: 'Customer Email', cell: ({ row }) => <TruncateCopyCell value={row.original.customerEmail} mode="auto" onCopied={onCopied} />, meta: { width: 200 } },
     { id: 'pspTransactionId', header: 'PSP Transaction ID', cell: ({ row }) => <TruncateCopyCell value={row.original.pspTransactionId} mono onCopied={onCopied} />, meta: { width: 184 } },
-    { id: 'paymentMethodId', header: 'Payment method', cell: ({ row }) => <PaymentMethodCell row={row.original} onCopied={onCopied} />, meta: { width: 168 } },
+    { id: 'paymentMethodId', header: 'Payment method', cell: ({ row }) => <PaymentMethodCell row={row.original} />, meta: { width: 168 } },
     beamCells.text({ id: 'currency', header: 'Currency', accessor: (r) => r.currency, width: 96 }),
     // Card Type is a CATEGORY, not a state — plain text, no badge (Direction/3DS grammar ruling).
     // PROPOSED column — card brand lives on payment-methods, not the payments list (SPEC ledger).
@@ -892,7 +744,7 @@ export function TransactionsPage() {
 
       <TableNext
         columns={columns}
-        // Server-shaped: the Table renders the page it's given (useClientPagination slices the filtered set).
+        // Server-shaped: the Table renders the page the store's envelope already sliced (no client slicing).
         data={pageRows}
         getRowId={(r) => r.id}
         // Pagination is owned by useTableFilters (URL source of truth). The port takes the 1-based controller
@@ -910,7 +762,7 @@ export function TransactionsPage() {
         jumpToPage={caps.paginationAt500}
         // Severity accent — failed rows get a leading danger bar (redundant reinforcement of the Status
         // chip; the chip names, the accent locates). Grammar spatial-accents note.
-        rowAccent={(r) => (r.status === 'failed' ? 'danger' : undefined)}
+        rowAccent={(r) => (isDanger(r.status) ? 'danger' : undefined)}
         // MILESTONE GATE — existence, not disablement. selection (checkboxes + bulk strip) is v1.1+ and is
         // DRIVEN BY bulkActions in the port (passing it enables the rail checkboxes); the row kebab
         // (actionRail.menu: Complete/Decline + Export ▸ submenu) is Beyond-only; expand (the timeline) is
