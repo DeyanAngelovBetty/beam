@@ -1,5 +1,21 @@
 import { products, gradientSeeds, type BrandName } from './tokens';
-import type { ThemeSeedOverrides } from './createBeamTheme';
+import type { ThemeSeedOverrides, BodyFace } from './createBeamTheme';
+
+// ── BODY FACE (Theme Lab dimension; Gaspar, 2026-09-24) ───────────────────────────────────────────────
+// "Thinner over smaller": the density lever is variable-font WEIGHT, not size (size holds at 14 — rows are
+// datum-fixed, so smaller text buys no vertical space; only weight buys lightness, and 14px preserves a11y).
+// Body/data ~380, caption/secondary ~340. FLOOR: nothing below the secondary weight on dark. The one corner
+// to eyeball is Dense (12) × 340 on #041213 — if it shimmers, lift the secondary weight to 360.
+const BODY_WEIGHT = 380; // body/data workhorse (variable axis)
+const BODY_SECONDARY_WEIGHT = 340; // caption/overline de-emphasis (≥340 on dark)
+export const GASPAR_BODY_FACES: Record<BodyFace, { family: string; weight: number; secondaryWeight: number }> = {
+  inter: { family: 'Inter Variable', weight: BODY_WEIGHT, secondaryWeight: BODY_SECONDARY_WEIGHT }, // candidate default (aligns with Vasco's Figma)
+  plex: { family: 'IBM Plex Sans Variable', weight: BODY_WEIGHT, secondaryWeight: BODY_SECONDARY_WEIGHT }, // alternate
+  geist: { family: 'Geist', weight: 400, secondaryWeight: 400 }, // PREVIOUS — static Google face (no variable axis) → previous look
+};
+export const GASPAR_BODY_FACE_LABEL: Record<BodyFace, string> = { inter: 'Inter', plex: 'IBM Plex Sans', geist: 'Geist (previous)' };
+/** The `overrides.bodyFont` seam value for a chosen Body face (Theme Lab dimension). */
+export const gasparBodyFont = (face: BodyFace) => GASPAR_BODY_FACES[face];
 
 // REJECTED SOURCE (do not re-extract): the `gaspar-official` clone @ 01d61ab was the WRONG SURFACE — its
 // `rule-editor/` purple (#7c6cf0) is the rule-editor tool's OWN accent, not the Gaspar product palette.
@@ -45,12 +61,18 @@ export const gasparOfficialOverrides = (brand: BrandName): ThemeSeedOverrides =>
   // Quicksand 300 for the DISPLAY scale (page titles h1–h6 + section titles subtitle1). Self-hosted via
   // @fontsource-variable in apps/gaspar. Gaspar-only (Sunlight untouched).
   //
-  // ⚠️ FONT SEAM — VASCO REVIEW LIST (decide once, together — one brand conversation):
-  //   (a) TITLE face: this Quicksand 300 exploration  vs  Vasco's Figma Inter.
-  //   (b) BODY face: currently Geist (productFonts.gaspar.body)  vs  Vasco's Figma Inter. LEFT AS GEIST on
-  //       purpose (NOT silently aligned to Inter) — it rides the same review as (a).
-  // Neither is wired into the font seam yet beyond this title override; ratify the pair, then graduate.
+  // ⚠️ FONT SEAM — VASCO REVIEW LIST (decide once, together — one brand conversation; his confirm due Fri):
+  //   (a) TITLE face: this Quicksand 300 exploration  vs  Vasco's Figma Inter. STILL DIVERGENT (exploration).
+  //   (b) BODY face: NOW Inter Variable @ 380/340 — ALIGNED WITH VASCO'S FIGMA (Inter), closing the prior
+  //       Geist-vs-Figma discrepancy in Inter's favour. Geist retired to a Theme Lab comparison option
+  //       (GASPAR_BODY_FACES); IBM Plex Sans is the alternate. Pending Vasco's Friday confirm.
+  // The BODY face is now a Theme Lab DIMENSION (Body face = Inter/Plex/Geist), the family half of the
+  // bodyFont seam; the app injects the chosen face into `overrides.bodyFont`. Default below = Inter.
   titleFont: { family: 'Quicksand Variable', weight: 300 },
+  bodyFont: gasparBodyFont('inter'), // default; the app's Body-face dimension overrides the family
+  // "Thinner over smaller" (2026-09-24): body/data ~380, caption ~340, SIZE unchanged (14). The a11y-
+  // preserving density argument — rows are datum-fixed (44px), so smaller text gains no vertical space;
+  // weight, not size, carries the lightness. Pairs Quicksand 300 display over Inter 380 body.
   // surface anchor #041213 == shipped → omitted (no change). Gradient: keep shipped mesh, recolour the dark
   // hues toward the Figma palette + pin the official LOGO stops (light mesh untouched).
   gradient: {

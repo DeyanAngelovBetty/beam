@@ -22,8 +22,9 @@ import type { BeamBadgeProps } from '@betty/beam';
  *  • [Q5] customerEmail = ENRICHED (not on the wire row) — kept displayed + searchable, derived here.
  *  • [Q6] paymentMethodId = the wire integer FK, KEPT alongside an ENRICHED card summary derived from it.
  *  • [Q7] psp vocabulary = Nuvei · Worldpay (sample + spec agree; Adyen dropped).
- *  • [Q9] id = the wire integer PK (`wireId`), surfaced through a `pay_`-prefixed DISPLAY id for continuity
- *         with the copy-id cell / getRowId / URLs. MY CALL — flagged; drop the prefix if the int is truth.
+ *  • [Q9 RESOLVED] id = the wire integer PK. The copy-id cell copies the RAW int and URLs carry the RAW id
+ *         (the `pay_` display prefix is retired per the fixtures-task rider) — `id` is `String(wireId)`, so
+ *         getRowId / selection / ?cr.searchId all key on the raw PK. `wireId` (number) kept alongside.
  *
  * pspTransactionId nullability follows the sample exactly: SET only for Succeeded; null for Initiated /
  * Processing / Failed (those never reached a PSP assignment in the sample). [Q10 timeline shape stays open.]
@@ -102,7 +103,7 @@ export interface PaymentEvent {
 export interface TransactionRow {
   // wire-native
   wireId: number; // the integer PK, kept [Q9]
-  id: string; // DISPLAY id: pay_<padded wireId> [Q9]
+  id: string; // = String(wireId) — the RAW PK as string; copy-id + URLs carry this [Q9 RESOLVED]
   customerId: string;
   paymentMethodId: number; // FK int, kept [Q6]
   amount: number;
@@ -276,7 +277,7 @@ export function toDisplayRow(w: WireTransaction): TransactionRow {
   const card = cardFor(w.paymentMethodId);
   return {
     wireId: w.id,
-    id: `pay_${String(w.id).padStart(8, '0')}`, // [Q9] display continuity (flagged)
+    id: String(w.id), // [Q9 RESOLVED] the RAW integer PK — copy-id cell + URLs carry this, not a pay_ prefix
     customerId: w.customerId,
     paymentMethodId: w.paymentMethodId,
     amount: w.amount,

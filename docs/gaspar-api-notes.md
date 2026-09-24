@@ -177,7 +177,7 @@ in `apps/gaspar/src/gaspar/transactionsFixture.ts`; each ruling is ledgered in-c
 | Q5 email | **ENRICHED** in the adapter (kept displayed + searchable) | provenance pending |
 | Q6 paymentMethodId | **FK kept**, card summary ENRICHED from it (shown in the Payment method cell + reveal) | lookup mechanism pending |
 | Q7 psp | **Nuvei / Worldpay** (Adyen dropped) | adopted (sample+spec agree) |
-| Q9 id | wire **int PK** kept as `wireId`; **`pay_`-prefixed display id** for continuity (my call) | flagged — drop prefix if int is the identifier |
+| Q9 id | wire **int PK** — copy-id cell + URLs carry the **RAW int** (`id = String(wireId)`); `pay_` prefix retired | RESOLVED (2026-09-24 rider) |
 
 Q8 (3DS roster), Q10 (events/failure event), Q11 (envelope stability) unchanged — still open, still to
 confirm with Konstantin. The pagination path is now the envelope consumed 1-based with no client slicing

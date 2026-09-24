@@ -16,9 +16,11 @@ import {
   useColorScheme,
   starMaskUri,
   logoGradient,
+  GASPAR_BODY_FACE_LABEL,
   type ThemeSeedOverrides,
   type BrandName,
   type TypeScale,
+  type BodyFace,
 } from '@betty/beam';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
@@ -108,6 +110,12 @@ type LabProps = {
    */
   typeScale?: TypeScale;
   onTypeScaleChange?: (scale: TypeScale) => void;
+  /**
+   * BODY FACE dimension (Gaspar; 2026-09-24). Like the type scale it REBUILDS the theme (a font seam,
+   * not a CSS var), so the app owns it: pass value + setter. Omitted → the control is hidden.
+   */
+  bodyFace?: BodyFace;
+  onBodyFaceChange?: (face: BodyFace) => void;
 };
 
 /**
@@ -123,7 +131,7 @@ export function ThemeLabDrawer(props: LabProps) {
   );
 }
 
-function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeScaleChange }: LabProps) {
+function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeScaleChange, bodyFace, onBodyFaceChange }: LabProps) {
   const { mode, setMode } = useColorScheme();
   const editing: Scheme = mode === 'light' ? 'light' : 'dark';
   const counterpart: Scheme = editing === 'dark' ? 'light' : 'dark';
@@ -626,6 +634,26 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                   <MenuItem value="current">Current (14)</MenuItem>
                   <MenuItem value="compact">Compact (13)</MenuItem>
                   <MenuItem value="dense">Dense (12)</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          )}
+
+          {/* Body face — a FONT-SEAM dimension (Gaspar; 2026-09-24). Same rebuild-the-theme mechanism as
+              Type scale (not a live CSS var), so the app owns it (via onBodyFaceChange). Inter is the
+              candidate default (aligns with Vasco's Figma); Plex the alternate; Geist the previous face. */}
+          {onBodyFaceChange && (
+            <Stack spacing={0.5}>
+              <Typography variant="overline" color="text.secondary">
+                Body face
+              </Typography>
+              <FormControl size="small" fullWidth>
+                <Select value={bodyFace ?? 'inter'} onChange={(e) => onBodyFaceChange(e.target.value as BodyFace)} aria-label="Body face">
+                  {(Object.keys(GASPAR_BODY_FACE_LABEL) as BodyFace[]).map((face) => (
+                    <MenuItem key={face} value={face}>
+                      {GASPAR_BODY_FACE_LABEL[face]}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Stack>

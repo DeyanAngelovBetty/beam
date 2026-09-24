@@ -18,10 +18,10 @@
 // Apps consume the theme through this entry, never by deep-importing
 // ./theme/* — same seam rule as atoms (BEAM.md §6.2).
 export { createBeamTheme } from './theme/createBeamTheme';
-export type { ThemeSeedOverrides, TypeScale } from './theme/createBeamTheme';
+export type { ThemeSeedOverrides, TypeScale, BodyFace } from './theme/createBeamTheme';
 // Gaspar official (Vasco/Figma) palette override — the app's temporary default-swap seam + the Theme Lab
 // "Current (shipped)" candidate. See theme/gasparOfficial.ts for provenance + the named exit.
-export { gasparOfficialOverrides } from './theme/gasparOfficial';
+export { gasparOfficialOverrides, gasparBodyFont, GASPAR_BODY_FACE_LABEL } from './theme/gasparOfficial';
 // Betty sparkle geometry — ONE source (theme tiles it, the Lab chip renders through it).
 export { STAR_PATH, starMaskUri } from './theme/starGeometry';
 // Brand wordmark logos — envelope geometry + the mask-sizing helper (colour stays app-owned).

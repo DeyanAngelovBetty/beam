@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, gasparOfficialOverrides, AppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
-import type { BrandName, BeamNavItem, TypeScale } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, gasparOfficialOverrides, gasparBodyFont, AppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import type { BrandName, BeamNavItem, TypeScale, BodyFace } from '@betty/beam';
 import { GASPAR_NAV, VIEW_PATH, allowedViews, landingView, pruneNav, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
 import { MilestoneProvider, useMilestone } from './gaspar/milestone';
@@ -83,12 +83,18 @@ function GasparApp() {
   // Type scale — density dimension picked in the Theme Lab (CEO compromise, 2026-09-23). Rebuilds the
   // theme (not a live CSS-var edit), so the app owns it. Default 'current' (14) until ratified.
   const [typeScale, setTypeScale] = useState<TypeScale>('current');
+  // Body face — the font-seam dimension (2026-09-24). Inter (candidate default, aligns with Vasco's Figma) /
+  // IBM Plex Sans / Geist (previous). Rebuilds the theme like the type scale, so the app owns it.
+  const [bodyFace, setBodyFace] = useState<BodyFace>('inter');
   // TEMPORARY DEFAULT-SWAP SEAM (deliberate, against the "apps never pass overrides" doctrine): the Gaspar
   // default is flipped to the Vasco/Figma official palette. NAMED EXIT — graduates into token seeds once the
   // Gaspar colour direction is ratified (pending CEO/brand meeting); then this override is deleted and the
   // tokens carry it. Revert (to today's teal) = drop the third arg. The Theme Lab's "Teal (previous shipped)"
-  // renders today's teal without a revert.
-  const theme = useMemo(() => createBeamTheme(brand, 'gaspar', gasparOfficialOverrides(brand), typeScale), [brand, typeScale]);
+  // renders today's teal without a revert. The Body-face dimension injects the chosen face into bodyFont.
+  const theme = useMemo(
+    () => createBeamTheme(brand, 'gaspar', { ...gasparOfficialOverrides(brand), bodyFont: gasparBodyFont(bodyFace) }, typeScale),
+    [brand, typeScale, bodyFace],
+  );
 
   // MILESTONE NAV GATE — the views this phase HAS (Boryana's phasing + Deyan's ruling). Hidden =
   // absent: the nav is pruned to allowed views (+ their ancestors), and routes outside the phase
@@ -160,7 +166,7 @@ function GasparApp() {
         </Routes>
       </AppShell>
       {/* Non-modal — the live app above IS the preview; it stays interactable. */}
-      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} typeScale={typeScale} onTypeScaleChange={setTypeScale} />
+      <ThemeLabDrawer open={labOpen} onClose={() => setLabOpen(false)} product="gaspar" jurisdiction={brand} typeScale={typeScale} onTypeScaleChange={setTypeScale} bodyFace={bodyFace} onBodyFaceChange={setBodyFace} />
     </ThemeProvider>
   );
 }
