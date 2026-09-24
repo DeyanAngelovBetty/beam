@@ -47,8 +47,16 @@ export const GASPAR_BODY_WGHT: Record<BodyFace, { min: number; max: number; defa
   geist: { min: 300, max: 460, default: 400 },
   'roboto-flex': { min: 100, max: 460, default: ROBOTO_FLEX_PRESET.wght },
 };
-/** The `overrides.bodyFont` seam value for a chosen Body face (Theme Lab dimension). */
-export const gasparBodyFont = (face: BodyFace) => GASPAR_BODY_FACES[face];
+// MONO face — Roboto Mono Variable (@fontsource-variable/roboto-mono, wght 100–700), chosen for FAMILY
+// KINSHIP with the Roboto Flex body. It FOLLOWS the body weight (createBeamTheme emits --beam-mono-wght =
+// clamp(100, body-wght + delta, 700)), replacing the system `monospace` keyword whose non-variable faces
+// clamp at ~400 and split the grid into two weights at body 240. weightDelta +20: mono's fixed advance
+// width makes stems read lighter per nominal weight, so a gentle lift brings mono to visual parity with the
+// proportional body at 240 (conservative end of the sanctioned 20–40; nudge toward 40 if still wispy).
+const GASPAR_MONO = { family: 'Roboto Mono Variable', weightDelta: 20, min: 100, max: 700 } as const;
+/** The `overrides.bodyFont` seam value for a chosen Body face (Theme Lab dimension) — every face carries the
+ *  same mono, which follows that face's body weight. */
+export const gasparBodyFont = (face: BodyFace) => ({ ...GASPAR_BODY_FACES[face], mono: GASPAR_MONO });
 
 // REJECTED SOURCE (do not re-extract): the `gaspar-official` clone @ 01d61ab was the WRONG SURFACE — its
 // `rule-editor/` purple (#7c6cf0) is the rule-editor tool's OWN accent, not the Gaspar product palette.

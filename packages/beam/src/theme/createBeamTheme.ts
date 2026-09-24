@@ -72,6 +72,11 @@ export interface ThemeSeedOverrides {
     opticalSizing?: 'auto' | 'none';
     /** Body/data letter-spacing (e.g. Inter `0.15px` — thin-on-dark air). Body/data sizes only. */
     letterSpacing?: string;
+    /** MONO face (timestamps/IDs/tabular cells) that FOLLOWS the body weight. A variable mono is required
+     *  so it renders the low end without clamping heavier than the body. Emits `--beam-mono-family` +
+     *  `--beam-mono-wght` = `clamp(min, body-wght + weightDelta, max)` — one var, so the wght slider thins
+     *  body + mono in lockstep. `weightDelta` compensates mono's lighter per-nominal stroke (default 0). */
+    mono?: { family: string; weightDelta?: number; min?: number; max?: number };
   };
 }
 
@@ -151,6 +156,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
     ...(bf?.letterSpacing ? { letterSpacing: bf.letterSpacing } : {}),
   };
   const hasBodyFaceRender = Object.keys(bodyFaceRender).length > 0;
+  // MONO face that FOLLOWS the body weight. `--beam-mono-wght` reuses the body-weight EXPRESSION (bf.weight,
+  // which carries the face's own `var(--beam-body-wght, default)`), so mono and body share one live var and
+  // thin in lockstep; `weightDelta` compensates mono's lighter per-nominal stroke. Emitted as CSS vars only
+  // when the seam supplies mono (Gaspar) → Sunlight never gets them.
+  const monoFamilyValue = bf?.mono ? `"${bf.mono.family}", ui-monospace, monospace` : undefined;
+  const monoWghtValue =
+    bf?.mono && bf.weight !== undefined
+      ? `clamp(${bf.mono.min ?? 100}, calc(${bf.weight} + ${bf.mono.weightDelta ?? 0}), ${bf.mono.max ?? 700})`
+      : undefined;
   // Gradient title dials (BeamPage). tint is per-mode; underline weight/fade per-product.
   const ti = titleSeeds[product];
   // Product-scoped surface ramp. The step's PRODUCT half bakes here (per scheme);
@@ -423,6 +437,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             ...statusInkVars('dark'),
             '--beam-status-fill-alpha': String(STATUS_CHIP.fillAlpha.dark),
             '--beam-status-border-alpha': String(STATUS_CHIP.borderAlpha),
+            // Mono face following body weight (Gaspar only; scheme-invariant → :root). See monoWghtValue.
+            ...(monoFamilyValue ? { '--beam-mono-family': monoFamilyValue, '--beam-mono-wght': monoWghtValue as string } : {}),
             // Surface ramp (§9), now LOAD-BEARING and MATERIALIZED as a chain: the anchor
             // SEED (the ONE hex, per scheme) → the registered ramp (formula once per slot) →
             // aliases. The anchor + step :root defaults are this product's DARK values

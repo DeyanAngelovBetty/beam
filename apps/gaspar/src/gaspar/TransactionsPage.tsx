@@ -145,6 +145,12 @@ const ERROR_CODE_NONE = '__none__'; // sentinel value for "rows with no error co
 
 const EM_DASH = '—';
 
+// Mono cells (PSP ID / error code / timeline) use Roboto Mono Variable via the theme's --beam-mono-* vars,
+// which FOLLOW the body weight — so the grid reads as ONE weight at any body wght (no mono-clamps-heavier
+// split at 240) and the wght slider thins mono in lockstep. Fallback = system monospace (theme without the
+// mono seam); font-weight simply inherits when --beam-mono-wght is unset.
+const MONO_SX = { fontFamily: 'var(--beam-mono-family, monospace)', fontWeight: 'var(--beam-mono-wght)' } as const;
+
 /**
  * ISO 8583 MTI dictionary — DATA, not logic. Verbatim from the pasted table; keyed by code. A code
  * absent here is unknown: the cell shows the code and the reveal says "Unknown code" — no invented
@@ -196,7 +202,7 @@ function ErrorCodeCell({ code }: { code: string | null | undefined }) {
   );
   return (
     <Tooltip title={title}>
-      <Box component="span" tabIndex={0} sx={{ fontFamily: 'monospace', cursor: 'help', borderRadius: 0.5 }}>
+      <Box component="span" tabIndex={0} sx={{ ...MONO_SX, cursor: 'help', borderRadius: 0.5 }}>
         {code}
       </Box>
     </Tooltip>
@@ -233,7 +239,7 @@ function TruncateCopyCell({ value, mono, mode = 'middle', onCopied }: { value: s
         <Box
           component="span"
           sx={{
-            fontFamily: mono ? 'monospace' : undefined,
+            ...(mono ? MONO_SX : {}),
             whiteSpace: 'nowrap',
             // 'middle' (IDs): char-based middle-truncate always. 'auto' (emails): full value in the
             // normal face, CSS end-ellipsis ONLY when the column is too narrow.
@@ -349,7 +355,7 @@ function PaymentTimeline({ events }: { events: PaymentEvent[] }) {
       <Stack spacing={1} sx={{ mt: 0.5 }}>
         {events.map((e, i) => (
           <Stack key={i} direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-            <Box component="span" sx={{ fontFamily: 'monospace', color: 'text.secondary', whiteSpace: 'nowrap', minWidth: 148 }}>
+            <Box component="span" sx={{ ...MONO_SX, color: 'text.secondary', whiteSpace: 'nowrap', minWidth: 148 }}>
               {fmtEventTime(e.occurredOnUtc)}
             </Box>
             <Box sx={{ minWidth: 0 }}>

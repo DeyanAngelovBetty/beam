@@ -13,6 +13,10 @@ import '@fontsource-variable/quicksand';
 import '@fontsource-variable/inter/opsz.css';
 import '@fontsource-variable/ibm-plex-sans';
 import '@fontsource-variable/roboto-flex/full.css';
+// MONO face (2026-09-24): variable Roboto Mono (wght 100–700), family kinship with the Roboto Flex body. It
+// FOLLOWS the body weight via --beam-mono-wght, so timestamps/IDs/tabular cells don't clamp heavier than
+// body at 240. Replaces the system `monospace` keyword in the Gaspar grid's mono cells.
+import '@fontsource-variable/roboto-mono';
 import { App } from './App';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

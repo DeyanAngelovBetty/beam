@@ -310,7 +310,11 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     a11y conservatism, **DESIGN-REPO SCOPE**: flagged for explicit re-evaluation before any product handoff
     (the **340** recommendation stands as the ops-shift value). Weight is a live CSS var (`--beam-body-wght`,
     a registered axis) so the Theme Lab thins it with no rebuild; caption clamps to `max(wght − 40, 200)`.
-    Headings (Quicksand 300) untouched; Sunlight rides none of this (gasparOfficial seam only).
+    Headings (Quicksand 300) untouched; Sunlight rides none of this (gasparOfficial seam only). **Mono
+    follows body weight:** the mono face (timestamps/IDs/tabular cells) is **Roboto Mono Variable** (Flex
+    kinship), weight = `clamp(100, --beam-body-wght + 20, 700)` — one slider thins body + mono in lockstep,
+    no split at 240 (the `+20` compensates mono's lighter per-nominal stroke). Gaspar-scoped; Sunlight's
+    `monospace` untouched.
 
 ## 7. Figma ↔ code sync mechanics
 
