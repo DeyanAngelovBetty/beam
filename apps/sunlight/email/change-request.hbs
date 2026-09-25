@@ -24,12 +24,12 @@
   </style>
 </head>
 
-<body style="margin:0;padding:0;background-color:#f6f3f5;font-family:Inter,Arial,Helvetica,sans-serif;color:#222126;">
+<body style="margin:0;padding:0;background-color:#E2DDD9;font-family:Inter,Arial,Helvetica,sans-serif;color:#323232;">
   <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
     Change request #{{requestId}} — {{status}}.
   </div>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f6f3f5">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
     <tr>
       <td align="center" class="email-stage" style="padding:32px 16px;">
 
@@ -38,16 +38,30 @@
           <tr><td>
         <![endif]-->
 
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:600px;border:1px solid #e9e4e9;border-radius:12px;border-collapse:separate;overflow:hidden;">
+        {{!-- border:1px solid #E9CEC2;border-radius:12px; --}}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;border-collapse:separate;overflow:hidden;">
 
           <tr>
-            <td class="email-header" bgcolor="#fbf1e0" style="padding:22px 32px;border-radius:11px 11px 0 0;">
+            <td class="email-header" bgcolor="#b33f00" 
+              style="padding:22px 32px; border:1px solid #D08548; border-width:1px 1px 0 1px; border-radius:12px 12px 0 0; background: radial-gradient(80.51% 125.4% at 50% 100%, rgba(246, 242, 242, 0.81) 0%, rgba(246, 242, 242, 0.18) 100%), linear-gradient(0deg, rgba(179, 63, 0, 0.59) 0%, rgba(179, 63, 0, 0.59) 100%), #D5820B;
+
+">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="font-size:34px;line-height:36px;letter-spacing:-2px;color:#906013;">
-                    Sunlight
+                  <td style="font-size:34px;line-height:36px;letter-spacing:-2px;color:#b33f00;">
+
+                    <img 
+  style="width: 200px;" 
+  src='data:image/png;base64,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'/>
+
+
+
+  {{!-- <div style="width: 200px;height: 31px;aspect-ratio: 200/31;background: url('data:image/png;base64,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') lightgray 50% / contain no-repeat;
+box-shadow: -0.5px -0.5px 0 0 rgba(222, 162, 78, 0.80) inset;"></div> --}}
+
+
                   </td>
-                  <td align="right" style="font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#906013;">
+                  <td align="right" style="font-size:14px;letter-spacing:1.6px;text-transform:uppercase;color:#fff; text-shadow: -0.5px 0.5px 0 0 rgba(222, 162, 78, 0.80)">
                     Change control
                   </td>
                 </tr>
@@ -56,39 +70,39 @@
           </tr>
 
           <tr>
-            <td class="email-content" style="padding:30px 32px 28px;">
+            <td class="email-content" style="background-color:#F0F0F0; padding:30px 32px 28px; border:1px solid #E5BFA1; border-width:0 1px 1px 1px; border-radius:0 0 12px 12px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
 
                 <tr>
                   <td style="padding-bottom:18px;font-size:12px;line-height:24px;">
 
                     {{#equals status "Applied"}}
-                    <span style="display:inline-block;padding:2px 10px;border-radius:4px;background-color:#ecf3ed;color:#166534;">
+                    <span style="display:inline-block;padding:2px 10px;border-radius: 16px;color:#2e7d32;border: 1px solid #689F6B;letter-spacing: 0.5px;font-size:14px;font-weight:300;line-height:1.5;font-family: "Inter Variable", Helvetica, Arial, sans-serif;">
                       {{status}}
                     </span>
                     {{/equals}}
 
                     {{#equals status "Rejected"}}
-                    <span style="display:inline-block;padding:2px 10px;border-radius:4px;background-color:#fbecec;color:#b91c1c;">
+                    <span style="display:inline-block;padding:2px 10px;border-radius:16px;color:#d32f2f;border:1px solid #DC6969;;letter-spacing: 0.5px;font-size:14px;font-weight:300;line-height:1.5;font-family: "Inter Variable", Helvetica, Arial, sans-serif;">
                       {{status}}
                     </span>
                     {{/equals}}
 
                     {{#equals status "Outdated"}}
-                    <span style="display:inline-block;padding:2px 10px;border-radius:4px;background-color:#fdf2e8;color:#92400e;">
+                    <span style="display:inline-block;padding:2px 10px;border-radius:16px;color:#ed6c02;border:1px solid #F59E0B;letter-spacing: 0.5px;font-size:14px;font-weight:300;line-height:1.5;font-family: "Inter Variable", Helvetica, Arial, sans-serif;">
                       {{status}}
                     </span>
                     {{/equals}}
 
-                    <span style="padding-left:10px;color:#69636e;letter-spacing:0.5px;">
+                    {{!-- <span style="padding-left:10px;color:#69636e;letter-spacing:0.5px;">
                       REQUEST #{{requestId}}
-                    </span>
+                    </span> --}}
                   </td>
                 </tr>
 
                 <tr>
-                  <td>
-                    <h1 class="email-headline" style="margin:0 0 12px;font-size:28px;line-height:1.2;font-weight:normal;letter-spacing:-0.8px;">
+                  <td style="background-color:#F0F0F0;">
+                    <h1 class="email-headline" style="margin:0;font-size:28px;line-height:1.4;font-weight:normal;letter-spacing:-0.8px;">
                       {{#equals status "Applied"}}
                         Your change request was applied.
                       {{/equals}}
@@ -100,15 +114,15 @@
                       {{/equals}}
                     </h1>
 
-                    <p style="margin:0;font-size:14px;line-height:23px;color:#69636e;">
+                    <p style="margin:0;font-size:14px;line-height:23px;color:#787878;">
                       {{#equals status "Applied"}}
                         The changes you proposed have been successfully applied.
                       {{/equals}}
                       {{#equals status "Rejected"}}
-                        The changes you proposed have not been applied. The reason is included below.
+                        The changes you proposed have not been applied. 
                       {{/equals}}
                       {{#equals status "Outdated"}}
-                        Your request is no longer current and cannot be applied. The reason is included below.
+                        Your request is no longer current and cannot be applied. 
                       {{/equals}}
                     </p>
                   </td>
@@ -116,17 +130,18 @@
 
                 {{#equals status "Rejected"}}
                 <tr>
-                  <td style="padding-top:24px;">
+                  <td style="padding-top:20px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td bgcolor="#fbecec" style="padding:17px 20px;border-left:3px solid #d32f2f;border-radius:0 8px 8px 0;">
-                          <h2 style="margin:0 0 6px;font-size:13px;line-height:20px;color:#b91c1c;">
-                            Rejection reason
+                        <td bgcolor="#fafafa" style="padding:17px 20px;border-radius:12px;border:1px solid #D08548;">
+                          <h2 style="margin:0;font-size:16px;font-weight:600;line-height:28px;color:#323232;">
+                            Reason
                           </h2>
-                          <p style="margin:0;font-size:14px;line-height:23px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if reason}}{{reason}}{{else}}No reason provided.{{/if}}</p>
+                          <p style="margin-bottom:20px;font-size:17px;line-height:1.3;font-weight:200;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if reason}}{{reason}}{{else}}No reason provided.{{/if}}</p>
                           {{#each appliedRequests}}
-                          <p style="margin:14px 0 0;font-size:14px;line-height:23px;">
-                            <a href="{{this.url}}" target="_blank" rel="noopener noreferrer" style="color:#906013;font-weight:bold;text-decoration:underline;">
+                          <p style="margin:4px 0 0;font-size:14px;line-height:23px;">
+                            <a href="{{this.url}}" target="_blank" rel="noopener noreferrer" 
+                              style="color: #B33F00;text-align: center;font-size: 13px;font-style: normal;font-weight: 550;line-height: 22px;letter-spacing: 0.46px;text-transform: uppercase; text-decoration: none;">
                               View applied change request #{{this.id}}
                             </a>
                           </p>
@@ -143,14 +158,15 @@
                   <td style="padding-top:24px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td bgcolor="#fdf2e8" style="padding:17px 20px;border-left:3px solid #ed6c02;border-radius:0 8px 8px 0;">
-                          <h2 style="margin:0 0 6px;font-size:13px;line-height:20px;color:#92400e;">
-                            Reason it became outdated
+                        <td bgcolor="#fafafa" style="padding:17px 20px;border-radius:12px;border:1px solid #D08548;">
+                          <h2 style="margin:0;font-size:16px;font-weight:600;line-height:28px;color:#323232;">
+                            Reason
                           </h2>
-                          <p style="margin:0;font-size:14px;line-height:23px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if reason}}{{reason}}{{else}}No reason provided.{{/if}}</p>
+                          <p style="margin-bottom:20px;font-size:17px;line-height:1.2;font-weight:200;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if reason}}{{reason}}{{else}}No reason provided.{{/if}}</p>
                           {{#each appliedRequests}}
-                          <p style="margin:14px 0 0;font-size:14px;line-height:23px;">
-                            <a href="{{this.url}}" target="_blank" rel="noopener noreferrer" style="color:#906013;font-weight:bold;text-decoration:underline;">
+                          <p style="margin:4px 0 0;font-size:14px;line-height:23px;">
+                            <a href="{{this.url}}" target="_blank" rel="noopener noreferrer" 
+                            style="color: #B33F00;text-align: center;font-size: 13px;font-style: normal;font-weight: 550;line-height: 22px;letter-spacing: 0.46px;text-transform: uppercase; text-decoration: none;">
                               View applied change request #{{this.id}}
                             </a>
                           </p>
@@ -163,41 +179,61 @@
                 {{/equals}}
 
                 <tr>
-                  <td style="padding-top:28px;">
-                    <p style="margin:0 0 9px;font-size:11px;line-height:18px;letter-spacing:1.3px;text-transform:uppercase;color:#69636e;">
-                      Request details
-                    </p>
+                  <td style="padding-top:20px;">
 
-                    <p style="margin:0 0 16px;font-size:17px;line-height:24px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if description}}{{description}}{{else}}Change request #{{requestId}}{{/if}}</p>
-
-                    <table width="100%" cellpadding="0" cellspacing="0" aria-label="Change request details" style="border-collapse:collapse;table-layout:fixed;font-size:13px;line-height:21px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <th scope="row" width="32%" align="left" style="padding:10px 16px 10px 0;border-top:1px solid #e9e4e9;color:#69636e;font-weight:normal;">
-                          Feature
-                        </th>
-                        <td align="right" style="padding:10px 0;border-top:1px solid #e9e4e9;overflow-wrap:anywhere;word-break:break-word;">
-                          {{#if featureType}}{{featureType}}{{else}}Not provided{{/if}}
-                        </td>
-                      </tr>
+                        <td bgcolor="#EBEBEB" style="padding:17px 0 0 0;border-radius:12px;border:0.5px solid #D2CECB;">
+                          <h2 style="padding: 0 20px;margin:0;font-size:16px;font-weight:600;line-height:28px;color:#323232;">
+                            Details
+                          </h2>
 
-                      <tr>
-                        <th scope="row" width="32%" align="left" style="padding:10px 16px 10px 0;border-top:1px solid #e9e4e9;color:#69636e;font-weight:normal;">
-                          Updated by
-                        </th>
-                        <td align="right" style="padding:10px 0;border-top:1px solid #e9e4e9;overflow-wrap:anywhere;word-break:break-word;">
-                          {{#if updatedBy}}{{updatedBy}}{{else}}Not provided{{/if}}
-                        </td>
-                      </tr>
+                          <p style="padding: 0 20px; margin-bottom:20px;font-size:17px;line-height:1.3;font-weight:200;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if description}}{{description}}{{else}}Change request #{{requestId}}{{/if}}</p>
 
-                      <tr>
-                        <th scope="row" width="32%" align="left" style="padding:10px 16px 10px 0;border-top:1px solid #e9e4e9;color:#69636e;font-weight:normal;">
-                          Updated at
-                        </th>
-                        <td align="right" style="padding:10px 0;border-top:1px solid #e9e4e9;overflow-wrap:anywhere;word-break:break-word;">
-                          {{#if updatedAt}}{{updatedAt}}{{else}}Not provided{{/if}}
+                          <table width="100%" cellpadding="0" cellspacing="0" aria-label="Change request details" style="font-size:13px;line-height:21px;">
+                            <colgroup>
+                              <col width="25%" />
+                              <col width="75%" />
+                            </colgroup>
+                            <tr>
+                              <th scope="row" align="left" 
+                              style="color:#646464;border-top:0.5px solid #D2CECB;font-size: 10.4px;font-style: normal;font-weight: 300;line-height: 1;letter-spacing: 0.728px;text-transform: uppercase;padding:10px 0 10px 0;padding-left:20px;">
+                                Feature
+                              </th>
+                              <td style="padding:10px 0;border-top:0.5px solid #D2CECB;overflow-wrap:anywhere;word-break:break-word;">
+                                {{#if featureType}}{{featureType}}{{else}}Not provided{{/if}}
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <th scope="row" align="left" style="color:#646464;border-top:0.5px solid #D2CECB;font-size: 10.4px;font-style: normal;font-weight: 300;line-height: 1;letter-spacing: 0.728px;text-transform: uppercase;padding:10px 0 10px 0;padding-left:20px;">
+                                Updated by
+                              </th>
+                              <td style="padding:10px 0;border-top:0.5px solid #D2CECB;overflow-wrap:anywhere;word-break:break-word;">
+                                {{#if updatedBy}}{{updatedBy}}{{else}}Not provided{{/if}}
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <th scope="row" align="left" style="color:#646464;border-top:0.5px solid #D2CECB;font-size: 10.4px;font-style: normal;font-weight: 300;line-height: 1;letter-spacing: 0.728px;text-transform: uppercase;padding:10px 0 10px 0;padding-left:20px;  ">
+                                Updated at
+                              </th>
+                              <td style="padding:10px 0;border-top:0.5px solid #D2CECB;overflow-wrap:anywhere;word-break:break-word;">
+                                {{#if updatedAt}}{{updatedAt}}{{else}}Not provided{{/if}}
+                              </td>
+                            </tr>
+                          </table>
                         </td>
                       </tr>
                     </table>
+
+
+
+                    {{!-- <p style="margin:0 0 9px;font-size:11px;line-height:18px;letter-spacing:1.3px;text-transform:uppercase;color:#69636e;">
+                      Request details
+                    </p> --}}
+
+
                   </td>
                 </tr>
 
@@ -205,9 +241,11 @@
                   <td style="padding-top:24px;">
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td align="center" bgcolor="#906013" style="border-radius:8px;">
-                          <a href="{{requestUrl}}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:13px 22px;border-radius:8px;font-family:Inter,Arial,Helvetica,sans-serif;font-size:14px;line-height:20px;text-decoration:none;color:#ffffff;">
-                            View change request
+                        <td align="center" bgcolor="#b33f00" style="border-radius:8px;">
+                          <a href="{{requestUrl}}" target="_blank" rel="noopener noreferrer" 
+style="display:inline-block;padding:8px 16px;border-radius:8px;font-family:Inter,Arial,Helvetica,sans-serif;font-size:14px;letter-spacing: 1px;text-transform: uppercase;line-height:24px;text-decoration:none;color:#ffffff;">
+                            View change request #{{requestId}}
+                            {{!-- ➔ --}}
                           </a>
                         </td>
                       </tr>
@@ -219,14 +257,7 @@
             </td>
           </tr>
 
-          <tr>
-            <td class="email-footer" style="padding:18px 32px;border-top:1px solid #e9e4e9;font-size:12px;line-height:20px;color:#69636e;">
-              <p style="margin:0;">Sunlight &middot; Change control</p>
-              <p style="margin:3px 0 0;">
-                You received this update because you created this request.
-              </p>
-            </td>
-          </tr>
+
 
         </table>
 
