@@ -218,6 +218,16 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      — a non-ordered table (Scratcher payout rows) still gets the Section shell + rail + a kebab, its kebab
      just carries **Delete** with no Move items. (Rail convention itself: §6, minted in the Payout Sectors
      drag work.)
+   - **Drag-handle rail convention (2026-09-25, minted here).** The leading rail's first citizen on an
+     `orderable` table is the **⠿ drag handle** (`RowDragHandle` + `useRowReorder`); the kebab sits beside it.
+     Pointer-drag reorders rows and **positions renumber on drop for free** — sector numbers are derived from
+     array order (index + 1), never stored. Three rules hold it in doctrine: **(a) the drag is the
+     ENHANCEMENT, not the only route** — the kebab's Move up / Move down is the keyboard/AT path and MUST
+     stay, so the grip is `aria-hidden` and unfocusable; **(b)** the dragged row is **LIFTED** with the row
+     surface + an elevation shadow — theme tokens only, **no new colours**; **(c)** the row is `draggable`
+     ONLY while a pointer is on the handle, so in-row fields keep normal text selection. It's
+     exploration-grade (native HTML5 drag, no library) but shippable; it becomes an estate pattern the moment
+     a second orderable table appears.
    - Never a literal — compose from `FIELD_GEOMETRY` / `FIELD_TWIN_HEIGHT` / `TABLE_CELL_PAD_Y` /
      `TABLE_ROW_DIVIDER`. For embedded tables this is owned by `Section`'s scoped styles (same
      mechanism as the 44px header enforcement); a table opts into twin height with the class

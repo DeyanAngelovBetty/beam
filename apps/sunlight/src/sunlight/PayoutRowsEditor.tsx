@@ -21,7 +21,7 @@ import type { BeamStatSeverity } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import { PRIZE_TYPE_LABEL, type RewardType } from './payoutConfigs';
-import { RowActionsKebab } from './rowActionRail';
+import { RowActionsKebab, RowDragHandle, useRowReorder } from './rowActionRail';
 import {
   REWARD_TYPES,
   emptyRow,
@@ -113,6 +113,8 @@ export function PayoutRowsEditor({
     v.status === 'exact' ? undefined : v.status === 'under' ? 'warning' : 'error';
   const positionLabel = orderable ? 'payout sector' : 'payout row';
   const columnCount = 1 + (orderable ? 1 : 0) + (showTopPrize ? 1 : 0) + 3; // rail + [sector] + [top] + msg/prob/rewards
+  // Drag-to-reorder — only where order is data-meaningful (kebab Move stays the keyboard path).
+  const { draggingIndex, rowProps, handleProps, liftedRowSx } = useRowReorder(rows, onChange);
 
   return (
     <Section
@@ -156,7 +158,7 @@ export function PayoutRowsEditor({
       >
         <TableHead>
           <TableRow>
-            <TableCell aria-label="Row actions" sx={{ width: 44 }} />
+            <TableCell aria-label="Row actions" sx={{ width: '1%' }} />
             {orderable && <TableCell align="right">Sector</TableCell>}
             {showTopPrize && <TableCell>Top Prize</TableCell>}
             <TableCell>Win Message</TableCell>
@@ -169,18 +171,25 @@ export function PayoutRowsEditor({
             const rowErr = v.rows[ri];
             const canAddReward = Boolean(firstUnusedType(row.rewards));
             return (
-              <TableRow key={row._key}>
-                {/* LEADING RAIL — the drag-handle slot (drag pass) + the kebab. */}
+              <TableRow
+                key={row._key}
+                {...(orderable ? rowProps(ri) : {})}
+                sx={orderable && draggingIndex === ri ? liftedRowSx : undefined}
+              >
+                {/* LEADING RAIL — the drag handle (orderable only) + the kebab. */}
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  <RowActionsKebab
-                    label={positionLabel}
-                    index={ri}
-                    count={rows.length}
-                    orderable={orderable}
-                    onMoveUp={() => moveRow(ri, -1)}
-                    onMoveDown={() => moveRow(ri, 1)}
-                    onDelete={() => deleteRow(row._key)}
-                  />
+                  <Stack direction="row" sx={{ alignItems: 'center' }}>
+                    {orderable && <RowDragHandle handleProps={handleProps} />}
+                    <RowActionsKebab
+                      label={positionLabel}
+                      index={ri}
+                      count={rows.length}
+                      orderable={orderable}
+                      onMoveUp={() => moveRow(ri, -1)}
+                      onMoveDown={() => moveRow(ri, 1)}
+                      onDelete={() => deleteRow(row._key)}
+                    />
+                  </Stack>
                 </TableCell>
                 {orderable && <TableCell align="right">{ri + 1}</TableCell>}
                 {showTopPrize && (

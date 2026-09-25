@@ -15,7 +15,7 @@ import {
 } from '@betty/beam';
 import type { BeamStatSeverity } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
-import { RowActionsKebab } from './rowActionRail';
+import { RowActionsKebab, RowDragHandle, useRowReorder } from './rowActionRail';
 import {
   emptyMultiplierRow,
   validateMultiplierRows,
@@ -68,6 +68,8 @@ export function MultiplierRowsEditor({
 
   const severity: BeamStatSeverity | undefined =
     validation.status === 'exact' ? undefined : validation.status === 'under' ? 'warning' : 'error';
+  // Multiplier sectors are always positional → always drag-reorderable (kebab Move stays the keyboard path).
+  const { draggingIndex, rowProps, handleProps, liftedRowSx } = useRowReorder(rows, onChange);
 
   return (
     <Section
@@ -110,7 +112,7 @@ export function MultiplierRowsEditor({
       >
         <TableHead>
           <TableRow>
-            <TableCell aria-label="Row actions" sx={{ width: 44 }} />
+            <TableCell aria-label="Row actions" sx={{ width: '1%' }} />
             <TableCell align="right">Sector</TableCell>
             <TableCell align="right">Probability (%)</TableCell>
             <TableCell align="right">Multiplier</TableCell>
@@ -120,18 +122,21 @@ export function MultiplierRowsEditor({
           {rows.map((row, index) => {
             const rowError = validation.rows[index];
             return (
-              <TableRow key={row._key}>
-                {/* LEADING RAIL — drag-handle slot (drag pass) + the kebab (orderable → Move up/down). */}
+              <TableRow key={row._key} {...rowProps(index)} sx={draggingIndex === index ? liftedRowSx : undefined}>
+                {/* LEADING RAIL — the drag handle + the kebab (orderable → Move up/down). */}
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  <RowActionsKebab
-                    label="multiplier sector"
-                    index={index}
-                    count={rows.length}
-                    orderable
-                    onMoveUp={() => moveRow(index, -1)}
-                    onMoveDown={() => moveRow(index, 1)}
-                    onDelete={() => deleteRow(row._key)}
-                  />
+                  <Stack direction="row" sx={{ alignItems: 'center' }}>
+                    <RowDragHandle handleProps={handleProps} />
+                    <RowActionsKebab
+                      label="multiplier sector"
+                      index={index}
+                      count={rows.length}
+                      orderable
+                      onMoveUp={() => moveRow(index, -1)}
+                      onMoveDown={() => moveRow(index, 1)}
+                      onDelete={() => deleteRow(row._key)}
+                    />
+                  </Stack>
                 </TableCell>
                 <TableCell align="right">{index + 1}</TableCell>
                 <TableCell align="right">
