@@ -26,7 +26,7 @@ import { MultiplierRowsGrid } from './MultiplierRowsGrid';
 import {
   GAME_TYPES,
   gameTypeLabel,
-  getPayoutRows,
+  isOrderablePayout,
   statusBadge,
   getPayoutConfig,
   createPayoutConfig,
@@ -87,11 +87,6 @@ export function PayoutConfigEditor() {
 function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void }) {
   const navigate = useNavigate();
   const badge = statusBadge(config.status);
-  // Probability total as a DISPLAY value — the editor shows it as a validation "Live Check"
-  // (BeamStat + severity); in a saved, read-only view there is nothing to validate, so it reads
-  // as a plain labelled total (severity would falsely imply live checking). Judgment call, reported.
-  const payoutTotal = getPayoutRows(config).reduce((sum, row) => sum + row.probability, 0) * 100;
-  const payoutTotalLabel = payoutTotal.toLocaleString('en-US', { maximumFractionDigits: 4 });
 
   return (
     <Stack spacing={3}>
@@ -110,49 +105,22 @@ function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void
         <BeamStat label="Name" value={config.name} />
         <BeamStat label="Game Type" value={gameTypeLabel(config.gameType)} />
       </DetailsPanel>
+      {/* Each grid now owns its own bleed Section (title + TOTAL-only toolbar stat) — the page just
+          places them; the read-only "total as plain labelled value, no severity" judgment lives in the
+          grid (a saved record has nothing to live-validate). */}
       {config.gameType === 'BettyMultiplierMadness' ? (
         <DetailsPanel aria-label="Payout configuration"><BeamStat label="RTP" value={`${config.rtp * 100}%`} /></DetailsPanel>
       ) : config.gameType === 'BettyWheelOfWins' ? (
-        <Stack spacing={3}>
-          <Stack spacing={1}>
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Payout sectors
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total probability: {payoutTotalLabel}%
-              </Typography>
-            </Stack>
-            <PayoutRowsGrid rows={config.payoutRows} showSectorPositions />
-          </Stack>
-          <Stack spacing={1}>
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Multiplier sectors
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total probability:{' '}
-                {(config.multiplierRows.reduce((sum, row) => sum + row.probability, 0) * 100).toLocaleString(
-                  'en-US',
-                  { maximumFractionDigits: 4 },
-                )}%
-              </Typography>
-            </Stack>
-            <MultiplierRowsGrid rows={config.multiplierRows} />
-          </Stack>
-        </Stack>
+        <>
+          <PayoutRowsGrid rows={config.payoutRows} orderable />
+          <MultiplierRowsGrid rows={config.multiplierRows} />
+        </>
       ) : (
-        <Stack spacing={1}>
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Payout rows
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Total probability: {payoutTotalLabel}%
-            </Typography>
-          </Stack>
-          <PayoutRowsGrid rows={config.rows} showSectorPositions={config.gameType === 'BettyWheel'} showTopPrize={config.gameType === 'BettyScratcher'} />
-        </Stack>
+        <PayoutRowsGrid
+          rows={config.rows}
+          orderable={isOrderablePayout(config.gameType)}
+          showTopPrize={config.gameType === 'BettyScratcher'}
+        />
       )}
     </Stack>
   );
@@ -271,11 +239,14 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
           slotProps={{ htmlInput: { maxLength: MAX_NAME } }}
         />
         {isEdit ? (
-          <BeamField
+          // Add-time-fixed (BEAM.md §6, the CJ ruling): game type is chosen at creation and never
+          // changes, so edit shows it as STATIC TEXT — a BeamStat (the field twin's view half) + the
+          // helper as its caption — NOT a disabled input (disabled reads as "editable, just not now").
+          <BeamStat
             label="Game Type"
             value={model.gameType ? gameTypeLabel(model.gameType) : ''}
-            disabled
-            helperText="Game type can't be changed after creation."
+            caption="Game type can't be changed after creation."
+            showCaption
           />
         ) : (
           <BeamField
@@ -306,7 +277,7 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
         </DetailsPanel>
       ) : (
         <PayoutRowsEditor rows={model.payoutRows} onChange={changePayoutRows}
-          showAllErrors={submitAttempted} orderedSectors={model.gameType === 'BettyWheelOfWins' || model.gameType === 'BettyWheel'}
+          showAllErrors={submitAttempted} orderable={isOrderablePayout(model.gameType)}
           showTopPrize={model.gameType === 'BettyScratcher'} />
       )}
       {v.configuration && <Typography variant="body2" color={submitAttempted ? 'error' : 'text.secondary'} role="status">{v.configuration}</Typography>}

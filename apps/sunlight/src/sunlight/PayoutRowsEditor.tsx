@@ -8,7 +8,7 @@ import {
   MenuItem,
   IconButton,
   Tooltip,
-  Paper,
+  Section,
   MuiTable as Table,
   TableHead,
   TableBody,
@@ -19,11 +19,9 @@ import {
 } from '@betty/beam';
 import type { BeamStatSeverity } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CloseIcon from '@mui/icons-material/Close';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { PRIZE_TYPE_LABEL, type RewardType } from './payoutConfigs';
+import { RowActionsKebab } from './rowActionRail';
 import {
   REWARD_TYPES,
   emptyRow,
@@ -34,33 +32,31 @@ import {
 } from './payoutConfigForm';
 
 /**
- * PayoutRowsEditor — the EDITABLE sibling of PayoutRowsGrid, deliberately the
- * same skeleton (Win Message | Probability | Rewards, now + a row-actions
- * column) so view and edit read as one table (our oldest doctrine). Controlled:
- * `rows` in, `onChange` out. Renders the inline validation + the Live Check.
+ * PayoutRowsEditor — the EDIT half of the Payout Sectors / Payout Rows table. Convergence pass
+ * (2026-09-25): wrapped in a bleed `Section` (title + toolbar-stats lane), row controls moved to the
+ * LEADING rail + kebab (trailing action column retired), per-reward × kept on the reward line.
  *
- * Minimums (list-grammar: structural prevention for local rules, validation for
- * aggregate rules): ≥1 reward per row is PREVENTED (Remove disabled at the last
- * reward); ≥1 row overall is a VALIDATION aggregate (rows may empty, Save
- * blocks). Duplicate reward types are prevented structurally — the Type select
- * offers only types unused in that row.
+ * EDITOR GRID (BEAM.md §6.7 exemption): view rows sit at 44, edit rows grow as tall as the form needs
+ * (a row hosts a rewards collection) — the view↔edit toggle may reflow, and that's sanctioned here.
  *
- * Scaffold plain — spacing / severity pigment / placement is Deyan's bench pass.
+ * `orderable` is DECLARED by the caller (not inferred): true → positional sectors (drag slot + kebab
+ * Move up/down + the Sector number column); false → plain rows (kebab = Delete only). Minimums:
+ * ≥1 reward per row is structural (Remove disabled at the last); ≥1 row is a validation aggregate.
  */
 export function PayoutRowsEditor({
   rows,
   onChange,
   showAllErrors = false,
-  orderedSectors = false,
+  orderable = false,
   showTopPrize = false,
 }: {
   rows: EditorRow[];
   onChange: (rows: EditorRow[]) => void;
   showAllErrors?: boolean;
-  orderedSectors?: boolean;
+  orderable?: boolean;
   showTopPrize?: boolean;
 }) {
-  const v = validateRows(rows, orderedSectors ? 'payout sector' : 'payout row');
+  const v = validateRows(rows, orderable ? 'payout sector' : 'payout row');
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
   const markTouched = (key: string) =>
     setTouched((current) => {
@@ -73,7 +69,7 @@ export function PayoutRowsEditor({
   const setRow = (key: string, patch: Partial<EditorRow>) =>
     onChange(rows.map((r) => (r._key === key ? { ...r, ...patch } : r)));
   const selectTopPrize = (event: ChangeEvent<HTMLInputElement>) =>
-    onChange(rows.map(row => ({ ...row, isTopPrize: row._key === event.target.value })));
+    onChange(rows.map((row) => ({ ...row, isTopPrize: row._key === event.target.value })));
   const setReward = (rowKey: string, rKey: string, patch: Partial<EditorRow['rewards'][number]>) =>
     onChange(
       rows.map((r) =>
@@ -110,223 +106,195 @@ export function PayoutRowsEditor({
       rows.map((r) => (r._key === rowKey ? { ...r, rewards: r.rewards.filter((rw) => rw._key !== rKey) } : r))
     );
 
-  // Live Check severity (detail §2): exact = quiet · under = warning · over = error.
+  // Live Check severity (detail §2): exact = quiet · under = warning · over = error. REMAINING ≠ 0 reads
+  // danger here AND blocks Save — but the block is validateModel's own (rowsValid requires exact); this stat
+  // only SURFACES it.
   const severity: BeamStatSeverity | undefined =
     v.status === 'exact' ? undefined : v.status === 'under' ? 'warning' : 'error';
+  const positionLabel = orderable ? 'payout sector' : 'payout row';
+  const columnCount = 1 + (orderable ? 1 : 0) + (showTopPrize ? 1 : 0) + 3; // rail + [sector] + [top] + msg/prob/rewards
 
   return (
-    // One fit-content container so the strip's edges align with the grid's
-    // (the strip spans the grid width, not the page width).
-    <Box sx={{ width: 'fit-content' }}>
-      <Stack spacing={1.5}>
-        <Typography variant="h6" component="h2">
-          {orderedSectors ? 'Payout Sectors' : 'Payout Rows'}
-        </Typography>
-
-        {/* Chrome strip ABOVE the grid: Live Check (+ aggregate errors) left,
-            Add Row right. The Live Check is BeamStat severity's first consumer
-            (detail §2): exact = quiet · under = warning · over = danger. */}
-        <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Button size="small" startIcon={<AddIcon />} onClick={addRow}>
-            {orderedSectors ? 'Add Sector' : 'Add Row'}
+    <Section
+      title={orderable ? 'Payout Sectors' : 'Payout Rows'}
+      aria-label={orderable ? 'Payout sectors' : 'Payout rows'}
+      isEdit
+      bleed
+      // TOOLBAR STATS LANE (Section note): actions left (Add — small text/flat), derived stats right.
+      toolbar={
+        <>
+          <Button size="small" variant="text" startIcon={<AddIcon />} onClick={addRow}>
+            {orderable ? 'Add Sector' : 'Add Row'}
           </Button>
-
-          <Stack spacing={0.5}>
-            <Stack direction="row" spacing={4} sx={{ alignItems: 'flex-start' }}>
-              <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
-              {/* Remaining echoes the same invariant → same severity (tone dropped in BeamStat v2). */}
-              <BeamStat label="Remaining" value={`${v.remaining}%`} severity={severity} />
-            </Stack>
-            {v.aggregate && showError('aggregate') && (
-              <Typography variant="body2" color="error" role="alert">
-                {v.aggregate}
-              </Typography>
-            )}
+          <Box sx={{ flexGrow: 1 }} />
+          <Stack direction="row" spacing={4} sx={{ alignItems: 'flex-start' }}>
+            <BeamStat label="Total probability" value={`${v.total}%`} severity={severity} />
+            {/* REMAINING ≠ 0 → danger ink (severity) — surfaces the Save gate (validateModel). */}
+            <BeamStat label="Remaining" value={`${v.remaining}%`} severity={severity} />
           </Stack>
-
-        </Stack>
-
-        {/* Editable → interactive surface, so bordered (detail-grammar §1.2).
-            Fit-content, same skeleton as PayoutRowsGrid. */}
-        <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
-          <Table
-            size="small"
-            aria-label={orderedSectors ? 'Payout sectors' : 'Payout rows'}
-            sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}
-          >
-          <TableHead sx={{ '& th': { pb: 2.5 } }}>
-            <TableRow>
-              {orderedSectors && <TableCell align="right">Sector</TableCell>}
-              {showTopPrize && <TableCell>Top Prize</TableCell>}
+        </>
+      }
+    >
+      {/* Inset one-liners in the Section pad, ABOVE the bleeding table (same slot as the empty-state):
+          the aggregate error, then the empty-state. The table stays the DIRECT bleed child (contract). */}
+      {v.aggregate && showError('aggregate') && rows.length > 0 && (
+        <Typography variant="body2" color="error" role="alert" sx={{ px: 2, pb: 1 }}>
+          {v.aggregate}
+        </Typography>
+      )}
+      {rows.length === 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 1 }} role={showError('aggregate') ? 'alert' : undefined}>
+          {orderable ? 'No sectors yet — add at least one.' : 'No rows yet — add at least one.'}
+        </Typography>
+      )}
+      <Table
+        size="small"
+        aria-label={orderable ? 'Payout sectors' : 'Payout rows'}
+        // Editor grid: cells top-align (fields sit at the row top, not centred in a tall row) — overrides
+        // Section's density middle-align, per the §6.7 exemption.
+        sx={{ '& td, & th': { verticalAlign: 'top !important' } }}
+      >
+        <TableHead>
+          <TableRow>
+            <TableCell aria-label="Row actions" sx={{ width: 44 }} />
+            {orderable && <TableCell align="right">Sector</TableCell>}
+            {showTopPrize && <TableCell>Top Prize</TableCell>}
             <TableCell>Win Message</TableCell>
-              <TableCell align="right">Probability (%)</TableCell>
-              <TableCell>Rewards</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={orderedSectors ? 5 : 4} sx={{ py: 3, color: 'text.secondary' }}>
-                  {orderedSectors ? 'No sectors yet — add at least one.' : 'No rows yet — add at least one.'}
+            <TableCell align="right">Probability (%)</TableCell>
+            <TableCell>Rewards</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {rows.map((row, ri) => {
+            const rowErr = v.rows[ri];
+            const canAddReward = Boolean(firstUnusedType(row.rewards));
+            return (
+              <TableRow key={row._key}>
+                {/* LEADING RAIL — the drag-handle slot (drag pass) + the kebab. */}
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  <RowActionsKebab
+                    label={positionLabel}
+                    index={ri}
+                    count={rows.length}
+                    orderable={orderable}
+                    onMoveUp={() => moveRow(ri, -1)}
+                    onMoveDown={() => moveRow(ri, 1)}
+                    onDelete={() => deleteRow(row._key)}
+                  />
+                </TableCell>
+                {orderable && <TableCell align="right">{ri + 1}</TableCell>}
+                {showTopPrize && (
+                  <TableCell>
+                    <Radio
+                      value={row._key}
+                      checked={Boolean(row.isTopPrize)}
+                      onChange={selectTopPrize}
+                      slotProps={{ input: { 'aria-label': `Top prize, row ${ri + 1}` } }}
+                    />
+                  </TableCell>
+                )}
+                <TableCell>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    multiline
+                    maxRows={4}
+                    value={row.winMessage}
+                    onChange={(e) => setRow(row._key, { winMessage: e.target.value })}
+                    onBlur={() => markTouched(`winMessage:${row._key}`)}
+                    error={Boolean(rowErr?.winMessage && showError(`winMessage:${row._key}`))}
+                    helperText={showError(`winMessage:${row._key}`) ? rowErr?.winMessage : undefined}
+                    slotProps={{ htmlInput: { 'aria-label': `Win message, ${positionLabel} ${ri + 1}` } }}
+                  />
+                </TableCell>
+                <TableCell align="right">
+                  <TextField
+                    size="small"
+                    sx={{ width: 110 }}
+                    value={row.probabilityPct}
+                    onChange={(e) => setRow(row._key, { probabilityPct: e.target.value })}
+                    onBlur={() => {
+                      markTouched(`probability:${row._key}`);
+                      markTouched('aggregate');
+                    }}
+                    error={Boolean(rowErr?.probability && showError(`probability:${row._key}`))}
+                    helperText={showError(`probability:${row._key}`) ? rowErr?.probability : undefined}
+                    slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Probability percent, ${positionLabel} ${ri + 1}` } }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Stack spacing={1}>
+                    {row.rewards.map((rw, rwi) => {
+                      const available = REWARD_TYPES.filter(
+                        (t) => t === rw.rewardType || !row.rewards.some((o, i) => i !== rwi && o.rewardType === t)
+                      );
+                      const amtErr = rowErr?.rewards[rwi]?.amount;
+                      const lastReward = row.rewards.length === 1;
+                      return (
+                        <Stack key={rw._key} direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
+                          <TextField
+                            select
+                            size="small"
+                            label="Type"
+                            sx={{ width: 120 }}
+                            value={rw.rewardType}
+                            onChange={(e) => setReward(row._key, rw._key, { rewardType: e.target.value as RewardType })}
+                          >
+                            {available.map((t) => (
+                              <MenuItem key={t} value={t}>
+                                {PRIZE_TYPE_LABEL[t]}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                          <TextField
+                            size="small"
+                            label="Amount"
+                            sx={{ width: 120 }}
+                            value={rw.amount}
+                            onChange={(e) => setReward(row._key, rw._key, { amount: e.target.value })}
+                            onBlur={() => markTouched(`amount:${row._key}:${rw._key}`)}
+                            error={Boolean(amtErr && showError(`amount:${row._key}:${rw._key}`))}
+                            helperText={showError(`amount:${row._key}:${rw._key}`) ? amtErr : undefined}
+                            slotProps={{ htmlInput: { inputMode: 'numeric', 'aria-label': `Amount, reward ${rwi + 1}, ${positionLabel} ${ri + 1}` } }}
+                          />
+                          {/* ≥1 reward per row is structural — Remove disabled at the last. Per-reward × stays
+                              on the reward line (NOT the rail). */}
+                          <Tooltip title={lastReward ? `A ${positionLabel} needs at least one reward.` : 'Remove reward'}>
+                            <span>
+                              <IconButton
+                                size="small"
+                                aria-label={`Remove reward ${rwi + 1}, ${positionLabel} ${ri + 1}`}
+                                disabled={lastReward}
+                                onClick={() => removeReward(row._key, rw._key)}
+                              >
+                                <CloseIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </Stack>
+                      );
+                    })}
+                    <Box>
+                      <Tooltip title={canAddReward ? 'Add reward' : 'Both reward types are used.'}>
+                        <span>
+                          <Button size="small" startIcon={<AddIcon />} disabled={!canAddReward} onClick={() => addReward(row._key)}>
+                            Add Reward
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    </Box>
+                  </Stack>
                 </TableCell>
               </TableRow>
-            )}
-            {rows.map((row, ri) => {
-              const rowErr = v.rows[ri];
-              const canAddReward = Boolean(firstUnusedType(row.rewards));
-              const positionLabel = orderedSectors ? 'sector' : 'row';
-              return (
-                <TableRow key={row._key}>
-                  {orderedSectors && <TableCell align="right">{ri + 1}</TableCell>}
-                  {showTopPrize && <TableCell><Radio value={row._key} checked={Boolean(row.isTopPrize)}
-                    onChange={selectTopPrize}
-                    slotProps={{ input: { 'aria-label': `Top prize, row ${ri + 1}` } }} /></TableCell>}
-                  <TableCell>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      multiline
-                      maxRows={4}
-                      value={row.winMessage}
-                      onChange={(e) => setRow(row._key, { winMessage: e.target.value })}
-                      onBlur={() => markTouched(`winMessage:${row._key}`)}
-                      error={Boolean(rowErr?.winMessage && showError(`winMessage:${row._key}`))}
-                      helperText={showError(`winMessage:${row._key}`) ? rowErr?.winMessage : undefined}
-                      slotProps={{ htmlInput: { 'aria-label': `Win message, ${positionLabel} ${ri + 1}` } }}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <TextField
-                      size="small"
-                      sx={{ width: 110 }}
-                      value={row.probabilityPct}
-                      onChange={(e) => setRow(row._key, { probabilityPct: e.target.value })}
-                      onBlur={() => {
-                        markTouched(`probability:${row._key}`);
-                        markTouched('aggregate');
-                      }}
-                      error={Boolean(rowErr?.probability && showError(`probability:${row._key}`))}
-                      helperText={showError(`probability:${row._key}`) ? rowErr?.probability : undefined}
-                      slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Probability percent, ${positionLabel} ${ri + 1}` } }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Stack spacing={1}>
-                      {row.rewards.map((rw, rwi) => {
-                        const available = REWARD_TYPES.filter(
-                          (t) => t === rw.rewardType || !row.rewards.some((o, i) => i !== rwi && o.rewardType === t)
-                        );
-                        const amtErr = rowErr?.rewards[rwi]?.amount;
-                        const lastReward = row.rewards.length === 1;
-                        return (
-                          <Stack key={rw._key} direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
-                            <TextField
-                              select
-                              size="small"
-                              label="Type"
-                              sx={{ width: 120 }}
-                              value={rw.rewardType}
-                              onChange={(e) => setReward(row._key, rw._key, { rewardType: e.target.value as RewardType })}
-                            >
-                              {available.map((t) => (
-                                <MenuItem key={t} value={t}>
-                                  {PRIZE_TYPE_LABEL[t]}
-                                </MenuItem>
-                              ))}
-                            </TextField>
-                            <TextField
-                              size="small"
-                              label="Amount"
-                              sx={{ width: 120 }}
-                              value={rw.amount}
-                              onChange={(e) => setReward(row._key, rw._key, { amount: e.target.value })}
-                              onBlur={() => markTouched(`amount:${row._key}:${rw._key}`)}
-                              error={Boolean(amtErr && showError(`amount:${row._key}:${rw._key}`))}
-                              helperText={showError(`amount:${row._key}:${rw._key}`) ? amtErr : undefined}
-                              slotProps={{ htmlInput: { inputMode: 'numeric', 'aria-label': `Amount, reward ${rwi + 1}, ${positionLabel} ${ri + 1}` } }}
-                            />
-                            {/* ≥1 reward per row is structural — Remove disabled at the last. */}
-                            <Tooltip title={lastReward ? `A ${positionLabel} needs at least one reward.` : 'Remove reward'}>
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  aria-label={`Remove reward ${rwi + 1}, ${positionLabel} ${ri + 1}`}
-                                  disabled={lastReward}
-                                  onClick={() => removeReward(row._key, rw._key)}
-                                >
-                                  <CloseIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          </Stack>
-                        );
-                      })}
-                      <Box>
-                        <Tooltip title={canAddReward ? 'Add reward' : 'Both reward types are used.'}>
-                          <span>
-                            <Button
-                              size="small"
-                              startIcon={<AddIcon />}
-                              disabled={!canAddReward}
-                              onClick={() => addReward(row._key)}
-                            >
-                              Add Reward
-                            </Button>
-                          </span>
-                        </Tooltip>
-                      </Box>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={0.5}>
-                      {orderedSectors && (
-                        <>
-                          <Tooltip title="Move up">
-                            <span>
-                              <IconButton
-                                size="small"
-                                aria-label={`Move payout sector ${ri + 1} up`}
-                                disabled={ri === 0}
-                                onClick={() => moveRow(ri, -1)}
-                              >
-                                <ArrowUpwardIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title="Move down">
-                            <span>
-                              <IconButton
-                                size="small"
-                                aria-label={`Move payout sector ${ri + 1} down`}
-                                disabled={ri === rows.length - 1}
-                                onClick={() => moveRow(ri, 1)}
-                              >
-                                <ArrowDownwardIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                        </>
-                      )}
-                      {/* ≥1 row overall is a VALIDATION aggregate — delete allowed to empty. */}
-                      <Tooltip title={orderedSectors ? 'Delete sector' : 'Delete row'}>
-                        <IconButton
-                          size="small"
-                          aria-label={orderedSectors ? `Delete payout sector ${ri + 1}` : `Delete row ${ri + 1}`}
-                          onClick={() => deleteRow(row._key)}
-                        >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        </Paper>
-      </Stack>
-    </Box>
+            );
+          })}
+          {rows.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={columnCount} sx={{ height: 8, p: 0, border: 0 }} />
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </Section>
   );
 }

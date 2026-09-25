@@ -1,5 +1,8 @@
 import {
-  Paper,
+  Box,
+  Typography,
+  Section,
+  BeamStat,
   MuiTable as Table,
   TableBody,
   TableCell,
@@ -8,20 +11,40 @@ import {
 } from '@betty/beam';
 import type { MultiplierRow } from './payoutConfigs';
 
+/**
+ * MultiplierRowsGrid — the VIEW half of the Wheel of Wins multiplier-sector table. Same bleed `Section`
+ * shell as its editor twin (title + Total-only toolbar); the model description reads in the Section body
+ * ABOVE the table (muted body2, inset to the pad — the empty-state slot), matching the editor. View is
+ * read-only: no leading action rail, no kebab (BEAM.md §6.7 exemption — shell identical, interior reflows).
+ */
+
 const DIMMED_OPACITY = 0.35; // matches zero-probability payout sectors
-const BOUNDARY = { borderBottom: 1, borderColor: 'divider' };
-const NO_BORDER = { borderBottom: 0 };
 
 const formatPercent = (probability: number) =>
   `${(probability * 100).toLocaleString('en-US', { maximumFractionDigits: 4 })}%`;
 
 export function MultiplierRowsGrid({ rows }: { rows: MultiplierRow[] }) {
+  const total = rows.reduce((sum, row) => sum + row.probability, 0) * 100;
+  const totalLabel = total.toLocaleString('en-US', { maximumFractionDigits: 4 });
   return (
-    <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
+    <Section
+      title="Multiplier Sectors"
+      aria-label="Multiplier sectors"
+      bleed
+      toolbar={
+        <>
+          <Box sx={{ flexGrow: 1 }} />
+          <BeamStat label="Total probability" value={`${totalLabel}%`} />
+        </>
+      }
+    >
+      <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 1 }}>
+        The selected multiplier applies to every reward in the independently selected payout sector.
+      </Typography>
       <Table
         size="small"
         aria-label="Multiplier sectors"
-        sx={{ '& td, & th': { width: 'fit-content', verticalAlign: 'top' } }}
+        sx={{ '& td, & th': { verticalAlign: 'top' } }}
       >
         <TableHead>
           <TableRow>
@@ -33,16 +56,15 @@ export function MultiplierRowsGrid({ rows }: { rows: MultiplierRow[] }) {
         <TableBody>
           {rows.map((row, index) => {
             const dim = { opacity: row.probability === 0 ? DIMMED_OPACITY : 1 };
-            const bottom = index === rows.length - 1 ? NO_BORDER : BOUNDARY;
             return (
               <TableRow key={index}>
-                <TableCell align="right" sx={{ ...bottom, ...dim }}>
+                <TableCell align="right" sx={dim}>
                   {index + 1}
                 </TableCell>
-                <TableCell align="right" sx={{ ...bottom, ...dim }}>
+                <TableCell align="right" sx={dim}>
                   {formatPercent(row.probability)}
                 </TableCell>
-                <TableCell align="right" sx={{ ...bottom, ...dim }}>
+                <TableCell align="right" sx={dim}>
                   {row.multiplier}×
                 </TableCell>
               </TableRow>
@@ -50,6 +72,6 @@ export function MultiplierRowsGrid({ rows }: { rows: MultiplierRow[] }) {
           })}
         </TableBody>
       </Table>
-    </Paper>
+    </Section>
   );
 }

@@ -215,6 +215,16 @@ export const PAYOUT_CONFIGS: PayoutConfig[] = [
 export const GAME_TYPES: GameType[] = ['BettyWheel', 'BettyScratcher', 'BettyWheelOfWins', 'BettyMultiplierMadness'];
 export const PAYOUT_STATUSES: PayoutStatus[] = ['Enabled', 'Disabled'];
 
+/**
+ * Is the payout table's ROW ORDER data-meaningful? DECLARED, not inferred (BEAM.md §6.7): the wheel games
+ * (Betty Wheel, Wheel of Wins) render positional sectors whose order IS the sector layout, so they are
+ * orderable — the drag handle + kebab Move up/down show. Scratcher rows and the RTP-only Multiplier Madness
+ * carry no positional order → not orderable (shell + Delete-only kebab). (Multiplier SECTORS, a separate
+ * table, are always positional → orderable — declared at that table directly.)
+ */
+export const isOrderablePayout = (gameType: GameType | ''): boolean =>
+  gameType === 'BettyWheel' || gameType === 'BettyWheelOfWins';
+
 export const LEGACY_GAME_TYPES = ['Wheel', 'Scratcher', 'DailyWheel', 'DailyScratcher', 'DailyGift', 'MultiplierMadness', 'InstantWheel', 'WheelOfWins'] as const;
 
 export function gameTypeLabel(gameType: string): string {

@@ -61,7 +61,7 @@ export const MultiRewardRow: Story = { args: { rows: [multi] } };
 
 /** Wheel of Wins payout sectors derive their public position from array order. */
 export const NumberedSectors: Story = {
-  args: { rows: [single, multi, zero], showSectorPositions: true },
+  args: { rows: [single, multi, zero], orderable: true },
 };
 
 /** Zero-probability ("visual only") row — same grid, dimmed quiet. */

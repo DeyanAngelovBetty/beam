@@ -29,9 +29,9 @@ const row = (winMessage: string, pct: string, rewards: [RewardType, string][]): 
 });
 
 /** Controlled harness — real editing, so the bench can drive every control. */
-function Harness({ initial, orderedSectors = false }: { initial: EditorRow[]; orderedSectors?: boolean }) {
+function Harness({ initial, orderable = false }: { initial: EditorRow[]; orderable?: boolean }) {
   const [rows, setRows] = useState<EditorRow[]>(initial);
-  return <PayoutRowsEditor rows={rows} onChange={setRows} orderedSectors={orderedSectors} />;
+  return <PayoutRowsEditor rows={rows} onChange={setRows} orderable={orderable} />;
 }
 
 /** A single blank row — the create default (Live Check reads 0%, warning). */
@@ -53,7 +53,7 @@ export const MultiReward: Story = {
 export const OrderedSectors: Story = {
   render: () => (
     <Harness
-      orderedSectors
+      orderable
       initial={[
         row('Small win', '60', [['Coins', '10']]),
         row('Bonus bundle', '30', [['Coins', '20'], ['Tokens', '2']]),

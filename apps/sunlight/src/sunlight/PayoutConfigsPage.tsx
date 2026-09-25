@@ -25,6 +25,7 @@ import {
   PAYOUT_STATUSES,
   getPayoutRows,
   gameTypeLabel,
+  isOrderablePayout,
   statusBadge,
   type GameType,
   type PayoutConfig,
@@ -58,21 +59,12 @@ const PAYOUT_CONFIG_DEFS: TableFilterDefinition<Applied>[] = [
 
 function ExpandedConfig({ config }: { config: PayoutConfig }) {
   if (config.gameType === 'BettyMultiplierMadness') return <Typography>RTP: {config.rtp * 100}%</Typography>;
-  if (config.gameType !== 'BettyWheelOfWins') return <PayoutRowsGrid rows={config.rows} showSectorPositions={config.gameType === 'BettyWheel'} showTopPrize={config.gameType === 'BettyScratcher'} />;
+  if (config.gameType !== 'BettyWheelOfWins') return <PayoutRowsGrid rows={config.rows} orderable={isOrderablePayout(config.gameType)} showTopPrize={config.gameType === 'BettyScratcher'} />;
+  // Each grid owns its bleed Section (title + total) — the expansion just stacks them, no extra labels.
   return (
     <Stack spacing={2}>
-      <Stack spacing={0.75}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Payout sectors
-        </Typography>
-        <PayoutRowsGrid rows={config.payoutRows} showSectorPositions />
-      </Stack>
-      <Stack spacing={0.75}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Multiplier sectors
-        </Typography>
-        <MultiplierRowsGrid rows={config.multiplierRows} />
-      </Stack>
+      <PayoutRowsGrid rows={config.payoutRows} orderable />
+      <MultiplierRowsGrid rows={config.multiplierRows} />
     </Stack>
   );
 }
