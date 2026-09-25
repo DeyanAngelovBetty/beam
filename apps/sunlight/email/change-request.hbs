@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<!--
+  Sunlight — Change Request approval-flow email.
+  SOURCE: Tzeno's draft (2026-09-25). Structure KEPT verbatim (tables, MSO conditional, preheader, a11y
+  scope/th, the equals / if / each branches) — this is a Beam-token RE-SKIN + bench, not a rebuild.
+  Colours/typography/radii are email-safe LITERALS compiled from Beam tokens; the provenance table +
+  rationale live in apps/sunlight/email/email-tokens.md. CONTRACT: every placeholder and conditional
+  is unchanged — Tzeno's mailer consumes this file as-is. Client QA (Gmail/Outlook send-test) is a separate
+  gate; the Storybook bench (Sunlight/Email — Change Request) is a visual harness only.
+  NOTE: keep Handlebars tokens OUT of this comment — the parser reads mustaches inside HTML comments too.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Change request #{{requestId}}</title>
+  <style>
+    @media only screen and (max-width:480px) {
+      .email-stage { padding:16px 8px !important; }
+      .email-content { padding:24px 20px !important; }
+      .email-header, .email-footer { padding:18px 20px !important; }
+      .email-headline { font-size:25px !important; }
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#f6f3f5;font-family:Inter,Arial,Helvetica,sans-serif;color:#222126;">
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
+    Change request #{{requestId}} — {{status}}.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f6f3f5">
+    <tr>
+      <td align="center" class="email-stage" style="padding:32px 16px;">
+
+        <!--[if mso]>
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0">
+          <tr><td>
+        <![endif]-->
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:600px;border:1px solid #e9e4e9;border-radius:12px;border-collapse:separate;overflow:hidden;">
+
+          <tr>
+            <td class="email-header" bgcolor="#fbf1e0" style="padding:22px 32px;border-radius:11px 11px 0 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size:34px;line-height:36px;letter-spacing:-2px;color:#906013;">
+                    Sunlight
+                  </td>
+                  <td align="right" style="font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#906013;">
+                    Change control
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="email-content" style="padding:30px 32px 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
+
+                <tr>
+                  <td style="padding-bottom:18px;font-size:12px;line-height:24px;">
+
+                    {{#equals status "Applied"}}
+                    <span style="display:inline-block;padding:2px 10px;border-radius:4px;background-color:#ecf3ed;color:#166534;">
+                      {{status}}
+                    </span>
+                    {{/equals}}
+
+                    {{#equals status "Rejected"}}
+                    <span style="display:inline-block;padding:2px 10px;border-radius:4px;background-color:#fbecec;color:#b91c1c;">
+                      {{status}}
+                    </span>
+                    {{/equals}}
+
+                    {{#equals status "Outdated"}}
+                    <span style="display:inline-block;padding:2px 10px;border-radius:4px;background-color:#fdf2e8;color:#92400e;">
+                      {{status}}
+                    </span>
+                    {{/equals}}
+
+                    <span style="padding-left:10px;color:#69636e;letter-spacing:0.5px;">
+                      REQUEST #{{requestId}}
+                    </span>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <h1 class="email-headline" style="margin:0 0 12px;font-size:28px;line-height:1.2;font-weight:normal;letter-spacing:-0.8px;">
+                      {{#equals status "Applied"}}
+                        Your change request was applied.
+                      {{/equals}}
+                      {{#equals status "Rejected"}}
+                        Your change request was rejected.
+                      {{/equals}}
+                      {{#equals status "Outdated"}}
+                        Your change request is outdated.
+                      {{/equals}}
+                    </h1>
+
+                    <p style="margin:0;font-size:14px;line-height:23px;color:#69636e;">
+                      {{#equals status "Applied"}}
+                        The changes you proposed have been successfully applied.
+                      {{/equals}}
+                      {{#equals status "Rejected"}}
+                        The changes you proposed have not been applied. The reason is included below.
+                      {{/equals}}
+                      {{#equals status "Outdated"}}
+                        Your request is no longer current and cannot be applied. The reason is included below.
+                      {{/equals}}
+                    </p>
+                  </td>
+                </tr>
+
+                {{#equals status "Rejected"}}
+                <tr>
+                  <td style="padding-top:24px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td bgcolor="#fbecec" style="padding:17px 20px;border-left:3px solid #d32f2f;border-radius:0 8px 8px 0;">
+                          <h2 style="margin:0 0 6px;font-size:13px;line-height:20px;color:#b91c1c;">
+                            Rejection reason
+                          </h2>
+                          <p style="margin:0;font-size:14px;line-height:23px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if reason}}{{reason}}{{else}}No reason provided.{{/if}}</p>
+                          {{#each appliedRequests}}
+                          <p style="margin:14px 0 0;font-size:14px;line-height:23px;">
+                            <a href="{{this.url}}" target="_blank" rel="noopener noreferrer" style="color:#906013;font-weight:bold;text-decoration:underline;">
+                              View applied change request #{{this.id}}
+                            </a>
+                          </p>
+                          {{/each}}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {{/equals}}
+
+                {{#equals status "Outdated"}}
+                <tr>
+                  <td style="padding-top:24px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td bgcolor="#fdf2e8" style="padding:17px 20px;border-left:3px solid #ed6c02;border-radius:0 8px 8px 0;">
+                          <h2 style="margin:0 0 6px;font-size:13px;line-height:20px;color:#92400e;">
+                            Reason it became outdated
+                          </h2>
+                          <p style="margin:0;font-size:14px;line-height:23px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if reason}}{{reason}}{{else}}No reason provided.{{/if}}</p>
+                          {{#each appliedRequests}}
+                          <p style="margin:14px 0 0;font-size:14px;line-height:23px;">
+                            <a href="{{this.url}}" target="_blank" rel="noopener noreferrer" style="color:#906013;font-weight:bold;text-decoration:underline;">
+                              View applied change request #{{this.id}}
+                            </a>
+                          </p>
+                          {{/each}}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {{/equals}}
+
+                <tr>
+                  <td style="padding-top:28px;">
+                    <p style="margin:0 0 9px;font-size:11px;line-height:18px;letter-spacing:1.3px;text-transform:uppercase;color:#69636e;">
+                      Request details
+                    </p>
+
+                    <p style="margin:0 0 16px;font-size:17px;line-height:24px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">{{#if description}}{{description}}{{else}}Change request #{{requestId}}{{/if}}</p>
+
+                    <table width="100%" cellpadding="0" cellspacing="0" aria-label="Change request details" style="border-collapse:collapse;table-layout:fixed;font-size:13px;line-height:21px;">
+                      <tr>
+                        <th scope="row" width="32%" align="left" style="padding:10px 16px 10px 0;border-top:1px solid #e9e4e9;color:#69636e;font-weight:normal;">
+                          Feature
+                        </th>
+                        <td align="right" style="padding:10px 0;border-top:1px solid #e9e4e9;overflow-wrap:anywhere;word-break:break-word;">
+                          {{#if featureType}}{{featureType}}{{else}}Not provided{{/if}}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" width="32%" align="left" style="padding:10px 16px 10px 0;border-top:1px solid #e9e4e9;color:#69636e;font-weight:normal;">
+                          Updated by
+                        </th>
+                        <td align="right" style="padding:10px 0;border-top:1px solid #e9e4e9;overflow-wrap:anywhere;word-break:break-word;">
+                          {{#if updatedBy}}{{updatedBy}}{{else}}Not provided{{/if}}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" width="32%" align="left" style="padding:10px 16px 10px 0;border-top:1px solid #e9e4e9;color:#69636e;font-weight:normal;">
+                          Updated at
+                        </th>
+                        <td align="right" style="padding:10px 0;border-top:1px solid #e9e4e9;overflow-wrap:anywhere;word-break:break-word;">
+                          {{#if updatedAt}}{{updatedAt}}{{else}}Not provided{{/if}}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding-top:24px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td align="center" bgcolor="#906013" style="border-radius:8px;">
+                          <a href="{{requestUrl}}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:13px 22px;border-radius:8px;font-family:Inter,Arial,Helvetica,sans-serif;font-size:14px;line-height:20px;text-decoration:none;color:#ffffff;">
+                            View change request
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="email-footer" style="padding:18px 32px;border-top:1px solid #e9e4e9;font-size:12px;line-height:20px;color:#69636e;">
+              <p style="margin:0;">Sunlight &middot; Change control</p>
+              <p style="margin:3px 0 0;">
+                You received this update because you created this request.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!--[if mso]>
+          </td></tr>
+        </table>
+        <![endif]-->
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
