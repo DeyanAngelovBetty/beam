@@ -24,22 +24,19 @@ import {
   emptyMultiplierRow,
   validateMultiplierRows,
   type EditorMultiplierRow,
-  type EditorRow,
 } from './payoutConfigForm';
 
 /** Wheel of Wins multiplier-sector editor. Public sector numbers are index + 1. */
 export function MultiplierRowsEditor({
   rows,
-  payoutRows,
   onChange,
   showAllErrors = false,
 }: {
   rows: EditorMultiplierRow[];
-  payoutRows: EditorRow[];
   onChange: (rows: EditorMultiplierRow[]) => void;
   showAllErrors?: boolean;
 }) {
-  const validation = validateMultiplierRows(rows, payoutRows);
+  const validation = validateMultiplierRows(rows);
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
   const markTouched = (key: string) =>
     setTouched((current) => {
@@ -98,11 +95,6 @@ export function MultiplierRowsEditor({
             {validation.aggregate && showError('aggregate') && (
               <Typography variant="body2" color="error" role="alert">
                 {validation.aggregate}
-              </Typography>
-            )}
-            {validation.multiplication && (
-              <Typography variant="body2" color="error" role="alert">
-                {validation.multiplication}
               </Typography>
             )}
           </Stack>

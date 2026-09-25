@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -16,7 +16,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { GAME_TYPES, PAYOUT_STATUSES, gameTypeLabel, statusBadge } from './payoutConfigs';
 import type { GameType, PayoutStatus } from './payoutConfigs';
-import { GAME_CONFIGS } from './gameConfigs';
+import { GAME_CONFIGS, gameConfigEnableReason } from './gameConfigs';
 import type { GameConfig } from './gameConfigs';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { TargetingRulesGrid } from './TargetingRulesGrid';
@@ -34,34 +34,37 @@ const GAME_CONFIG_DEFS: TableFilterDefinition<Applied>[] = [
   { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, ...PAYOUT_STATUSES.map((s) => ({ label: s, value: s }))] },
 ];
 
-function confirmToggle(config: GameConfig, next: 'Enable' | 'Disable') {
-  if (typeof window === 'undefined') return;
-  if (window.confirm(`${next} "${config.code}"?`)) {
-    console.log(next.toLowerCase(), config.id);
-  }
-}
 
 export function GameConfigsPage() {
   const navigate = useNavigate();
+  const [revision, setRevision] = useState(0);
+function confirmToggle(config: GameConfig, next: 'Enable' | 'Disable') {
+  if (next === 'Enable' && gameConfigEnableReason(config)) return;
+  if (window.confirm(`${next} "${config.name}"?`)) {
+    config.status = next === 'Enable' ? 'Enabled' : 'Disabled';
+    setRevision(current => current + 1);
+  }
+}
+
   const filters = useTableFilters<Applied>({ initialValues: EMPTY, urlSync: true });
   const applied = filters.applied;
 
   const rows = useMemo(() => {
     const query = applied.q.trim().toLowerCase();
     return GAME_CONFIGS.filter((config) => {
-      if (query && !`${config.code} ${config.id}`.toLowerCase().includes(query)) return false;
+      if (query && !`${config.name} ${config.id}`.toLowerCase().includes(query)) return false;
       if (applied.gameType !== 'any' && config.gameType !== applied.gameType) return false;
       if (applied.status !== 'any' && config.status !== applied.status) return false;
       return true;
     });
-  }, [applied.gameType, applied.q, applied.status]);
+  }, [applied.gameType, applied.q, applied.status, revision]);
 
   const columns: BeamColumn<GameConfig>[] = [
     {
       key: 'name',
       header: 'Name',
-      render: (config) => config.code,
-      getValue: (config) => config.code,
+      render: (config) => config.name,
+      getValue: (config) => config.name,
       isIdentity: true,
       getHref: (config) => `${import.meta.env.BASE_URL}game-configs/${config.id}`,
     },
@@ -104,6 +107,8 @@ export function GameConfigsPage() {
         }
       : {
           id: 'enable',
+          disabled: Boolean(gameConfigEnableReason(config)),
+          disabledReason: gameConfigEnableReason(config),
           label: 'Enable',
           icon: <CheckCircleIcon fontSize="small" />,
           onSelect: () => confirmToggle(config, 'Enable'),

@@ -1,3 +1,5 @@
+import { ChainedExperiencesPage } from './sunlight/ChainedExperiencesPage';
+import { ChainedExperienceEditor } from './sunlight/ChainedExperienceEditor';
 import { createContext, useContext, useMemo, useState } from 'react';
 import {
   createBrowserRouter,
@@ -138,6 +140,9 @@ const router = createBrowserRouter(
         { path: 'game-configs/new', element: <GameConfigEditor /> },
         { path: 'game-configs/:id', element: <GameConfigEditor /> },
         { path: 'default-game-configs', element: <DefaultGameConfigsPage /> },
+        { path: 'chained-experiences', element: <ChainedExperiencesPage /> },
+        { path: 'chained-experiences/new', element: <ChainedExperienceEditor /> },
+        { path: 'chained-experiences/:id', element: <ChainedExperienceEditor /> },
         { path: 'meta-game-presets', element: <MetaGamePresetsPage /> },
         { path: 'meta-game-presets/new', element: <MetaGamePresetEditor /> },
         { path: 'meta-game-presets/:id', element: <MetaGamePresetEditor /> },

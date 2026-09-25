@@ -37,18 +37,8 @@ const multiplierRow = (probabilityPct, multiplier) => ({
 });
 
 const validModel = () => ({
+  ...toEditorModel(PAYOUT_CONFIGS.find(config => config.gameType === 'BettyWheelOfWins')),
   name: 'Wheel of Wins Form Test',
-  gameType: 'BettyWheelOfWins',
-  payoutRows: [
-    payoutRow('Small', '60', [reward('Coins', '10')]),
-    payoutRow('Bundle', '30', [reward('Coins', '20'), reward('Tokens', '2')]),
-    payoutRow('Jackpot', '10', [reward('Coins', '100')]),
-  ],
-  multiplierRows: [
-    multiplierRow('60', '1'),
-    multiplierRow('30', '1.5'),
-    multiplierRow('10', '3'),
-  ],
 });
 
 test('game-type changes create and remove multiplier state instead of hiding it', () => {
@@ -56,8 +46,8 @@ test('game-type changes create and remove multiplier state instead of hiding it'
   assert.equal(wheelOfWins.gameType, 'BettyWheelOfWins');
   assert.equal(wheelOfWins.multiplierRows.length, 1);
 
-  const wheel = withGameType(wheelOfWins, 'Wheel');
-  assert.equal(wheel.gameType, 'Wheel');
+  const wheel = withGameType(wheelOfWins, 'BettyWheel');
+  assert.equal(wheel.gameType, 'BettyWheel');
   assert.ok(!('multiplierRows' in wheel));
 });
 
@@ -98,7 +88,7 @@ test('domain/form round-trips preserve standard and Wheel of Wins collection ord
   const wheelConfig = PAYOUT_CONFIGS.find((config) => config.id === 'pc-wheel-standard');
   assert.ok(wheelConfig);
   const wheelInput = toDomainInput(toEditorModel(wheelConfig));
-  assert.equal(wheelInput.gameType, 'Wheel');
+  assert.equal(wheelInput.gameType, 'BettyWheel');
   assert.deepEqual(
     wheelInput.rows.map((row) => row.winMessage),
     wheelConfig.rows.map((row) => row.winMessage),
@@ -107,14 +97,14 @@ test('domain/form round-trips preserve standard and Wheel of Wins collection ord
 
 test('payout and multiplier totals are validated independently', () => {
   const payoutUnder = validModel();
-  payoutUnder.payoutRows[0].probabilityPct = '50';
+  payoutUnder.payoutRows[0].probabilityPct = '30';
   const payoutValidation = validateModel(payoutUnder);
   assert.equal(payoutValidation.valid, false);
   assert.match(payoutValidation.aggregate, /currently 90%/);
   assert.equal(payoutValidation.multiplier?.aggregate, undefined);
 
   const multiplierUnder = validModel();
-  multiplierUnder.multiplierRows[0].probabilityPct = '50';
+  multiplierUnder.multiplierRows[0].probabilityPct = '40';
   const multiplierValidation = validateModel(multiplierUnder);
   assert.equal(multiplierValidation.valid, false);
   assert.equal(multiplierValidation.aggregate, undefined);
@@ -133,24 +123,11 @@ test('payout and multiplier totals are validated independently', () => {
   assert.equal(validateModel(emptyWheel, wheelConfig.id).aggregate, 'Add at least one payout row.');
 });
 
-test('fractional products fail only when both rows are selectable', () => {
-  const invalid = validModel();
-  invalid.payoutRows = [payoutRow('Odd', '100', [reward('Coins', '5')])];
-  invalid.multiplierRows = [multiplierRow('100', '1.5')];
-  assert.match(validateModel(invalid).multiplier?.multiplication, /5 Coins.*1\.5.*7\.5/);
-
-  const zeroPayout = validModel();
-  zeroPayout.payoutRows = [
-    payoutRow('Display only', '0', [reward('Coins', '5')]),
-    payoutRow('Selectable', '100', [reward('Coins', '10')]),
-  ];
-  zeroPayout.multiplierRows = [multiplierRow('100', '1.5')];
-  assert.equal(validateModel(zeroPayout).valid, true);
-
-  const zeroMultiplier = validModel();
-  zeroMultiplier.payoutRows = [payoutRow('Odd', '100', [reward('Coins', '5')])];
-  zeroMultiplier.multiplierRows = [multiplierRow('100', '1'), multiplierRow('0', '1.5')];
-  assert.equal(validateModel(zeroMultiplier).valid, true);
+test('fractional products are allowed, matching the backend amount conversion', () => {
+  const model = validModel();
+  model.payoutRows[0].rewards[0].amount = '5';
+  model.multiplierRows[0].multiplier = '1.5';
+  assert.equal(validateModel(model).valid, true);
 });
 
 test('reward amounts remain positive whole numbers and multipliers must be positive', () => {
@@ -168,23 +145,26 @@ test('reward amounts remain positive whole numbers and multipliers must be posit
   }
 });
 
-test('near-integer products are rejected beyond floating-point representation error', () => {
-  const model = validModel();
-  model.payoutRows = [payoutRow('Almost whole', '100', [reward('Coins', '1')])];
-  model.multiplierRows = [multiplierRow('100', '1.0000005')];
-
-  assert.match(validateModel(model).multiplier?.multiplication, /1\.0000005/);
-
-  const representationArtifact = validModel();
-  representationArtifact.payoutRows = [payoutRow('Whole in decimal arithmetic', '100', [reward('Coins', '50')])];
-  representationArtifact.multiplierRows = [multiplierRow('100', '0.58')];
-  assert.equal(validateModel(representationArtifact).valid, true);
+test('MM uses RTP only and validates the percentage boundaries', () => {
+  const mm = PAYOUT_CONFIGS.find(config => config.gameType === 'BettyMultiplierMadness');
+  assert.deepEqual(toDomainInput(toEditorModel(mm)), { name: mm.name, gameType: mm.gameType, rtp: 0.97 });
+  for (const rtpPct of ['', '0', '-1', '101']) assert.equal(validateModel({ ...toEditorModel(mm), name: 'New MM', rtpPct }).valid, false);
+  for (const rtpPct of ['0.1', '97', '100']) assert.equal(validateModel({ ...toEditorModel(mm), name: 'New MM', rtpPct }).valid, true);
+  assert.equal('rtpPct' in withGameType(toEditorModel(mm), 'BettyWheel'), false);
 });
 
-test('finite multipliers whose reward product overflows are rejected', () => {
-  const model = validModel();
-  model.payoutRows = [payoutRow('Overflow', '100', [reward('Coins', '2')])];
-  model.multiplierRows = [multiplierRow('100', '1e308')];
-
-  assert.match(validateModel(model).multiplier?.multiplication, /Infinity/);
+test('sector counts, top prize and reward digits match MetaGame configuration rules', () => {
+  for (const config of PAYOUT_CONFIGS) assert.equal(validateModel(toEditorModel(config), config.id).valid, true, config.id);
+  const wheel = { ...toEditorModel(PAYOUT_CONFIGS.find(config => config.gameType === 'BettyWheel')), name: 'New Wheel' };
+  wheel.payoutRows.pop();
+  assert.match(validateModel(wheel).configuration, /6–16/);
+  const scratcher = { ...toEditorModel(PAYOUT_CONFIGS.find(config => config.gameType === 'BettyScratcher')), name: 'New Scratcher' };
+  scratcher.payoutRows.forEach(row => row.isTopPrize = false);
+  assert.match(validateModel(scratcher).configuration, /exactly one/);
+  scratcher.payoutRows[0].isTopPrize = true;
+  scratcher.payoutRows[0].rewards[0].amount = '1234';
+  assert.match(validateModel(scratcher).rows[0].rewards[0].amount, /first 3 digits/);
+  scratcher.payoutRows[0].rewards[0].amount = '1230';
+  assert.equal(validateModel(scratcher).valid, true);
+  assert.equal(toDomainInput(scratcher).rows[0].isTopPrize, true);
 });

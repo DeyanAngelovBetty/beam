@@ -1,4 +1,4 @@
-import type { GameType, PayoutStatus, StandardPayoutGameType } from './payoutConfigs';
+import { LEGACY_GAME_TYPES, type PayoutStatus } from './payoutConfigs';
 
 export type PresetVolatility = 'Low' | 'Medium' | 'High';
 export type PresetUseCase = 'All' | 'Store';
@@ -6,7 +6,7 @@ export type PresetUseCase = 'All' | 'Store';
 export interface MetaGamePreset {
   id: string;
   gameConfigId: string | null;
-  name: GameType;
+  name: string;
   displayName: string;
   configCode: string | null;
   skinId: string | null;
@@ -21,16 +21,16 @@ export type MetaGamePresetInput = Omit<MetaGamePreset, 'id' | 'status'>;
 
 export const PRESET_VOLATILITIES: PresetVolatility[] = ['Low', 'Medium', 'High'];
 export const PRESET_USE_CASES: PresetUseCase[] = ['All', 'Store'];
-export const LEGACY_YODA_GAME_TYPES: StandardPayoutGameType[] = ['MysteryBox', 'Wheel', 'Scratcher'];
+export const LEGACY_YODA_GAME_TYPES = LEGACY_GAME_TYPES;
 
 export const META_GAME_PRESETS: MetaGamePreset[] = [
   {
-    id: 'preset-mystery-box-daily-reward',
-    gameConfigId: 'gc-mystery-box-default',
-    name: 'MysteryBox',
-    displayName: 'Mystery Box',
+    id: 'preset-betty-wheel-daily-reward',
+    gameConfigId: 'gc-betty-wheel-default',
+    name: 'BettyWheel',
+    displayName: 'Betty Wheel',
     configCode: null,
-    skinId: 'mystery-box-default',
+    skinId: 'betty-wheel-default',
     imageUrl: null,
     volatility: 'Medium',
     useCases: ['All'],
@@ -38,12 +38,12 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
     status: 'Enabled',
   },
   {
-    id: 'preset-mystery-box-promotion',
-    gameConfigId: 'gc-mystery-box-promotion',
-    name: 'MysteryBox',
-    displayName: 'Mystery Box Promotion',
+    id: 'preset-betty-wheel-promotion',
+    gameConfigId: 'gc-betty-wheel-promotion',
+    name: 'BettyWheel',
+    displayName: 'Betty Wheel Promotion',
     configCode: null,
-    skinId: 'mystery-box-promotion',
+    skinId: 'betty-wheel-promotion',
     imageUrl: null,
     volatility: 'High',
     useCases: ['Store'],
@@ -53,7 +53,7 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
   {
     id: 'preset-weekly-wheel',
     gameConfigId: 'gc-wheel-default',
-    name: 'Wheel',
+    name: 'BettyWheel',
     displayName: 'Weekly Wheel',
     configCode: null,
     skinId: 'wheel-default',
@@ -66,7 +66,7 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
   {
     id: 'preset-daily-scratcher',
     gameConfigId: 'gc-scratcher-default',
-    name: 'Scratcher',
+    name: 'BettyScratcher',
     displayName: 'Daily Scratcher',
     configCode: null,
     skinId: 'scratcher-default',
@@ -89,6 +89,21 @@ export const META_GAME_PRESETS: MetaGamePreset[] = [
     expiryHours: 168,
     status: 'Enabled',
   },
+  {
+    id: 'preset-mm-standard', name: 'BettyMultiplierMadness', displayName: 'Multiplier Madness',
+    gameConfigId: 'gc-mm-default', configCode: null, skinId: null, imageUrl: null,
+    volatility: 'High', useCases: ['All'], expiryHours: 24, status: 'Enabled',
+  },
+  {
+    id: 'preset-wheel-default-config', name: 'BettyWheel', displayName: 'Wheel with default configuration',
+    gameConfigId: null, configCode: null, skinId: null, imageUrl: null,
+    volatility: 'Medium', useCases: ['All'], expiryHours: 24, status: 'Enabled',
+  },
+  {
+    id: 'preset-legacy-wheel', name: 'Wheel', displayName: 'Legacy Wheel',
+    gameConfigId: null, configCode: 'LEGACY_WHEEL', skinId: null, imageUrl: null,
+    volatility: null, useCases: ['All'], expiryHours: null, status: 'Enabled',
+  },
 ];
 
 let presetSequence = 0;
@@ -102,7 +117,7 @@ export function createMetaGamePreset(input: MetaGamePresetInput): MetaGamePreset
   const preset: MetaGamePreset = {
     ...input,
     id: `preset-${Date.now().toString(36)}-${presetSequence}`,
-    status: 'Disabled',
+    status: 'Enabled',
   };
   META_GAME_PRESETS.push(preset);
   return preset;

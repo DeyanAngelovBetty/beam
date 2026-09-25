@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { payoutConfigDisableReason } from './gameConfigs';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Stack,
@@ -54,18 +55,10 @@ const PAYOUT_CONFIG_DEFS: TableFilterDefinition<Applied>[] = [
   { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, ...PAYOUT_STATUSES.map((s) => ({ label: s, value: s }))] },
 ];
 
-// Row actions are stubbed — behaviour wiring is a later round; only navigation
-// is real. Enable/Disable dialogs ship PLAIN (window.confirm); the real dialog
-// and its exact copy come from brief §10.1 (not yet in-repo).
-function confirmToggle(config: PayoutConfig, next: 'Enable' | 'Disable') {
-  if (typeof window === 'undefined') return;
-  if (window.confirm(`${next} "${config.name}"?`)) {
-    console.log(next.toLowerCase(), config.id);
-  }
-}
 
 function ExpandedConfig({ config }: { config: PayoutConfig }) {
-  if (config.gameType !== 'BettyWheelOfWins') return <PayoutRowsGrid rows={config.rows} />;
+  if (config.gameType === 'BettyMultiplierMadness') return <Typography>RTP: {config.rtp * 100}%</Typography>;
+  if (config.gameType !== 'BettyWheelOfWins') return <PayoutRowsGrid rows={config.rows} showSectorPositions={config.gameType === 'BettyWheel'} showTopPrize={config.gameType === 'BettyScratcher'} />;
   return (
     <Stack spacing={2}>
       <Stack spacing={0.75}>
@@ -86,6 +79,15 @@ function ExpandedConfig({ config }: { config: PayoutConfig }) {
 
 export function PayoutConfigsPage() {
   const navigate = useNavigate();
+  const [revision, setRevision] = useState(0);
+function confirmToggle(config: PayoutConfig, next: 'Enable' | 'Disable') {
+  if (next === 'Disable' && payoutConfigDisableReason(config.id)) return;
+  if (window.confirm(`${next} "${config.name}"?`)) {
+    config.status = next === 'Enable' ? 'Enabled' : 'Disabled';
+    setRevision(current => current + 1);
+  }
+}
+
   // Applied filters + URL sync are owned by useTableFilters (shareable, refresh-proof).
   const filters = useTableFilters<Applied>({ initialValues: EMPTY, urlSync: true });
   const applied = filters.applied;
@@ -98,7 +100,7 @@ export function PayoutConfigsPage() {
       if (applied.status !== 'any' && c.status !== applied.status) return false;
       return true;
     });
-  }, [applied.q, applied.gameType, applied.status]);
+  }, [applied.q, applied.gameType, applied.status, revision]);
 
   const isApplied = applied.q !== '' || applied.gameType !== 'any' || applied.status !== 'any';
 
@@ -135,10 +137,10 @@ export function PayoutConfigsPage() {
     // vetoed; Updated dropped — see metagame-pages.md.
     {
       key: 'rows',
-      header: 'Rows',
+      header: 'Configuration',
       align: 'right',
       getValue: (c) => getPayoutRows(c).length + (c.gameType === 'BettyWheelOfWins' ? c.multiplierRows.length : 0),
-      render: (c) => c.gameType === 'BettyWheelOfWins'
+      render: (c) => c.gameType === 'BettyMultiplierMadness' ? `RTP ${c.rtp * 100}%` : c.gameType === 'BettyWheelOfWins'
         ? `${c.payoutRows.length} payout · ${c.multiplierRows.length} multiplier`
         : c.rows.length,
     },
@@ -150,7 +152,7 @@ export function PayoutConfigsPage() {
   const rowActions = (c: PayoutConfig): BeamRowAction[] => [
     { id: 'edit', label: 'Edit', icon: <EditIcon fontSize="small" />, onSelect: () => navigate(`/payout-configs/${c.id}`, { state: { edit: true } }) },
     c.status === 'Enabled'
-      ? { id: 'disable', label: 'Disable', icon: <BlockIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Disable') }
+      ? { id: 'disable', disabled: Boolean(payoutConfigDisableReason(c.id)), disabledReason: payoutConfigDisableReason(c.id), label: 'Disable', icon: <BlockIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Disable') }
       : { id: 'enable', label: 'Enable', icon: <CheckCircleIcon fontSize="small" />, onSelect: () => confirmToggle(c, 'Enable') },
   ];
 

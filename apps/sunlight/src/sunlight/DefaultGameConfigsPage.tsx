@@ -86,7 +86,7 @@ export function DefaultGameConfigsPage() {
                   displayEmpty: true,
                   renderValue: (selected) => {
                     const option = options.find((candidate) => candidate.id === selected);
-                    return option ? `${option.code} — ${option.status}` : 'Not configured';
+                    return option ? `${option.name} — ${option.status}` : 'Not configured';
                   },
                 },
               }}
@@ -94,7 +94,7 @@ export function DefaultGameConfigsPage() {
             >
               {options.map((option) => (
                 <MenuItem key={option.id} value={option.id}>
-                  {option.code} — {option.status}
+                  {option.name} — {option.status}
                 </MenuItem>
               ))}
             </TextField>

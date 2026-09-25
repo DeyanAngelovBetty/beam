@@ -1,5 +1,6 @@
 import {
   Paper,
+  BeamBool,
   MuiTable as Table,
   TableHead,
   TableBody,
@@ -42,9 +43,11 @@ const rewardsLabel = (row: PayoutRow) =>
 export function PayoutRowsGrid({
   rows,
   showSectorPositions = false,
+  showTopPrize = false,
 }: {
   rows: PayoutRow[];
   showSectorPositions?: boolean;
+  showTopPrize?: boolean;
 }) {
   return (
     <Paper variant="outlined" sx={{ width: 'fit-content', overflow: 'hidden' }}>
@@ -56,6 +59,7 @@ export function PayoutRowsGrid({
         <TableHead>
           <TableRow>
             {showSectorPositions && <TableCell align="right">Sector</TableCell>}
+            {showTopPrize && <TableCell>Top Prize</TableCell>}
             <TableCell>Win Message</TableCell>
             <TableCell align="right">Probability</TableCell>
             <TableCell>Rewards</TableCell>
@@ -72,6 +76,7 @@ export function PayoutRowsGrid({
                     {ri + 1}
                   </TableCell>
                 )}
+                {showTopPrize && <TableCell sx={bottom}><BeamBool value={Boolean(row.isTopPrize)} /></TableCell>}
                 <TableCell sx={{ ...bottom, ...dim }}>{row.winMessage}</TableCell>
                 <TableCell align="right" sx={{ ...bottom, ...dim }}>
                   {formatPercent(row.probability)}

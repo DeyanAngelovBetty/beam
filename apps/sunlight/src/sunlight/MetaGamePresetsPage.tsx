@@ -28,13 +28,13 @@ import {
   type MetaGamePreset,
 } from './metaGamePresets';
 import { nextPresetStatusAction, presetSource, type PresetSource } from './metaGamePresetHelpers';
-import { GAME_TYPES, PAYOUT_STATUSES, gameTypeLabel, statusBadge, type GameType, type PayoutStatus } from './payoutConfigs';
+import { LEGACY_GAME_TYPES, GAME_TYPES, PAYOUT_STATUSES, gameTypeLabel, statusBadge, type GameType, type PayoutStatus } from './payoutConfigs';
 import { RouterIdentityLink } from './RouterIdentityLink';
 import { PresetImagePreview } from './PresetImagePreview';
 
 interface AppliedFilters {
   q: string;
-  gameType: 'any' | GameType;
+  gameType: string;
   source: 'any' | PresetSource;
   status: 'any' | PayoutStatus;
 }
@@ -42,14 +42,14 @@ interface AppliedFilters {
 const EMPTY_FILTERS: AppliedFilters = { q: '', gameType: 'any', source: 'any', status: 'any' };
 const PRESET_DEFS: TableFilterDefinition<AppliedFilters>[] = [
   { key: 'q', control: 'text', label: 'Search', placeholder: 'Search Display Name or ID' },
-  { key: 'gameType', control: 'select', label: 'Game Type', options: [{ label: 'Any', value: 'any' }, ...GAME_TYPES.map((g) => ({ label: gameTypeLabel(g), value: g }))] },
+  { key: 'gameType', control: 'select', label: 'Game Type', options: [{ label: 'Any', value: 'any' }, ...[...GAME_TYPES, ...LEGACY_GAME_TYPES].map((g) => ({ label: gameTypeLabel(g), value: g }))] },
   { key: 'source', control: 'select', label: 'Configuration Source', options: [{ label: 'Any', value: 'any' }, { label: 'Betty', value: 'Betty' }, { label: 'Yoda', value: 'Yoda' }] },
   { key: 'status', control: 'select', label: 'Status', options: [{ label: 'Any', value: 'any' }, ...PAYOUT_STATUSES.map((s) => ({ label: s, value: s }))] },
 ];
 
 function gameConfigName(preset: MetaGamePreset): string {
-  if (!preset.gameConfigId) return preset.configCode ?? 'Not configured';
-  return GAME_CONFIGS.find((config) => config.id === preset.gameConfigId)?.code ?? 'Unknown GameConfig';
+  if (!preset.gameConfigId) return presetSource(preset) === 'Betty' ? 'Default game configuration' : preset.configCode ?? 'Not configured';
+  return GAME_CONFIGS.find((config) => config.id === preset.gameConfigId)?.name ?? 'Unknown GameConfig';
 }
 
 function PresetPreview({ preset }: { preset: MetaGamePreset }) {

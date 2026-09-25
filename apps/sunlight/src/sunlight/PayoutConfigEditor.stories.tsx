@@ -30,7 +30,7 @@ function At({ entry, edit = false }: { entry: string; edit?: boolean }) {
 }
 
 /** View-first: an existing config opens READ-ONLY; Edit flips to the editor. */
-export const ViewMode: Story = { render: () => <At entry="/payout-configs/pc-mystery-box-standard" /> };
+export const ViewMode: Story = { render: () => <At entry="/payout-configs/pc-betty-wheel-standard" /> };
 
 /** Create has nothing to view → opens straight in the editor. */
 export const Create: Story = { render: () => <At entry="/payout-configs/new" /> };
@@ -44,3 +44,7 @@ export const WheelOfWinsView: Story = {
 export const WheelOfWinsEdit: Story = {
   render: () => <At entry="/payout-configs/pc-betty-wheel-of-wins-standard" edit />,
 };
+
+export const MultiplierMadnessView: Story = { render: () => <At entry="/payout-configs/pc-mm-standard" /> };
+export const MultiplierMadnessEdit: Story = { render: () => <At entry="/payout-configs/pc-mm-standard" edit /> };
+export const ScratcherEdit: Story = { render: () => <At entry="/payout-configs/pc-scratcher-standard" edit /> };

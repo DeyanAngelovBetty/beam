@@ -29,12 +29,12 @@ name valid+unique · every rule has a PayoutConfig · every rule's condition pas
 ## Status
 Chip below the title (identity, not action); not editable here. The cross-object
 rule ("cannot Enable while enabled rules reference Disabled PayoutConfigs")
-belongs to the Enable ACTION (list), not Save — surfaced here as a non-blocking
-warning.
+blocks Enable and also blocks Save when editing an already Enabled config.
+For Disabled configs, it remains a non-blocking warning.
 
 ## Basic information
-- **Name** (`code`): text, required, ≤100, unique within GameType (seed store).
-- **Game Type**: dropdown (canonical eight), required; **read-only on edit**.
+- **Name** (`name`): text, required, ≤100, unique within GameType (seed store).
+- **Game Type**: dropdown (the four internal game types), required; **read-only on edit**.
 - GameType change on CREATE → **mark-invalid** (least destructive): selections
   kept, marked invalid if off-type, operator re-picks.
 
@@ -51,10 +51,9 @@ reorder; only its PayoutConfig select. Add Rule inserts above the fallback.
 ## Validation (classified)
 - fallback exists/enabled/last/conditionless → STRUCTURAL (fixed row).
 - rule has a PayoutConfig → inline, Save-gated.
-- condition tree valid (and flat, per the model mismatch) → inline, Save-gated.
+- recursive condition tree valid → inline, Save-gated.
 - name required/length/unique → inline, Save-gated.
-- enabled rule references a Disabled PayoutConfig → AGGREGATE, **non-blocking**
-  warning by the rules header.
+- enabled rule references a Disabled PayoutConfig → AGGREGATE, warning while Disabled; blocks saving an Enabled config.
 
 ## Live Checks
 None (no numeric aggregate) — the disabled-reference warning occupies the

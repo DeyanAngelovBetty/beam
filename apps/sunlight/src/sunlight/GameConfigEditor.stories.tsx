@@ -29,7 +29,7 @@ function At({ entry }: { entry: string }) {
 }
 
 /** View-first: an existing config opens READ-ONLY; Edit flips to the editor. */
-export const ViewMode: Story = { render: () => <At entry="/game-configs/gc-mystery-box-default" /> };
+export const ViewMode: Story = { render: () => <At entry="/game-configs/gc-betty-wheel-default" /> };
 
 /** Create → opens straight in the editor. */
 export const Create: Story = { render: () => <At entry="/game-configs/new" /> };

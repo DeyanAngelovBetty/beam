@@ -64,7 +64,7 @@ export interface EditorFallback {
 }
 
 export interface EditorModel {
-  code: string;
+  name: string;
   gameType: GameType | '';
   rules: EditorRule[]; // conditional rules, top = highest priority
   fallback: EditorFallback;
@@ -84,7 +84,7 @@ export function emptyRule(): EditorRule {
 
 export function emptyModel(): EditorModel {
   return {
-    code: '',
+    name: '',
     gameType: '',
     rules: [],
     fallback: { _key: key(), payoutConfigId: '' },
@@ -101,7 +101,7 @@ export function toEditorModel(config: GameConfig): EditorModel {
     .sort((a, b) => b.priority - a.priority); // order = priority, top highest
 
   return {
-    code: config.code,
+    name: config.name,
     gameType: config.gameType,
     rules: conditional.map((r) => ({
       _key: key(),
@@ -133,13 +133,13 @@ export function toDomainInput(model: EditorModel): GameConfigInput {
     status: 'Enabled',
     payoutConfigId: model.fallback.payoutConfigId,
   });
-  return { code: model.code.trim(), gameType: model.gameType as GameType, targetingRules: rules };
+  return { name: model.name.trim(), gameType: model.gameType as GameType, targetingRules: rules };
 }
 
 /** Dirty-check projection — drops client keys/ids. */
 export function serializeModel(model: EditorModel): string {
   return JSON.stringify({
-    code: model.code,
+    name: model.name,
     gameType: model.gameType,
     rules: model.rules.map((r) => ({ status: r.status, payoutConfigId: r.payoutConfigId, group: r.group })),
     fallback: { payoutConfigId: model.fallback.payoutConfigId },
@@ -154,10 +154,11 @@ export interface RuleErrors {
 }
 
 export interface ModelValidation {
-  code?: string;
+  name?: string;
   gameType?: string;
   rules: RuleErrors[];
   fallback?: string;
+  status?: string;
   /** Rule numbers whose ENABLED rule references a Disabled PayoutConfig
    *  (AGGREGATE, non-blocking — the Enable-action concern, awareness here). */
   disabledRefRuleNumbers: number[];
@@ -167,13 +168,13 @@ export interface ModelValidation {
 const statusOf = (id: string): PayoutStatus | undefined =>
   PAYOUT_CONFIGS.find((p) => p.id === id)?.status;
 
-export function validateModel(model: EditorModel, excludeId?: string): ModelValidation {
-  let code: string | undefined;
-  const trimmed = model.code.trim();
-  if (!trimmed) code = 'Name is required.';
-  else if (trimmed.length > MAX_NAME) code = `Keep it under ${MAX_NAME} characters.`;
+export function validateModel(model: EditorModel, excludeId?: string, configStatus: PayoutStatus = 'Disabled'): ModelValidation {
+  let name: string | undefined;
+  const trimmed = model.name.trim();
+  if (!trimmed) name = 'Name is required.';
+  else if (trimmed.length > MAX_NAME) name = `Keep it under ${MAX_NAME} characters.`;
   else if (model.gameType && !gameConfigNameIsUnique(trimmed, model.gameType, excludeId))
-    code = 'A game config with this name already exists for this game type.';
+    name = 'A game config with this name already exists for this game type.';
 
   const gameType = model.gameType ? undefined : 'Game Type is required.';
 
@@ -202,14 +203,18 @@ export function validateModel(model: EditorModel, excludeId?: string): ModelVali
     .filter(({ r }) => r.status === 'Enabled' && statusOf(r.payoutConfigId) === 'Disabled')
     .map(({ n }) => n);
 
+  const status = configStatus === 'Enabled' && (disabledRefRuleNumbers.length > 0 || statusOf(model.fallback.payoutConfigId) !== 'Enabled')
+    ? 'Enabled Game Configs require enabled Payout Configs for every enabled rule, including fallback.' : undefined;
+
   const rulesValid = rules.every((e) => !e.payoutConfig && !e.condition);
   return {
-    code,
+    name,
     gameType,
     rules,
     fallback,
     disabledRefRuleNumbers,
-    valid: !code && !gameType && rulesValid && !fallback,
+    status,
+    valid: !name && !gameType && !status && rulesValid && !fallback,
   };
 }
 

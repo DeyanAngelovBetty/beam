@@ -26,6 +26,7 @@ export interface EditorReward {
 export interface EditorRow {
   _key: string;
   id?: string;
+  isTopPrize?: boolean;
   winMessage: string;
   probabilityPct: string;
   rewards: EditorReward[];
@@ -44,6 +45,7 @@ interface EditorModelBase {
 
 export type EditorModel =
   | (EditorModelBase & { gameType: StandardPayoutGameType | '' })
+  | (EditorModelBase & { gameType: 'BettyMultiplierMadness'; rtpPct: string })
   | (EditorModelBase & {
       gameType: 'BettyWheelOfWins';
       multiplierRows: EditorMultiplierRow[];
@@ -84,6 +86,9 @@ export function emptyModel(): EditorModel {
 
 /** Change the create-time type without retaining an irrelevant hidden collection. */
 export function withGameType(model: EditorModel, gameType: GameType): EditorModel {
+  if (gameType === 'BettyMultiplierMadness') {
+    return model.gameType === gameType ? model : { name: model.name, gameType, rtpPct: '', payoutRows: [] };
+  }
   if (gameType === 'BettyWheelOfWins') {
     return model.gameType === 'BettyWheelOfWins'
       ? model
@@ -101,6 +106,7 @@ const toEditorRows = (rows: PayoutRow[]): EditorRow[] =>
   rows.map((row) => ({
     _key: clientKey(),
     id: row.id,
+    isTopPrize: row.isTopPrize,
     winMessage: row.winMessage,
     probabilityPct: formatPctForInput(row.probability),
     rewards: row.rewards.map((reward) => ({
@@ -111,6 +117,7 @@ const toEditorRows = (rows: PayoutRow[]): EditorRow[] =>
   }));
 
 export function toEditorModel(config: PayoutConfig): EditorModel {
+  if (config.gameType === 'BettyMultiplierMadness') return { name: config.name, gameType: config.gameType, rtpPct: formatPctForInput(config.rtp), payoutRows: [] };
   if (config.gameType === 'BettyWheelOfWins') {
     return {
       name: config.name,
@@ -134,6 +141,7 @@ const toDomainPayoutRows = (rows: EditorRow[]): PayoutRow[] =>
     }));
     return {
       id: row.id,
+      ...(row.isTopPrize !== undefined ? { isTopPrize: row.isTopPrize } : {}),
       probability: Number((Number(row.probabilityPct) / 100).toFixed(8)),
       winMessage: row.winMessage.trim(),
       // Existing demo-only headline value; not editable and not a sector identifier.
@@ -144,6 +152,7 @@ const toDomainPayoutRows = (rows: EditorRow[]): PayoutRow[] =>
 
 /** Form → domain payload. Call only after validateModel reports valid. */
 export function toDomainInput(model: EditorModel): PayoutConfigInput {
+  if (model.gameType === 'BettyMultiplierMadness') return { name: model.name.trim(), gameType: model.gameType, rtp: Number(model.rtpPct) / 100 };
   const payoutRows = toDomainPayoutRows(model.payoutRows);
   if (model.gameType === 'BettyWheelOfWins') {
     const multiplierRows: MultiplierRow[] = model.multiplierRows.map((row) => ({
@@ -157,10 +166,12 @@ export function toDomainInput(model: EditorModel): PayoutConfigInput {
 
 /** Serialized projection for dirty-checking — drops client/internal identity. */
 export function serializeModel(model: EditorModel): string {
+  if (model.gameType === 'BettyMultiplierMadness') return JSON.stringify({ name: model.name, gameType: model.gameType, rtpPct: model.rtpPct });
   const common = {
     name: model.name,
     gameType: model.gameType,
     payoutRows: model.payoutRows.map((row) => ({
+      isTopPrize: row.isTopPrize,
       winMessage: row.winMessage,
       probabilityPct: row.probabilityPct,
       rewards: row.rewards.map((reward) => ({ rewardType: reward.rewardType, amount: reward.amount })),
@@ -204,11 +215,12 @@ export interface MultiplierRowsValidation {
   remaining: number;
   status: ProbabilityStatus;
   aggregate?: string;
-  multiplication?: string;
   rowsValid: boolean;
 }
 
 export interface ModelValidation {
+  rtp?: string;
+  configuration?: string;
   name?: string;
   gameType?: string;
   rows: RowErrors[];
@@ -254,7 +266,9 @@ export function validateRows(
     else total += probability;
 
     errors.rewards = row.rewards.map((reward) =>
-      isWholePositive(reward.amount) ? {} : { amount: 'Whole number ≥ 1.' },
+      !isWholePositive(reward.amount) ? { amount: 'Whole number ≥ 1.' }
+        : /[1-9]/.test(String(Number(reward.amount)).slice(3))
+          ? { amount: 'Only zeros are allowed after the first 3 digits (e.g. 1230).' } : {},
     );
 
     if (errors.winMessage || errors.probability || errors.rewards.some((reward) => reward.amount)) {
@@ -284,7 +298,6 @@ export function validateRows(
 /** Centralized multiplier and reward×multiplier validation for Wheel of Wins. */
 export function validateMultiplierRows(
   rows: EditorMultiplierRow[],
-  payoutRows: EditorRow[],
 ): MultiplierRowsValidation {
   let total = 0;
   let hasFieldError = false;
@@ -319,40 +332,6 @@ export function validateMultiplierRows(
     aggregate = `Multiplier probabilities must total 100% (currently ${roundedTotal}%).`;
   }
 
-  let multiplication: string | undefined;
-  for (let multiplierIndex = 0; multiplierIndex < rows.length && !multiplication; multiplierIndex += 1) {
-    const multiplierRow = rows[multiplierIndex];
-    const multiplierProbability = Number(multiplierRow.probabilityPct.trim());
-    const multiplier = Number(multiplierRow.multiplier.trim());
-    if (
-      rowErrors[multiplierIndex]?.probability
-      || rowErrors[multiplierIndex]?.multiplier
-      || multiplierProbability <= 0
-    ) {
-      continue;
-    }
-
-    for (let payoutIndex = 0; payoutIndex < payoutRows.length && !multiplication; payoutIndex += 1) {
-      const payoutRow = payoutRows[payoutIndex];
-      const payoutProbability = Number(payoutRow.probabilityPct.trim());
-      if (!Number.isFinite(payoutProbability) || payoutProbability <= 0 || payoutProbability > 100) continue;
-
-      for (const reward of payoutRow.rewards) {
-        if (!isWholePositive(reward.amount)) continue;
-        const amount = parseInt(reward.amount, 10);
-        const result = amount * multiplier;
-        const wholeNumberTolerance = Number.EPSILON * Math.max(1, Math.abs(result)) * 4;
-        if (
-          result <= 0
-          || !Number.isFinite(result)
-          || Math.abs(result - Math.round(result)) > wholeNumberTolerance
-        ) {
-          multiplication = `Payout sector ${payoutIndex + 1}: ${amount} ${reward.rewardType} × multiplier sector ${multiplierIndex + 1} (${multiplier}) = ${result}. Results must be positive whole numbers.`;
-          break;
-        }
-      }
-    }
-  }
 
   return {
     rows: rowErrors,
@@ -360,8 +339,7 @@ export function validateMultiplierRows(
     remaining: Number((100 - total).toFixed(4)),
     status,
     aggregate,
-    multiplication,
-    rowsValid: !hasFieldError && rows.length >= 1 && status === 'exact' && !multiplication,
+    rowsValid: !hasFieldError && rows.length >= 1 && status === 'exact',
   };
 }
 
@@ -372,7 +350,7 @@ export function validateModel(model: EditorModel, excludeId?: string): ModelVali
     model.gameType === 'BettyWheelOfWins' ? 'payout sector' : 'payout row',
   );
   const multiplier = model.gameType === 'BettyWheelOfWins'
-    ? validateMultiplierRows(model.multiplierRows, model.payoutRows)
+    ? validateMultiplierRows(model.multiplierRows)
     : undefined;
 
   let name: string | undefined;
@@ -384,6 +362,25 @@ export function validateModel(model: EditorModel, excludeId?: string): ModelVali
   }
 
   const gameType = model.gameType ? undefined : 'Game Type is required.';
+  if (model.gameType === 'BettyMultiplierMadness') {
+    const value = Number(model.rtpPct);
+    const rtp = Number.isFinite(value) && value > 0 && value <= 100 ? undefined : 'RTP must be greater than 0% and at most 100%.';
+    return { name, gameType, rtp, rows: [], total: 0, remaining: 0, status: 'exact', valid: !name && !gameType && !rtp };
+  }
+
+  let configuration: string | undefined;
+  const count = model.payoutRows.length;
+  if (model.gameType === 'BettyWheel' && (count < 6 || count > 16 || count % 2 !== 0)) {
+    configuration = 'Wheel requires 6–16 payout sectors, in multiples of 2.';
+  } else if (model.gameType === 'BettyScratcher') {
+    if (count < 9) configuration = 'Scratcher requires at least 9 payout rows.';
+    else if (model.payoutRows.filter(row => row.isTopPrize).length !== 1) configuration = 'Select exactly one Top Prize.';
+  } else if (model.gameType === 'BettyWheelOfWins') {
+    const inner = model.multiplierRows.length;
+    if (!((count === 10 && inner === 8) || (count === 8 && inner === 6))) {
+      configuration = 'Wheel of Wins requires 10 payout / 8 multiplier sectors or 8 payout / 6 multiplier sectors.';
+    }
+  }
 
   return {
     name,
@@ -393,7 +390,8 @@ export function validateModel(model: EditorModel, excludeId?: string): ModelVali
     remaining: payout.remaining,
     status: payout.status,
     aggregate: payout.aggregate,
+    configuration,
     multiplier,
-    valid: !name && !gameType && payout.rowsValid && (!multiplier || multiplier.rowsValid),
+    valid: !name && !gameType && !configuration && payout.rowsValid && (!multiplier || multiplier.rowsValid),
   };
 }

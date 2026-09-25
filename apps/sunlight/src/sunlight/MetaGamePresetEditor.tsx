@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useBlocker, useNavigate, useParams, useLocation } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/EditRounded';
 import {
@@ -32,10 +32,8 @@ import {
   type PresetUseCase,
 } from './metaGamePresets';
 import {
-  canChangePresetSource,
   emptyPresetModel,
   gameConfigForId,
-  gameTypeFromGameConfig,
   isPreviewableImageUrl,
   normalizePresetUseCases,
   presetGameConfigOptions,
@@ -46,7 +44,7 @@ import {
   type PresetEditorModel,
   type PresetSource,
 } from './metaGamePresetHelpers';
-import { gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
+import { GAME_TYPES, gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
 import { PresetImagePreview } from './PresetImagePreview';
 
 type TouchedField = 'displayName' | 'gameConfigId' | 'gameType' | 'configCode' | 'expiryHours';
@@ -101,18 +99,18 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
         }
       />
       {/* Configuration Source stays a titled, distinct region — it's the mode selector that governs
-          the rest (an immutable-after-creation choice), not just another field. */}
+          which configuration fields are relevant. */}
       <Stack spacing={2}>
         <Typography variant="subtitle2" color="text.secondary">Configuration Source</Typography>
         <DetailsPanel aria-label="Configuration source">
-          <BeamStat label="Source" value={model.source === 'Betty' ? 'Betty GameConfig' : 'Legacy Yoda'} />
+          <BeamStat label="Source" value={model.source === 'Betty' ? 'Betty' : 'Legacy Yoda'} />
         </DetailsPanel>
       </Stack>
       {/* The details panel (grammar §2), view mode — the preset's own fields, unlabeled. */}
       <DetailsPanel aria-label="Preset details">
         <BeamStat label="Display Name" value={model.displayName || '—'} />
         {model.source === 'Betty' ? (
-          <BeamStat label="GameConfig" value={gameConfig ? `${gameConfig.code} — ${gameTypeLabel(gameConfig.gameType)} — ${gameConfig.status}` : model.gameConfigId || '—'} />
+          <BeamStat label="GameConfig" value={gameConfig ? `${gameConfig.name} — ${gameTypeLabel(gameConfig.gameType)} — ${gameConfig.status}` : model.gameConfigId || 'Default for this game type'} />
         ) : (
           <BeamStat label="Config Code" value={model.configCode || '—'} />
         )}
@@ -148,8 +146,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
   const isDirty = JSON.stringify(model) !== originalSerialized;
   const validation = validatePresetModel(model, GAME_CONFIGS);
   const selectedGameConfig = gameConfigForId(GAME_CONFIGS, model.gameConfigId);
-  const gameConfigOptions = presetGameConfigOptions(GAME_CONFIGS, model, isEdit);
-  const canChangeSource = canChangePresetSource(isEdit);
+  const gameConfigOptions = presetGameConfigOptions(GAME_CONFIGS, model);
   const saveLabel = isEdit ? 'Save' : 'Create';
 
   const blocker = useBlocker(
@@ -163,7 +160,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
     shouldShowPresetError(Boolean(touched[field]), submitAttempted);
 
   const selectSource = (source: PresetSource) => {
-    if (!canChangeSource || source === model.source) return;
+    if (source === model.source) return;
     setModel((current) => ({
       ...current,
       source,
@@ -179,9 +176,15 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
     setModel((current) => ({
       ...current,
       gameConfigId,
-      gameType: gameTypeFromGameConfig(GAME_CONFIGS, gameConfigId),
     }));
   };
+
+  const selectGameType = (event: ChangeEvent<HTMLInputElement>) => {
+    const gameType = event.target.value;
+    markTouched('gameType');
+    setModel(current => ({ ...current, gameType, gameConfigId: '' }));
+  };
+  const changeGameConfig = (event: ChangeEvent<HTMLInputElement>) => selectGameConfig(event.target.value);
 
   const save = () => {
     if (!validation.valid) return;
@@ -215,7 +218,7 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
       <BeamPage
         title={existing ? existing.displayName : 'Create MetaGame Preset'}
         back={backTo(navigate, '/meta-game-presets', 'MetaGame Presets')}
-        subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New presets are created as Disabled.'}
+        subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New presets are created as Enabled.'}
         action={
           <Stack direction="row" spacing={1}>
             <Button variant="text" onClick={requestCancel}>Cancel</Button>
@@ -249,25 +252,18 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
           <Button
             variant={model.source === 'Betty' ? 'contained' : 'outlined'}
             aria-pressed={model.source === 'Betty'}
-            disabled={!canChangeSource}
             onClick={() => selectSource('Betty')}
           >
-            Betty GameConfig
+            Betty
           </Button>
           <Button
             variant={model.source === 'Yoda' ? 'contained' : 'outlined'}
             aria-pressed={model.source === 'Yoda'}
-            disabled={!canChangeSource}
             onClick={() => selectSource('Yoda')}
           >
             Legacy Yoda
           </Button>
         </Stack>
-        {isEdit && (
-          <Typography variant="body2" color="text.secondary">
-            Configuration Source can't be changed after creation.
-          </Typography>
-        )}
       </Stack>
 
       {/* The details panel (grammar §2), edit mode — the preset's fields, unlabeled. Non-field
@@ -285,33 +281,24 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
 
         {model.source === 'Betty' ? (
           <>
-            <BeamField
-              select
-              label="GameConfig"
-              required
-              value={model.gameConfigId}
-              onChange={(event) => selectGameConfig(event.target.value)}
-              onBlur={() => markTouched('gameConfigId')}
+            <BeamField select label="Game Type" required value={model.gameType} onChange={selectGameType}
+              error={showError('gameType') && Boolean(validation.gameType)} helperText={showError('gameType') ? validation.gameType : undefined}>
+              {GAME_TYPES.map(gameType => <MenuItem key={gameType} value={gameType}>{gameTypeLabel(gameType)}</MenuItem>)}
+            </BeamField>
+            <BeamField select label="GameConfig" value={model.gameConfigId}
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+              onChange={changeGameConfig} onBlur={() => markTouched('gameConfigId')}
               error={showError('gameConfigId') && Boolean(validation.gameConfigId)}
-              helperText={showError('gameConfigId') ? validation.gameConfigId : undefined}
-            >
-              {gameConfigOptions.map((config) => (
-                <MenuItem key={config.id} value={config.id}>
-                  {config.code} — {gameTypeLabel(config.gameType)} — {config.status}
-                </MenuItem>
-              ))}
+              helperText={showError('gameConfigId') && validation.gameConfigId ? validation.gameConfigId : 'Optional. Without a selection, the game uses its default configuration.'}>
+              <MenuItem value="">Use default game configuration</MenuItem>
+              {gameConfigOptions.map(config => <MenuItem key={config.id} value={config.id}>{config.name} — {config.status}</MenuItem>)}
             </BeamField>
             {disabledGameConfigWarning && (
               <Typography variant="body2" color="warning.main" role="status" sx={{ gridColumn: '1 / -1' }}>
                 {disabledGameConfigWarning}
               </Typography>
             )}
-            <BeamField
-              label="Game Type"
-              value={model.gameType ? gameTypeLabel(model.gameType) : ''}
-              disabled
-              helperText="Derived from the selected GameConfig."
-            />
+
           </>
         ) : (
           <>

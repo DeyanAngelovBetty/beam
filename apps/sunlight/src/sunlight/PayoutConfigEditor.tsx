@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import {
   Stack,
@@ -43,6 +43,8 @@ import {
   validateModel,
   withGameType,
   type EditorModel,
+  type EditorRow,
+  type EditorMultiplierRow,
 } from './payoutConfigForm';
 
 /**
@@ -108,7 +110,9 @@ function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void
         <BeamStat label="Name" value={config.name} />
         <BeamStat label="Game Type" value={gameTypeLabel(config.gameType)} />
       </DetailsPanel>
-      {config.gameType === 'BettyWheelOfWins' ? (
+      {config.gameType === 'BettyMultiplierMadness' ? (
+        <DetailsPanel aria-label="Payout configuration"><BeamStat label="RTP" value={`${config.rtp * 100}%`} /></DetailsPanel>
+      ) : config.gameType === 'BettyWheelOfWins' ? (
         <Stack spacing={3}>
           <Stack spacing={1}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
@@ -147,7 +151,7 @@ function ViewForm({ config, onEdit }: { config: PayoutConfig; onEdit: () => void
               Total probability: {payoutTotalLabel}%
             </Typography>
           </Stack>
-          <PayoutRowsGrid rows={config.rows} />
+          <PayoutRowsGrid rows={config.rows} showSectorPositions={config.gameType === 'BettyWheel'} showTopPrize={config.gameType === 'BettyScratcher'} />
         </Stack>
       )}
     </Stack>
@@ -181,9 +185,10 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
   const saveReason =
     v.name ??
     v.gameType ??
+    v.rtp ??
+    v.configuration ??
     v.aggregate ??
     v.multiplier?.aggregate ??
-    v.multiplier?.multiplication ??
     (hasPayoutFieldError || hasMultiplierFieldError
       ? 'Fix the highlighted fields.'
       : 'Complete the form.');
@@ -208,6 +213,14 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
   const requestCancel = () => (isDirty ? setPendingCancel(true) : onCancel());
   const keepEditing = () => { setPendingCancel(false); blocker.reset?.(); };
   const discard = () => { if (pendingCancel) { setPendingCancel(false); onCancel(); } else blocker.proceed?.(); };
+
+  const changeRtp = (event: ChangeEvent<HTMLInputElement>) => {
+    const rtpPct = event.target.value;
+    setModel(current => current.gameType === 'BettyMultiplierMadness' ? { ...current, rtpPct } : current);
+  };
+  const changePayoutRows = (payoutRows: EditorRow[]) => setModel(current => ({ ...current, payoutRows }));
+  const changeMultiplierRows = (multiplierRows: EditorMultiplierRow[]) =>
+    setModel(current => current.gameType === 'BettyWheelOfWins' ? { ...current, multiplierRows } : current);
 
   const badge = existing ? statusBadge(existing.status) : null;
 
@@ -284,24 +297,21 @@ function EditorForm({ existing, onCancel }: { existing?: PayoutConfig; onCancel:
         )}
       </DetailsPanel>
 
-      <PayoutRowsEditor
-        rows={model.payoutRows}
-        onChange={(payoutRows) => setModel((current) => ({ ...current, payoutRows }))}
-        showAllErrors={submitAttempted}
-        orderedSectors={model.gameType === 'BettyWheelOfWins'}
-      />
-
+      {model.gameType === 'BettyMultiplierMadness' ? (
+        <DetailsPanel aria-label="Payout configuration">
+          <BeamField label="RTP (%)" required value={model.rtpPct}
+            onChange={changeRtp} error={submitAttempted && Boolean(v.rtp)}
+            helperText={submitAttempted && v.rtp ? v.rtp : 'Greater than 0%, up to 100%. Example: 97.'}
+            slotProps={{ htmlInput: { inputMode: 'decimal' } }} />
+        </DetailsPanel>
+      ) : (
+        <PayoutRowsEditor rows={model.payoutRows} onChange={changePayoutRows}
+          showAllErrors={submitAttempted} orderedSectors={model.gameType === 'BettyWheelOfWins' || model.gameType === 'BettyWheel'}
+          showTopPrize={model.gameType === 'BettyScratcher'} />
+      )}
+      {v.configuration && <Typography variant="body2" color={submitAttempted ? 'error' : 'text.secondary'} role="status">{v.configuration}</Typography>}
       {model.gameType === 'BettyWheelOfWins' && (
-        <MultiplierRowsEditor
-          rows={model.multiplierRows}
-          payoutRows={model.payoutRows}
-          onChange={(multiplierRows) =>
-            setModel((current) =>
-              current.gameType === 'BettyWheelOfWins' ? { ...current, multiplierRows } : current,
-            )
-          }
-          showAllErrors={submitAttempted}
-        />
+        <MultiplierRowsEditor rows={model.multiplierRows} onChange={changeMultiplierRows} showAllErrors={submitAttempted} />
       )}
 
       <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>

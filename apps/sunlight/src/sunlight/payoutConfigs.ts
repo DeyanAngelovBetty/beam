@@ -1,8 +1,8 @@
 import type { BeamStatus } from '@betty/beam';
 
 /** GameTypes exposed by the Betty MetaGame visual demo. */
-export type GameType = 'MysteryBox' | 'Wheel' | 'Scratcher' | 'BettyWheelOfWins';
-export type StandardPayoutGameType = Exclude<GameType, 'BettyWheelOfWins'>;
+export type GameType = 'BettyWheel' | 'BettyScratcher' | 'BettyWheelOfWins' | 'BettyMultiplierMadness';
+export type StandardPayoutGameType = Exclude<GameType, 'BettyWheelOfWins' | 'BettyMultiplierMadness'>;
 
 export type PayoutStatus = 'Enabled' | 'Disabled';
 
@@ -16,7 +16,7 @@ export interface Reward {
 }
 
 export interface PayoutRow {
-  /** Aggregate PUT identity. New rows omit this value. */
+  /** Mock row identity, used only for rendering. */
   id?: string;
   /** Probability as a fraction from 0 to 1. */
   probability: number;
@@ -24,6 +24,7 @@ export interface PayoutRow {
   /** Demo-only headline value used by the derived average column. */
   prizeValue: number;
   rewards: Reward[];
+  isTopPrize?: boolean;
 }
 
 export interface MultiplierRow {
@@ -51,9 +52,15 @@ export interface BettyWheelOfWinsPayoutConfig extends PayoutConfigBase {
   multiplierRows: MultiplierRow[];
 }
 
-export type PayoutConfig = StandardPayoutConfig | BettyWheelOfWinsPayoutConfig;
+export interface MultiplierMadnessPayoutConfig extends PayoutConfigBase {
+  gameType: 'BettyMultiplierMadness';
+  rtp: number;
+}
+
+export type PayoutConfig = StandardPayoutConfig | BettyWheelOfWinsPayoutConfig | MultiplierMadnessPayoutConfig;
 
 export function getPayoutRows(config: PayoutConfig): PayoutRow[] {
+  if (config.gameType === 'BettyMultiplierMadness') return [];
   return config.gameType === 'BettyWheelOfWins' ? config.payoutRows : config.rows;
 }
 
@@ -74,132 +81,144 @@ export function probabilityTotal(config: PayoutConfig): number {
   return getPayoutRows(config).reduce((sum, row) => sum + row.probability, 0);
 }
 
-const coins = (amount: number): Reward => ({ rewardType: 'Coins', amount });
-const tokens = (amount: number): Reward => ({ rewardType: 'Tokens', amount });
-
-/** Coherent Betty-owned payout graph for the four-game visual demo. */
+/** In-memory examples matching the MetaGame configuration rules. */
 export const PAYOUT_CONFIGS: PayoutConfig[] = [
   {
-    id: 'pc-mystery-box-standard',
-    name: 'Mystery Box Standard Payout',
-    gameType: 'MysteryBox',
+    id: 'pc-betty-wheel-standard',
+    name: 'Betty Wheel Standard Payout',
+    gameType: 'BettyWheel',
     status: 'Enabled',
-    createdAt: '2026-07-01',
-    updatedAt: '2026-07-30',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
     rows: [
-      { probability: 0.55, winMessage: 'Small Prize', prizeValue: 10, rewards: [coins(10)] },
-      { probability: 0.3, winMessage: 'Medium Prize', prizeValue: 25, rewards: [coins(25)] },
-      { probability: 0.12, winMessage: 'Big Prize', prizeValue: 100, rewards: [coins(100)] },
-      {
-        probability: 0.03,
-        winMessage: 'Jackpot',
-        prizeValue: 500,
-        rewards: [coins(500), tokens(10)],
-      },
+      {probability: 0.4, winMessage: '10 Coins', prizeValue: 10, rewards: [{rewardType: 'Coins', amount: 10}]},
+      {probability: 0.25, winMessage: '20 Coins', prizeValue: 20, rewards: [{rewardType: 'Coins', amount: 20}]},
+      {probability: 0.15, winMessage: '50 Coins', prizeValue: 50, rewards: [{rewardType: 'Coins', amount: 50}]},
+      {probability: 0.1, winMessage: '100 Coins', prizeValue: 100, rewards: [{rewardType: 'Coins', amount: 100}]},
+      {probability: 0.09, winMessage: '200 Coins', prizeValue: 200, rewards: [{rewardType: 'Coins', amount: 200}]},
+      {probability: 0.01, winMessage: 'Jackpot', prizeValue: 1000, rewards: [{rewardType: 'Coins', amount: 1000}, {rewardType: 'Tokens', amount: 10}]},
     ],
   },
   {
-    id: 'pc-mystery-box-premium',
-    name: 'Mystery Box Premium Payout',
-    gameType: 'MysteryBox',
+    id: 'pc-betty-wheel-premium',
+    name: 'Betty Wheel Premium Payout',
+    gameType: 'BettyWheel',
     status: 'Enabled',
-    createdAt: '2026-07-08',
-    updatedAt: '2026-07-30',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
     rows: [
-      { probability: 0.5, winMessage: 'Premium Prize', prizeValue: 100, rewards: [coins(100)] },
-      { probability: 0.35, winMessage: 'Big Premium Prize', prizeValue: 250, rewards: [coins(250)] },
-      {
-        probability: 0.15,
-        winMessage: 'VIP Jackpot',
-        prizeValue: 1000,
-        rewards: [coins(1000), tokens(25)],
-      },
+      {probability: 0.4, winMessage: '100 Coins', prizeValue: 100, rewards: [{rewardType: 'Coins', amount: 100}]},
+      {probability: 0.25, winMessage: '200 Coins', prizeValue: 200, rewards: [{rewardType: 'Coins', amount: 200}]},
+      {probability: 0.15, winMessage: '500 Coins', prizeValue: 500, rewards: [{rewardType: 'Coins', amount: 500}]},
+      {probability: 0.1, winMessage: '1000 Coins', prizeValue: 1000, rewards: [{rewardType: 'Coins', amount: 1000}]},
+      {probability: 0.09, winMessage: '2000 Coins', prizeValue: 2000, rewards: [{rewardType: 'Coins', amount: 2000}]},
+      {probability: 0.01, winMessage: 'Jackpot', prizeValue: 10000, rewards: [{rewardType: 'Coins', amount: 10000}, {rewardType: 'Tokens', amount: 10}]},
     ],
   },
   {
-    id: 'pc-mystery-box-promotion',
-    name: 'Mystery Box Promotion Payout',
-    gameType: 'MysteryBox',
+    id: 'pc-betty-wheel-promotion',
+    name: 'Betty Wheel Promotion Payout',
+    gameType: 'BettyWheel',
     status: 'Disabled',
-    createdAt: '2026-07-18',
-    updatedAt: '2026-07-29',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
     rows: [
-      { probability: 0.6, winMessage: 'Promotion Prize', prizeValue: 20, rewards: [coins(20)] },
-      { probability: 0.3, winMessage: 'Big Promotion Prize', prizeValue: 50, rewards: [coins(50)] },
-      {
-        probability: 0.1,
-        winMessage: 'Promotion Jackpot',
-        prizeValue: 200,
-        rewards: [coins(200), tokens(5)],
-      },
+      {probability: 0.4, winMessage: '10 Coins', prizeValue: 10, rewards: [{rewardType: 'Coins', amount: 10}]},
+      {probability: 0.25, winMessage: '20 Coins', prizeValue: 20, rewards: [{rewardType: 'Coins', amount: 20}]},
+      {probability: 0.15, winMessage: '50 Coins', prizeValue: 50, rewards: [{rewardType: 'Coins', amount: 50}]},
+      {probability: 0.1, winMessage: '100 Coins', prizeValue: 100, rewards: [{rewardType: 'Coins', amount: 100}]},
+      {probability: 0.09, winMessage: '200 Coins', prizeValue: 200, rewards: [{rewardType: 'Coins', amount: 200}]},
+      {probability: 0.01, winMessage: 'Jackpot', prizeValue: 1000, rewards: [{rewardType: 'Coins', amount: 1000}, {rewardType: 'Tokens', amount: 10}]},
     ],
   },
   {
     id: 'pc-wheel-standard',
-    name: 'Wheel Standard Payout',
-    gameType: 'Wheel',
+    name: 'Weekly Wheel Payout',
+    gameType: 'BettyWheel',
     status: 'Enabled',
-    createdAt: '2026-07-02',
-    updatedAt: '2026-07-26',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
     rows: [
-      { probability: 0.7, winMessage: 'Small Wheel Win', prizeValue: 5, rewards: [coins(5)] },
-      { probability: 0.25, winMessage: 'Big Wheel Win', prizeValue: 25, rewards: [coins(25)] },
-      {
-        probability: 0.05,
-        winMessage: 'Wheel Jackpot',
-        prizeValue: 100,
-        rewards: [coins(100), tokens(2)],
-      },
+      {probability: 0.4, winMessage: '10 Coins', prizeValue: 10, rewards: [{rewardType: 'Coins', amount: 10}]},
+      {probability: 0.25, winMessage: '20 Coins', prizeValue: 20, rewards: [{rewardType: 'Coins', amount: 20}]},
+      {probability: 0.15, winMessage: '50 Coins', prizeValue: 50, rewards: [{rewardType: 'Coins', amount: 50}]},
+      {probability: 0.1, winMessage: '100 Coins', prizeValue: 100, rewards: [{rewardType: 'Coins', amount: 100}]},
+      {probability: 0.09, winMessage: '200 Coins', prizeValue: 200, rewards: [{rewardType: 'Coins', amount: 200}]},
+      {probability: 0.01, winMessage: 'Jackpot', prizeValue: 1000, rewards: [{rewardType: 'Coins', amount: 1000}, {rewardType: 'Tokens', amount: 10}]},
     ],
   },
   {
     id: 'pc-scratcher-standard',
-    name: 'Scratcher Standard Payout',
-    gameType: 'Scratcher',
+    name: 'Betty Scratcher Payout',
+    gameType: 'BettyScratcher',
     status: 'Enabled',
-    createdAt: '2026-07-03',
-    updatedAt: '2026-07-27',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
     rows: [
-      { probability: 0.65, winMessage: 'Scratch Win', prizeValue: 10, rewards: [coins(10)] },
-      { probability: 0.3, winMessage: 'Big Scratch Win', prizeValue: 50, rewards: [coins(50)] },
-      { probability: 0.05, winMessage: 'Scratch Jackpot', prizeValue: 250, rewards: [coins(250)] },
+      {probability: 0.3, winMessage: '10 Coins', prizeValue: 10, rewards: [{rewardType: 'Coins', amount: 10}], isTopPrize: false},
+      {probability: 0.2, winMessage: '20 Coins', prizeValue: 20, rewards: [{rewardType: 'Coins', amount: 20}], isTopPrize: false},
+      {probability: 0.15, winMessage: '30 Coins', prizeValue: 30, rewards: [{rewardType: 'Coins', amount: 30}], isTopPrize: false},
+      {probability: 0.1, winMessage: '50 Coins', prizeValue: 50, rewards: [{rewardType: 'Coins', amount: 50}], isTopPrize: false},
+      {probability: 0.1, winMessage: '100 Coins', prizeValue: 100, rewards: [{rewardType: 'Coins', amount: 100}], isTopPrize: false},
+      {probability: 0.08, winMessage: '200 Coins', prizeValue: 200, rewards: [{rewardType: 'Coins', amount: 200}], isTopPrize: false},
+      {probability: 0.04, winMessage: '500 Coins', prizeValue: 500, rewards: [{rewardType: 'Coins', amount: 500}], isTopPrize: false},
+      {probability: 0.02, winMessage: '1000 Coins', prizeValue: 1000, rewards: [{rewardType: 'Coins', amount: 1000}], isTopPrize: false},
+      {probability: 0.01, winMessage: '10000 Coins', prizeValue: 10000, rewards: [{rewardType: 'Coins', amount: 10000}], isTopPrize: true},
     ],
   },
   {
     id: 'pc-betty-wheel-of-wins-standard',
-    name: 'Betty Wheel of Wins Standard Payout',
+    name: 'Betty Wheel of Wins Payout',
     gameType: 'BettyWheelOfWins',
     status: 'Enabled',
-    createdAt: '2026-08-20',
-    updatedAt: '2026-08-26',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
     payoutRows: [
-      { probability: 0.6, winMessage: 'Small Win', prizeValue: 10, rewards: [coins(10)] },
-      {
-        probability: 0.3,
-        winMessage: 'Bonus Bundle',
-        prizeValue: 20,
-        rewards: [coins(20), tokens(2)],
-      },
-      {
-        probability: 0.1,
-        winMessage: 'Wheel Jackpot',
-        prizeValue: 100,
-        rewards: [coins(100), tokens(10)],
-      },
+      {probability: 0.4, winMessage: '10 Coins', prizeValue: 10, rewards: [{rewardType: 'Coins', amount: 10}]},
+      {probability: 0.2, winMessage: '20 Coins', prizeValue: 20, rewards: [{rewardType: 'Coins', amount: 20}]},
+      {probability: 0.15, winMessage: '30 Coins', prizeValue: 30, rewards: [{rewardType: 'Coins', amount: 30}]},
+      {probability: 0.1, winMessage: '50 Coins', prizeValue: 50, rewards: [{rewardType: 'Coins', amount: 50}]},
+      {probability: 0.07, winMessage: '100 Coins', prizeValue: 100, rewards: [{rewardType: 'Coins', amount: 100}]},
+      {probability: 0.04, winMessage: '200 Coins', prizeValue: 200, rewards: [{rewardType: 'Coins', amount: 200}]},
+      {probability: 0.03, winMessage: '500 Coins', prizeValue: 500, rewards: [{rewardType: 'Coins', amount: 500}]},
+      {probability: 0.01, winMessage: '1000 Coins', prizeValue: 1000, rewards: [{rewardType: 'Coins', amount: 1000}]},
     ],
     multiplierRows: [
-      { probability: 0.6, multiplier: 1 },
-      { probability: 0.3, multiplier: 1.5 },
-      { probability: 0.1, multiplier: 3 },
+      {probability: 0.5, multiplier: 1},
+      {probability: 0.2, multiplier: 2},
+      {probability: 0.15, multiplier: 3},
+      {probability: 0.1, multiplier: 5},
+      {probability: 0.04, multiplier: 10},
+      {probability: 0.01, multiplier: 20},
     ],
+  },
+  {
+    id: 'pc-mm-standard',
+    name: 'Multiplier Madness 97%',
+    gameType: 'BettyMultiplierMadness',
+    status: 'Enabled',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
+    rtp: 0.97,
+  },
+  {
+    id: 'pc-mm-promotion',
+    name: 'Multiplier Madness 98%',
+    gameType: 'BettyMultiplierMadness',
+    status: 'Disabled',
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-25',
+    rtp: 0.98,
   },
 ];
 
-export const GAME_TYPES: GameType[] = ['MysteryBox', 'Wheel', 'Scratcher', 'BettyWheelOfWins'];
+export const GAME_TYPES: GameType[] = ['BettyWheel', 'BettyScratcher', 'BettyWheelOfWins', 'BettyMultiplierMadness'];
 export const PAYOUT_STATUSES: PayoutStatus[] = ['Enabled', 'Disabled'];
 
-export function gameTypeLabel(gameType: GameType): string {
-  return gameType === 'BettyWheelOfWins' ? 'Betty Wheel of Wins' : gameType;
+export const LEGACY_GAME_TYPES = ['Wheel', 'Scratcher', 'DailyWheel', 'DailyScratcher', 'DailyGift', 'MultiplierMadness', 'InstantWheel', 'WheelOfWins'] as const;
+
+export function gameTypeLabel(gameType: string): string {
+  return gameType.replace(/([a-z])([A-Z])/g, '$1 $2');
 }
 
 export function statusBadge(status: PayoutStatus): { status: BeamStatus; label: string } {
@@ -261,7 +280,7 @@ export interface BettyWheelOfWinsPayoutConfigInput extends PayoutConfigInputBase
   multiplierRows: MultiplierRow[];
 }
 
-export type PayoutConfigInput = StandardPayoutConfigInput | BettyWheelOfWinsPayoutConfigInput;
+export type PayoutConfigInput = StandardPayoutConfigInput | BettyWheelOfWinsPayoutConfigInput | { name: string; gameType: 'BettyMultiplierMadness'; rtp: number };
 
 function stampRows(rows: PayoutRow[]): PayoutRow[] {
   return rows.map((row) => ({ ...row, id: row.id ?? newId('row') }));
@@ -277,7 +296,9 @@ export function createPayoutConfig(input: PayoutConfigInput): PayoutConfig {
     createdAt: today,
     updatedAt: today,
   };
-  const config: PayoutConfig = input.gameType === 'BettyWheelOfWins'
+  const config: PayoutConfig = input.gameType === 'BettyMultiplierMadness'
+    ? { ...common, gameType: input.gameType, rtp: input.rtp }
+    : input.gameType === 'BettyWheelOfWins'
     ? {
         ...common,
         gameType: input.gameType,
@@ -293,12 +314,15 @@ export function createPayoutConfig(input: PayoutConfigInput): PayoutConfig {
 export function updatePayoutConfig(id: string, input: PayoutConfigInput): PayoutConfig | undefined {
   const config = PAYOUT_CONFIGS.find((candidate) => candidate.id === id);
   if (!config) return undefined;
-  if (config.gameType === 'BettyWheelOfWins') {
+  if (config.gameType === 'BettyMultiplierMadness') {
+    if (input.gameType !== 'BettyMultiplierMadness') return undefined;
+    config.rtp = input.rtp;
+  } else if (config.gameType === 'BettyWheelOfWins') {
     if (input.gameType !== 'BettyWheelOfWins') return undefined;
     config.payoutRows = stampRows(input.payoutRows);
     config.multiplierRows = input.multiplierRows.map((row) => ({ ...row }));
   } else {
-    if (input.gameType === 'BettyWheelOfWins') return undefined;
+    if (input.gameType === 'BettyWheelOfWins' || input.gameType === 'BettyMultiplierMadness') return undefined;
     config.rows = stampRows(input.rows);
   }
   config.name = input.name.trim();

@@ -1,4 +1,4 @@
-import type { GameType, PayoutStatus } from './payoutConfigs';
+import { PAYOUT_CONFIGS, type GameType, type PayoutStatus } from './payoutConfigs';
 
 export type GcIdPrefix = 'gc' | 'tr';
 
@@ -20,25 +20,25 @@ export interface TargetingRule {
 
 export interface GameConfig {
   id: string;
-  code: string;
+  name: string;
   gameType: GameType;
   status: PayoutStatus;
   targetingRules: TargetingRule[];
 }
 
-/** Betty-owned GameConfigs for the four-game visual demo. */
+/** Betty-owned GameConfigs for the internal-game visual demo. */
 export const GAME_CONFIGS: GameConfig[] = [
   {
-    id: 'gc-mystery-box-default',
-    code: 'MYSTERY_BOX_DEFAULT',
-    gameType: 'MysteryBox',
+    id: 'gc-betty-wheel-default',
+    name: 'BETTY_WHEEL_DEFAULT',
+    gameType: 'BettyWheel',
     status: 'Enabled',
     targetingRules: [
       {
-        id: 'tr-mystery-box-vip',
+        id: 'tr-betty-wheel-vip',
         priority: 100,
         status: 'Enabled',
-        payoutConfigId: 'pc-mystery-box-premium',
+        payoutConfigId: 'pc-betty-wheel-premium',
         condition: {
           operator: 'All',
           statements: [
@@ -55,31 +55,31 @@ export const GAME_CONFIGS: GameConfig[] = [
         },
       },
       {
-        id: 'tr-mystery-box-fallback',
+        id: 'tr-betty-wheel-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-mystery-box-standard',
+        payoutConfigId: 'pc-betty-wheel-standard',
       },
     ],
   },
   {
-    id: 'gc-mystery-box-promotion',
-    code: 'MYSTERY_BOX_PROMOTION',
-    gameType: 'MysteryBox',
+    id: 'gc-betty-wheel-promotion',
+    name: 'BETTY_WHEEL_PROMOTION',
+    gameType: 'BettyWheel',
     status: 'Disabled',
     targetingRules: [
       {
-        id: 'tr-mystery-box-promotion-fallback',
+        id: 'tr-betty-wheel-promotion-fallback',
         priority: 0,
         status: 'Enabled',
-        payoutConfigId: 'pc-mystery-box-promotion',
+        payoutConfigId: 'pc-betty-wheel-promotion',
       },
     ],
   },
   {
     id: 'gc-wheel-default',
-    code: 'WHEEL_DEFAULT',
-    gameType: 'Wheel',
+    name: 'WHEEL_DEFAULT',
+    gameType: 'BettyWheel',
     status: 'Enabled',
     targetingRules: [
       {
@@ -92,8 +92,8 @@ export const GAME_CONFIGS: GameConfig[] = [
   },
   {
     id: 'gc-scratcher-default',
-    code: 'SCRATCHER_DEFAULT',
-    gameType: 'Scratcher',
+    name: 'SCRATCHER_DEFAULT',
+    gameType: 'BettyScratcher',
     status: 'Enabled',
     targetingRules: [
       {
@@ -106,7 +106,7 @@ export const GAME_CONFIGS: GameConfig[] = [
   },
   {
     id: 'gc-betty-wheel-of-wins-default',
-    code: 'BETTY_WHEEL_OF_WINS_DEFAULT',
+    name: 'BETTY_WHEEL_OF_WINS_DEFAULT',
     gameType: 'BettyWheelOfWins',
     status: 'Enabled',
     targetingRules: [
@@ -117,6 +117,10 @@ export const GAME_CONFIGS: GameConfig[] = [
         payoutConfigId: 'pc-betty-wheel-of-wins-standard',
       },
     ],
+  },
+  {
+    id: 'gc-mm-default', name: 'Multiplier Madness', gameType: 'BettyMultiplierMadness', status: 'Enabled',
+    targetingRules: [{ id: 'tr-mm-fallback', priority: 0, status: 'Enabled', payoutConfigId: 'pc-mm-standard' }],
   },
 ];
 
@@ -131,18 +135,18 @@ export function getGameConfig(id: string): GameConfig | undefined {
   return GAME_CONFIGS.find((config) => config.id === id);
 }
 
-export function gameConfigNameIsUnique(code: string, gameType: GameType, excludeId?: string): boolean {
-  const normalizedCode = code.trim().toLowerCase();
+export function gameConfigNameIsUnique(name: string, gameType: GameType, excludeId?: string): boolean {
+  const normalizedCode = name.trim().toLowerCase();
   return !GAME_CONFIGS.some(
     (config) =>
       config.id !== excludeId
       && config.gameType === gameType
-      && config.code.trim().toLowerCase() === normalizedCode
+      && config.name.trim().toLowerCase() === normalizedCode
   );
 }
 
 export interface GameConfigInput {
-  code: string;
+  name: string;
   gameType: GameType;
   targetingRules: TargetingRule[];
 }
@@ -155,7 +159,7 @@ function stampRules(rules: TargetingRule[]): TargetingRule[] {
 export function createGameConfig(input: GameConfigInput): GameConfig {
   const config: GameConfig = {
     id: newGcId('gc'),
-    code: input.code.trim(),
+    name: input.name.trim(),
     gameType: input.gameType,
     status: 'Disabled',
     targetingRules: stampRules(input.targetingRules),
@@ -168,7 +172,20 @@ export function createGameConfig(input: GameConfigInput): GameConfig {
 export function updateGameConfig(id: string, input: GameConfigInput): GameConfig | undefined {
   const config = GAME_CONFIGS.find((candidate) => candidate.id === id);
   if (!config) return undefined;
-  config.code = input.code.trim();
+  config.name = input.name.trim();
   config.targetingRules = stampRules(input.targetingRules);
   return config;
+}
+
+/** Same enable/disable dependencies as the MetaGame status handlers. */
+export function gameConfigEnableReason(config: GameConfig): string | undefined {
+  return config.targetingRules.some(rule => rule.status === 'Enabled' &&
+    PAYOUT_CONFIGS.find(payout => payout.id === rule.payoutConfigId)?.status !== 'Enabled')
+    ? 'Enable the Payout Configs used by enabled targeting rules first.' : undefined;
+}
+
+export function payoutConfigDisableReason(payoutConfigId: string): string | undefined {
+  return GAME_CONFIGS.some(config => config.status === 'Enabled' && config.targetingRules.some(rule =>
+    rule.status === 'Enabled' && rule.payoutConfigId === payoutConfigId))
+    ? 'Used by an enabled Game Config. Disable that config or update its targeting rules first.' : undefined;
 }

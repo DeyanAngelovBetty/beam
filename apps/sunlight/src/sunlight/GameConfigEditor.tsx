@@ -74,7 +74,7 @@ function ViewForm({ config, onEdit }: { config: GameConfig; onEdit: () => void }
   return (
     <Stack spacing={3}>
       <BeamPage
-        title={config.code}
+        title={config.name}
         back={backTo(navigate, '/game-configs', 'Game Configs')}
         subtitle={<BeamStatusBadge status={badge.status} label={badge.label} size="small" />}
         action={
@@ -85,7 +85,7 @@ function ViewForm({ config, onEdit }: { config: GameConfig; onEdit: () => void }
       />
       {/* The details panel (grammar §2), view mode — first field region, unlabeled. */}
       <DetailsPanel aria-label="Basic information">
-        <BeamStat label="Name" value={config.code} />
+        <BeamStat label="Name" value={config.name} />
         <BeamStat label="Game Type" value={gameTypeLabel(config.gameType)} />
       </DetailsPanel>
       <Stack spacing={1}>
@@ -108,16 +108,16 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
     [existing]
   );
   const [model, setModel] = useState<EditorModel>(initialModel);
-  const [touched, setTouched] = useState({ code: false, gameType: false });
+  const [touched, setTouched] = useState({ name: false, gameType: false });
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const originalSerialized = useMemo(() => serializeModel(initialModel), [initialModel]);
   const isDirty = serializeModel(model) !== originalSerialized;
   const savingRef = useRef(false);
 
-  const v = validateModel(model, existing?.id);
+  const v = validateModel(model, existing?.id, existing?.status);
   const saveLabel = isEdit ? 'Save' : 'Create';
   const saveReason =
-    v.code ??
+    v.name ??
     v.gameType ??
     (v.rules.some((r) => r.payoutConfig || r.condition) ? 'Fix the highlighted rules.' : undefined) ??
     v.fallback ??
@@ -147,7 +147,7 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
   return (
     <Stack spacing={3}>
       <BeamPage
-        title={existing ? existing.code : 'Create Game Config'}
+        title={existing ? existing.name : 'Create Game Config'}
         back={backTo(navigate, '/game-configs', 'Game Configs')}
         subtitle={badge ? <BeamStatusBadge status={badge.status} label={badge.label} size="small" /> : isEdit ? undefined : 'New configurations are created as Disabled.'}
         action={
@@ -179,11 +179,11 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
         <BeamField
           label="Name"
           required
-          value={model.code}
-          onChange={(e) => setModel((m) => ({ ...m, code: e.target.value }))}
-          onBlur={() => setTouched((current) => ({ ...current, code: true }))}
-          error={Boolean(v.code) && (touched.code || submitAttempted)}
-          helperText={touched.code || submitAttempted ? v.code : undefined}
+          value={model.name}
+          onChange={(e) => setModel((m) => ({ ...m, name: e.target.value }))}
+          onBlur={() => setTouched((current) => ({ ...current, name: true }))}
+          error={Boolean(v.name) && (touched.name || submitAttempted)}
+          helperText={touched.name || submitAttempted ? v.name : undefined}
           slotProps={{ htmlInput: { maxLength: MAX_GC_NAME } }}
         />
         {isEdit ? (
@@ -217,6 +217,7 @@ function EditorForm({ existing, onCancel }: { existing?: GameConfig; onCancel: (
         )}
       </DetailsPanel>
 
+      {v.status && <Typography color="error" role="alert">{v.status}</Typography>}
       <TargetingRulesEditor value={model} onChange={setModel} showAllErrors={submitAttempted} />
 
       <Dialog open={blocker.state === 'blocked' || pendingCancel} onClose={keepEditing}>

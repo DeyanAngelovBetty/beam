@@ -39,7 +39,7 @@ const rule = (payoutConfigId: string, group: ConditionGroup, status: PayoutStatu
   group,
 });
 const model = (gameType: GameType, rules: EditorRule[], fallbackPayoutId: string): EditorModel => ({
-  code: 'DEMO_CONFIG',
+  name: 'DEMO_CONFIG',
   gameType,
   rules,
   fallback: { ...emptyModel().fallback, payoutConfigId: fallbackPayoutId },
@@ -52,7 +52,7 @@ function Harness({ initial }: { initial: EditorModel }) {
 
 /** Fallback only — no conditional rules yet (the create minimum). */
 export const FallbackOnly: Story = {
-  render: () => <Harness initial={model('Wheel', [], 'pc-wheel-standard')} />,
+  render: () => <Harness initial={model('BettyWheel', [], 'pc-wheel-standard')} />,
 };
 
 /** Multiple rules — reorder arrows disable at the first (up) and last (down). */
@@ -60,7 +60,7 @@ export const MultipleRules: Story = {
   render: () => (
     <Harness
       initial={model(
-        'Wheel',
+        'BettyWheel',
         [
           rule('pc-wheel-standard', grp('All', [leaf('Audience', 'IsOneOf', [1001]), leaf('LoyaltyStatus', 'IsOneOf', ['VIP'])])),
           rule('pc-wheel-standard', grp('Any', [leaf('RccSegment', 'IsOneOf', ['Whale'])])),
@@ -78,9 +78,9 @@ export const DisabledPayoutWarning: Story = {
   render: () => (
     <Harness
       initial={model(
-        'MysteryBox',
-        [rule('pc-mystery-box-promotion', grp('All', [leaf('Audience', 'IsOneOf', [1001])]))],
-        'pc-mystery-box-promotion'
+        'BettyWheel',
+        [rule('pc-betty-wheel-promotion', grp('All', [leaf('Audience', 'IsOneOf', [1001])]))],
+        'pc-betty-wheel-promotion'
       )}
     />
   ),
@@ -90,7 +90,7 @@ export const DisabledPayoutWarning: Story = {
 export const InvalidCondition: Story = {
   render: () => (
     <Harness
-      initial={model('Wheel', [rule('pc-wheel-standard', grp('All', [leaf('Audience', 'IsOneOf', [])]))], 'pc-wheel-standard')}
+      initial={model('BettyWheel', [rule('pc-wheel-standard', grp('All', [leaf('Audience', 'IsOneOf', [])]))], 'pc-wheel-standard')}
     />
   ),
 };

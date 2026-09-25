@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   Stack,
   Box,
@@ -15,6 +15,7 @@ import {
   TableRow,
   TableCell,
   BeamStat,
+  Radio,
 } from '@betty/beam';
 import type { BeamStatSeverity } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
@@ -51,11 +52,13 @@ export function PayoutRowsEditor({
   onChange,
   showAllErrors = false,
   orderedSectors = false,
+  showTopPrize = false,
 }: {
   rows: EditorRow[];
   onChange: (rows: EditorRow[]) => void;
   showAllErrors?: boolean;
   orderedSectors?: boolean;
+  showTopPrize?: boolean;
 }) {
   const v = validateRows(rows, orderedSectors ? 'payout sector' : 'payout row');
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
@@ -69,6 +72,8 @@ export function PayoutRowsEditor({
 
   const setRow = (key: string, patch: Partial<EditorRow>) =>
     onChange(rows.map((r) => (r._key === key ? { ...r, ...patch } : r)));
+  const selectTopPrize = (event: ChangeEvent<HTMLInputElement>) =>
+    onChange(rows.map(row => ({ ...row, isTopPrize: row._key === event.target.value })));
   const setReward = (rowKey: string, rKey: string, patch: Partial<EditorRow['rewards'][number]>) =>
     onChange(
       rows.map((r) =>
@@ -152,7 +157,8 @@ export function PayoutRowsEditor({
           <TableHead sx={{ '& th': { pb: 2.5 } }}>
             <TableRow>
               {orderedSectors && <TableCell align="right">Sector</TableCell>}
-              <TableCell>Win Message</TableCell>
+              {showTopPrize && <TableCell>Top Prize</TableCell>}
+            <TableCell>Win Message</TableCell>
               <TableCell align="right">Probability (%)</TableCell>
               <TableCell>Rewards</TableCell>
               <TableCell />
@@ -173,6 +179,9 @@ export function PayoutRowsEditor({
               return (
                 <TableRow key={row._key}>
                   {orderedSectors && <TableCell align="right">{ri + 1}</TableCell>}
+                  {showTopPrize && <TableCell><Radio value={row._key} checked={Boolean(row.isTopPrize)}
+                    onChange={selectTopPrize}
+                    slotProps={{ input: { 'aria-label': `Top prize, row ${ri + 1}` } }} /></TableCell>}
                   <TableCell>
                     <TextField
                       size="small"

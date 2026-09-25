@@ -1,197 +1,147 @@
-# MetaGame pages — Betty Meta Games in Beam
+# MetaGame configuration pages
 
-*The MetaGame back-office workstream in `apps/sunlight`, under the "Betty Meta
-Games" nav section. Source of truth: Georgi's **MetaGame Design Brief** + **Simple
-Guide** (`docs/reference/`). This doc records the domain model, the IA decisions,
-and the pages planned; it grows with the workstream. v2 · 2026-07-29 (aligned to
-the brief).*
+Updated 2026-09-25 against MetaGame feature branch
+`BETTY-9916/add-multiplier-madness-engine`, commit `7b89b4f`.
 
----
+## Scope and save model
 
-## Domain model — Payout Configs
+These Sunlight pages are a **mocked configuration demo**. Lists and forms use
+in-memory records; refreshing the page restores the examples. No MetaGame,
+Loyalty or Gateway requests are made.
 
-A **PayoutConfig** is a payout table: weighted rows, each a probability of
-landing on a prize value plus the rewards paid. Shape lives in
-`apps/sunlight/src/sunlight/payoutConfigs.ts` (mock-data lane).
+Existing Beam list/detail components, view-first navigation and direct-write
+Create/Save are retained. There is no maker-checker integration on these pages.
+Chained Experiences use a list and configuration form, **not a calendar view**.
 
-- **PayoutConfig**: `id`, `name`, `gameType`, `status`, `rows: PayoutRow[]`,
-  `createdAt`, `updatedAt`.
-  - **`name` is the API Code** (brief §5.1): the list column is labelled "Name",
-    the underlying field is the config's API code. Noted in the types.
-- **PayoutRow**: `probability` (0..1), `winMessage`, `prizeValue`,
-  `rewards: Reward[]`. Rows with `probability: 0` are **visual only** — shown,
-  never landed.
-- **Reward**: `rewardType` (**`Coins` | `Tokens`** only, brief) + `amount`
-  (positive integer). A row carries at most one of each type — no repeats.
-- **GameType**: the canonical **eight** (brief) — `Wheel`, `Scratcher`,
-  `DailyWheel`, `DailyScratcher`, `DailyGift`, `MultiplierMadness`,
-  `InstantWheel`, `WheelOfWins`.
-- **Status**: **`Enabled` | `Disabled`** only (brief). A config is *created*
-  Disabled; activation is a separate concern, not a status. Disabled is the
-  normal prep state — never an error.
-- **Derived helpers**: `expectedAvgPayout` (Σ probability × value) and
-  `probabilityTotal` (should be 1.0) — the seed of the detail page's **Live
-  Checks**. "Topaz - Weekend Special" sums to 0.9 (a validation demo).
+## Game types
 
-### Status vocabulary — §6.4 creak RESOLVED (2026-07-29)
+The payout engine supports four internal types:
 
-The earlier tracer flagged that `BeamStatus` had no word for the old "Disabled".
-With the brief's two-state model this resolves by **mapping to existing
-vocabulary**, no union extension:
+- `BettyWheel`
+- `BettyScratcher`
+- `BettyWheelOfWins`
+- `BettyMultiplierMadness`
 
-- **Enabled → `active`** — positive, green fill.
-- **Disabled → `draft`** — neutral/dormant, grey **outline**. Deliberately *not*
-  `paused`, which `BeamStatusBadge` renders as a **warning** (amber); Disabled is
-  a normal prep state, not a warning. Domain labels ("Enabled"/"Disabled")
-  override the badge copy.
+Legacy types (for example `Wheel`, `Scratcher`, `MultiplierMadness`) are
+distinct and remain available in the legacy preset form. `MysteryBox` is not a
+MetaGame game type.
 
-## IA decisions
+## Payout Configs
 
-- **One Payout Configurations list for all game types — CONFIRMED (2026-07-29,
-  per brief).** GameType is a promoted filter, not per-type nav entries. *(Was
-  provisional pending Georgi; the brief confirms the single list.)*
+Routes: `/payout-configs`, `/payout-configs/new`, `/payout-configs/:id`.
 
-## Columns & filters
+Name is required, at most 100 characters, unique within a game type.
+New records are Disabled. GameType is immutable on edit.
 
-*Per Georgi (Slack, 2026-07-30):* Columns are **Name** (API Code) · **Game
-Type** · **Status** · **Payout Rows** (count) · **Actions** (the rail kebab).
-- **Avg Payout — VETOED.** It was our enhancement (ours-not-spec); Georgi cut
-  it. The number still feeds the detail page's Live Checks, just not the list.
-- **Updated — dropped** from the list.
-- Filters: **exact-match** semantics on Game Type + Status; search over name/id.
-  Sorting + pagination (default **20**) unchanged.
+| Type | Configuration |
+| --- | --- |
+| BettyWheel | 6–16 ordered payout sectors, in multiples of 2 |
+| BettyScratcher | At least 9 payout rows, exactly one Top Prize |
+| BettyWheelOfWins | 10 payout / 8 multiplier sectors, or 8 payout / 6 multiplier sectors |
+| BettyMultiplierMadness | RTP only; entered as a percentage, stored as a ratio in (0, 1] |
 
-## Actions
+Sector counts and the reward digit rule mirror the current
+`MetagameValidationConfiguration` defaults in MetaGame. Update this demo if
+those settings change.
 
-*Per Georgi (Slack, 2026-07-30):* the row's actions are **Edit** + **Enable ↔
-Disable** only (the toggle shows the opposite of the current status). **Clone
-removed.** Defined once as `rowActions` (list-grammar §3) and projected to both
-the kebab and the expansion action bar — one place changes, every surface
-follows. Confirmation dialogs ship **plain** (`window.confirm`); real copy is
-brief §10.1.
-- **No Delete** anywhere (brief §10). **No batch actions** — the brief specifies
-  no bulk workflows, so this page renders none. The persistent batch strip
-  remains a Table capability + list-grammar doctrine for pages that earn
-  it (list-grammar §4, §6); Payout Configs isn't one.
+Each payout distribution totals 100%; Wheel of Wins has an independent
+multiplier distribution that also totals 100%. Individual probabilities may
+be zero. Rewards are Coins and/or Tokens, without duplicate types per row.
+Amounts are positive whole numbers with only zeros after their first three
+digits (1230 is valid; 1234 is not). Multipliers are positive; fractional
+products are allowed, matching the engine's conversion to a whole reward.
 
-## PayoutRowsGrid (expansion content)
+Disabling a payout used by an enabled rule of an enabled GameConfig is blocked.
+The mock actions change state locally and show the same dependency restriction.
 
-*Per Georgi (Slack, 2026-07-30):* **Win Message | Probability | Rewards**.
-Rewards are one column, listed inline per row ("3 Coins, 2 Tokens").
-Probability displays as a **percentage** (stored 0..1, ×100,
-no trailing-zero padding). The earlier merged-cell / rowSpan anatomy (a line per
-reward) was superseded; it may return in the **editor** half of the pattern.
+## Game Configs
 
-*Terminology confirmed 2026-07-31:* user-facing reward types mirror the
-backend-aligned values **Coins** and **Tokens**. Reward amounts display as
-grouped whole numbers with readable singular/plural copy (`1 Coin`, `3 Coins`,
-`2 Tokens`, `500 Coins, 10 Tokens`); the legacy currency label is not used.
+Routes: `/game-configs`, `/game-configs/new`, `/game-configs/:id`.
 
-## Payout Config — Create / Edit page
+Name is required, at most 100 characters and unique per game type. New configs
+are Disabled; GameType is immutable on edit. The editor replaces the targeting
+rules as an aggregate.
 
-*Per Georgi's Create spec (2026-07-30).* Routes: **`/payout-configs/new`**
-(Create) and **`/payout-configs/:id`** (Edit) — one `PayoutConfigEditor`, mode
-by param.
+- Top rule has highest priority. Reordering sets distinct priorities.
+- Exactly one enabled fallback remains last, without a condition.
+- Conditions support nested All/Any groups and IsOneOf/IsNoneOf leaves.
+- Fields: Audience (numeric IDs), LoyaltyStatus and RccSegment (strings).
+- Payout selectors show only the same game type.
+- Disabled configs may reference disabled payouts. Enabling a config, or saving
+  changes to an enabled config, requires enabled payouts for every enabled rule,
+  including fallback.
 
-- **No view mode — deliberate divergence.** Brief §5.2 defines only Create/Edit;
-  MetaGame configs are always editable (Enabled configs stay editable, brief
-  §10). This departs from the User page's view↔edit doctrine, on purpose.
-- **Header-actions vs bottom bar — flagged to Georgi.** Cancel + Create/Save sit
-  in the page-header actions slot (detail-grammar §4 save model), not the bottom
-  bar Georgi sketched. Doctrine wins; a one-line move if product overrules. Save
-  is gated on a valid form **and** total probability exactly 100%.
-- **% input supersedes the brief.** Probability is entered as a **percentage**
-  (Georgi's latest, superseding the brief's decimal input); stored domain value
-  stays 0..1. Held as a raw string in the form, converted on save; the sum-to-100
-  Live Check works in percentage space.
-- **Status** is visible (badge) but not editable here (brief §5.2.8); Enable is a
-  separate post-create action. **Game Type** is read-only on edit (brief §5.2.7).
-- **Live Check** (Total + Remaining, BeamStat severity — its first real
-  consumer): 100% → quiet · <100% → `warning` · >100% → `danger`.
-- **Minimums doctrine (one line, so Game Configs inherits it): _structural
-  prevention for local rules, validation for aggregate rules._** ≥1 reward per
-  row and no-duplicate-reward-type are LOCAL → prevented structurally (disabled
-  controls / filtered options). ≥1 row overall and total-=-100% are AGGREGATE →
-  validated (Save blocks, message by the Live Check).
-- **Persistence** mirrors the brief's aggregate PUT: `PayoutRow` gained `id?`
-  (retained across update; new rows assigned; omitted rows removed). The editor
-  pairs it with a client-only `_key`.
+Targeting lookup options remain demo data, not live audience/status lookups.
 
-## Game Configs list (2026-07-30)
+## Default Game Configs
 
-- Route: `/game-configs`, under **Betty Meta Games**, beside Payout Configs.
-- Columns: **Name** (the API `Code`) · **Game Type** · **Status** ·
-  **Targeting Rules** (count).
-- Promoted filters: search over Code/Id · exact-match Game Type · exact-match
-  Status. Sorting and pagination follow Payout Configs.
-- Tier 3 row click, with rail expand + kebab. Row actions are **Edit** and the
-  state-dependent **Enable/Disable** action only; no Delete, Clone, or batch
-  actions.
-- Expansion renders rules in descending priority/evaluation order. Each config
-  has exactly one enabled, conditionless fallback, rendered last and explicitly
-  labelled. Conditional groups are displayed read-only as All/Any summaries;
-  the condition-builder editor remains design-lane and is not part of this
-  slice.
+Route: `/default-game-configs`.
 
-## Game Config — Create / Edit page (2026-07-31)
+One mapping per internal GameType. The selected GameConfig must match that
+type. A Disabled GameConfig can be assigned, but the UI warns that the engine
+cannot use it until enabled. Changing the mapping does not change the preset.
 
-*Spec archived at `docs/specs/game-config-editor-spec.md` (the skill's first run).
-Built on Georgi's merged `gameConfigs.ts` + list — extended, not duplicated.*
+## MetaGame Presets
 
-- Routes: **`/game-configs/new`** · **`/game-configs/:id`** → one
-  `GameConfigEditor`. **Create + Edit only, no view mode** (MetaGame default).
-- Save (Cancel + Create/Save in the header actions slot, grammar §4) is gated on:
-  name valid+unique · every rule has a valid PayoutConfig · every rule's
-  condition passes `isValidConditionTree` · fallback has its PayoutConfig. Status
-  chip below the title (identity, not editable). Unsaved guard = `useBlocker` + dialog.
-- **TargetingRules list:** order IS priority (no numbers); per rule a header
-  (Rule n · Enabled/Disabled · Delete), a GameType-filtered PayoutConfig select
-  (options show name + status badge; Disabled selectable), and the
-  **ConditionBuilder** (consumed via its API only). **Reorder = up/down arrows**
-  (drag is a later enhancement, dated + revisitable). The **fallback** is a
-  structurally-fixed last row: always present, always Enabled, conditionless,
-  only its PayoutConfig editable.
-- **GameType change on create → mark-invalid** (least destructive): selections
-  are kept; if they no longer match the type they mark invalid and the operator
-  re-picks. Nothing is deleted, no confirm.
-- **Disabled-PayoutConfig reference** is an AGGREGATE, **non-blocking** warning by
-  the rules header ("can't be Enabled while rule n uses a Disabled Payout
-  Config") — the Enable *action* (list) enforces it, not Save.
+Routes: `/meta-game-presets`, `/meta-game-presets/new`, `/meta-game-presets/:id`.
 
-### Flags (for Georgi)
-- **Condition-model mismatch.** His `TargetingRule.condition` is **flat**
-  (`{match, conditions[]}`, display-string operators, string values); the
-  ConditionBuilder is a **nested tree**. An adapter (`gameConfigForm.ts`) bridges
-  them, but the flat model **can't persist nested groups** — a rule's condition
-  is Save-valid only when flat. Resolve: the model grows to a tree, or Game
-  Config conditions stay flat.
-- **Rule display name.** The sketch shows rule names; the API defines none. Built
-  **without** a name field (ConditionSummary is the rule's identity); existing
-  `name` is retained on save. Georgi's call.
-- **Seed cross-references.** Georgi's `GAME_CONFIGS` reference PayoutConfig ids
-  and condition value vocabularies that predate the real `payoutConfigs.ts` /
-  `conditionTree.ts` seeds — editing those configs shows orphan selections
-  (flagged, re-select). A data-cleanup follow-up, not machinery.
-- **ConditionBuilder nesting visuals:** still `pending design pass` (Deyan's bench).
+The form includes game type/name, display name, optional GameConfig, legacy
+ConfigCode, SkinId, ImageUrl, Volatility, UseCases and ExpiryHours.
 
-## Pages planned (brief screen inventory)
+- Betty presets may select an explicit matching GameConfig or use the default
+  for their game type. A missing GameConfig does **not** by itself mean Yoda.
+- Legacy presets retain ConfigCode and canonical legacy game types.
+- Config/source choices are editable, like the backend Update handler.
+- Create defaults to Enabled, matching an omitted `Enabled` API property.
+- Enable/Disable and Delete remain mocked. Deleted presets disappear from
+  selectors; existing chain references are displayed as deleted if applicable.
+- There is no `ChainedPresetId` on a preset.
 
-- **Payout Configs — list** ✓ (`/payout-configs`).
-- **Payout Config — Create/Edit** ✓ (`/payout-configs/new`, `/payout-configs/:id`).
-  The detail *view* Live Checks over `expectedAvgPayout` are a separate later
-  round (this page is the editor).
-- **Game Configurations — list + editor** (with the condition builder) — pending
-  (Georgi's agent builds the list + editor shell on a branch).
-  - *ConditionBuilder scaffolded bench-first (2026-07-30)* — the editor's flagged
-    invention, built standalone in `apps/sunlight` (`conditionTree.ts` +
-    `ConditionBuilder.tsx` + `ConditionSummary.tsx`, `Lab/Sunlight/ConditionBuilder`)
-    so it slots into that editor when both land. Domain mirrors the API Condition
-    JSON (Group/Leaf, All/Any, In/NotIn); never renders raw JSON — the summary is
-    the read-only prose twin. Controlled, `isValidConditionTree` exposed for the
-    editor's Save gate. **Pending:** nesting visuals (spine-motif territory,
-    reserved) and the per-field value **lookup data** (placeholder lists — no
-    lookup endpoints, brief §14). Value control is a constrained multi-select
-    (no free entry); new leaves default field/operator, empty-values is the honest
-    incomplete signal.
-- **Default Configs mapping** — pending.
-- **Presets** — pending.
+## Chained Experiences
+
+Routes: `/chained-experiences`, `/chained-experiences/new`,
+`/chained-experiences/:id`.
+
+Fields:
+
+- SourceGameType: an internal game type other than BettyMultiplierMadness.
+- SourcePresetId: optional. Empty means a source entry **without a preset**,
+  using default configuration; it is not a wildcard.
+- TargetGameType: BettyMultiplierMadness for V1.
+- TargetPresetId: required, with a matching MM GameConfig.
+- StartDate and EndDate: UTC, with start included and end excluded.
+
+Source preset choices follow the validator: no GameConfig, or a GameConfig
+matching SourceGameType. Target presets require an MM GameConfig. Disabled
+presets remain selectable. Deleted presets cannot be selected.
+
+End must follow start. Periods cannot overlap for the same SourceGameType and
+SourcePresetId; adjacent periods are allowed. Started periods remain editable.
+There is no extra Enabled flag or Delete action on an experience.
+
+The source completion timestamp selects the applicable period. A successful
+Coins reward is required for a chained MM entry. Existing children are reused;
+changes affect resolution when a child does not yet exist.
+
+The current backend exposes POST/PUT `admin/chainedExperiences`, but no GET
+list/detail endpoint. The list remains mock-only; no read API is invented here.
+
+## Model boundaries
+
+These are UI models, not an HTTP client: IDs and row keys are local strings;
+reward amounts are convenient form values. A future API integration must map
+them to numeric IDs and the backend `Configuration` JSON
+(`payoutRows`, `multiplierRows`, `rtp`, rewards with `payload.amount`).
+Sector numbers derive from array order. RTP is displayed as percent and stored
+as a ratio. GameConfig uses `name`, matching the backend.
+
+## Verification
+
+- `npm run typecheck`
+- `npm run build`
+- Targeted `node --test` files for payout configs/forms, game configs, defaults,
+  presets and chained experiences in `apps/sunlight/src/sunlight`.
+- Browser checks against the Vite development server.
+
+Existing editor stories and the Chained Experiences stories remain available
+under `Lab/Sunlight`.

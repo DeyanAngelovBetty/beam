@@ -29,7 +29,7 @@ function At({ entry }: { entry: string }) {
 }
 
 /** View-first: an existing preset opens READ-ONLY; Edit flips to the editor. */
-export const ViewMode: Story = { render: () => <At entry="/meta-game-presets/preset-mystery-box-daily-reward" /> };
+export const ViewMode: Story = { render: () => <At entry="/meta-game-presets/preset-betty-wheel-daily-reward" /> };
 
 /** Create → opens straight in the editor. */
 export const Create: Story = { render: () => <At entry="/meta-game-presets/new" /> };

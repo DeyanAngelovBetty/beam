@@ -1,6 +1,6 @@
 import type { GameConfig } from './gameConfigs';
 import type { MetaGamePreset, MetaGamePresetInput, PresetUseCase, PresetVolatility } from './metaGamePresets';
-import type { GameType, PayoutStatus } from './payoutConfigs';
+import { GAME_TYPES, type GameType, type PayoutStatus } from './payoutConfigs';
 
 export type PresetSource = 'Betty' | 'Yoda';
 
@@ -8,7 +8,7 @@ export interface PresetEditorModel {
   source: PresetSource;
   displayName: string;
   gameConfigId: string;
-  gameType: GameType | '';
+  gameType: string;
   configCode: string;
   skinId: string;
   imageUrl: string;
@@ -26,8 +26,8 @@ export interface PresetValidation {
   valid: boolean;
 }
 
-export function presetSource(preset: Pick<MetaGamePreset, 'gameConfigId'>): PresetSource {
-  return preset.gameConfigId === null ? 'Yoda' : 'Betty';
+export function presetSource(preset: Pick<MetaGamePreset, 'gameConfigId' | 'name'>): PresetSource {
+  return preset.gameConfigId !== null || GAME_TYPES.includes(preset.name as GameType) ? 'Betty' : 'Yoda';
 }
 
 export function emptyPresetModel(): PresetEditorModel {
@@ -70,16 +70,11 @@ export function gameTypeFromGameConfig(configs: GameConfig[], id: string): GameT
 
 export function presetGameConfigOptions(
   configs: GameConfig[],
-  model: Pick<PresetEditorModel, 'source' | 'gameType'>,
-  isEdit: boolean
+  model: Pick<PresetEditorModel, 'source' | 'gameType'>
 ): GameConfig[] {
   if (model.source !== 'Betty') return [];
-  if (!isEdit || !model.gameType) return configs;
+  if (!model.gameType) return configs;
   return configs.filter((config) => config.gameType === model.gameType);
-}
-
-export function canChangePresetSource(isEdit: boolean): boolean {
-  return !isEdit;
 }
 
 export function validatePresetModel(model: PresetEditorModel, configs: GameConfig[]): PresetValidation {
@@ -89,7 +84,9 @@ export function validatePresetModel(model: PresetEditorModel, configs: GameConfi
   let configCode: string | undefined;
 
   if (model.source === 'Betty') {
-    gameConfigId = gameConfigForId(configs, model.gameConfigId) ? undefined : 'GameConfig is required.';
+    gameType = GAME_TYPES.includes(model.gameType as GameType) ? undefined : 'Choose an internal game type.';
+    const selectedConfig = gameConfigForId(configs, model.gameConfigId);
+    if (model.gameConfigId && selectedConfig?.gameType !== model.gameType) gameConfigId = 'Choose a GameConfig of the selected game type.';
   } else {
     gameType = model.gameType ? undefined : 'Game Type is required.';
     configCode = model.configCode.trim() ? undefined : 'Config Code is required.';
@@ -114,10 +111,10 @@ export function validatePresetModel(model: PresetEditorModel, configs: GameConfi
 
 export function presetModelToInput(model: PresetEditorModel, configs: GameConfig[]): MetaGamePresetInput {
   const gameType =
-    model.source === 'Betty' ? gameTypeFromGameConfig(configs, model.gameConfigId) : model.gameType;
+    model.source === 'Betty' && model.gameConfigId ? gameTypeFromGameConfig(configs, model.gameConfigId) : model.gameType;
   if (!gameType) throw new Error('A valid GameType is required.');
   return {
-    gameConfigId: model.source === 'Betty' ? model.gameConfigId : null,
+    gameConfigId: model.source === 'Betty' ? model.gameConfigId || null : null,
     name: gameType,
     displayName: model.displayName.trim(),
     configCode: model.source === 'Yoda' ? model.configCode.trim() : null,

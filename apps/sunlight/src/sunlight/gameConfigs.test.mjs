@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-import { GAME_CONFIGS } from './gameConfigs.ts';
-import { PAYOUT_CONFIGS } from './payoutConfigs.ts';
+import test, { after } from 'node:test';
+import { createServer } from 'vite';
+const vite = await createServer({ root: process.cwd(), appType: 'custom', logLevel: 'silent', server: { middlewareMode: true } });
+after(() => vite.close());
+const { GAME_CONFIGS } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/gameConfigs.ts');
+const { PAYOUT_CONFIGS } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/payoutConfigs.ts');
 
 const GROUP_OPERATORS = new Set(['All', 'Any']);
 const LEAF_OPERATORS = new Set(['IsOneOf', 'IsNoneOf']);
@@ -24,59 +27,15 @@ function assertCondition(condition) {
   }
 }
 
-test('GameConfig demo contains exactly the final five records and the connected Wheel of Wins fallback', () => {
-  assert.deepEqual(
-    GAME_CONFIGS.map(({ id, code, gameType, status }) => ({ id, code, gameType, status })),
-    [
-      {
-        id: 'gc-mystery-box-default',
-        code: 'MYSTERY_BOX_DEFAULT',
-        gameType: 'MysteryBox',
-        status: 'Enabled',
-      },
-      {
-        id: 'gc-mystery-box-promotion',
-        code: 'MYSTERY_BOX_PROMOTION',
-        gameType: 'MysteryBox',
-        status: 'Disabled',
-      },
-      { id: 'gc-wheel-default', code: 'WHEEL_DEFAULT', gameType: 'Wheel', status: 'Enabled' },
-      {
-        id: 'gc-scratcher-default',
-        code: 'SCRATCHER_DEFAULT',
-        gameType: 'Scratcher',
-        status: 'Enabled',
-      },
-      {
-        id: 'gc-betty-wheel-of-wins-default',
-        code: 'BETTY_WHEEL_OF_WINS_DEFAULT',
-        gameType: 'BettyWheelOfWins',
-        status: 'Enabled',
-      },
-    ]
-  );
-
-  assert.deepEqual(
-    GAME_CONFIGS.find((config) => config.id === 'gc-betty-wheel-of-wins-default'),
-    {
-      id: 'gc-betty-wheel-of-wins-default',
-      code: 'BETTY_WHEEL_OF_WINS_DEFAULT',
-      gameType: 'BettyWheelOfWins',
-      status: 'Enabled',
-      targetingRules: [
-        {
-          id: 'tr-betty-wheel-of-wins-fallback',
-          priority: 0,
-          status: 'Enabled',
-          payoutConfigId: 'pc-betty-wheel-of-wins-standard',
-        },
-      ],
-    }
-  );
+test('the demo includes the MM fallback and only canonical internal game types', () => {
+  assert.ok(GAME_CONFIGS.every(config => ['BettyWheel', 'BettyScratcher', 'BettyWheelOfWins', 'BettyMultiplierMadness'].includes(config.gameType)));
+  const mm = GAME_CONFIGS.find(config => config.gameType === 'BettyMultiplierMadness');
+  assert.equal(mm.targetingRules[0].payoutConfigId, 'pc-mm-standard');
+  assert.equal(mm.targetingRules[0].condition, undefined);
 });
 
-test('MysteryBox targeting rule matches the exact recursive condition', () => {
-  const config = GAME_CONFIGS.find((candidate) => candidate.id === 'gc-mystery-box-default');
+test('BettyWheel targeting rule matches the exact recursive condition', () => {
+  const config = GAME_CONFIGS.find((candidate) => candidate.id === 'gc-betty-wheel-default');
   const targetedRule = config.targetingRules[0];
 
   assert.deepEqual(
@@ -89,7 +48,7 @@ test('MysteryBox targeting rule matches the exact recursive condition', () => {
     {
       priority: 100,
       status: 'Enabled',
-      payoutConfigId: 'pc-mystery-box-premium',
+      payoutConfigId: 'pc-betty-wheel-premium',
       condition: {
         operator: 'All',
         statements: [
@@ -109,7 +68,7 @@ test('MysteryBox targeting rule matches the exact recursive condition', () => {
   assertCondition(targetedRule.condition);
 
   const fallback = config.targetingRules[1];
-  assert.equal(fallback.payoutConfigId, 'pc-mystery-box-standard');
+  assert.equal(fallback.payoutConfigId, 'pc-betty-wheel-standard');
   assert.equal(fallback.priority, 0);
   assert.equal(fallback.condition, undefined);
 });
@@ -146,11 +105,11 @@ test('enabled priorities are unique and every fallback is enabled, last, and pri
   }
 });
 
-test('Disabled MysteryBox promotion is isolated from Enabled configurations', () => {
-  const config = GAME_CONFIGS.find((candidate) => candidate.id === 'gc-mystery-box-promotion');
+test('Disabled BettyWheel promotion is isolated from Enabled configurations', () => {
+  const config = GAME_CONFIGS.find((candidate) => candidate.id === 'gc-betty-wheel-promotion');
   assert.equal(config.targetingRules.length, 1);
   assert.equal(config.targetingRules[0].status, 'Enabled');
   assert.equal(config.targetingRules[0].priority, 0);
   assert.equal(config.targetingRules[0].condition, undefined);
-  assert.equal(config.targetingRules[0].payoutConfigId, 'pc-mystery-box-promotion');
+  assert.equal(config.targetingRules[0].payoutConfigId, 'pc-betty-wheel-promotion');
 });

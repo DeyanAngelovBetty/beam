@@ -15,6 +15,7 @@ export type SunlightPage =
   | 'game-configs'
   | 'default-game-configs'
   | 'meta-game-presets'
+  | 'chained-experiences'
   | 'token-campaigns'
   | 'community-jackpots'
   | 'pending-approvals'
@@ -29,6 +30,7 @@ export const PAGE_PATH: Record<SunlightPage, string> = {
   'game-configs': '/game-configs',
   'default-game-configs': '/default-game-configs',
   'meta-game-presets': '/meta-game-presets',
+  'chained-experiences': '/chained-experiences',
   'token-campaigns': '/prize-wall/token-campaigns',
   'community-jackpots': '/community-jackpots',
   'pending-approvals': '/pending-approvals',
@@ -73,6 +75,7 @@ export function buildSunlightNav({ pathname, navigate }: NavArgs): BeamNavItem[]
         leaf('Game Configs', 'game-configs'),
         leaf('Default Game Configs', 'default-game-configs'),
         leaf('MetaGame Presets', 'meta-game-presets'),
+        leaf('Chained Experiences', 'chained-experiences'),
       ],
     },
     // Promotions and Loyalty — the PNG's group (CJs.png). Renamed from the demo's "Prize Wall" to match
