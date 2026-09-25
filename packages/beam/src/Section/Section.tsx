@@ -103,7 +103,13 @@ export function Section({ title, actions, toolbar, isEdit, bleed = false, childr
       </Box>
       {actions && <Box sx={{ px: 2, pb: 1 }}>{actions}</Box>}
       {/* Toolbar band — between header and body, at the field-twin datum (title → toolbar → body). Hosts
-          the section's add-CTAs (canonical: the small `+` text button). Inert when absent. */}
+          the section's add-CTAs (canonical: the small `+` text button). Inert when absent.
+          NEW PATTERN — the TOOLBAR STATS LANE (Payout Sectors, 2026-09-25): a toolbar may split into
+          ACTIONS (left) + derived STATS (right) — pass a flex row that justifies space-between, actions
+          leading, `BeamStat`s (meta scale) trailing. The stats are the table's live derived readouts (e.g.
+          TOTAL PROBABILITY / REMAINING); a validation stat (REMAINING ≠ 0 → danger) reads here while the
+          Save gate stays the form's own (the stat surfaces the gate, it does not add one). View mode drops
+          the edit-only actions + edit-only stats (e.g. shows TOTAL only). */}
       {toolbar && (
         <Box sx={{ px: 2, pb: 1, minHeight: FIELD_TWIN_HEIGHT, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           {toolbar}

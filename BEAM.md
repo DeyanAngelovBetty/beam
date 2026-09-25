@@ -202,6 +202,22 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      BOTH modes, so a **full-height field twin** fits (no compact/squished input; it matches the
      `DetailsPanel` field height). Values and inputs **left-align** under the header's left edge
      (per `section-goal.png`). **Header rows stay 44 everywhere** (chrome band, not content).
+   - **Editor grids — EXEMPT from the no-reflow invariant (charter: Payout Sectors, 2026-09-25).** A row
+     that hosts a per-row **collection** or a **variable-height edit form** (Payout Sectors' edit row holds a
+     whole payout-rows sub-grid, not a single field) cannot honour a fixed twin height without squishing its
+     editor. So the invariant is **lifted**: **view rows sit at density 44** (`FIELD_TWIN_HEIGHT`), **edit
+     rows grow as tall as the form needs**, and the **view↔edit toggle MAY reflow** — accepted, because the
+     content genuinely changes height (the only sanctioned reflow beyond the toolbar). Header rows stay 44.
+     This is the exemption's charter case; the fixed-height twin rows above (Rewards Strategy) remain the
+     sibling for tables whose rows swap to a *single* field.
+   - **`orderable` is DECLARED, never inferred (2026-09-25).** Whether a table's row order is data-meaningful
+     is a per-table property the page states explicitly (from game-type config), not something a component
+     guesses from a `gameType`. **Reorder affordances — the drag-handle rail slot + the kebab's Move up /
+     Move down — render ONLY where `orderable` is declared** (positional wheel sectors: Payout Sectors,
+     Multiplier Sectors). The **shell / leading-rail / kebab grammar applies to ALL editor tables regardless**
+     — a non-ordered table (Scratcher payout rows) still gets the Section shell + rail + a kebab, its kebab
+     just carries **Delete** with no Move items. (Rail convention itself: §6, minted in the Payout Sectors
+     drag work.)
    - Never a literal — compose from `FIELD_GEOMETRY` / `FIELD_TWIN_HEIGHT` / `TABLE_CELL_PAD_Y` /
      `TABLE_ROW_DIVIDER`. For embedded tables this is owned by `Section`'s scoped styles (same
      mechanism as the 44px header enforcement); a table opts into twin height with the class
