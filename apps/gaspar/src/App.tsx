@@ -129,8 +129,6 @@ function GasparApp() {
       <CssBaseline />
       <AppShell
         brandMark={brandMark}
-        // Density compromise (CEO 2026-09-23): no logo in the collapsed rail — just the expand control.
-        showCollapsedBrandMark={false}
         navItems={navItems}
         persistKey="beam.shell.gaspar"
         footer={<ShellFooter brand={brand} onBrandChange={setBrand} onOpenThemeLab={() => setLabOpen(true)} />}

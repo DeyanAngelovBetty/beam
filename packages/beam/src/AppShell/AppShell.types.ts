@@ -51,9 +51,10 @@ export interface AppShellProps {
 
   /**
    * Show the brand mark in the COLLAPSED brand strip (the floating hamburger row when the sidebar is
-   * closed). Default `true`. Gaspar sets `false` as a density compromise (CEO, 2026-09-23): the collapsed
-   * rail carries only the expand/collapse control, reclaiming the top band for content. The EXPANDED
-   * panel keeps its brand mark regardless. (See docs/shell-grammar.md.)
+   * closed). Default `false` (Chavdar, 2026-09-28, BEAM.md §6.16): estate-wide, the collapsed rail carries
+   * only the expand/collapse control, reclaiming the top band for content. No product currently sets it —
+   * it survives only as the opt-back-in seam. The EXPANDED panel keeps its brand mark regardless.
+   * (See docs/shell-grammar.md.)
    */
   showCollapsedBrandMark?: boolean;
 
