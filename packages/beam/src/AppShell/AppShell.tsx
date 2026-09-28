@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -497,6 +497,9 @@ export function AppShell({
   const main = (
     <Box
       component="main"
+      // CONSTANT KEYED POSITION (BEAM.md §6.17): `main` is the single keyed child that survives every
+      // nav-state swap — React updates the chrome sibling beside it but never remounts the page/Outlet.
+      key="beam-shell-main"
       // Named for the ignition (grammar §4): morphs full-width ↔ right column on
       // lock/unlock. Present in both states, so its group genuinely reflows.
       style={{ viewTransitionName: VT_CONTENT }}
@@ -538,95 +541,105 @@ export function AppShell({
     </Box>
   );
 
-  // ---- LOCKED (wide): in-flow panel + content, as a grid so the column can
-  // later animate (grammar §4). Fills appFrame (height 100%); the rail is a plain
-  // full-height cell now (main owns the scroll, so no sticky needed). ----
-  const frameContent = effectiveLocked ? (
-    <Box sx={{ display: 'grid', gridTemplateColumns: `${DRAWER_WIDTH}px 1fr`, height: '100%' }}>
-      <Box component="nav" sx={{ height: '100%' }}>
-        {panel('locked')}
-      </Box>
+  // ---- ONE frame, all nav states (BEAM.md §6.17). A SINGLE grid container renders in every state, with
+  // `main` as its CONSTANT keyed last child — so collapse/expand/peek swaps only the chrome sibling and NEVER
+  // remounts the page. LOCKED adds a real 264px rail column (in-flow, so the column can animate, grammar §4);
+  // COLLAPSED/NARROW drops to a single `1fr` column and layers its chrome (strip, hover zone, peek, drawer)
+  // OUT OF FLOW (absolute / portalled) — consuming no grid track, so `main` keeps the sole cell and never
+  // wraps to a second row. The rail is a plain full-height cell (main owns the scroll, no sticky needed). ----
+  const frameContent = (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: effectiveLocked ? `${DRAWER_WIDTH}px 1fr` : '1fr',
+        height: '100%',
+      }}
+    >
+      {effectiveLocked ? (
+        <Box component="nav" key="beam-shell-rail" sx={{ height: '100%' }}>
+          {panel('locked')}
+        </Box>
+      ) : (
+        // CLOSED (wide) or NARROW: brand strip + peek/drawer on demand. All `absolute` within appFrame (NOT
+        // `fixed` to the viewport), so they sit BELOW the app-alert bar and out of the grid flow. Keyed as a
+        // single fragment so `main` stays the same-index, same-key sibling as in the locked branch.
+        <Fragment key="beam-shell-chrome">
+          {/* Brand strip (grammar §3): hamburger + color mark, top-left, no bar. */}
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ alignItems: 'center', position: 'absolute', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
+          >
+            {/* Hamburger, dual role (grammar §3, §6): wide = lock toggle (hover still
+                peeks); narrow = open the modal drawer, no lock. */}
+            <Tooltip title={isWide ? `Lock sidebar open · ${LOCK_SHORTCUT_LABEL}` : 'Open navigation'}>
+              <IconButton
+                ref={hamburgerRef}
+                aria-label={isWide ? 'Lock sidebar open' : 'Open navigation'}
+                aria-expanded={isWide ? effectiveLocked : peekOpen}
+                aria-controls={panelId}
+                aria-keyshortcuts={isWide ? LOCK_ARIA_KEYSHORTCUTS : undefined}
+                onMouseEnter={isWide ? scheduleOpen : undefined}
+                onClick={() => {
+                  if (isWide) lockOpen();
+                  else if (peekOpen) closeNow();
+                  else openNow();
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Tooltip>
+            {/* Collapsed-strip brand mark — OFF by default estate-wide (Chavdar 2026-09-28, BEAM.md §6.16): the
+                collapsed rail shows only the expand/collapse control, so the top band is reclaimed for content +
+                the sticky chrome. Opt back in with `showCollapsedBrandMark`. Expanded panel keeps its mark. */}
+            {showCollapsedBrandMark && (
+              <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
+                {colorMark}
+              </Box>
+            )}
+          </Stack>
+
+          {/* Left-edge hover zone opens the peek (wide, closed). */}
+          {isWide && !peekOpen && (
+            <Box
+              onMouseEnter={scheduleOpen}
+              sx={{ position: 'absolute', top: 0, left: 0, width: 8, height: '100%', zIndex: theme.zIndex.appBar - 1 }}
+            />
+          )}
+
+          {isWide ? (
+            peekOpen && (
+              // Peek = floating panel, non-modal (grammar §2, §6). Inset below the
+              // strip so the strip stays visible; anchored to appFrame, not the viewport.
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: STRIP_HEIGHT,
+                  left: 0,
+                  height: `calc(100% - ${STRIP_HEIGHT * 2}px)`,
+                  zIndex: theme.zIndex.appBar - 1,
+                }}
+              >
+                {panel('peek')}
+              </Box>
+            )
+          ) : (
+            // Narrow: the peek wearing mobile clothes — a modal drawer.
+            <Drawer
+              variant="temporary"
+              open={peekOpen}
+              onClose={closeNow}
+              ModalProps={{ keepMounted: true }}
+              sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, ...NAV_GLASS_SX } }}
+            >
+              {panel('peek', true)}
+            </Drawer>
+          )}
+        </Fragment>
+      )}
+
       {main}
     </Box>
-  ) : (
-    // ---- CLOSED (wide) or NARROW: brand strip + content; peek/drawer on demand. The strip,
-    // hover zone, and peek are `absolute` within appFrame (NOT `fixed` to the viewport) — that
-    // is what puts them BELOW the app-alert bar, dissolving the strip-over-bar overlap. ----
-    <>
-      {/* Brand strip (grammar §3): hamburger + color mark, top-left, no bar. */}
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ alignItems: 'center', position: 'absolute', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
-      >
-        {/* Hamburger, dual role (grammar §3, §6): wide = lock toggle (hover still
-            peeks); narrow = open the modal drawer, no lock. */}
-        <Tooltip title={isWide ? `Lock sidebar open · ${LOCK_SHORTCUT_LABEL}` : 'Open navigation'}>
-          <IconButton
-            ref={hamburgerRef}
-            aria-label={isWide ? 'Lock sidebar open' : 'Open navigation'}
-            aria-expanded={isWide ? effectiveLocked : peekOpen}
-            aria-controls={panelId}
-            aria-keyshortcuts={isWide ? LOCK_ARIA_KEYSHORTCUTS : undefined}
-            onMouseEnter={isWide ? scheduleOpen : undefined}
-            onClick={() => {
-              if (isWide) lockOpen();
-              else if (peekOpen) closeNow();
-              else openNow();
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-        </Tooltip>
-        {/* Collapsed-strip brand mark — OFF by default estate-wide (Chavdar 2026-09-28, BEAM.md §6.16): the
-            collapsed rail shows only the expand/collapse control, so the top band is reclaimed for content +
-            the sticky chrome. Opt back in with `showCollapsedBrandMark`. Expanded panel keeps its mark. */}
-        {showCollapsedBrandMark && (
-          <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
-            {colorMark}
-          </Box>
-        )}
-      </Stack>
-
-      {/* Left-edge hover zone opens the peek (wide, closed). */}
-      {isWide && !peekOpen && (
-        <Box
-          onMouseEnter={scheduleOpen}
-          sx={{ position: 'absolute', top: 0, left: 0, width: 8, height: '100%', zIndex: theme.zIndex.appBar - 1 }}
-        />
-      )}
-
-      {main}
-
-      {isWide ? (
-        peekOpen && (
-          // Peek = floating panel, non-modal (grammar §2, §6). Inset below the
-          // strip so the strip stays visible; anchored to appFrame, not the viewport.
-          <Box
-            sx={{
-              position: 'absolute',
-              top: STRIP_HEIGHT,
-              left: 0,
-              height: `calc(100% - ${STRIP_HEIGHT * 2}px)`,
-              zIndex: theme.zIndex.appBar - 1,
-            }}
-          >
-            {panel('peek')}
-          </Box>
-        )
-      ) : (
-        // Narrow: the peek wearing mobile clothes — a modal drawer.
-        <Drawer
-          variant="temporary"
-          open={peekOpen}
-          onClose={closeNow}
-          ModalProps={{ keepMounted: true }}
-          sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, ...NAV_GLASS_SX } }}
-        >
-          {panel('peek', true)}
-        </Drawer>
-      )}
-    </>
   );
 
   // ---- The two-row shell frame. Row 1 = the app-alert slot (full VIEWPORT width, in-flow,
