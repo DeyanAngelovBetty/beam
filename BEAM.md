@@ -430,6 +430,17 @@ Design against the real model, not a generic BO:
     `key` that captures everything the init depends on (`${mode}:${id}`), read from `useParams` in
     a thin route wrapper. "Works on deploy" must mean "works in dev too," or localhost isn't a
     trustworthy review surface.
+- **Flagship pages don't ride an auto-deploy; verification is runtime, not reasoning (2026-09-28.)**
+  - **No silent flagship deploys.** Push-to-`main` IS the deploy (Appendix A), so a commit touching a
+    *flagship* page — Gaspar Transactions, Sunlight Payout Configs, Community Jackpots, plus any page
+    Deyan names in-session — stays local or on a branch until Deyan confirms his own browser
+    click-through in that session. Green typecheck + build is not clearance; the click-through is.
+  - **Verification = runtime/browser proof, split in the report.** A change is verified only when
+    observed running — the dev server under StrictMode (per the bullet above) or the deployed page —
+    never by-construction. But the agent usually cannot see a browser, so every report separates
+    **OBSERVED** (what ran, where, and how it was seen) from **UNVERIFIED**, and ends with an
+    **Eyeball list**: concrete click-through steps for Deyan covering everything left unverified. A
+    report without that split is incomplete.
 - **Decisions get written down here** the day they're made, with their reason. An undocumented
   decision doesn't exist.
 - **The Lab.** App-local patterns get bench stories under `Lab/<Product>/<Name>` for isolated

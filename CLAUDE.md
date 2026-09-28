@@ -12,6 +12,10 @@ covers the CSS-computed token doctrine in depth.
 Working style: **propose → review → build.** For anything beyond a trivial edit, show a short
 plan or diff first. Verify as you go — typecheck and build before reporting something done.
 
+**Flagship pages never auto-deploy** — commits touching them stay local/branch until Deyan
+confirms his click-through in-session. **Verification is runtime proof**; reports split
+Observed / Unverified and end with an eyeball list. (BEAM.md §9, 2026-09-28.)
+
 ## Commands
 
 ```bash
