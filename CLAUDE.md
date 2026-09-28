@@ -16,6 +16,20 @@ plan or diff first. Verify as you go — typecheck and build before reporting so
 confirms his click-through in-session. **Verification is runtime proof**; reports split
 Observed / Unverified and end with an eyeball list. (BEAM.md §9, 2026-09-28.)
 
+### Report format
+
+**One thing per iteration.** Before proposing, explain in plain terms what the change is and
+why; Deyan prefers understanding one change over speed or volume.
+
+Reports to Deyan are **short**. Use exactly this shape; details only on request:
+
+- **Changed** — one line per commit (sha, what).
+- **Where to look** — which of Deyan's tabs (local Sunlight/Gaspar/Storybook; Pages only after
+  a push) + the route/story. Say "refresh" or "restart &lt;which&gt;" explicitly.
+- **Check** — ≤5 numbered click steps, each with what "correct" looks like. This is the eyeball
+  list; anything not listed was verified in code (say so in one line).
+- **Decide** — ≤3 questions, each with your recommendation. Omit if none.
+
 ## Commands
 
 ```bash
