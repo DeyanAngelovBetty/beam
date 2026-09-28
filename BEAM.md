@@ -381,6 +381,16 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     and none setting it, the prop has **no remaining consumer** — a candidate for removal in a later pass
     (kept for now as the single opt-back-in seam). Diverges from official Beam, which always renders its
     `FrameLogo` in the collapsed top bar (see docs/beam-alignment.md §4).
+17. **Nav-state changes NEVER remount page content (2026-09-28).** Collapsing / expanding / peeking the nav is
+    a CHROME change, not a navigation — so `AppShell` MUST keep `{children}` / `<Outlet>` at ONE constant tree
+    position across every nav state. React then swaps the surrounding rail/strip/peek but **never unmounts the
+    page**. A detail page holds unsaved edit state in local React state; a remount discards it **silently** —
+    `useBlocker` guards route changes only, and a nav toggle isn't one. Mechanically: `main` is a single
+    **keyed** child of ONE always-present grid container, and all collapsed chrome (strip, hover zone, peek,
+    drawer) is **out of flow** (absolute / portal) so `main` keeps the sole `1fr` cell and never wraps to a
+    second row. Official Beam has this by construction (`main` rendered unconditionally beside `<Frame>`).
+    *(Regression: the old locked/collapsed branch swap moved `main` between two JSX branches and remounted the
+    Outlet — Sunlight Payout Configs edit dropped to view and lost its draft on collapse.)*
 
 ## 7. Figma ↔ code sync mechanics
 
