@@ -67,7 +67,6 @@ export function PayoutRowsGrid({
       <Table
         size="small"
         aria-label={orderable ? 'Payout sectors' : 'Payout rows'}
-        sx={{ '& td, & th': { verticalAlign: 'top' } }}
       >
         <TableHead>
           <TableRow>

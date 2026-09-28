@@ -108,7 +108,6 @@ export function MultiplierRowsEditor({
       <Table
         size="small"
         aria-label="Multiplier sectors"
-        sx={{ '& td, & th': { verticalAlign: 'top !important' } }}
       >
         <TableHead>
           <TableRow>

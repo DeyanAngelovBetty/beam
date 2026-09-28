@@ -154,7 +154,6 @@ export function PayoutRowsEditor({
         aria-label={orderable ? 'Payout sectors' : 'Payout rows'}
         // Editor grid: cells top-align (fields sit at the row top, not centred in a tall row) — overrides
         // Section's density middle-align, per the §6.7 exemption.
-        sx={{ '& td, & th': { verticalAlign: 'top !important' } }}
       >
         <TableHead>
           <TableRow>
