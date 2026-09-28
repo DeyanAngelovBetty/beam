@@ -373,6 +373,14 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     on Gaspar transactions. **Chromium-first** (Chrome/Edge ~125+ ship anchor positioning; Firefox &
     Safari as of 2026-08 do not — those render exactly today's accent). *(Not a shipped pattern — an
     exploration; revisit if/when anchor positioning is Baseline.)*
+16. **Collapsed nav shows NO brand mark — the estate default (2026-09-28).** When the sidebar is collapsed,
+    the floating strip carries ONLY the expand/collapse control; the product logo does not appear. This was
+    Gaspar's density compromise (CEO 2026-09-23); Chavdar's ruling (2026-09-28) makes it estate-wide, so
+    `AppShell`'s `showCollapsedBrandMark` now **defaults `false`** and no product opts in (the old default was
+    `true` with Gaspar the lone `false`). The EXPANDED panel keeps its mark. With every product on the default
+    and none setting it, the prop has **no remaining consumer** — a candidate for removal in a later pass
+    (kept for now as the single opt-back-in seam). Diverges from official Beam, which always renders its
+    `FrameLogo` in the collapsed top bar (see docs/beam-alignment.md §4).
 
 ## 7. Figma ↔ code sync mechanics
 

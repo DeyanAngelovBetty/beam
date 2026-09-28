@@ -142,6 +142,7 @@ ours      BeamAppShell { navItems:BeamNavItem[](children-nested), brandMark, per
 - ⚠️ **Styles live in `Name.styles.ts` (official)** vs **inline `sx` + `createBeamTheme` overrides (ours)**. Official externalizes to a `.styles.ts` per component (`Page.styles.ts`, `Table.styles.ts`, …); we inline sx and carry design rationale in comments. Structural difference across every organism.
 - ⚠️ **Provider.** Official `BeamProvider(product, jurisdiction)` resolves theme + localization (module singleton) + Toaster + mode persistence (`beamConfig` localStorage). Ours: apps wire `ThemeProvider` + `CssBaseline` + `createBeamTheme(brand, product)` by hand, no localization layer.
 - ⚠️ **Story titles** `Components/*` (flat, official) vs our `Organisms/*` + `Organisms (placeholder)/*` groupings. **Theme factory:** their prebuilt `productThemes[product][jur]` object vs our `createBeamTheme(brand, product)` factory.
+- ⚠️ **Collapsed-nav brand mark (2026-09-28).** Ours hides the product logo when the sidebar is collapsed — `AppShell.showCollapsedBrandMark` now **defaults `false`** estate-wide (Chavdar's density ruling; BEAM.md §6.16). Official always renders `FrameLogo` in its collapsed top bar (`Frame/Frame.tsx` → the `menuIdentity` strip carries `<FrameLogo>` next to the menu button, unconditionally). A deliberate lane divergence, not a bug.
 
 ---
 
