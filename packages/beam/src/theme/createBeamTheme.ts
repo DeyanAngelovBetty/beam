@@ -387,6 +387,10 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // the data-beam-mode rules flip them. Painted on a fixed layer in
             // AppShell — behind everything, occluded by the opaque ramp surfaces.
             '--beam-page-mesh': derived.pageMesh,
+            // Cross-hue mix space for the page mesh (§2). Production default = `oklab` (hue preserved);
+            // Theme Lab flips it to `oklch` on the document root as a comparison bench (§9). Scheme- and
+            // product-invariant, so it lives here once, not in the data-beam-mode blocks.
+            '--beam-mix-space': 'oklab',
             // Scroll-affordance edge-shadow tint — :root default = DARK (22%); the data-beam-mode blocks
             // below flip it per scheme (light = 5%). PER-SCHEME (§6.12; see derived.edgeShadow).
             '--beam-edge-shadow': derived.edgeShadow,

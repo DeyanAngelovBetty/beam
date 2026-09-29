@@ -176,6 +176,16 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const [logoStop, setLogoStop] = useState(1);
   const [ch, setCh] = useState({ l: 0, c: 0, h: 0 });
   const [intensity, setIntensity] = useState(0);
+  // Mix-space A/B bench (§9): flips the page mesh's `color-mix` space live via `--beam-mix-space` on the
+  // document root. Lab-only, NOT a product setting — production is always `oklab` (the theme default);
+  // `oklch` is here to SHOW the purple/teal hue rotation the doctrine fixed. Reverts on drawer unmount.
+  const [mixSpace, setMixSpace] = useState<'oklab' | 'oklch'>('oklab');
+  useEffect(() => {
+    document.documentElement.style.setProperty('--beam-mix-space', mixSpace);
+    return () => {
+      document.documentElement.style.removeProperty('--beam-mix-space');
+    };
+  }, [mixSpace]);
   // Link/ratio state is keyed by ACTIVE KEY (target, or `logo1`..`logo4` per stop) — the logo
   // stops each carry their own cross-scheme link state, like any target.
   const [links, setLinks] = useState<Record<string, { h: boolean; c: boolean }>>({
@@ -595,7 +605,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       { label: 'star', src: readVar('--beam-star-color'), intensity: starIntensityNow },
     ] as const
   ).map(({ label, src, intensity }) => {
-    const color = resolveColor(`color-mix(in oklch, ${src} ${intensity}, ${canvas})`);
+    const color = resolveColor(`color-mix(in ${mixSpace}, ${src} ${intensity}, ${canvas})`);
     const subtle = canvasCh.c > 0.005 && hueDistance(toChannels(color).h, canvasCh.h) <= SUBTLE_HUE_DEG;
     return { label, color, subtle };
   });
@@ -780,6 +790,29 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                 {selected === 'logo' ? `stop ${logoStop}` : TARGET_META[selected].label}
               </Typography>
               <HexInput value={channelsToHex(ch.l, ch.c, ch.h)} onCommit={commitHex} />
+            </Stack>
+            {/* Mix-space A/B bench (§9) — flips the page mesh live. Lab-only; production is always oklab. */}
+            <Stack spacing={0.5}>
+              <Typography variant="overline" color="text.secondary">
+                mix space
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                {(['oklab', 'oklch'] as const).map((space) => (
+                  <Button
+                    key={space}
+                    size="small"
+                    variant={mixSpace === space ? 'contained' : 'outlined'}
+                    onClick={() => setMixSpace(space)}
+                    aria-pressed={mixSpace === space}
+                    sx={{ minWidth: 72 }}
+                  >
+                    {space}
+                  </Button>
+                ))}
+              </Stack>
+              <Typography variant="caption" color="text.secondary">
+                {mixSpace === 'oklab' ? 'shipped — hue held' : 'A/B only — hue rotates toward the base (purple/teal)'}
+              </Typography>
             </Stack>
             {/* Painted-tint strip — what the three radials ACTUALLY paint (mix-toward-canvas).
                 Raw seeds in the chips above; painted reality here. */}

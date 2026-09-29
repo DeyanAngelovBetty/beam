@@ -585,9 +585,13 @@ export const derived = {
   pageMesh:
     // THREE radials (dot layer removed — it was the placeholder for the Betty star, now a
     // MASK on its own fixed layer, body::after; see createBeamTheme). These fill (no tile).
-    'radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
-    'radial-gradient(110% 110% at 100% 0%, color-mix(in oklch, var(--beam-gradient-hue-b) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
-    'radial-gradient(130% 130% at 50% 120%, color-mix(in oklch, var(--beam-gradient-hue-c) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%)',
+    // CROSS-HUE tints → mix `in oklab` (docs/derived-color-tokens.md §2): oklch interpolates HUE, so a
+    // warm seed over a hue-tinted base rotates purple/teal. The space is read from `--beam-mix-space`
+    // (default `oklab`, emitted in createBeamTheme) — a var so Theme Lab can A/B-flip it live; production
+    // is always oklab. var() substitutes inside color-mix at computed-value time (Chrome-first).
+    'radial-gradient(120% 120% at 0% 0%, color-mix(in var(--beam-mix-space, oklab), var(--mui-palette-primary-main) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
+    'radial-gradient(110% 110% at 100% 0%, color-mix(in var(--beam-mix-space, oklab), var(--beam-gradient-hue-b) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%), ' +
+    'radial-gradient(130% 130% at 50% 120%, color-mix(in var(--beam-mix-space, oklab), var(--beam-gradient-hue-c) var(--beam-gradient-intensity), var(--mui-palette-background-default)) 0%, transparent 55%)',
 
   /**
    * hue-c DEFAULT — the primary rotated +45° in hue. Its value IS this expression (not a
