@@ -397,6 +397,15 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     toggle, page-level collapse/expand headers — and canvas contrast is audited for that list alone; adding to
     it is a design decision. A readable element placed straight on the canvas is a review finding. Full rule +
     the float list: docs/surface-grammar.md.
+19. **Page gutters — one estate-wide rule; only LEFT is nav-state-aware (2026-09-29, supersedes the
+    2026-09-23 rule).** `top` / `right` / `bottom` = **`PAGE_GUTTER`** (3× spacing — `{xs:2, md:3}`) in BOTH
+    nav states; `left` = `PAGE_GUTTER` expanded, **`CONTENT_GUTTER_LEFT_COLLAPSED`** (7×) collapsed, the only
+    nav-state-aware edge (it clears the floating nav toggle). `PAGE_TOP_GAP` and `CONTENT_BOTTOM` are defined
+    AS `PAGE_GUTTER` (names kept; sticky-chrome vertical arithmetic reads `CONTENT_BOTTOM` untouched). **Why:**
+    the density pass (Chavdar) — the tightened values that started on Gaspar Transactions are generalised into
+    ONE rule for every page. This **supersedes** the earlier symmetric-`CONTENT_INLINE` (5×) gutter + the
+    nav-state-aware `right` (collapsed 1.5×); those constants + the `contentGutter` prop are now vestigial
+    (no app passes `contentGutter`). Set once on `AppShell` `main`; all sticky chrome inherits.
 
 ## 7. Figma ↔ code sync mechanics
 
