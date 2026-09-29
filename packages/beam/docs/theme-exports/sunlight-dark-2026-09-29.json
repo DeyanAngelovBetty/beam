@@ -1,0 +1,51 @@
+{
+  "version": 3,
+  "name": "sunlight-updated-3",
+  "scope": {
+    "product": "sunlight",
+    "jurisdiction": "ontario"
+  },
+  "createdAt": "2026-09-29T10:42:44.193Z",
+  "brand": {
+    "primary": {
+      "dark": {
+        "main": "#f59e1e",
+        "light": "#ffb33f",
+        "dark": "#c47000"
+      },
+      "light": {
+        "main": "#b33f00",
+        "light": "#eb7500",
+        "dark": "#8d1100"
+      }
+    }
+  },
+  "surface": {
+    "dark": {
+      "anchor": "#0e121b"
+    },
+    "light": {
+      "anchor": "#e3e3e3"
+    }
+  },
+  "gradient": {
+    "dark": {
+      "hueB": "#fff3c2",
+      "intensity": "24%"
+    },
+    "light": {
+      "hueB": "#d3c68f",
+      "intensity": "7%"
+    }
+  },
+  "star": {
+    "pitch": "59px",
+    "sizeRatio": 0.23,
+    "dark": {
+      "intensity": "5%"
+    },
+    "light": {
+      "intensity": "5%"
+    }
+  }
+}
