@@ -45,11 +45,22 @@ Three large soft radials, one formula, all products — each a subtle tint fadin
 `transparent` over the page background:
 
 ```css
-radial-gradient(120% 120% at 0% 0%,   color-mix(in oklch, var(--mui-palette-primary-main)          I, var(--mui-palette-background-default)) 0%, transparent 55%),  /* hue-a */
-radial-gradient(110% 110% at 100% 0%, color-mix(in oklch, var(--beam-gradient-hue-b)                I, var(--mui-palette-background-default)) 0%, transparent 55%),  /* hue-b */
-radial-gradient(130% 130% at 50% 120%,color-mix(in oklch, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) I, var(--mui-palette-background-default)) 0%, transparent 55%)  /* hue-c */
+radial-gradient(120% 120% at 0% 0%,   color-mix(in oklab, var(--mui-palette-primary-main)          I, var(--mui-palette-background-default)) 0%, transparent 55%),  /* hue-a */
+radial-gradient(110% 110% at 100% 0%, color-mix(in oklab, var(--beam-gradient-hue-b)                I, var(--mui-palette-background-default)) 0%, transparent 55%),  /* hue-b */
+radial-gradient(130% 130% at 50% 120%,color-mix(in oklab, oklch(from var(--mui-palette-primary-main) l c calc(h + 45)) I, var(--mui-palette-background-default)) 0%, transparent 55%)  /* hue-c */
 /* I = var(--beam-gradient-intensity) */
 ```
+
+> **Doctrine — cross-hue tints mix `in oklab` (2026-09-29).** A tint whose two ends are *both
+> chromatic and different hues* (a warm brand seed → a hue-tinted surface) MUST mix **`in oklab`**.
+> `oklab` blends straight across a/b and keeps the seed warm. **`in oklch` interpolates the HUE channel**,
+> and at these intensities the base is the majority of the mix (10% seed ⇒ 90% base), so the tint's hue
+> rotates almost all the way to the base hue — a warm seed over Sunlight-dark's blue base (H≈266°) lands
+> **purple/teal** (this is what made Theme Lab look purple). `oklch` stays **reserved** for (a) hue-held
+> relative-colour L-steps — `oklch(from anchor calc(l ± n·step) c h)`, where `c h` pass through unchanged
+> (the surface ramp, nav glass) — and (b) mixes toward an **achromatic** target (white/black/transparent/
+> text), whose hue is powerless so nothing rotates. `hue-c`'s `oklch(from … calc(h + 45))` is fine — it's a
+> relative-colour rotation of the *seed*, evaluated before the mix; only the `color-mix` space changed.
 
 - **Three tint points, one recipe.** `hue-a` is primary (existing seed); `hue-b` is a
   designer-controlled seed (`--beam-gradient-hue-b`); `hue-c` is **derived by +45°
@@ -94,6 +105,12 @@ which only made the border look thinner from inside)*. Stops **reuse the page-me
 points** (primary · `hue-b` · primary +45°), each mixed toward the surface so it's a lit
 edge, not a rainbow. **Opt-in only** (never global on Paper); applied to the Gaspar
 dashboard widget shells.
+
+> **PENDING under the cross-hue rule (2026-09-29).** `beamGradientBorder` still mixes its stops
+> `in oklch` toward `--mui-palette-background-paper` (a *chromatic* surface), at high intensities
+> (calm 32/45, hover 60/72) — so it rotates hue even harder than the mesh. It's a known case under the
+> doctrine above, deferred to the next iteration (this pass converted the page mesh + Theme Lab preview
+> only). `starColor` (→ `text.primary`, near-neutral) is borderline and also deferred.
 
 - **Grows outward, not `scale()`** — the ring width is an ABSOLUTE px change
   (`--beam-ring`, a registered `@property <length>` so it interpolates). `scale()` is
