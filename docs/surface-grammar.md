@@ -23,6 +23,25 @@ Aliases resolve through one anchor + step; a live anchor change re-derives the w
 name the level (`background.paper`, `background.overlay`, `background.paper0`) — never a hex, never a
 raw `--beam-surface-N`.
 
+## The canvas is expressive because content is contained (bento) — 2026-09-29
+
+Beam is a **containment language**: content lives in boxes (Paper, Section, cards), each on its own
+opaque ramp surface. Because everything readable sits on a box, the **canvas** behind them — base
+(`background.default`, the sunk `−1` floor above) + mesh + Betty-star mask + stars — is free to be
+**expressive**. This is *why* the page sinks to `−1` and the mesh can carry real intensity: nothing but a
+closed list reads directly against it.
+
+**Only these float directly on the canvas, and canvas contrast is audited for this list ALONE:**
+
+- the **page header** — title, subtitle, breadcrumb, primary CTA (`BeamPage`);
+- the **nav toggle** (the `AppShell` collapsed strip);
+- **page-level collapse/expand headers** (e.g. Users, Roles).
+
+**Adding to this list is a design decision** — it widens the canvas-contrast audit. Everything else MUST
+live in a box; a readable element placed straight on the canvas (a bare validation line, a naked
+empty-state) is a review finding, not a supported surface. Corollary: the page-sink and mesh intensity are
+tunable precisely *because* only this list reads against them.
+
 ## Dialogs sit at `paper`, not above overlay
 
 A dialog renders at **`paper` (ramp 1)**, the same level as the working surface — **not** at the top of

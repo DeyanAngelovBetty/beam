@@ -391,6 +391,12 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     second row. Official Beam has this by construction (`main` rendered unconditionally beside `<Frame>`).
     *(Regression: the old locked/collapsed branch swap moved `main` between two JSX branches and remounted the
     Outlet — Sunlight Payout Configs edit dropped to view and lost its draft on collapse.)*
+18. **Containment (bento) — content lives in boxes; the canvas is expressive (2026-09-28).** Everything
+    readable sits on a box (Paper / Section / card, an opaque ramp surface), which is *why* the canvas (base +
+    mesh + star) may be expressive. Only a CLOSED list floats directly on the canvas — page header, nav
+    toggle, page-level collapse/expand headers — and canvas contrast is audited for that list alone; adding to
+    it is a design decision. A readable element placed straight on the canvas is a review finding. Full rule +
+    the float list: docs/surface-grammar.md.
 
 ## 7. Figma ↔ code sync mechanics
 

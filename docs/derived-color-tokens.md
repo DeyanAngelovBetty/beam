@@ -204,6 +204,9 @@ ghost is the same mask desaturated (chroma 0 → grey), a watermark that reads a
 - **If something can't be derived** (needs designer judgment, or Figma can't
   represent even the baked result), stop and flag it — that's a seed request or a
   style, not a workaround.
+- **Theme Lab exports are full-state snapshots; apply them by scoped diff, never
+  wholesale.** An export carries every seed for both schemes (a one-scheme tuning
+  still ships the other scheme's current values) — copy only the lines you changed.
 - Respect the mirror rule (§2) — check every new formula in **both** schemes and at
   least two brands before calling it done.
 
