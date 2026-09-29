@@ -60,7 +60,19 @@ const STATES = { hover: 0.04, selected: 0.08, focus: 0.12, focusVisible: 0.3, ou
  * (Provisional home — migrates to BeamPage's rhythm once that organism leaves placeholder.)
  */
 export const CONTENT_TOP = { xs: 2, md: 10 }; // SUPERSEDED for the page top by PAGE_TOP_GAP (2026-09-23); kept for the SpacingBoard doc.
-export const CONTENT_BOTTOM = { xs: 2, md: 3 };
+
+/**
+ * PAGE_GUTTER — the ONE page edge value (3× spacing; xs 16 / md 24). Estate-wide rule (2026-09-29, BEAM.md
+ * §6.19, supersedes the 2026-09-23 nav-state-aware gutters): every page edge is PAGE_GUTTER — top, right,
+ * bottom, and left-EXPANDED — in both nav states; only the LEFT gutter is nav-state-aware (opens to
+ * CONTENT_GUTTER_LEFT_COLLAPSED when collapsed, to clear the floating toggle). CONTENT_BOTTOM + PAGE_TOP_GAP
+ * are defined AS this (names kept so the sticky-chrome vertical arithmetic that reads CONTENT_BOTTOM is
+ * untouched). The density values started on Gaspar Transactions; this generalises them (Chavdar).
+ */
+export const PAGE_GUTTER = { xs: 2, md: 3 };
+export const CONTENT_BOTTOM = PAGE_GUTTER;
+// Vestigial (2026-09-29): the old symmetric page gutter. No longer the page edge (PAGE_GUTTER is); kept this
+// pass for the SpacingBoard doc + the still-accepted `contentGutter` prop. Removal candidate.
 export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
 
 /**
@@ -71,15 +83,16 @@ export const CONTENT_INLINE = { xs: 2, sm: 4, md: 5 };
  * CONTENT_TOP at the page top (AppShell main + stickyChromeGapSx). snap-1 sits at the Stack's border-box
  * top (scroll 0); this is padding INSIDE that box, so the snap point doesn't move.
  */
-export const PAGE_TOP_GAP = CONTENT_BOTTOM;
+export const PAGE_TOP_GAP = PAGE_GUTTER;
 
 /**
- * Horizontal gutters — NAV-STATE-AWARE (2026-09-23). EXPANDED shell keeps today's symmetric CONTENT_INLINE.
- * COLLAPSED shell (closed/narrow): the LEFT gutter opens to clear the floating toggle (so chrome + toggle
- * share the top band — the vertical gain), the RIGHT tightens. sx spacing values; the shell gates on its
- * own collapsed state (data-beam-nav-collapsed), never viewport width alone.
+ * The LEFT gutter is the ONLY nav-state-aware edge (2026-09-29, §6.19): expanded uses PAGE_GUTTER (like every
+ * other edge), collapsed opens to CONTENT_GUTTER_LEFT_COLLAPSED so the page clears the floating toggle. The
+ * shell gates on its own collapsed state (data-beam-nav-collapsed), never viewport width alone.
  */
 export const CONTENT_GUTTER_LEFT_COLLAPSED = 7; // 56px — clears the ~48px floating toggle + breath
+// Vestigial (2026-09-29): right no longer tightens when collapsed — it's PAGE_GUTTER in both states.
+// Kept this pass; removal candidate.
 export const CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5; // 12px
 
 /**

@@ -22,7 +22,7 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, CONTENT_GUTTER_LEFT_COLLAPSED, CONTENT_GUTTER_RIGHT_COLLAPSED, LOGO_BAR_HEIGHT } from '../theme/tokens';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, CONTENT_GUTTER_LEFT_COLLAPSED, LOGO_BAR_HEIGHT } from '../theme/tokens';
 
 const DRAWER_WIDTH = 264;
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
@@ -513,15 +513,13 @@ export function AppShell({
         minHeight: 0,
         height: '100%',
         overflowY: 'auto',
-        // Horizontal gutter is NAV-STATE-AWARE (density rework 2026-09-23): EXPANDED (locked) keeps the
-        // symmetric `contentGutter`; COLLAPSED opens the LEFT to clear the floating toggle (chrome + toggle
-        // share the top band — the vertical gain) and tightens the RIGHT. Gated on the shell's collapsed
-        // state (`effectiveLocked`), not viewport width.
-        ...(effectiveLocked
-          ? { px: contentGutter }
-          : { pl: CONTENT_GUTTER_LEFT_COLLAPSED, pr: CONTENT_GUTTER_RIGHT_COLLAPSED }),
+        // Page gutters (§6.19, 2026-09-29): every edge is PAGE_GUTTER (3×) in BOTH nav states; only the LEFT
+        // is nav-state-aware — it opens to CONTENT_GUTTER_LEFT_COLLAPSED when collapsed to clear the floating
+        // toggle. Gated on the shell's collapsed state (`effectiveLocked`), not viewport width. (`contentGutter`
+        // is vestigial — no app passes it — kept this pass; not read here anymore.)
+        pr: PAGE_GUTTER,
+        pl: effectiveLocked ? PAGE_GUTTER : CONTENT_GUTTER_LEFT_COLLAPSED,
         pb: CONTENT_BOTTOM,
-        // PAGE_TOP_GAP — ordinary page rhythm (1×spacing); sticky pages no longer reserve the old ~80px top.
         pt: PAGE_TOP_GAP,
         // STICKY-CHROME CONTRACT: a grid with `stickyChrome` publishes `data-beam-sticky-chrome`; it takes
         // over the page's TOP + BOTTOM spacing (footer floor, header ceiling), so main gives up BOTH its
