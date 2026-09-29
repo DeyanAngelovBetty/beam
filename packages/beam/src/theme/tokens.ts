@@ -484,7 +484,9 @@ export const gradientSeeds: Record<
   sunlight: {
     // Modern Wisdom combo (§6 run): hue-c pinned — Sunlight's FIRST officiated override, so it
     // stops deriving its bottom glow (mirrors the gaspar candy hue-c pin).
-    dark: { hueB: '#FFF3C2', intensity: 10, hueC: '#D95F1A', starPitch: 59, starSizeRatio: 0.23, starIntensity: 5 },
+    // Dark intensity tuned 10 → 24 via Theme Lab (oklab), export sunlight-dark-2026-09-29. Scheme-wide
+    // (one --beam-gradient-intensity for all three tints). Light UNTOUCHED (export's light deltas out of scope).
+    dark: { hueB: '#FFF3C2', intensity: 24, hueC: '#D95F1A', starPitch: 59, starSizeRatio: 0.23, starIntensity: 5 },
     light: { hueB: '#D3C68F', intensity: 6, hueC: '#F53400', starPitch: 59, starSizeRatio: 0.23, starIntensity: 5 },
   },
   gaspar: {
