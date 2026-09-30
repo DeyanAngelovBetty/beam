@@ -42,6 +42,12 @@ live in a box; a readable element placed straight on the canvas (a bare validati
 empty-state) is a review finding, not a supported surface. Corollary: the page-sink and mesh intensity are
 tunable precisely *because* only this list reads against them.
 
+**App background** = the canvas: base + page mesh + stars, painted globally by the theme
+(`body::before` / `body::after`). Same name in Figma, Storybook (`Foundations/App Background`), and here.
+**Not a component** (2026-09-30): it's a fixed body-level layer at `z −1`, sampled by stickyChrome's bands
+— extracting an `<AppBackground>` would fight that. Promote to a component only on a second *in-flow* use
+(§2).
+
 ## Dialogs sit at `paper`, not above overlay
 
 A dialog renders at **`paper` (ramp 1)**, the same level as the working surface — **not** at the top of
