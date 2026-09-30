@@ -531,6 +531,23 @@ Design against the real model, not a generic BO:
 6. When a needed token, style, or component doesn't exist: **stop and flag it** — that's a
    system gap to fix once, not a local workaround to invent.
 
+**Working in Figma via MCP (2026-09-30)** — from the Colors-page token sync:
+- **It's token-expensive** (screenshots, node/variable reads, retries). **Split the labour: humans do the UI
+  finagling** (drag handles, variant wiring, fill/opacity bindings); **agents do the exact numbers, targeted
+  reads, and final verification.** Prefer small scripted reads (`getVariableByIdAsync`, a filtered
+  `getLocalVariablesAsync`) over whole-page `get_metadata` dumps; screenshots only to VERIFY, at modest size;
+  one task per fresh session (context fills fast).
+- **Known plugin-API limits:** it **cannot write `PATTERN` fills**; a pattern's **scale** and a **paint's
+  opacity** can't bind to variables. Bind **LAYER opacity** instead — unit is 0–1 read as a percent (a bound
+  value of `5` renders 5%).
+- **Patterns that work:** **alias-with-bound-opacity** (a colour variable = seed-colour alias + `opacity`
+  bound to an intensity variable — how the page-mesh tints fade); **two-hop resolution** (a palette-mode
+  variable aliases a product-scoped variable, so one value resolves by scheme × product).
+- **Figma-only plumbing variables** (no code twin — internal aliases, resolved intermediates) go under an
+  **`_figma/…` underscore group**, so nobody maps them back to code.
+- **Figma MIRRORS code; tuning happens in Theme Lab.** Never hand-"fix" a synced value in Figma — change it
+  in code / the Lab and re-sync, or the two drift.
+
 ---
 
 ## Appendix A — Repo map & Figma files
