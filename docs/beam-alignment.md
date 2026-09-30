@@ -203,4 +203,25 @@ ours      BeamAppShell { navItems:BeamNavItem[](children-nested), brandMark, per
 
 ---
 
+## 6. Figma file behind code — un-expressible seams *(2026-09-30)*
+
+The Figma foundations file syncs the **token seeds** (product × jurisdiction × mode). Some code renders
+through a **code-only override** that no Figma token mode can hold, so the Colors-page frames show the
+token base, not the app's true default. Flag these; they resolve only when the override **graduates into
+token seeds**.
+
+- **Gaspar `gasparOfficialOverrides` (the default-swap seam).** The Gaspar app's default theme is
+  `createBeamTheme('ontario', 'gaspar', gasparOfficialOverrides('ontario'), …)` — a deliberate, temporary
+  third-arg override (against the "apps never pass overrides" doctrine; named exit = graduate into seeds
+  once the Gaspar colour direction is ratified). The Colors frames are set to **Ontario**, which expresses
+  the base correctly (primary dark `#57DDCC` / light `#0F766E`, surface anchor), but the override changes
+  values that live **only in code**:
+  - page-mesh **hue-b** `#57DDCC` (token seed `#68DD57`) · **hue-c** `#4BA8DA` (token `#66D2FF`)
+  - mesh **intensity** dark **25** / light **25** (token 22 / 14) · **star** dark intensity 5 (token 4)
+  - **secondary** dark `#4BA8DA` · **title** font Quicksand 300 · **body** font Roboto Flex 240
+  So the Gaspar frames read teal-primary with the **token** green/cyan mesh @22, not the override's
+  all-teal/blue mesh @25. Not fabricated into Figma (no workaround); expressible once the seam graduates.
+
+---
+
 *End of audit. No code, stories, or config were modified in producing this report.*
