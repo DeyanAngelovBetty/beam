@@ -178,6 +178,19 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      this convention into an enforceable package boundary.)*
 3. **Every organism ships as a trio:** `Name.types.ts` + `Name.tsx` + `Name.stories.tsx`.
    Stories are the regression harness — internal rewrites must keep existing stories green.
+   - **Storybook title groups (2026-09-30), one rule each:**
+     - **`Components/`** — Beam organisms; titles **mirror official Beam exactly** where official has the
+       component; lane-only `Beam*` organisms (no official counterpart) also live here.
+     - **`Foundations/`** — the theme made visible (App Background, Surfaces): token/canvas specimens
+       driven by the product/brand/mode globals. Our lane; official has no such group.
+     - **`Theme Lab`** (top-level) — the live tuning instrument (seeds → JSON → sync); an instrument, not
+       a component or artifact, so it sits at the root, not under `Lab/`.
+     - **`Lab/`** — non-shipped experiments & benches: `Lab/Beam` (Beam-lane recipes, e.g. Gradient
+       Border), `Lab/Sunlight` · `Lab/Gaspar` (app-local patterns **pre-integration**), `Lab/Bench`
+       (comparison benches — the winner graduates, the bench stays as the record, §9).
+     - **`Sunlight/` · `Gaspar/`** (top-level) — **product artifacts**: finished product-specific surfaces
+       that aren't Beam organisms (Email, Rule Builder), distinct from `Lab/Sunlight`·`Lab/Gaspar` (which
+       are experiments not yet graduated).
 4. **Statuses are semantic vocabulary, not colors.** `BeamStatusBadge` accepts
    `active | scheduled | draft | paused | expired | error`; extending the union is a
    vocabulary decision made deliberately, never a color pick. (Approval-flow states like
