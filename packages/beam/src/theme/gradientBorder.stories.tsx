@@ -20,7 +20,7 @@ import { usePointerAngleTracking } from './usePointerAngleTracking';
  * Deyan's bench dial.
  */
 const meta: Meta = {
-  title: 'Recipes/GradientBorder (tracked)',
+  title: 'Lab/Beam/Gradient Border',
   parameters: { layout: 'centered' },
 };
 export default meta;

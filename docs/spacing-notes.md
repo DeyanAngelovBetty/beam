@@ -2,8 +2,8 @@
 
 *Inventory + proposal for the foundations session (Deyan + Vasco). **Zero value
 changes** — this records what IS, flags drift, and sketches an opt-in density
-architecture for discussion. No decisions here. Companion board:
-`Lab/Foundation/SpacingBoard`. Dated 2026-07-31.*
+architecture for discussion. No decisions here. Companion board `Lab/Foundation/SpacingBoard`
+was retired 2026-09-30 (Storybook housekeeping); this doc is now the ledger. Dated 2026-07-31.*
 
 ---
 
@@ -110,8 +110,8 @@ re-render, CSS variables respond):
 
 ---
 
-*The board (`Lab/Foundation/SpacingBoard`) renders every value above as a labeled
-specimen. Note: spacing is **axis-invariant** — unlike ColorBoard, nothing on the
-board changes across product / brand / mode. The toolbar axes are inherited but
+*The board (`Lab/Foundation/SpacingBoard`) that rendered every value above as a labeled
+specimen was retired 2026-09-30; the values above stand as the ledger. Note: spacing is
+**axis-invariant** — unlike ColorBoard, nothing changed across product / brand / mode. The toolbar axes are inherited but
 inert here, and that invariance is itself a finding (spacing has no per-axis
 story today).*

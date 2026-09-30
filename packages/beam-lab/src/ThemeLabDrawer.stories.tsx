@@ -20,7 +20,7 @@ import { ThemeLabDrawer } from './ThemeLabDrawer';
  * NOTE: the override sheet is shared module state for the session — Reset (or refresh) clears it.
  */
 const meta: Meta<typeof ThemeLabDrawer> = {
-  title: 'BeamLab/Theme Lab',
+  title: 'Theme Lab',
   component: ThemeLabDrawer,
   parameters: { layout: 'fullscreen' },
 };
