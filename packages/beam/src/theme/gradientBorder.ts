@@ -30,7 +30,7 @@ import type { SxProps, Theme } from '@mui/material/styles';
  * mix toward it so it's a lit edge, not a rainbow. Defaults to `background.paper`
  * (surface 1); pass `--beam-surface-2/-3` for Menu/Dialog.
  *
- * ANIMATION: `interactive` runs the rotation PAUSED on the pseudo and resumes it on hover
+ * ANIMATION (`hover-spin`): runs the rotation PAUSED on the pseudo and resumes it on hover
  * (never restarts — that would snap back to initial-value), lifts the intensity, and
  * grows the ring to 2px. It stays paused under prefers-reduced-motion — static but lit.
  * The angle var (`inherits: false`) is animated ON the pseudo so it reaches the gradient.
@@ -51,16 +51,20 @@ import type { SxProps, Theme } from '@mui/material/styles';
  */
 export function beamGradientBorder(opts?: {
   surface?: string;
-  interactive?: boolean;
-  /** Pointer-tracked bright sector (opt-in flourish; pair with usePointerAngleTracking on the same
-   *  element's ref). Supersedes `interactive`'s spin — keeps the hover grow, drops the rotation. */
-  track?: boolean;
+  /** Interaction tier — ONE foundation, the angle driver is the only thing that changes (used with
+   *  increasing intent; docs/derived-color-tokens.md). `none` = fixed angle, no hover grow — the calm
+   *  CHROME default (the floating nav). `hover-step` = angle shifts a set amount on hover (NAMED; built in a
+   *  later Lab pass — renders calm for now). `hover-spin` = rotates while hovered, pauses on leave (the
+   *  former `interactive`). `track` = pointer-tracked bright sector (pair usePointerAngleTracking on the
+   *  same element's ref) — the loudest. */
+  interaction?: 'none' | 'hover-step' | 'hover-spin' | 'track';
   radius?: number;
 }): SxProps<Theme> {
   const surface = opts?.surface ?? 'var(--mui-palette-background-paper)';
-  const track = opts?.track ?? false;
-  const interactive = (opts?.interactive ?? false) && !track; // track supersedes the spin
-  const hoverGrow = interactive || track; // both lift intensity + grow the ring 1→2px on hover
+  const interaction = opts?.interaction ?? 'none';
+  const track = interaction === 'track';
+  const spin = interaction === 'hover-spin'; // the former `interactive` rotation (Kevin-Powell, d94531a)
+  const hoverGrow = spin || track; // both lift intensity + grow the ring 1→2px on hover; none/hover-step stay calm
   const radius = opts?.radius ?? 24; // must equal the element's border-radius (MuiPaper.rounded)
   const i = 'var(--beam-border-intensity)';
   // Three colours, mixing UNCHANGED (each toward the surface by --beam-border-intensity): primary
@@ -106,7 +110,7 @@ export function beamGradientBorder(opts?: {
       transition: track
         ? '--beam-ring var(--beam-motion-quick), --beam-track-angle var(--beam-motion-move)'
         : '--beam-ring var(--beam-motion-quick)',
-      ...(interactive && {
+      ...(spin && {
         animation: 'beam-border-spin 6s linear infinite',
         animationPlayState: 'paused',
       }),
@@ -121,10 +125,10 @@ export function beamGradientBorder(opts?: {
         // `--beam-ring` is `inherits: false`, so grow it ON the pseudo, and (spin only) resume the
         // rotation from where it paused (never restart).
         '--beam-ring': '2px',
-        ...(interactive && { animationPlayState: 'running' }),
+        ...(spin && { animationPlayState: 'running' }),
       },
     }),
-    ...(interactive && {
+    ...(spin && {
       // Reduced motion: never resume the spin. Still lit; the ring still grows (the
       // motion token's duration is zeroed, so it snaps rather than glides).
       '@media (prefers-reduced-motion: reduce)': {

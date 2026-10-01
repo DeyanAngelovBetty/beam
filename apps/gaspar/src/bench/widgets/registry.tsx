@@ -65,7 +65,7 @@ export function WidgetShell({
         // usePointerAngleTracking above drives it) and the rim grows 1px → 2px OUTWARD. It sets
         // border:none and carries the whole rim on the pseudo (no reflow — the box never changes
         // size); squircle is matched explicitly on the rim.
-        ...(gradientBorder ? (beamGradientBorder({ track: true }) as object) : {}),
+        ...(gradientBorder ? (beamGradientBorder({ interaction: 'track' }) as object) : {}),
       }}
     >
       <Typography

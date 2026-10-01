@@ -54,7 +54,7 @@ function TrackedPaper({ children }: { children: ReactNode }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
-        ...(beamGradientBorder({ track: true, surface: CARD_SURFACE, radius: CARD_RADIUS }) as object),
+        ...(beamGradientBorder({ interaction: 'track', surface: CARD_SURFACE, radius: CARD_RADIUS }) as object),
       }}
     >
       {children}

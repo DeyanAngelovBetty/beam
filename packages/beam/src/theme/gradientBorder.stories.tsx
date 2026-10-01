@@ -33,7 +33,7 @@ function TrackedCard({ label }: { label: string }) {
     <Paper
       ref={ref}
       variant="outlined"
-      sx={{ width: 200, height: 120, display: 'grid', placeItems: 'center', ...(beamGradientBorder({ track: true }) as object) }}
+      sx={{ width: 200, height: 120, display: 'grid', placeItems: 'center', ...(beamGradientBorder({ interaction: 'track' }) as object) }}
     >
       <Typography variant="overline" color="text.secondary">
         {label}
@@ -62,7 +62,7 @@ export const Variants: Story = {
       <Paper variant="outlined" sx={{ width: 200, height: 120, display: 'grid', placeItems: 'center', ...(beamGradientBorder() as object) }}>
         <Typography variant="overline" color="text.secondary">Static</Typography>
       </Paper>
-      <Paper variant="outlined" sx={{ width: 200, height: 120, display: 'grid', placeItems: 'center', ...(beamGradientBorder({ interactive: true }) as object) }}>
+      <Paper variant="outlined" sx={{ width: 200, height: 120, display: 'grid', placeItems: 'center', ...(beamGradientBorder({ interaction: 'hover-spin' }) as object) }}>
         <Typography variant="overline" color="text.secondary">Spin (hover)</Typography>
       </Paper>
       <TrackedCard label="Track (hover)" />
