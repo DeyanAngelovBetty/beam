@@ -106,6 +106,20 @@ points** (primary · `hue-b` · primary +45°), each mixed toward the surface so
 edge, not a rainbow. **Opt-in only** (never global on Paper); applied to the Gaspar
 dashboard widget shells.
 
+**One foundation, four interaction tiers (2026-10-01).** The `::after` rim + masking + stops are the
+**foundation** — never re-invented. The *only* thing a caller's `interaction` changes is the **angle
+driver** (and whether hover grows the ring), used with **increasing intent**:
+- **`none`** — fixed angle (`--beam-border-angle` at rest), no animation, no hover grow. **The chrome
+  default** — a calm lit rim (the floating nav).
+- **`hover-step`** — the angle shifts a set amount on hover/active (a transition). *(Named; built in a
+  later Lab bench pass.)*
+- **`hover-spin`** — rotates while hovered, pauses on leave (the Kevin-Powell technique, `d94531a`); = the
+  former `interactive`. Reuse it, don't rewrite.
+- **`track`** — pointer tracking (`--beam-track-angle` + `usePointerAngleTracking`); the loudest. Current
+  dashboard.
+Tracking/spin is **reserved for INTENT** (a flourish on an interactive card); **chrome uses `none`**. All
+four share the foundation untouched — a `Lab › Beam › Gradient Border` bench shows them side by side.
+
 > **PENDING under the cross-hue rule (2026-09-29).** `beamGradientBorder` still mixes its stops
 > `in oklch` toward `--mui-palette-background-paper` (a *chromatic* surface), at high intensities
 > (calm 32/45, hover 60/72) — so it rotates hue even harder than the mesh. It's a known case under the

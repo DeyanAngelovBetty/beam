@@ -419,6 +419,13 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     ONE rule for every page. This **supersedes** the earlier symmetric-`CONTENT_INLINE` (5×) gutter + the
     nav-state-aware `right` (collapsed 1.5×); those constants + the `contentGutter` prop are now vestigial
     (no app passes `contentGutter`). Set once on `AppShell` `main`; all sticky chrome inherits.
+20. **Floating nav + gradient-border intent tiers (2026-10-01).** The nav panel floats in both states
+    (docked: 270 rail, 258 panel inset `NAV_INSET`, radius `borderRadius/24`, glass over the canvas; peek:
+    same panel, keeps shadows) — full rule in docs/shell-grammar.md §7; preserves §6.17 (main never
+    remounts). The panel wears `beamGradientBorder` at the **calm** tier. **One border foundation, four
+    `interaction` tiers used with increasing intent — `none` (chrome default) → `hover-step` → `hover-spin`
+    → `track` (flourish).** Tracking/spin is reserved for intent; chrome is `none`. Foundation + tiers:
+    docs/derived-color-tokens.md (`beamGradientBorder`).
 
 ## 7. Figma ↔ code sync mechanics
 
