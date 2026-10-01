@@ -96,6 +96,13 @@ export const CONTENT_GUTTER_LEFT_COLLAPSED = 7; // 56px — clears the ~48px flo
 export const CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5; // 12px
 
 /**
+ * Floating-nav geometry (2026-10-01, BEAM.md §6.20 / docs/shell-grammar.md §7). The nav panel floats:
+ * a 258px glass panel inset `NAV_INSET` inside a 270px rail column, radius `BORDER_RADIUS_24`.
+ */
+export const NAV_INSET = 1.5; // 12px (1.5 × spacing) — panel inset: docked top/bottom/left; peek top/left.
+export const BORDER_RADIUS_24 = 24; // Figma: shape › borderRadius/24 — the soft/rounded radius (nav panel, MuiPaper).
+
+/**
  * RAIL_SEAT — the optical vertical (px) where TABLE CHROME-BAND action LABELS seat: **2 × spacing = 16px**,
  * the same line the checkbox control rail sits on (measured, 2026-09-24). The bulk strip's EXPORT, the
  * select-all, the row checkboxes, and the footer's "Manage columns" all share it. Chrome-band containers

@@ -22,9 +22,16 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, CONTENT_GUTTER_LEFT_COLLAPSED, LOGO_BAR_HEIGHT } from '../theme/tokens';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, CONTENT_GUTTER_LEFT_COLLAPSED, LOGO_BAR_HEIGHT, NAV_INSET, BORDER_RADIUS_24 } from '../theme/tokens';
+import { beamGradientBorder } from '../theme/gradientBorder';
 
-const DRAWER_WIDTH = 264;
+const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
+// Floating nav (§6.20): a 258px glass panel inset NAV_INSET inside a 270px docked rail column.
+const RAIL_WIDTH = 270;
+const PANEL_WIDTH = 258;
+// Calm gradient-border rim for the floating panel (both states) — interaction 'none' (no tracking/spin),
+// mixing toward the canvas base it floats over. Replaces the docked separation shadow.
+const NAV_BORDER_SX = beamGradientBorder({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24 });
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
 // derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
 // cleared horizontally by the collapsed gutter). Local name for the shell's own strip height.
@@ -87,6 +94,11 @@ const NAV_GLASS_SX = {
     borderRight: '1px solid var(--beam-nav-edge)',
   },
   '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
+    '--beam-nav-glass-alpha': '1',
+  },
+  // Accessibility: a viewer who asks for less transparency gets the opaque rail (same alpha=1 path as the
+  // no-backdrop-filter fallback) — the glass is decorative, the nav must stay legible.
+  '@media (prefers-reduced-transparency: reduce)': {
     '--beam-nav-glass-alpha': '1',
   },
 };
@@ -393,45 +405,27 @@ export function AppShell({
         // (it's plain CSS, grammar §4). Enter on lock / exit on unlock.
         style={nature === 'locked' && !drawer ? { viewTransitionName: VT_PANEL } : undefined}
         sx={{
-          width: DRAWER_WIDTH,
+          // Fills its wrap (the outer border Box owns size/position now — floating nav, §6.20).
+          width: '100%',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          // Nav rail — the shared frosted-glass recipe (NAV_GLASS_SX): a translucent
-          // tinted gradient (chrome sinks; content rises) + backdrop-filter. NB the
-          // narrow-viewport peek floats this same recessed surface OVER content — a
-          // contradiction, flagged for review. `position: relative` so the edge
-          // ::after insets to the panel (the locked panel is otherwise static).
+          // Nav rail — the shared frosted-glass recipe (NAV_GLASS_SX): a translucent tinted gradient +
+          // backdrop-filter, in BOTH states now. `position: relative` so the lit-edge ::after insets to the
+          // panel; the backdrop-filter + VT name here are exactly why the GRADIENT BORDER lives on the outer
+          // wrap, not this element (its own ::after + stacking context are taken).
           position: 'relative',
+          overflow: 'hidden', // clip nav content to the radius; the wrap's border ::after is outside, unaffected
           ...NAV_GLASS_SX,
-          // Constant-geometry border (detail grammar §1) — present in both natures;
-          // nature changes PIGMENT, never geometry (§2). On the glass rail the pigment
-          // is TRANSPARENT: a drawn opaque outline is the strongest "solid object" cue
-          // and would override the translucent fill. The lit --beam-nav-edge catch is
-          // the glass's visible edge; this keeps the box geometry so locked↔peek
-          // doesn't reflow. (Peek's bottom, which the edge catch doesn't reach, leans
-          // on its drop shadow — under review.)
+          // Constant-geometry transparent border (keeps box geometry so locked↔peek doesn't reflow); the lit
+          // --beam-nav-edge catch is the glass's visible edge.
           borderStyle: 'solid',
-          borderWidth: nature === 'peek' ? '1px 1px 1px 0' : '0 1px 0 0',
+          borderWidth: '1px',
           borderColor: 'transparent',
-          ...(floating ? { 
-            borderRadius: 2, 
-            borderTopLeftRadius: 0, 
-            borderBottomLeftRadius: 0, 
-            boxShadow: 8 } : { borderRadius: 0 }),
-          // DOCKED only: an OUTWARD drop shadow, cast RIGHT onto the page. It falls on
-          // the page, not on the rail, so there's no ambiguity about which surface
-          // casts it — reads the same in both schemes. (An inset shadow darkens the
-          // rail's OWN edge, which in dark — rail darker than page — reads as
-          // self-shadowing, i.e. IN FRONT; identical CSS, inverted metaphor. Retired,
-          // don't restore — shell-grammar §2.) 0 vertical offset: a full-height column
-          // casts horizontally onto adjacent content, not down into a clipped viewport
-          // edge. Surface-derived colour + per-scheme alpha (WELL_SHADOW), lighter than
-          // peek's float. The rail is still a RECESSED surface (navOffset < 0) — this is
-          // separation, not elevation. Peek keeps boxShadow: 8; narrow keeps its scrim.
-          ...(nature === 'locked'
-            ? { boxShadow: '6px 0 18px -2px var(--beam-nav-shadow)' }
-            : {}),
+          // Floating panel, both states: radius borderRadius/24. Peek keeps its drop shadow; the DOCKED panel
+          // drops the old 6px separation shadow — the gradient border on the wrap replaces it (§6.20).
+          borderRadius: `${BORDER_RADIUS_24}px`,
+          ...(floating ? { boxShadow: 8 } : {}),
         }}
       >
         {/* Panel header — brand mark + chevrons (grammar §3). */}
@@ -549,13 +543,18 @@ export function AppShell({
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: effectiveLocked ? `${DRAWER_WIDTH}px 1fr` : '1fr',
+        gridTemplateColumns: effectiveLocked ? `${RAIL_WIDTH}px 1fr` : '1fr',
         height: '100%',
       }}
     >
       {effectiveLocked ? (
-        <Box component="nav" key="beam-shell-rail" sx={{ height: '100%' }}>
-          {panel('locked')}
+        // Rail cell (270); the panel floats inside it — inset NAV_INSET (12) top/bottom/left, 258 wide. The
+        // gradient border rides the OUTER wrap (no filter/VT/z-index → its z-−1 ::after shows on the canvas
+        // in the inset gap), the glass panel is the inner. overflow visible so the ring isn't clipped.
+        <Box component="nav" key="beam-shell-rail" sx={{ position: 'relative', height: '100%' }}>
+          <Box sx={{ position: 'absolute', top: NAV_INSET, bottom: NAV_INSET, left: NAV_INSET, width: PANEL_WIDTH, ...NAV_BORDER_SX }}>
+            {panel('locked')}
+          </Box>
         </Box>
       ) : (
         // CLOSED (wide) or NARROW: brand strip + peek/drawer on demand. All `absolute` within appFrame (NOT
@@ -607,15 +606,18 @@ export function AppShell({
 
           {isWide ? (
             peekOpen && (
-              // Peek = floating panel, non-modal (grammar §2, §6). Inset below the
-              // strip so the strip stays visible; anchored to appFrame, not the viewport.
+              // Peek = floating panel, non-modal (grammar §2, §6). Inset below the strip so the strip stays
+              // visible; left: NAV_INSET so the gradient-border ring clears appFrame's overflow:hidden (not
+              // left:0). This Box is the border WRAP (no filter/VT); the glass panel is its child.
               <Box
                 sx={{
                   position: 'absolute',
                   top: STRIP_HEIGHT,
-                  left: 0,
+                  left: NAV_INSET,
+                  width: PANEL_WIDTH,
                   height: `calc(100% - ${STRIP_HEIGHT * 2}px)`,
                   zIndex: theme.zIndex.appBar - 1,
+                  ...NAV_BORDER_SX,
                 }}
               >
                 {panel('peek')}
