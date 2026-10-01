@@ -9,21 +9,20 @@ import { BORDER_RADIUS_24 } from '../theme/tokens';
 
 /**
  * Liquid Glass bench (Lab) — see real liquid glass over real Beam content and decide where it belongs.
- * Three recipes side by side, two forms each (platter fringe behind a solid box at offset 12/24, and a fully
- * translucent panel with text). Controls: blur, brightness (recipe A lift), displacement scale, specular.
+ * Three recipes side by side, three forms each (platter fringe behind a solid box at offset 8 = the nav's,
+ * and 12 = Deyan's reference card; plus a fully translucent panel with text). ALL recipes share ONE lighting
+ * layer (light-driven: blur + saturate + BRIGHTNESS + diagonal sheen + specular shadow) and differ ONLY in
+ * refraction, so refraction is judged in isolation. Controls: blur, brightness (all), displacement (B/C).
  *
  * ⚠️ Chromium target. I could not visually verify any of this (no browser in the build env) — treat every
  * visual claim as UNVERIFIED until you eyeball it in Chrome. Known caveats are noted per recipe.
- *   A — light-driven glass (blur + saturate + BRIGHTNESS + diagonal sheen + specular shadow): reliable
- *       everywhere; brightness slider (dark-mode lift). This is the recipe the nav glass A/B now uses.
- *   B — generator-style: specular ::before (inset box-shadow) + refraction ::after (backdrop-filter:blur(0)
- *       + filter:url(#…) feTurbulence→feGaussianBlur→feDisplacementMap) + outer shadow + isolation. The
- *       backdrop-displacement via `filter` on a backdrop-filtered pseudo is the EXPERIMENTAL bit — Chromium-
- *       only, version-sensitive; may show no refraction. Safari/FF ignore the url() filter → degrade to the
- *       blur(0) (plain, not broken).
- *   C — edge-lens: same as B but the displacement map is a SHAPED gradient (bend at the rim, flat centre)
- *       instead of uniform noise. The map here is a BEST-EFFORT radial/linear approximation — a true
- *       rounded-rect normal map needs research (see the report). Experimental; UNVERIFIED.
+ *   A — lighting only, no refraction. The calm baseline; reliable everywhere.
+ *   B — lighting + NOISE displacement (feTurbulence→feGaussianBlur→feDisplacementMap) via DIRECT
+ *       `backdrop-filter: … url(#beam-liquid-glass)` (Chromium 141). This is the shipped NAV glass recipe.
+ *       Safari/FF ignore the url() filter → degrade to lighting-only (plain, not broken).
+ *   C — lighting + EDGE-LENS: same as B but the displacement map is a SHAPED gradient (bend at the rim, flat
+ *       centre) instead of uniform noise. The map here is a BEST-EFFORT approximation — a true rounded-rect
+ *       normal map needs research (see the report). Experimental; UNVERIFIED.
  */
 const meta: Meta = { title: 'Lab/Beam/Liquid Glass', parameters: { layout: 'fullscreen' } };
 export default meta;
@@ -76,46 +75,31 @@ function Filters({ scale }: { scale: number }) {
   );
 }
 
-// ---- recipes as sx fragments (driven by CSS vars --lg-blur / --lg-specular; scale is the SVG attr) ----
+// ---- recipes = ONE lighting layer, differing ONLY in refraction (Deyan's bench ruling 2026-10-01) ----
+// The lighting layer (blur + saturate + brightness + sheen + specular) is SHARED by every recipe, so A/B/C
+// are judged on refraction alone: none (A) / noise (B) / edge-lens (C). Lighting reads the themed mode-aware
+// vars (sheen, specular shadow, saturate baked at 1.6) so the bench faithfully previews the nav glass; blur +
+// brightness are overridden by the bench's own sliders (--lg-blur / --lg-bright) for tuning. Refraction is a
+// filter id appended to backdrop-filter AFTER the lighting filters (DIRECT backdrop-filter: … url(#svg) —
+// Chromium 141). A passes no id → lighting only.
 const RADIUS = `${BORDER_RADIUS_24}px`;
-// A — LIGHT-DRIVEN glass (2026-10-01): brightness(var(--lg-bright)) lifts our dark canvas (blur+saturate alone
-// read too dark), a diagonal sheen (--beam-nav-sheen) sits over the translucent tint, and a specular inset
-// edge + outer drop (--beam-nav-glass-shadow) are the "it's glass" cue. Sheen + shadow are the themed mode-
-// aware vars, so flipping the Storybook `mode` toolbar shows the dark vs light sheen live. This mirrors the
-// nav glass A/B (platter.ts fill:'glass') exactly — same vars — so the bench is a faithful preview.
-const recipeA = {
-  backdropFilter: 'blur(var(--lg-blur)) saturate(1.6) brightness(var(--lg-bright))',
-  WebkitBackdropFilter: 'blur(var(--lg-blur)) saturate(1.6) brightness(var(--lg-bright))',
+const LIGHTING_FILTER = 'blur(var(--lg-blur)) saturate(1.6) brightness(var(--lg-bright))';
+const LIGHTING = {
   background: 'var(--beam-nav-sheen), color-mix(in oklab, var(--mui-palette-background-paper) 40%, transparent)',
   border: '1px solid var(--beam-nav-edge)',
-  boxShadow: 'var(--beam-nav-glass-shadow)',
+  boxShadow: 'var(--beam-nav-glass-shadow)', // specular inset rim + outer drop — the "it's glass" cue
 } as const;
+const glassSx = (refract?: string) => {
+  const bf = refract ? `${LIGHTING_FILTER} url(#${refract})` : LIGHTING_FILTER;
+  return { ...LIGHTING, backdropFilter: bf, WebkitBackdropFilter: bf } as const;
+};
 
-// B/C — refraction via DIRECT `backdrop-filter: blur() url(#svg)` (Chromium 141: identical to the former
-// ::after blur(0)+filter trick, so the pseudo is gone). Specular inset edge + outer shadow + isolation stay.
-const recipeRefract = (filterId: string) =>
-  ({
-    isolation: 'isolate',
-    background: 'color-mix(in oklab, var(--mui-palette-background-paper) 20%, transparent)',
-    boxShadow: '0 12px 40px -12px rgba(0,0,0,0.5)', // outer shadow
-    backdropFilter: `blur(var(--lg-blur)) url(#${filterId})`,
-    WebkitBackdropFilter: `blur(var(--lg-blur)) url(#${filterId})`,
-    // specular inset edge
-    '&::before': {
-      content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', cornerShape: 'squircle',
-      pointerEvents: 'none', zIndex: 1,
-      boxShadow: 'inset 0 1px 1px rgba(255,255,255,calc(0.6 * var(--lg-specular))), inset 0 -1px 1px rgba(255,255,255,calc(0.25 * var(--lg-specular)))',
-    },
-  }) as const;
-
-function GlassPanel({ label, recipe, filterId }: { label: string; recipe: 'A' | 'B' | 'C'; filterId?: string }) {
-  const sx =
-    recipe === 'A' ? recipeA : recipeRefract(filterId ?? 'beam-liquid-glass');
+function GlassPanel({ label, filterId }: { label: string; filterId?: string }) {
   return (
     <Box
       sx={{
         position: 'relative', width: 240, height: 150, borderRadius: RADIUS, cornerShape: 'squircle',
-        display: 'grid', placeItems: 'center', overflow: 'hidden', ...sx,
+        display: 'grid', placeItems: 'center', overflow: 'hidden', ...glassSx(filterId),
       }}
     >
       <Typography variant="subtitle1" sx={{ position: 'relative', zIndex: 2 }}>{label}</Typography>
@@ -126,12 +110,11 @@ function GlassPanel({ label, recipe, filterId }: { label: string; recipe: 'A' | 
   );
 }
 
-function FringeBox({ label, recipe, offset, filterId }: { label: string; recipe: 'A' | 'B' | 'C'; offset: number; filterId?: string }) {
-  const sx = recipe === 'A' ? recipeA : recipeRefract(filterId ?? 'beam-liquid-glass');
+function FringeBox({ label, offset, filterId }: { label: string; offset: number; filterId?: string }) {
   return (
     // wrap carries the glass platter (inset -offset, behind); inner solid box is the opaque panel.
     <Box sx={{ position: 'relative', width: 240, height: 150 }}>
-      <Box sx={{ position: 'absolute', inset: `${-offset}px`, borderRadius: `${BORDER_RADIUS_24 + offset}px`, cornerShape: 'squircle', ...sx }} />
+      <Box sx={{ position: 'absolute', inset: `${-offset}px`, borderRadius: `${BORDER_RADIUS_24 + offset}px`, cornerShape: 'squircle', ...glassSx(filterId) }} />
       <Box
         sx={{
           position: 'absolute', inset: 0, borderRadius: RADIUS, cornerShape: 'squircle',
@@ -167,19 +150,17 @@ function Backdrop() {
 export const Bench: Story = {
   render: () => {
     const [blur, setBlur] = useState(18); // light-driven default — matches the nav glass seed (navGlassBlur 18)
-    const [bright, setBright] = useState(2.0); // the LIFT — what makes dark-canvas glass read as lit (dark mode)
+    const [bright, setBright] = useState(2.2); // the LIFT — what makes dark-canvas glass read as lit (dark mode)
     const [scale, setScale] = useState(12); // subtle Beam-appropriate default (range stays 0–200)
-    const [specular, setSpecular] = useState(0.6);
     return (
-      <Box sx={{ minHeight: '100vh', ['--lg-blur' as string]: `${blur}px`, ['--lg-bright' as string]: String(bright), ['--lg-specular' as string]: String(specular) }}>
+      <Box sx={{ minHeight: '100vh', ['--lg-blur' as string]: `${blur}px`, ['--lg-bright' as string]: String(bright) }}>
         <Filters scale={scale} />
 
         {/* Controls */}
         <Stack direction="row" spacing={4} sx={{ p: 2, position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.paper0', borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
           <Stack sx={{ width: 180 }}><Typography variant="caption">blur {blur}px</Typography><Slider size="small" min={0} max={30} value={blur} onChange={(_, v) => setBlur(v as number)} /></Stack>
-          <Stack sx={{ width: 180 }}><Typography variant="caption">brightness {bright.toFixed(1)} (A)</Typography><Slider size="small" min={1} max={3} step={0.1} value={bright} onChange={(_, v) => setBright(v as number)} /></Stack>
-          <Stack sx={{ width: 180 }}><Typography variant="caption">displacement {scale}</Typography><Slider size="small" min={0} max={200} value={scale} onChange={(_, v) => setScale(v as number)} /></Stack>
-          <Stack sx={{ width: 180 }}><Typography variant="caption">specular {specular.toFixed(2)}</Typography><Slider size="small" min={0} max={1} step={0.05} value={specular} onChange={(_, v) => setSpecular(v as number)} /></Stack>
+          <Stack sx={{ width: 180 }}><Typography variant="caption">brightness {bright.toFixed(1)} (all)</Typography><Slider size="small" min={1} max={3} step={0.1} value={bright} onChange={(_, v) => setBright(v as number)} /></Stack>
+          <Stack sx={{ width: 180 }}><Typography variant="caption">displacement {scale} (B/C)</Typography><Slider size="small" min={0} max={200} value={scale} onChange={(_, v) => setScale(v as number)} /></Stack>
         </Stack>
 
         {/* Content backdrop (fixed behind) + glass samples over it */}
@@ -187,16 +168,16 @@ export const Bench: Story = {
           <Box sx={{ position: 'absolute', inset: 0, zIndex: 0 }}><Backdrop /></Box>
           <Stack spacing={5} sx={{ position: 'relative', zIndex: 1, p: 6 }}>
             {([
-              ['A — blur + saturate + tint', 'A', undefined],
-              ['B — generator (noise displacement)', 'B', 'beam-liquid-glass'],
-              ['C — edge-lens (shaped map · best-effort)', 'C', 'beam-edge-lens'],
-            ] as const).map(([title, recipe, filterId]) => (
+              ['A — lighting only (no refraction)', undefined],
+              ['B — lighting + noise displacement', 'beam-liquid-glass'],
+              ['C — lighting + edge-lens (shaped map · best-effort)', 'beam-edge-lens'],
+            ] as const).map(([title, filterId]) => (
               <Stack key={title} spacing={1.5}>
                 <Typography variant="overline" sx={{ color: 'text.primary' }}>{title}</Typography>
                 <Stack direction="row" spacing={4} sx={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                  <GlassPanel label="Panel" recipe={recipe} filterId={filterId} />
-                  <FringeBox label="fringe 12" recipe={recipe} offset={12} filterId={filterId} />
-                  <FringeBox label="fringe 24" recipe={recipe} offset={24} filterId={filterId} />
+                  <GlassPanel label="Panel" filterId={filterId} />
+                  <FringeBox label="fringe 8" offset={8} filterId={filterId} />
+                  <FringeBox label="fringe 12" offset={12} filterId={filterId} />
                 </Stack>
               </Stack>
             ))}

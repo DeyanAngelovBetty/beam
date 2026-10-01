@@ -42,6 +42,13 @@ export function beamPlatter(opts?: {
   /** Outward extent (px). Omitted → `--beam-ring` (today's 1px/2px grow). A number pins a static offset. */
   offset?: number;
   radius?: number;
+  /**
+   * GLASS only — id of an SVG displacement filter (feTurbulence→feDisplacementMap) appended to the
+   * backdrop-filter AFTER the lighting layer, so the glass refracts the backdrop (the nav uses `'noise'`).
+   * The consumer MUST render that filter in the document (AppShell does). Omitted → lighting only (no
+   * refraction); degrades cleanly where the url() filter is unsupported (Safari/FF).
+   */
+  refract?: string;
 }): SxProps<Theme> {
   const fill = opts?.fill ?? 'gradient';
   const radius = opts?.radius ?? 24;
@@ -50,6 +57,9 @@ export function beamPlatter(opts?: {
   const radiusExpr = `calc(${radius}px + ${ring})`;
 
   if (fill === 'glass') {
+    // Lighting layer (blur + saturate + brightness) + optional refraction (url(#id), appended last).
+    const lighting = 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate)) brightness(var(--beam-nav-glass-brightness))';
+    const glassFilter = opts?.refract ? `${lighting} url(#${opts.refract})` : lighting;
     // Glass platter: a blurred, LIGHT-DRIVEN fill behind the box, visible in the `offset` fringe (the opaque
     // box occludes the centre). backdrop-filter blurs + re-saturates + BRIGHTENS the canvas behind it
     // (brightness is what lifts our dark canvas so it reads as lit glass, not a dark smear — 2026-10-01). The
@@ -67,8 +77,8 @@ export function beamPlatter(opts?: {
         zIndex: -1,
         pointerEvents: 'none',
         background: 'var(--beam-nav-sheen), var(--beam-nav-surface)', // diagonal sheen over the frosted tint
-        backdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate)) brightness(var(--beam-nav-glass-brightness))',
-        WebkitBackdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate)) brightness(var(--beam-nav-glass-brightness))',
+        backdropFilter: glassFilter,
+        WebkitBackdropFilter: glassFilter,
         border: '1px solid var(--beam-nav-edge)', // the edge light
         boxShadow: 'var(--beam-nav-glass-shadow)', // specular inset rim + outer drop — the main glass cue
         '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {

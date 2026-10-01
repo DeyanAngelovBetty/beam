@@ -106,10 +106,6 @@ export const BORDER_RADIUS_24 = 24; // Figma: shape › borderRadius/24 — the 
 // 12 = too wide, 4/6 = too thin) — a tuned px, not a derived ratio. Stays < the 24px gap so the fringe
 // clears appFrame's overflow:hidden (left-edge clearance = PAGE_GUTTER(24) − NAV_PLATTER_OFFSET(8) = 16px).
 export const NAV_PLATTER_OFFSET = 8;
-// Glass platter wants a WIDER halo than the gradient's 8 — the blurred/sheened fringe needs room to read as
-// glass, not a hairline (Deyan to judge 16–20; 18 to start). Only the nav glass A/B uses it; still < the 24px
-// gap (clearance 24 − 18 = 6px). Separate from NAV_PLATTER_OFFSET so flipping fill doesn't retune the gradient.
-export const NAV_PLATTER_GLASS_OFFSET = 18;
 
 /**
  * RAIL_SEAT — the optical vertical (px) where TABLE CHROME-BAND action LABELS seat: **2 × spacing = 16px**,
@@ -462,14 +458,14 @@ type NavSchemeSeed = {
 };
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
-    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.0 },
+    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.2 },
     light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4, navGlassBrightness: 0.92 },
   },
   gaspar: {
     // TEAL adopted 2026-09-03 (derived-color-tokens §8): teal-tinted anchors from the recovered
     // 2026-07 palette, verbatim. step + nav params UNCHANGED (identical across eras — the graduation
     // moves colour only). Outgoing lavender anchors (#000104 / #EEEFF2) retained as a lab candidate.
-    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.0 },
+    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.2 },
     light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4, navGlassBrightness: 0.92 },
   },
 };

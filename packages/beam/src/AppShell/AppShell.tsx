@@ -22,7 +22,7 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, NAV_PLATTER_OFFSET, NAV_PLATTER_GLASS_OFFSET } from '../theme/tokens';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from '../theme/tokens';
 import { beamPlatter } from '../theme/platter';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
@@ -33,13 +33,14 @@ const RAIL_WIDTH = 282; // 258 panel + 24 (PAGE_GUTTER) left inset
 const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
 const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px, for position props (sx position props aren't spacing-scaled)
-// The platter rim behind the floating panel (both states). Default fill = gradient at NAV_PLATTER_OFFSET (8)
-// — a hairline halo in the inset gap, mixing toward the canvas it floats over. A LIVE A/B for the glass
-// exploration: set `data-beam-nav-platter="glass"` on <html> in DevTools to swap the rim to the light-driven
-// liquid-glass fill (no rebuild) — not a ruling, just to compare on the real nav. The glass fringe gets its
-// OWN wider offset (NAV_PLATTER_GLASS_OFFSET = 18) so the blurred/sheened rim has room to read as glass.
+// The platter rim behind the floating panel (both states), both fills at the SAME NAV_PLATTER_OFFSET (8) — a
+// hairline halo in the inset gap. Default fill = gradient (calm, mixing toward the canvas it floats over). A
+// LIVE A/B for the glass exploration: set `data-beam-nav-platter="glass"` on <html> in DevTools to swap the
+// rim to the light-driven liquid-glass fill with NOISE refraction (no rebuild) — not a ruling, just to
+// compare on the real nav. Glass refraction reads the `#beam-nav-glass-noise` filter rendered below.
 const NAV_PLATTER_GRADIENT = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET });
-const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_GLASS_OFFSET });
+const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET, refract: 'beam-nav-glass-noise' });
+const NAV_GLASS_FILTER_ID = 'beam-nav-glass-noise';
 const NAV_BORDER_SX = {
   ...NAV_PLATTER_GRADIENT,
   '[data-beam-nav-platter="glass"] &': NAV_PLATTER_GLASS,
@@ -669,6 +670,18 @@ export function AppShell({
   // pages). Root is a FIXED viewport height so the app scrolls inside main, not the document. ----
   return (
     <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Nav-glass NOISE refraction filter (the glass A/B). Inert until a glass backdrop-filter references it
+          via url(#beam-nav-glass-noise) — i.e. only when data-beam-nav-platter="glass". Matches the bench's
+          recipe B (feTurbulence→feGaussianBlur→feDisplacementMap, displacement 12 = Deyan's reference). */}
+      <svg aria-hidden width="0" height="0" style={{ position: 'absolute' }}>
+        <defs>
+          <filter id={NAV_GLASS_FILTER_ID} x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves={2} seed={7} result="noise" />
+            <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+            <feDisplacementMap in="SourceGraphic" in2="blurred" scale={12} xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
       {appAlert}
       {/* minHeight:0 = the flexbox footgun guard: without it a flex child refuses to shrink below
           its content, main's internal scroll never engages, and the document scrolls instead. */}

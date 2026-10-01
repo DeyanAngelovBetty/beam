@@ -99,20 +99,26 @@ radial-gradient(130% 130% at 50% 120%,color-mix(in oklab, oklch(from var(--mui-p
 
 A barrel-exported sx factory (`theme/platter.ts`). The `::after` is the **platter** — a layer behind the
 box, extended `offset` outside it (a card's outward ring; or, behind an opaque box, a fringe/halo). Two
-**fills**: `gradient` (below) and `glass` (the **light-driven** liquid-glass recipe). `offset` omitted =
-today's `--beam-ring` (1px→2px); a number pins a static offset (the nav gradient: `NAV_PLATTER_OFFSET` = 8;
-the nav glass A/B wants a wider halo → `NAV_PLATTER_GLASS_OFFSET` = 18). Platter radius is concentric
-`calc(radius + offset)`.
+**fills**: `gradient` (below) and `glass` (the **light-driven + refracting** liquid-glass recipe). `offset`
+omitted = today's `--beam-ring` (1px→2px); a number pins a static offset — the nav uses the SAME
+`NAV_PLATTER_OFFSET` = 8 for BOTH fills (one offset token; flipping fill doesn't move the halo). Platter radius
+is concentric `calc(radius + offset)`.
 
-> **Glass fill — light-driven (2026-10-01).** Blur + saturate alone read too DARK over our dark canvas
-> (Chromium 141), so the glass is lifted by light, not just blur. Four cues, all mode-aware CSS vars emitted
-> in `createBeamTheme`'s scheme blocks (so a mode flip reskins the glass with no rebuild): (1) **brightness**
-> `backdrop-filter: … brightness(var(--beam-nav-glass-brightness))` — DARK 2.0 lifts the backdrop, LIGHT 0.92
-> damps a near-white one (`navGlassBrightness` seed); (2) **sheen** — a diagonal highlight (`--beam-nav-sheen`)
-> layered OVER the translucent tint, replacing the old flat tint; (3) **specular** — an inset rim-light +
-> outer drop (`--beam-nav-glass-shadow`), the main "it's glass" cue; (4) blur 24→**18**, saturate 1.5→**1.6**.
+> **Glass fill — light-driven + noise refraction (2026-10-01).** Blur + saturate alone read too DARK over our
+> dark canvas (Chromium 141), so the glass is a LIGHTING layer plus REFRACTION, and the two are independent:
+> - **Lighting** (all mode-aware CSS vars from `createBeamTheme`'s scheme blocks, so a mode flip reskins with
+>   no rebuild): (1) **brightness** `backdrop-filter: … brightness(var(--beam-nav-glass-brightness))` — DARK
+>   **2.2** lifts the backdrop, LIGHT 0.92 damps a near-white one (`navGlassBrightness` seed); (2) **sheen** —
+>   a diagonal highlight (`--beam-nav-sheen`) over the translucent tint, replacing the old flat tint; (3)
+>   **specular** — an inset rim-light + outer drop (`--beam-nav-glass-shadow`), the main "it's glass" cue; (4)
+>   blur 24→**18**, saturate 1.5→**1.6**. Recipe constants: `NAV_GLASS` in tokens.ts.
+> - **Refraction** — a `refract` id appended to the backdrop-filter (`… url(#id)`): a feTurbulence→
+>   feDisplacementMap NOISE wobble. The nav uses `'beam-nav-glass-noise'` (the filter is rendered in AppShell);
+>   degrades to lighting-only where url() filters aren't supported (Safari/FF).
+>
 > **LIGHT values PROPOSED / UNVERIFIED**: sheen leans DARK not white (a white sheen on a near-white pane washes
-> out). Recipe constants: `NAV_GLASS` in tokens.ts; live on the nav A/B + the Liquid Glass bench (recipe A).
+> out). Live on the nav glass A/B (`data-beam-nav-platter="glass"`) + the Liquid Glass bench (recipe B is the
+> nav recipe; all bench recipes share the lighting layer and differ only in refraction).
 
 > **Proposed rule — platter fill by ROLE (2026-10-01, UNVERIFIED).** CONTENT boxes (Sections, cards) get
 > the **gradient** platter; CHROME floating over content (nav, dialogs, tooltips, popovers) gets **glass**.
