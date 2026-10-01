@@ -95,9 +95,20 @@ radial-gradient(130% 130% at 50% 120%,color-mix(in oklab, oklch(from var(--mui-p
   4-value lists (`pitch, auto, auto, auto` / `repeat, no-repeat, no-repeat, no-repeat`),
   or the three radials inherit the dot tile and repeat.
 
-### `beamGradientBorder` — an opt-in lit edge from the same points *(2026-08-05)*
+### `beamPlatter` — a decorative layer served behind a box *(2026-08-05; renamed from `beamGradientBorder` 2026-10-01)*
 
-A barrel-exported sx factory. The rim is a `conic-gradient(from var(--beam-border-angle), …)`
+A barrel-exported sx factory (`theme/platter.ts`). The `::after` is the **platter** — a layer behind the
+box, extended `offset` outside it (a card's outward ring; or, behind an opaque box, a fringe/halo). Two
+**fills**: `gradient` (below) and `glass` (the liquid-glass recipe — backdrop blur + tint + edge light).
+`offset` omitted = today's `--beam-ring` (1px→2px); a number pins a static offset (the nav: `NAV_PLATTER_OFFSET`
+= 8). Platter radius is concentric `calc(radius + offset)`.
+
+> **Proposed rule — platter fill by ROLE (2026-10-01, UNVERIFIED).** CONTENT boxes (Sections, cards) get
+> the **gradient** platter; CHROME floating over content (nav, dialogs, tooltips, popovers) gets **glass**.
+> Flagged pending the nav gradient-vs-glass comparison (live A/B via `data-beam-nav-platter="glass"` on
+> `<html>`); it settles the rule.
+
+The gradient fill: the rim is a `conic-gradient(from var(--beam-border-angle), …)`
 drawn on an absolutely-positioned `::after` that sits just OUTSIDE the element (negative
 `inset`) and grows OUTWARD on hover — 1px calm → 2px — so the element's own box never
 changes size and nothing in layout moves *(reworked 2026-08-06 from the earlier inset-mask,
@@ -118,13 +129,11 @@ driver** (and whether hover grows the ring), used with **increasing intent**:
 - **`track`** — pointer tracking (`--beam-track-angle` + `usePointerAngleTracking`); the loudest. Current
   dashboard.
 Tracking/spin is **reserved for INTENT** (a flourish on an interactive card); **chrome uses `none`**. All
-four share the foundation untouched — a `Lab › Beam › Gradient Border` bench shows them side by side.
+four share the foundation untouched — a `Lab › Beam › Platter` bench shows them side by side.
 
-> **PENDING under the cross-hue rule (2026-09-29).** `beamGradientBorder` still mixes its stops
-> `in oklch` toward `--mui-palette-background-paper` (a *chromatic* surface), at high intensities
-> (calm 32/45, hover 60/72) — so it rotates hue even harder than the mesh. It's a known case under the
-> doctrine above, deferred to the next iteration (this pass converted the page mesh + Theme Lab preview
-> only). `starColor` (→ `text.primary`, near-neutral) is borderline and also deferred.
+> **Cross-hue rule — DONE (2026-10-01, `af3e2cf`).** The gradient stops now mix `in var(--beam-mix-space,
+> oklab)` (the pending oklch→oklab case closed). `starColor` (→ `text.primary`, near-neutral) stays
+> oklch — borderline, not cross-hue — and is left as-is.
 
 - **Grows outward, not `scale()`** — the ring width is an ABSOLUTE px change
   (`--beam-ring`, a registered `@property <length>` so it interpolates). `scale()` is

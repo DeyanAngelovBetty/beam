@@ -22,7 +22,7 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, NAV_INSET, BORDER_RADIUS_24 } from '../theme/tokens';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, NAV_INSET, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from '../theme/tokens';
 import { beamPlatter } from '../theme/platter';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
@@ -31,9 +31,16 @@ const RAIL_WIDTH = 270;
 const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
 const NAV_INSET_PX = NAV_INSET * 8; // 12px — NAV_INSET as raw px, for position props (sx position props aren't spacing-scaled)
-// Calm gradient-border rim for the floating panel (both states) — interaction 'none' (no tracking/spin),
-// mixing toward the canvas base it floats over. Replaces the docked separation shadow.
-const NAV_BORDER_SX = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_INSET_PX });
+// The platter rim behind the floating panel (both states), extending NAV_PLATTER_OFFSET (8) — a hairline
+// halo in the inset gap. Default fill = gradient (calm, mixing toward the canvas it floats over). A LIVE A/B
+// for the glass exploration: set `data-beam-nav-platter="glass"` on <html> in DevTools to swap the rim to
+// the liquid-glass fill (no rebuild) — not a ruling, just to compare on the real nav.
+const NAV_PLATTER_GRADIENT = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET });
+const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET });
+const NAV_BORDER_SX = {
+  ...NAV_PLATTER_GRADIENT,
+  '[data-beam-nav-platter="glass"] &': NAV_PLATTER_GLASS,
+};
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
 // derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
 // cleared horizontally by the collapsed gutter). Local name for the shell's own strip height.

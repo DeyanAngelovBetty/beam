@@ -101,6 +101,10 @@ export const CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5; // 12px
  */
 export const NAV_INSET = 1.5; // 12px (1.5 × spacing) — panel inset: docked top/bottom/left; peek top/left.
 export const BORDER_RADIUS_24 = 24; // Figma: shape › borderRadius/24 — the soft/rounded radius (nav panel, MuiPaper).
+// How far the platter rim extends outside the panel. A hairline halo, NOT a second panel (8 eyeballed over
+// 12 = too wide, 4/6 = too thin) — a tuned px, not a derived ratio. Stays < NAV_INSET (12) so the fringe
+// clears appFrame's overflow:hidden (left-edge clearance = NAV_INSET − NAV_PLATTER_OFFSET = 4px).
+export const NAV_PLATTER_OFFSET = 8;
 
 /**
  * RAIL_SEAT — the optical vertical (px) where TABLE CHROME-BAND action LABELS seat: **2 × spacing = 16px**,
