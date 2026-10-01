@@ -424,7 +424,7 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     nav-state-aware page edge any more** — all four edges are `PAGE_GUTTER`, always. `CONTENT_GUTTER_LEFT_COLLAPSED`
     joins `CONTENT_INLINE` / `contentGutter` as vestigial.
 20. **Floating nav + gradient-border intent tiers (2026-10-01).** The nav panel floats in both states
-    (docked: 270 rail, 258 panel inset `NAV_INSET`, radius `borderRadius/24`, glass over the canvas; peek:
+    (docked: 282 rail, 258 panel inset by `PAGE_GUTTER`, radius `borderRadius/24`, over the canvas; peek:
     same panel, keeps shadows) — full rule in docs/shell-grammar.md §7; preserves §6.17 (main never
     remounts). The panel wears `beamGradientBorder` at the **calm** tier. **One border foundation, four
     `interaction` tiers used with increasing intent — `none` (chrome default) → `hover-step` → `hover-spin`

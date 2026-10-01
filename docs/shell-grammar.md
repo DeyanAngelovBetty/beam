@@ -172,11 +172,12 @@ header or footer zone — audited per app, not assumed.
 
 The nav panel **floats** in both states — it no longer reaches the frame edges.
 
-- **Docked:** the rail is a **270px** column; the panel insets **`NAV_INSET` (1.5×spacing = 12px)** on
-  top / bottom / left → **258px** wide, radius **`borderRadius/24`** (Figma `shape › borderRadius/24`). The
-  gap to content is the existing `PAGE_GUTTER` left. The glass now sits **over the app background** — the
-  canvas (base + mesh + stars) shows in the inset gap around the panel.
-- **Peek:** the same 258px panel, 12px from the left, below the toggle row, radius 24 — **keeps its
+- **Docked:** the rail is a **282px** column; the panel insets by the **page gutter (`PAGE_GUTTER` = 24 at
+  md)** on top / bottom / left → **258px** wide, radius **`borderRadius/24`** (Figma `shape › borderRadius/24`).
+  The inset IS the page gutter — one gutter value estate-wide (there is no separate `NAV_INSET` token; AppShell
+  reads `PAGE_GUTTER`), so the gap around the nav matches every other page gutter. The canvas (base + mesh +
+  stars) shows in the inset gap around the panel.
+- **Peek:** the same 258px panel, 24px from the left, below the toggle row, radius 24 — **keeps its
   shadows**.
 - **Glass in BOTH states** (the frosted `NAV_GLASS_SX` recipe, already applied to both the locked panel and
   the peek in code). `prefers-reduced-transparency: reduce` falls back to opaque (`--beam-nav-glass-alpha:
@@ -184,7 +185,7 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 - **Gradient border on the panel, both states** — `beamGradientBorder` at the **calm** tier
   (`interaction: 'none'`): same foundation/colours as the dashboard rim, no pointer tracking. On the docked
   panel the border **REPLACES** the old `6px 0 18px` separation shadow; the peek keeps its own shadows.
-- **§6.17 preserved:** only the rail column width (264→270) and the panel's own insets/radius/border change;
+- **§6.17 preserved:** only the rail column width (264→282) and the panel's own insets/radius/border change;
   `{main}` stays the constant keyed grid cell across every nav state — the nav toggle never remounts the page.
 
 ## Open

@@ -96,14 +96,15 @@ export const CONTENT_GUTTER_LEFT_COLLAPSED = 7; // 56px — clears the ~48px flo
 export const CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5; // 12px
 
 /**
- * Floating-nav geometry (2026-10-01, BEAM.md §6.20 / docs/shell-grammar.md §7). The nav panel floats:
- * a 258px glass panel inset `NAV_INSET` inside a 270px rail column, radius `BORDER_RADIUS_24`.
+ * Floating-nav geometry (2026-10-01, BEAM.md §6.20 / docs/shell-grammar.md §7). The nav panel floats: a
+ * 258px panel inset by the page gutter (`PAGE_GUTTER` = 24 at md) inside a 282px rail column, radius
+ * `BORDER_RADIUS_24`. The inset IS the page gutter — one gutter value estate-wide, so there is no separate
+ * NAV_INSET token; AppShell reads `PAGE_GUTTER` directly.
  */
-export const NAV_INSET = 1.5; // 12px (1.5 × spacing) — panel inset: docked top/bottom/left; peek top/left.
 export const BORDER_RADIUS_24 = 24; // Figma: shape › borderRadius/24 — the soft/rounded radius (nav panel, MuiPaper).
 // How far the platter rim extends outside the panel. A hairline halo, NOT a second panel (8 eyeballed over
-// 12 = too wide, 4/6 = too thin) — a tuned px, not a derived ratio. Stays < NAV_INSET (12) so the fringe
-// clears appFrame's overflow:hidden (left-edge clearance = NAV_INSET − NAV_PLATTER_OFFSET = 4px).
+// 12 = too wide, 4/6 = too thin) — a tuned px, not a derived ratio. Stays < the 24px gap so the fringe
+// clears appFrame's overflow:hidden (left-edge clearance = PAGE_GUTTER(24) − NAV_PLATTER_OFFSET(8) = 16px).
 export const NAV_PLATTER_OFFSET = 8;
 
 /**

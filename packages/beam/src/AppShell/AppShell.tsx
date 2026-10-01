@@ -22,15 +22,17 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, NAV_INSET, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from '../theme/tokens';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from '../theme/tokens';
 import { beamPlatter } from '../theme/platter';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
-// Floating nav (§6.20): a 258px glass panel inset NAV_INSET inside a 270px docked rail column.
-const RAIL_WIDTH = 270;
+// Floating nav (§6.20): a 258px panel inset by the page gutter (PAGE_GUTTER = 24 at md) inside a 282px docked
+// rail column. The inset IS the page gutter — one gutter value estate-wide, so the nav reads PAGE_GUTTER (no
+// separate NAV_INSET token).
+const RAIL_WIDTH = 282; // 258 panel + 24 (PAGE_GUTTER) left inset
 const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
-const NAV_INSET_PX = NAV_INSET * 8; // 12px — NAV_INSET as raw px, for position props (sx position props aren't spacing-scaled)
+const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px, for position props (sx position props aren't spacing-scaled)
 // The platter rim behind the floating panel (both states), extending NAV_PLATTER_OFFSET (8) — a hairline
 // halo in the inset gap. Default fill = gradient (calm, mixing toward the canvas it floats over). A LIVE A/B
 // for the glass exploration: set `data-beam-nav-platter="glass"` on <html> in DevTools to swap the rim to
@@ -570,7 +572,7 @@ export function AppShell({
         // out of flow (main is the sole 1fr track); the hamburger floats top-left.
         sx={
           effectiveLocked
-            ? ({ display: 'flex', height: '100%', pt: NAV_INSET, pb: NAV_INSET, pl: NAV_INSET } as const)
+            ? ({ display: 'flex', height: '100%', pt: PAGE_GUTTER, pb: PAGE_GUTTER, pl: PAGE_GUTTER } as const)
             : isWide
               ? ({ position: 'relative', height: '100%', zIndex: theme.zIndex.appBar - 1 } as const)
               : ({ position: 'absolute', top: 0, left: 0, zIndex: theme.zIndex.appBar } as const)
@@ -614,14 +616,14 @@ export function AppShell({
               peekOpen && (
                 // Peek = the floating panel, sliding out of the 60 column. Border wrap (spread FIRST so our
                 // `position:absolute` wins over the border's `relative`); top/bottom PINNED (no height calc);
-                // left NAV_INSET_PX so the ring clears appFrame's overflow:hidden. z-index lives on <nav>.
+                // left PAGE_GUTTER_PX so the ring clears appFrame's overflow:hidden. z-index lives on <nav>.
                 <Box
                   sx={{
                     ...NAV_BORDER_SX,
                     position: 'absolute',
                     top: STRIP_HEIGHT,
-                    left: NAV_INSET_PX,
-                    bottom: NAV_INSET_PX,
+                    left: PAGE_GUTTER_PX,
+                    bottom: PAGE_GUTTER_PX,
                     width: PANEL_WIDTH,
                   }}
                 >
