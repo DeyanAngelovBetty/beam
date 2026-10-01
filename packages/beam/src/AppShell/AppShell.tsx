@@ -33,7 +33,7 @@ const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the 
 const NAV_INSET_PX = NAV_INSET * 8; // 12px — NAV_INSET as raw px, for position props (sx position props aren't spacing-scaled)
 // Calm gradient-border rim for the floating panel (both states) — interaction 'none' (no tracking/spin),
 // mixing toward the canvas base it floats over. Replaces the docked separation shadow.
-const NAV_BORDER_SX = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24 });
+const NAV_BORDER_SX = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_INSET_PX });
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
 // derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
 // cleared horizontally by the collapsed gutter). Local name for the shell's own strip height.
@@ -405,26 +405,23 @@ export function AppShell({
         // (it's plain CSS, grammar §4). Enter on lock / exit on unlock.
         style={nature === 'locked' && !drawer ? { viewTransitionName: VT_PANEL } : undefined}
         sx={{
-          // Fills its wrap (the outer border Box owns size/position now — floating nav, §6.20).
+          // Fills its wrap (the outer platter Box owns size/position — floating nav, §6.20).
           width: '100%',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          // Nav rail — the shared frosted-glass recipe (NAV_GLASS_SX): a translucent tinted gradient +
-          // backdrop-filter, in BOTH states now. `position: relative` so the lit-edge ::after insets to the
-          // panel; the backdrop-filter + VT name here are exactly why the GRADIENT BORDER lives on the outer
-          // wrap, not this element (its own ::after + stacking context are taken).
           position: 'relative',
-          overflow: 'hidden', // clip nav content to the radius; the wrap's border ::after is outside, unaffected
-          ...NAV_GLASS_SX,
-          // Constant-geometry transparent border (keeps box geometry so locked↔peek doesn't reflow); the lit
-          // --beam-nav-edge catch is the glass's visible edge.
-          borderStyle: 'solid',
-          borderWidth: '1px',
-          borderColor: 'transparent',
-          // Floating panel, both states: radius borderRadius/24. Peek keeps its drop shadow; the DOCKED panel
-          // drops the old 6px separation shadow — the gradient border on the wrap replaces it (§6.20).
+          overflow: 'hidden', // clip nav content to the radius; the wrap's platter ::after is outside, unaffected
           borderRadius: `${BORDER_RADIUS_24}px`,
+          cornerShape: 'squircle', // match the platter so the curves stay parallel (§6.20)
+          // SOLID paper0 panel (floating nav, §6.20): 1px var(--beam-nav-edge). The GRADIENT PLATTER rides the
+          // outer wrap (beamPlatter), so no glass/::after/stacking-context on this box — VT_PANEL can stay for
+          // the morph. The NARROW DRAWER keeps the frosted glass (NAV_GLASS_SX): a modal surface, not the
+          // floating platter.
+          ...(drawer
+            ? { ...NAV_GLASS_SX, borderStyle: 'solid', borderWidth: '1px', borderColor: 'transparent' }
+            : { bgcolor: 'background.paper0', border: '1px solid var(--beam-nav-edge)' }),
+          // Peek keeps its drop shadow; the docked panel's separation is the platter rim (no shadow).
           ...(floating ? { boxShadow: 8 } : {}),
         }}
       >
