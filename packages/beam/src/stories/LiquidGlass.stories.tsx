@@ -10,17 +10,18 @@ import { BORDER_RADIUS_24 } from '../theme/tokens';
 /**
  * Liquid Glass bench (Lab) — see real liquid glass over real Beam content and decide where it belongs.
  * Three recipes side by side, three forms each (platter fringe behind a solid box at offset 8 = the nav's,
- * and 12 = Deyan's reference card; plus a fully translucent panel with text). ALL recipes share ONE lighting
- * layer (light-driven: blur + saturate + BRIGHTNESS + diagonal sheen + specular shadow) and differ ONLY in
- * refraction, so refraction is judged in isolation. Controls: blur, brightness (all), displacement (B/C).
+ * and 12 = Deyan's reference card; plus a fully translucent panel with text). ALL recipes share the LOCKED
+ * recipe (backdrop-filter blur → opacity-lift, NO saturate/brightness; sheen + surface fill; ONE box-shadow =
+ * inset rim-light + outer drop) and differ ONLY in refraction. Exactly four controls: blur, displacement
+ * (B/C), rim-light strength, lift strength — they drive the real themed vars, so the bench == the nav glass.
  *
  * ⚠️ Chromium target. I could not visually verify any of this (no browser in the build env) — treat every
  * visual claim as UNVERIFIED until you eyeball it in Chrome. Known caveats are noted per recipe.
- *   A — lighting only, no refraction. The calm baseline; reliable everywhere.
- *   B — lighting + NOISE displacement (feTurbulence→feGaussianBlur→feDisplacementMap) via DIRECT
+ *   A — no refraction. The calm baseline; reliable everywhere.
+ *   B — NOISE displacement (feTurbulence→feGaussianBlur→feDisplacementMap) via DIRECT
  *       `backdrop-filter: … url(#beam-liquid-glass)` (Chromium 141). This is the shipped NAV glass recipe.
- *       Safari/FF ignore the url() filter → degrade to lighting-only (plain, not broken).
- *   C — lighting + EDGE-LENS: same as B but the displacement map is a SHAPED gradient (bend at the rim, flat
+ *       Safari/FF ignore the url() filter → degrade to no-refraction (plain, not broken).
+ *   C — EDGE-LENS: same as B but the displacement map is a SHAPED gradient (bend at the rim, flat
  *       centre) instead of uniform noise. The map here is a BEST-EFFORT approximation — a true rounded-rect
  *       normal map needs research (see the report). Experimental; UNVERIFIED.
  */
@@ -75,23 +76,23 @@ function Filters({ scale }: { scale: number }) {
   );
 }
 
-// ---- recipes = ONE lighting layer, differing ONLY in refraction (Deyan's bench ruling 2026-10-01) ----
-// The lighting layer (blur + saturate + brightness + sheen + specular) is SHARED by every recipe, so A/B/C
-// are judged on refraction alone: none (A) / noise (B) / edge-lens (C). Lighting reads the themed mode-aware
-// vars (sheen, specular shadow, saturate baked at 1.6) so the bench faithfully previews the nav glass; blur +
-// brightness are overridden by the bench's own sliders (--lg-blur / --lg-bright) for tuning. Refraction is a
-// filter id appended to backdrop-filter AFTER the lighting filters (DIRECT backdrop-filter: … url(#svg) —
-// Chromium 141). A passes no id → lighting only.
+// ---- recipes = the LOCKED glass recipe, differing ONLY in refraction (Deyan's ruling 2026-10-01) ----
+// backdrop-filter = blur → (optional) refraction url(#id) → opacity-lift. NO saturate/brightness/drop-shadow
+// in the filter. Fill = sheen over the surface tint. ONE shadow source: the box-shadow (inset rim-light +
+// outer drop). This mirrors platter.ts fill:'glass' byte-for-byte, reading the SAME themed vars — the bench's
+// four sliders drive those vars (--beam-nav-glass-blur / -rim / -lift) + the SVG displacement — so A/B/C
+// differ only in refraction: none (A) / noise (B) / edge-lens (C).
 const RADIUS = `${BORDER_RADIUS_24}px`;
-const LIGHTING_FILTER = 'blur(var(--lg-blur)) saturate(1.6) brightness(var(--lg-bright))';
-const LIGHTING = {
-  background: 'var(--beam-nav-sheen), color-mix(in oklab, var(--mui-palette-background-paper) 40%, transparent)',
+const GLASS_BASE = {
+  background: 'var(--beam-nav-sheen), var(--beam-nav-surface)',
   border: '1px solid var(--beam-nav-edge)',
-  boxShadow: 'var(--beam-nav-glass-shadow)', // specular inset rim + outer drop — the "it's glass" cue
+  boxShadow: 'inset 0 0 14px -4px rgb(205 205 205 / var(--beam-nav-glass-rim)), 0 12px 32px -10px rgb(0 0 0 / 8%)',
 } as const;
 const glassSx = (refract?: string) => {
-  const bf = refract ? `${LIGHTING_FILTER} url(#${refract})` : LIGHTING_FILTER;
-  return { ...LIGHTING, backdropFilter: bf, WebkitBackdropFilter: bf } as const;
+  const bf = refract
+    ? `blur(var(--beam-nav-glass-blur)) url(#${refract}) opacity(var(--beam-nav-glass-lift))`
+    : `blur(var(--beam-nav-glass-blur)) opacity(var(--beam-nav-glass-lift))`;
+  return { ...GLASS_BASE, backdropFilter: bf, WebkitBackdropFilter: bf } as const;
 };
 
 function GlassPanel({ label, filterId }: { label: string; filterId?: string }) {
@@ -149,18 +150,21 @@ function Backdrop() {
 
 export const Bench: Story = {
   render: () => {
-    const [blur, setBlur] = useState(18); // light-driven default — matches the nav glass seed (navGlassBlur 18)
-    const [bright, setBright] = useState(2.2); // the LIFT — what makes dark-canvas glass read as lit (dark mode)
-    const [scale, setScale] = useState(12); // subtle Beam-appropriate default (range stays 0–200)
+    // EXACTLY four controls (Deyan's ruling) — they drive the real themed glass vars, so the bench == the nav.
+    const [blur, setBlur] = useState(18); // --beam-nav-glass-blur (seed default 18)
+    const [scale, setScale] = useState(12); // SVG displacement scale (B/C) — range 0–200
+    const [rim, setRim] = useState(21); // --beam-nav-glass-rim (%) — inset rim-light strength (dark exact 21)
+    const [lift, setLift] = useState(0.9); // --beam-nav-glass-lift — backdrop opacity() clarity-lift (dark exact 0.9)
     return (
-      <Box sx={{ minHeight: '100vh', ['--lg-blur' as string]: `${blur}px`, ['--lg-bright' as string]: String(bright) }}>
+      <Box sx={{ minHeight: '100vh', ['--beam-nav-glass-blur' as string]: `${blur}px`, ['--beam-nav-glass-rim' as string]: `${rim}%`, ['--beam-nav-glass-lift' as string]: String(lift) }}>
         <Filters scale={scale} />
 
-        {/* Controls */}
+        {/* Controls — blur, displacement, rim-light strength, lift strength (nothing else) */}
         <Stack direction="row" spacing={4} sx={{ p: 2, position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.paper0', borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
           <Stack sx={{ width: 180 }}><Typography variant="caption">blur {blur}px</Typography><Slider size="small" min={0} max={30} value={blur} onChange={(_, v) => setBlur(v as number)} /></Stack>
-          <Stack sx={{ width: 180 }}><Typography variant="caption">brightness {bright.toFixed(1)} (all)</Typography><Slider size="small" min={1} max={3} step={0.1} value={bright} onChange={(_, v) => setBright(v as number)} /></Stack>
           <Stack sx={{ width: 180 }}><Typography variant="caption">displacement {scale} (B/C)</Typography><Slider size="small" min={0} max={200} value={scale} onChange={(_, v) => setScale(v as number)} /></Stack>
+          <Stack sx={{ width: 180 }}><Typography variant="caption">rim-light {rim}%</Typography><Slider size="small" min={0} max={60} value={rim} onChange={(_, v) => setRim(v as number)} /></Stack>
+          <Stack sx={{ width: 180 }}><Typography variant="caption">lift {lift.toFixed(2)}</Typography><Slider size="small" min={0.5} max={1} step={0.01} value={lift} onChange={(_, v) => setLift(v as number)} /></Stack>
         </Stack>
 
         {/* Content backdrop (fixed behind) + glass samples over it */}

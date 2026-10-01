@@ -450,47 +450,49 @@ type NavSchemeSeed = {
   // the 56px mesh dots). See docs/shell-grammar.md §2 / derived-color-tokens §2.
   navGlassAlpha: number;
   navGlassBlur: number;
-  navGlassSaturate: number;
-  // Backdrop BRIGHTNESS (2026-10-01) — the light-driven lift. Blur+saturate over our DARK canvas reads too
-  // dark; brightness is what makes it read as lit glass. DARK > 1 (lift the dark backdrop); LIGHT < 1
-  // (a near-white backdrop needs damping, not lift). PROPOSED for light (UNVERIFIED). See NAV_GLASS below.
-  navGlassBrightness: number;
+  navGlassSaturate: number; // backdrop saturate — now ONLY the narrow drawer (NAV_GLASS_SX); the locked glass recipe dropped it.
 };
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
-    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.2 },
-    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4, navGlassBrightness: 0.92 },
+    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
+    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4 },
   },
   gaspar: {
     // TEAL adopted 2026-09-03 (derived-color-tokens §8): teal-tinted anchors from the recovered
     // 2026-07 palette, verbatim. step + nav params UNCHANGED (identical across eras — the graduation
     // moves colour only). Outgoing lavender anchors (#000104 / #EEEFF2) retained as a lab candidate.
-    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.2 },
-    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4, navGlassBrightness: 0.92 },
+    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
+    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4 },
   },
 };
 
 /**
- * Liquid-glass LIGHT CUES (2026-10-01). Blur + saturate alone read too dark on our dark canvas (tested in
- * Chromium 141), so the glass is light-driven. Three cues beyond the backdrop brightness (`navGlassBrightness`
- * in the seed above):
- *   • sheen  — a DIAGONAL highlight layered OVER the translucent tint (`--beam-nav-surface`), replacing the
- *              old flat-tint look. This is the "lit pane" read.
- *   • shadow — a specular INSET edge (light caught on the rim) + an outer drop shadow. This is the main
- *              "it's glass" cue (the generator's `::before`), folded into one box-shadow.
- * Mode-aware, NOT per-product (sunlight == gaspar) — emitted as CSS vars in createBeamTheme's scheme blocks
- * so a mode flip swaps them with NO theme rebuild (§5). LIGHT values are PROPOSED / UNVERIFIED: the sheen
- * leans DARK, not white — a white sheen on a near-white pane washes out, whereas a faint dark diagonal reads
- * as a tinted sheet of glass; the specular highlight stays white (light is white in both modes).
+ * Liquid-glass recipe cues — LOCKED 2026-10-01 (Deyan's DevTools values; dark is EXACT, keep verbatim).
+ * The glass is `blur(--beam-nav-glass-blur) url(#refract) opacity(--beam-nav-glass-lift)` as the backdrop
+ * filter (NO saturate, NO brightness — brightness was the wrong lever), over a `sheen + surface-tint` fill,
+ * with ONE shadow source: the element's `box-shadow` (an inset rim-light + an outer drop; no drop-shadow
+ * inside the backdrop filter — that was most of the heaviness). Three mode-aware dials, emitted as CSS vars
+ * in createBeamTheme's scheme blocks so a mode flip swaps them with NO rebuild (§5); `--beam-nav-glass-blur`
+ * is the fourth (seed above):
+ *   • sheen — a DIAGONAL highlight over the translucent tint (the "lit pane" read).
+ *   • rim   — the inset rim-light strength (α of `rgb(205 205 205 / rim)`), the box-shadow's first layer.
+ *   • lift  — the backdrop-filter `opacity()`: < 1 bleeds a little un-blurred backdrop back through, a subtle
+ *             clarity lift (replaces brightness). The outer drop (`0 12px 32px -10px rgb(0 0 0 / 8%)`) is
+ *             fixed in the recipe, so rim + lift are the only glass dials besides blur + displacement.
+ * LIGHT values are PROPOSED / UNVERIFIED: NO brightness there either; sheen leans DARK not white (a white
+ * sheen on a near-white pane washes out); rim a touch stronger and lift nearer 1 (a light backdrop needs
+ * less clarity bleed). The bench's four sliders drive blur / displacement / rim / lift.
  */
 export const NAV_GLASS = {
   dark: {
     sheen: 'linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06))',
-    shadow: 'inset 0 0 14px -4px rgba(255,255,255,0.90), 0 12px 32px -10px rgba(0,0,0,0.55)',
+    rim: '21%', // rgb(205 205 205 / 21%) — Deyan's exact value
+    lift: 0.9, // opacity(90%) — Deyan's exact value
   },
   light: {
     sheen: 'linear-gradient(135deg, rgba(20,24,33,0.10), rgba(20,24,33,0.02))',
-    shadow: 'inset 0 0 14px -4px rgba(255,255,255,0.95), 0 12px 32px -14px rgba(20,24,33,0.22)',
+    rim: '32%', // PROPOSED — the light-grey rim needs more presence on a light pane
+    lift: 0.95, // PROPOSED — less clarity bleed over a near-white backdrop
   },
 } as const;
 

@@ -45,8 +45,8 @@ const LAVENDER_ONTARIO_PRIMARY: NonNullable<ThemeSeedOverrides['primary']> = {
 };
 
 const LAVENDER_SURFACE: NonNullable<ThemeSeedOverrides['surface']> = {
-  dark: { anchor: '#000104', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.2 },
-  light: { anchor: '#EEEFF2', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4, navGlassBrightness: 0.92 },
+  dark: { anchor: '#000104', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
+  light: { anchor: '#EEEFF2', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4 },
 };
 
 const LAVENDER_GRADIENT: NonNullable<ThemeSeedOverrides['gradient']> = {

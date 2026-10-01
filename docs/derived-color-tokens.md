@@ -104,21 +104,21 @@ omitted = today's `--beam-ring` (1px→2px); a number pins a static offset — t
 `NAV_PLATTER_OFFSET` = 8 for BOTH fills (one offset token; flipping fill doesn't move the halo). Platter radius
 is concentric `calc(radius + offset)`.
 
-> **Glass fill — light-driven + noise refraction (2026-10-01).** Blur + saturate alone read too DARK over our
-> dark canvas (Chromium 141), so the glass is a LIGHTING layer plus REFRACTION, and the two are independent:
-> - **Lighting** (all mode-aware CSS vars from `createBeamTheme`'s scheme blocks, so a mode flip reskins with
->   no rebuild): (1) **brightness** `backdrop-filter: … brightness(var(--beam-nav-glass-brightness))` — DARK
->   **2.2** lifts the backdrop, LIGHT 0.92 damps a near-white one (`navGlassBrightness` seed); (2) **sheen** —
->   a diagonal highlight (`--beam-nav-sheen`) over the translucent tint, replacing the old flat tint; (3)
->   **specular** — an inset rim-light + outer drop (`--beam-nav-glass-shadow`), the main "it's glass" cue; (4)
->   blur 24→**18**, saturate 1.5→**1.6**. Recipe constants: `NAV_GLASS` in tokens.ts.
-> - **Refraction** — a `refract` id appended to the backdrop-filter (`… url(#id)`): a feTurbulence→
->   feDisplacementMap NOISE wobble. The nav uses `'beam-nav-glass-noise'` (the filter is rendered in AppShell);
->   degrades to lighting-only where url() filters aren't supported (Safari/FF).
+> **Glass fill — LOCKED recipe (2026-10-01, Deyan's DevTools values; dark is exact).** Brightness + saturate
+> were the wrong levers and read heavy, so they're gone. The recipe is now:
+> - **backdrop-filter** = `blur(--beam-nav-glass-blur) url(#refract) opacity(--beam-nav-glass-lift)` — blur,
+>   then a feTurbulence→feDisplacementMap NOISE refraction (`refract` id; nav = `'beam-nav-glass-noise'`,
+>   rendered in AppShell), then an `opacity()` **lift** (< 1 bleeds a little un-blurred backdrop back for
+>   clarity — replaces brightness). No saturate, no brightness, no `drop-shadow()` inside the filter.
+> - **fill** = `--beam-nav-sheen` (diagonal highlight) over `--beam-nav-surface` (translucent tint).
+> - **ONE shadow source** — the element's `box-shadow`: `inset 0 0 14px -4px rgb(205 205 205 / --beam-nav-glass-rim), 0 12px 32px -10px rgb(0 0 0 / 8%)` (inset rim-light + a light outer drop). No separate shadow var.
 >
-> **LIGHT values PROPOSED / UNVERIFIED**: sheen leans DARK not white (a white sheen on a near-white pane washes
-> out). Live on the nav glass A/B (`data-beam-nav-platter="glass"`) + the Liquid Glass bench (recipe B is the
-> nav recipe; all bench recipes share the lighting layer and differ only in refraction).
+> Mode-aware dials (CSS vars from `createBeamTheme`'s scheme blocks, so a mode flip reskins with no rebuild):
+> **sheen**, **rim** (rim-light α), **lift** (opacity), plus **blur** (seed). Recipe constants: `NAV_GLASS` in
+> tokens.ts (dark exact: rim 21%, lift 0.9, blur 18). **LIGHT values PROPOSED / UNVERIFIED** (no brightness
+> there either): sheen leans DARK not white; rim a touch stronger (32%), lift nearer 1 (0.95). Live on the nav
+> glass A/B (`data-beam-nav-platter="glass"`) + the Liquid Glass bench (recipe B = the nav recipe; all bench
+> recipes differ only in refraction). The bench's four sliders drive blur / displacement / rim / lift.
 
 > **Proposed rule — platter fill by ROLE (2026-10-01, UNVERIFIED).** CONTENT boxes (Sections, cards) get
 > the **gradient** platter; CHROME floating over content (nav, dialogs, tooltips, popovers) gets **glass**.

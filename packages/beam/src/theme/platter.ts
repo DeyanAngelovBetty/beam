@@ -57,15 +57,16 @@ export function beamPlatter(opts?: {
   const radiusExpr = `calc(${radius}px + ${ring})`;
 
   if (fill === 'glass') {
-    // Lighting layer (blur + saturate + brightness) + optional refraction (url(#id), appended last).
-    const lighting = 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate)) brightness(var(--beam-nav-glass-brightness))';
-    const glassFilter = opts?.refract ? `${lighting} url(#${opts.refract})` : lighting;
-    // Glass platter: a blurred, LIGHT-DRIVEN fill behind the box, visible in the `offset` fringe (the opaque
-    // box occludes the centre). backdrop-filter blurs + re-saturates + BRIGHTENS the canvas behind it
-    // (brightness is what lifts our dark canvas so it reads as lit glass, not a dark smear — 2026-10-01). The
-    // fill is a diagonal SHEEN over the translucent tint; a specular inset edge + outer drop shadow (one
-    // box-shadow) is the "it's glass" cue. All values are mode-aware CSS vars (NAV_GLASS, tokens.ts), so a
-    // mode flip reskins the glass with no rebuild. Fallbacks force opaque (alpha 1).
+    // LOCKED recipe (2026-10-01): backdrop-filter is blur → (optional) refraction url(#id) → opacity-lift.
+    // NO saturate, NO brightness, NO drop-shadow inside the filter (that was the heaviness).
+    const glassFilter = opts?.refract
+      ? `blur(var(--beam-nav-glass-blur)) url(#${opts.refract}) opacity(var(--beam-nav-glass-lift))`
+      : `blur(var(--beam-nav-glass-blur)) opacity(var(--beam-nav-glass-lift))`;
+    // Glass platter: a blurred fill behind the box, visible in the `offset` fringe (the opaque
+    // box occludes the centre). The fill is a diagonal SHEEN over the translucent tint; the opacity-lift
+    // bleeds a little un-blurred canvas back through for clarity; the box-shadow (inset rim-light + outer
+    // drop) is the single shadow source and the "it's glass" cue. All values are mode-aware CSS vars
+    // (NAV_GLASS, tokens.ts), so a mode flip reskins the glass with no rebuild. Fallbacks force opaque (alpha 1).
     return {
       position: 'relative',
       '&::after': {
@@ -80,7 +81,8 @@ export function beamPlatter(opts?: {
         backdropFilter: glassFilter,
         WebkitBackdropFilter: glassFilter,
         border: '1px solid var(--beam-nav-edge)', // the edge light
-        boxShadow: 'var(--beam-nav-glass-shadow)', // specular inset rim + outer drop — the main glass cue
+        // The ONLY shadow source (one total): inset rim-light (strength = --beam-nav-glass-rim) + outer drop.
+        boxShadow: 'inset 0 0 14px -4px rgb(205 205 205 / var(--beam-nav-glass-rim)), 0 12px 32px -10px rgb(0 0 0 / 8%)',
         '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
           '--beam-nav-glass-alpha': '1',
         },
