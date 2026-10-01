@@ -419,14 +419,23 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     ONE rule for every page. This **supersedes** the earlier symmetric-`CONTENT_INLINE` (5×) gutter + the
     nav-state-aware `right` (collapsed 1.5×); those constants + the `contentGutter` prop are now vestigial
     (no app passes `contentGutter`). Set once on `AppShell` `main`; all sticky chrome inherits.
-    **Superseded 2026-10-01 (§6.20):** once the collapsed nav toggle moved into its OWN 60px column, `main`
-    no longer opens its left to clear it — so `left` = `PAGE_GUTTER` in BOTH states too. **There is no
-    nav-state-aware page edge any more** — all four edges are `PAGE_GUTTER`, always. `CONTENT_GUTTER_LEFT_COLLAPSED`
-    joins `CONTENT_INLINE` / `contentGutter` as vestigial.
+    **History — superseded then reinstated (both 2026-10-01, §6.20):** first, once the collapsed nav toggle
+    moved into its OWN 60px column, `main` stopped opening its left to clear it and `left` went to `PAGE_GUTTER`
+    in every state (briefly, no nav-state-aware edge). Then the platter fringe landed: the floating panel's
+    rim extends `NAV_PLATTER_OFFSET` (8px) OUTWARD into the gutter, so **`left` is nav-state-aware again** —
+    see §6.20 for the three-way rule and the why. `CONTENT_GUTTER_LEFT_COLLAPSED` stays vestigial
+    (the new left values are derived from `PAGE_GUTTER` + `NAV_PLATTER_OFFSET`, not from it), alongside
+    `CONTENT_INLINE` / `contentGutter`.
 20. **Floating nav + gradient-border intent tiers (2026-10-01).** The nav panel floats in both states
     (docked: 282 rail, 258 panel inset by `PAGE_GUTTER`, radius `borderRadius/24`, over the canvas; peek:
     same panel, keeps shadows) — full rule in docs/shell-grammar.md §7; preserves §6.17 (main never
-    remounts). The panel wears `beamGradientBorder` at the **calm** tier. **One border foundation, four
+    remounts). **`main`'s left gutter is nav-state-aware** (supersedes §6.19's "all edges PAGE_GUTTER"): top /
+    right / bottom are always `PAGE_GUTTER`; left is `PAGE_GUTTER + NAV_PLATTER_OFFSET` (24 + 8 = 32px) DOCKED
+    — content opens an extra 8px so the panel's platter fringe (which extends into the gutter) keeps a true
+    24px gap — `0` COLLAPSED (the 60px nav column supplies the clearance), `PAGE_GUTTER` NARROW (the nav is a
+    modal drawer OVER main, no column). **Why:** the nav column and the platter fringe own the left space now,
+    not a floating toggle, so the left edge follows the nav state. The panel wears `beamGradientBorder` at the
+    **calm** tier. **One border foundation, four
     `interaction` tiers used with increasing intent — `none` (chrome default) → `hover-step` → `hover-spin`
     → `track` (flourish).** Tracking/spin is reserved for intent; chrome is `none`. Foundation + tiers:
     docs/derived-color-tokens.md (`beamGradientBorder`).

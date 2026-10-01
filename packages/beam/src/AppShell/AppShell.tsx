@@ -515,12 +515,21 @@ export function AppShell({
         minHeight: 0,
         height: '100%',
         overflowY: 'auto',
-        // Page gutters (§6.19, superseded 2026-10-01): PAGE_GUTTER (3×) on ALL edges in BOTH nav states — no
-        // nav-state-aware edge anymore. The floating-nav toggle lives in its own collapsed column (§6.20), so
-        // main no longer opens its left to clear it. (`contentGutter` + `CONTENT_GUTTER_LEFT_COLLAPSED` are
-        // now vestigial — no consumer.)
+        // Page gutters (§6.20, 2026-10-01). Top / right / bottom are always PAGE_GUTTER. The LEFT is
+        // nav-state-aware, because the floating nav owns the left space differently per state:
+        //  • DOCKED — PAGE_GUTTER + NAV_PLATTER_OFFSET (24 + 8 = 32px): the panel's platter fringe extends 8px
+        //    into the gutter, so content opens an extra 8px to clear it and keep a true 24px gap to the fringe.
+        //  • COLLAPSED (wide) — 0: the 60px nav column already supplies the left clearance.
+        //  • NARROW — PAGE_GUTTER: the nav is a modal drawer OVER main (no column), so main keeps its full gutter.
+        // This re-introduces a nav-state-aware left edge (the 2026-10-01 "PAGE_GUTTER on all edges" rule is
+        // superseded) — now justified by the nav column + platter fringe owning the left space, not a floating
+        // toggle. (`contentGutter` + `CONTENT_GUTTER_LEFT_COLLAPSED` stay vestigial — no consumer.)
         pr: PAGE_GUTTER,
-        pl: PAGE_GUTTER,
+        pl: effectiveLocked
+          ? `calc(${PAGE_GUTTER.md * 8}px + ${NAV_PLATTER_OFFSET}px)` // 32: gutter + platter fringe
+          : isWide
+            ? 0 // collapsed: the 60px nav column is the clearance
+            : PAGE_GUTTER, // narrow: drawer overlays main, keep the full gutter
         pb: CONTENT_BOTTOM,
         pt: PAGE_TOP_GAP,
         // STICKY-CHROME CONTRACT: a grid with `stickyChrome` publishes `data-beam-sticky-chrome`; it takes

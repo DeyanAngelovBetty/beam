@@ -185,6 +185,12 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 - **Gradient border on the panel, both states** — `beamGradientBorder` at the **calm** tier
   (`interaction: 'none'`): same foundation/colours as the dashboard rim, no pointer tracking. On the docked
   panel the border **REPLACES** the old `6px 0 18px` separation shadow; the peek keeps its own shadows.
+- **Content left gutter is nav-state-aware** (BEAM.md §6.20, supersedes §6.19). `main`'s top / right / bottom
+  stay `PAGE_GUTTER`; its **left** follows the nav state: **docked** = `PAGE_GUTTER + NAV_PLATTER_OFFSET`
+  (24 + 8 = 32px) so content clears the panel's platter fringe (which extends 8px into the gutter) and keeps a
+  true 24px gap to it; **collapsed** = `0` (the 60px nav column is the clearance); **narrow** = `PAGE_GUTTER`
+  (the drawer overlays main, no column). The nav column + the fringe own the left space — hence a state-aware
+  edge again.
 - **§6.17 preserved:** only the rail column width (264→282) and the panel's own insets/radius/border change;
   `{main}` stays the constant keyed grid cell across every nav state — the nav toggle never remounts the page.
 
