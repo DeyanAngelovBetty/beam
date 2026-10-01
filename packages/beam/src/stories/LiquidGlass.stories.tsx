@@ -10,10 +10,12 @@ import { BORDER_RADIUS_24 } from '../theme/tokens';
 /**
  * Liquid Glass bench (Lab) — see real liquid glass over real Beam content and decide where it belongs.
  * Three recipes side by side, three forms each (platter fringe behind a solid box at offset 8 = the nav's,
- * and 12 = Deyan's reference card; plus a fully translucent panel with text). ALL recipes share the LOCKED
- * recipe (backdrop-filter blur → opacity-lift, NO saturate/brightness; sheen + surface fill; ONE box-shadow =
- * inset rim-light + outer drop) and differ ONLY in refraction. Exactly four controls: blur, displacement
- * (B/C), rim-light strength, lift strength — they drive the real themed vars, so the bench == the nav glass.
+ * and 12 = Deyan's reference card; plus a fully translucent panel with text). ALL recipes share the FINAL
+ * recipe (backdrop-filter blur → refraction; NO saturate/brightness/opacity, NO box-shadow — the 1px border
+ * is the only edge; fill = a single TINT wash of background.paper, 0 = no background) and differ ONLY in
+ * refraction. Two controls + the tint dial: blur, displacement (B/C), tint — driving the real themed vars,
+ * so the bench == the nav glass. The translucent-PANEL form floors tint at 12% for text legibility; the
+ * fringe form (opaque box in front) can sit at 0.
  *
  * ⚠️ Chromium target. I could not visually verify any of this (no browser in the build env) — treat every
  * visual claim as UNVERIFIED until you eyeball it in Chrome. Known caveats are noted per recipe.
@@ -76,23 +78,25 @@ function Filters({ scale }: { scale: number }) {
   );
 }
 
-// ---- recipes = the LOCKED glass recipe, differing ONLY in refraction (Deyan's ruling 2026-10-01) ----
-// backdrop-filter = blur → (optional) refraction url(#id) → opacity-lift. NO saturate/brightness/drop-shadow
-// in the filter. Fill = sheen over the surface tint. ONE shadow source: the box-shadow (inset rim-light +
-// outer drop). This mirrors platter.ts fill:'glass' byte-for-byte, reading the SAME themed vars — the bench's
-// four sliders drive those vars (--beam-nav-glass-blur / -rim / -lift) + the SVG displacement — so A/B/C
-// differ only in refraction: none (A) / noise (B) / edge-lens (C).
+// ---- recipes = the FINAL glass recipe, differing ONLY in refraction (Deyan's ruling 2026-10-01) ----
+// backdrop-filter = blur → (optional) refraction url(#id). NO saturate/brightness/opacity, NO box-shadow —
+// the 1px border is the only edge. Fill = a single TINT (a wash of background.paper at --beam-nav-glass-tint;
+// 0 = no background). Mirrors platter.ts fill:'glass' byte-for-byte, reading the SAME themed vars — the
+// bench's three sliders drive --beam-nav-glass-blur / -tint + the SVG displacement — so A/B/C differ only in
+// refraction: none (A) / noise (B) / edge-lens (C).
 const RADIUS = `${BORDER_RADIUS_24}px`;
-const GLASS_BASE = {
-  background: 'var(--beam-nav-sheen), var(--beam-nav-surface)',
-  border: '1px solid var(--beam-nav-edge)',
-  boxShadow: 'inset 0 0 14px -4px rgb(205 205 205 / var(--beam-nav-glass-rim)), 0 12px 32px -10px rgb(0 0 0 / 8%)',
-} as const;
-const glassSx = (refract?: string) => {
-  const bf = refract
-    ? `blur(var(--beam-nav-glass-blur)) url(#${refract}) opacity(var(--beam-nav-glass-lift))`
-    : `blur(var(--beam-nav-glass-blur)) opacity(var(--beam-nav-glass-lift))`;
-  return { ...GLASS_BASE, backdropFilter: bf, WebkitBackdropFilter: bf } as const;
+// Legibility floor for the translucent-PANEL form only (text over the glass). The fringe form has an opaque
+// box in front, so it can sit at tint 0; a full glass panel can't — below this the text washes out.
+const PANEL_TINT_FLOOR = '12%';
+const glassSx = (refract?: string, tintFloor?: string) => {
+  const bf = refract ? `blur(var(--beam-nav-glass-blur)) url(#${refract})` : `blur(var(--beam-nav-glass-blur))`;
+  const tint = tintFloor ? `max(var(--beam-nav-glass-tint, 15%), ${tintFloor})` : 'var(--beam-nav-glass-tint, 15%)';
+  return {
+    background: `color-mix(in oklab, var(--mui-palette-background-paper) ${tint}, transparent)`,
+    border: '1px solid var(--beam-nav-edge)',
+    backdropFilter: bf,
+    WebkitBackdropFilter: bf,
+  } as const;
 };
 
 function GlassPanel({ label, filterId }: { label: string; filterId?: string }) {
@@ -100,7 +104,7 @@ function GlassPanel({ label, filterId }: { label: string; filterId?: string }) {
     <Box
       sx={{
         position: 'relative', width: 240, height: 150, borderRadius: RADIUS, cornerShape: 'squircle',
-        display: 'grid', placeItems: 'center', overflow: 'hidden', ...glassSx(filterId),
+        display: 'grid', placeItems: 'center', overflow: 'hidden', ...glassSx(filterId, PANEL_TINT_FLOOR),
       }}
     >
       <Typography variant="subtitle1" sx={{ position: 'relative', zIndex: 2 }}>{label}</Typography>
@@ -150,21 +154,19 @@ function Backdrop() {
 
 export const Bench: Story = {
   render: () => {
-    // EXACTLY four controls (Deyan's ruling) — they drive the real themed glass vars, so the bench == the nav.
+    // Two controls + the tint dial (Deyan's ruling) — driving the real themed vars, so the bench == the nav.
     const [blur, setBlur] = useState(18); // --beam-nav-glass-blur (seed default 18)
     const [scale, setScale] = useState(12); // SVG displacement scale (B/C) — range 0–200
-    const [rim, setRim] = useState(21); // --beam-nav-glass-rim (%) — inset rim-light strength (dark exact 21)
-    const [lift, setLift] = useState(0.9); // --beam-nav-glass-lift — backdrop opacity() clarity-lift (dark exact 0.9)
+    const [tint, setTint] = useState(15); // --beam-nav-glass-tint (%) — the lone fill dial; 0 = no background
     return (
-      <Box sx={{ minHeight: '100vh', ['--beam-nav-glass-blur' as string]: `${blur}px`, ['--beam-nav-glass-rim' as string]: `${rim}%`, ['--beam-nav-glass-lift' as string]: String(lift) }}>
+      <Box sx={{ minHeight: '100vh', ['--beam-nav-glass-blur' as string]: `${blur}px`, ['--beam-nav-glass-tint' as string]: `${tint}%` }}>
         <Filters scale={scale} />
 
-        {/* Controls — blur, displacement, rim-light strength, lift strength (nothing else) */}
+        {/* Controls — blur, displacement, tint (nothing else) */}
         <Stack direction="row" spacing={4} sx={{ p: 2, position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.paper0', borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
           <Stack sx={{ width: 180 }}><Typography variant="caption">blur {blur}px</Typography><Slider size="small" min={0} max={30} value={blur} onChange={(_, v) => setBlur(v as number)} /></Stack>
           <Stack sx={{ width: 180 }}><Typography variant="caption">displacement {scale} (B/C)</Typography><Slider size="small" min={0} max={200} value={scale} onChange={(_, v) => setScale(v as number)} /></Stack>
-          <Stack sx={{ width: 180 }}><Typography variant="caption">rim-light {rim}%</Typography><Slider size="small" min={0} max={60} value={rim} onChange={(_, v) => setRim(v as number)} /></Stack>
-          <Stack sx={{ width: 180 }}><Typography variant="caption">lift {lift.toFixed(2)}</Typography><Slider size="small" min={0.5} max={1} step={0.01} value={lift} onChange={(_, v) => setLift(v as number)} /></Stack>
+          <Stack sx={{ width: 180 }}><Typography variant="caption">tint {tint}%</Typography><Slider size="small" min={0} max={100} value={tint} onChange={(_, v) => setTint(v as number)} /></Stack>
         </Stack>
 
         {/* Content backdrop (fixed behind) + glass samples over it */}

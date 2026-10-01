@@ -57,16 +57,15 @@ export function beamPlatter(opts?: {
   const radiusExpr = `calc(${radius}px + ${ring})`;
 
   if (fill === 'glass') {
-    // LOCKED recipe (2026-10-01): backdrop-filter is blur → (optional) refraction url(#id) → opacity-lift.
-    // NO saturate, NO brightness, NO drop-shadow inside the filter (that was the heaviness).
+    // FINAL recipe (2026-10-01): backdrop-filter is blur → (optional) refraction url(#id). NO saturate,
+    // brightness, opacity, or box-shadow — refraction + blur carry it, the 1px border is the only edge.
     const glassFilter = opts?.refract
-      ? `blur(var(--beam-nav-glass-blur)) url(#${opts.refract}) opacity(var(--beam-nav-glass-lift))`
-      : `blur(var(--beam-nav-glass-blur)) opacity(var(--beam-nav-glass-lift))`;
-    // Glass platter: a blurred fill behind the box, visible in the `offset` fringe (the opaque
-    // box occludes the centre). The fill is a diagonal SHEEN over the translucent tint; the opacity-lift
-    // bleeds a little un-blurred canvas back through for clarity; the box-shadow (inset rim-light + outer
-    // drop) is the single shadow source and the "it's glass" cue. All values are mode-aware CSS vars
-    // (NAV_GLASS, tokens.ts), so a mode flip reskins the glass with no rebuild. Fallbacks force opaque (alpha 1).
+      ? `blur(var(--beam-nav-glass-blur)) url(#${opts.refract})`
+      : `blur(var(--beam-nav-glass-blur))`;
+    // Glass platter: a blurred fill behind the box, visible in the `offset` fringe (the opaque box occludes
+    // the centre). The fill is a single TINT — a wash of background.paper at `--beam-nav-glass-tint` (0 = no
+    // background at all). Mode-aware via the themed var, so a mode flip reskins with no rebuild. Fallback
+    // forces the surface opaque (alpha 1) where backdrop-filter is unsupported.
     return {
       position: 'relative',
       '&::after': {
@@ -77,17 +76,17 @@ export function beamPlatter(opts?: {
         cornerShape: 'squircle',
         zIndex: -1,
         pointerEvents: 'none',
-        background: 'var(--beam-nav-sheen), var(--beam-nav-surface)', // diagonal sheen over the frosted tint
+        background: 'color-mix(in oklab, var(--mui-palette-background-paper) var(--beam-nav-glass-tint, 15%), transparent)',
         backdropFilter: glassFilter,
         WebkitBackdropFilter: glassFilter,
-        border: '1px solid var(--beam-nav-edge)', // the edge light
-        // The ONLY shadow source (one total): inset rim-light (strength = --beam-nav-glass-rim) + outer drop.
-        boxShadow: 'inset 0 0 14px -4px rgb(205 205 205 / var(--beam-nav-glass-rim)), 0 12px 32px -10px rgb(0 0 0 / 8%)',
+        border: '1px solid var(--beam-nav-edge)', // the only edge
+        // No backdrop-filter / reduced transparency → force the tint fully opaque (a solid paper surface),
+        // since a faint translucent tint with no blur behind it looks broken, not like glass.
         '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
-          '--beam-nav-glass-alpha': '1',
+          '--beam-nav-glass-tint': '100%',
         },
         '@media (prefers-reduced-transparency: reduce)': {
-          '--beam-nav-glass-alpha': '1',
+          '--beam-nav-glass-tint': '100%',
         },
       },
     };

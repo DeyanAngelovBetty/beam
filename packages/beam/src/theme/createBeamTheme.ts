@@ -482,14 +482,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // Rail background — one swappable recipe, consumed at the two rail sites.
             '--beam-nav-surface': derived.navSurface,
             // Frosted-glass rail. Blur is scheme-invariant; alpha + saturate flip (saturate now only the
-            // narrow drawer). The LOCKED glass recipe (2026-10-01, NAV_GLASS in tokens.ts): sheen fill +
-            // rim-light + opacity-lift, mode-aware. :root carries the DARK (exact) defaults.
+            // narrow drawer). The FINAL glass recipe (2026-10-01, NAV_GLASS in tokens.ts): blur + refraction
+            // carry it; the lone fill dial is the TINT. :root carries the DARK default.
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
             '--beam-nav-glass-blur': `${s.dark.navGlassBlur}px`,
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
-            '--beam-nav-sheen': NAV_GLASS.dark.sheen,
-            '--beam-nav-glass-rim': NAV_GLASS.dark.rim,
-            '--beam-nav-glass-lift': String(NAV_GLASS.dark.lift),
+            '--beam-nav-glass-tint': NAV_GLASS.dark.tint,
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
@@ -542,9 +540,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.light.navSpread),
             '--beam-nav-glass-alpha': String(s.light.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.light.navGlassSaturate),
-            '--beam-nav-sheen': NAV_GLASS.light.sheen,
-            '--beam-nav-glass-rim': NAV_GLASS.light.rim,
-            '--beam-nav-glass-lift': String(NAV_GLASS.light.lift),
+            '--beam-nav-glass-tint': NAV_GLASS.light.tint,
             '--beam-nav-edge-offset': String(navEdgeOffset.light),
             '--beam-nav-edge-alpha': String(EDGE.light.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.light),
@@ -578,9 +574,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.dark.navSpread),
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
-            '--beam-nav-sheen': NAV_GLASS.dark.sheen,
-            '--beam-nav-glass-rim': NAV_GLASS.dark.rim,
-            '--beam-nav-glass-lift': String(NAV_GLASS.dark.lift),
+            '--beam-nav-glass-tint': NAV_GLASS.dark.tint,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),

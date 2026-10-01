@@ -467,33 +467,18 @@ export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: Nav
 };
 
 /**
- * Liquid-glass recipe cues — LOCKED 2026-10-01 (Deyan's DevTools values; dark is EXACT, keep verbatim).
- * The glass is `blur(--beam-nav-glass-blur) url(#refract) opacity(--beam-nav-glass-lift)` as the backdrop
- * filter (NO saturate, NO brightness — brightness was the wrong lever), over a `sheen + surface-tint` fill,
- * with ONE shadow source: the element's `box-shadow` (an inset rim-light + an outer drop; no drop-shadow
- * inside the backdrop filter — that was most of the heaviness). Three mode-aware dials, emitted as CSS vars
- * in createBeamTheme's scheme blocks so a mode flip swaps them with NO rebuild (§5); `--beam-nav-glass-blur`
- * is the fourth (seed above):
- *   • sheen — a DIAGONAL highlight over the translucent tint (the "lit pane" read).
- *   • rim   — the inset rim-light strength (α of `rgb(205 205 205 / rim)`), the box-shadow's first layer.
- *   • lift  — the backdrop-filter `opacity()`: < 1 bleeds a little un-blurred backdrop back through, a subtle
- *             clarity lift (replaces brightness). The outer drop (`0 12px 32px -10px rgb(0 0 0 / 8%)`) is
- *             fixed in the recipe, so rim + lift are the only glass dials besides blur + displacement.
- * LIGHT values are PROPOSED / UNVERIFIED: NO brightness there either; sheen leans DARK not white (a white
- * sheen on a near-white pane washes out); rim a touch stronger and lift nearer 1 (a light backdrop needs
- * less clarity bleed). The bench's four sliders drive blur / displacement / rim / lift.
+ * Liquid-glass recipe — FINAL 2026-10-01 (Deyan). Refraction + blur carry the effect; everything else was
+ * stripped. The glass is `blur(--beam-nav-glass-blur) url(#refract)` as the backdrop filter (NO saturate,
+ * brightness, opacity-lift), over a single TINT fill, with NO box-shadow — the 1px `--beam-nav-edge` border
+ * is the only edge. The tint is the lone fill dial: `--beam-nav-glass-tint`, a wash of `background.paper`,
+ * range 0–100%, where 0 = no background at all (pure blurred/refracted backdrop). Mode-aware, emitted as a
+ * CSS var in createBeamTheme's scheme blocks so a mode flip swaps it with NO rebuild (§5); the bench's three
+ * sliders drive blur / displacement / tint. LIGHT default is PROPOSED / UNVERIFIED — a near-white backdrop
+ * needs a touch more wash to read as a distinct pane.
  */
 export const NAV_GLASS = {
-  dark: {
-    sheen: 'linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06))',
-    rim: '21%', // rgb(205 205 205 / 21%) — Deyan's exact value
-    lift: 0.9, // opacity(90%) — Deyan's exact value
-  },
-  light: {
-    sheen: 'linear-gradient(135deg, rgba(20,24,33,0.10), rgba(20,24,33,0.02))',
-    rim: '32%', // PROPOSED — the light-grey rim needs more presence on a light pane
-    lift: 0.95, // PROPOSED — less clarity bleed over a near-white backdrop
-  },
+  dark: { tint: '15%' },
+  light: { tint: '22%' }, // PROPOSED — more wash so the frost reads against the bright page
 } as const;
 
 /**
