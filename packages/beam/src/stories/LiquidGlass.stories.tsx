@@ -28,17 +28,31 @@ const meta: Meta = { title: 'Lab/Beam/Liquid Glass', parameters: { layout: 'full
 export default meta;
 type Story = StoryObj;
 
-// Edge-lens displacement map (best-effort): mid-grey centre (no displacement) → high-contrast R/G at the rim
-// (strong bend). A real rounded-rect lens wants a crafted normal map; this radial approximation is flagged.
+// Edge-lens displacement map — SDF-rim approach (per the Chromium finding): neutral 128 centre (no
+// displacement), with the bend living in a rim BAND along the inward normal — R encodes x (left +, right −),
+// G encodes y (top +, bottom −). Rounded-rect clipped. ⚠️ BEST-EFFORT + UNVERIFIED: the L/R (R-channel)
+// bands run full height so they own the CORNERS → corners bend horizontally only; a correct all-corner
+// normal map (and the map's coordinate space INSIDE backdrop-filter) is the unsolved research bit.
+const W = 240, H = 150, RX = 24, BAND = 24;
 const EDGE_MAP =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="150"><defs>` +
-      `<radialGradient id="r" cx="50%" cy="50%" r="60%">` +
-      `<stop offset="55%" stop-color="rgb(128,128,128)"/>` +
-      `<stop offset="100%" stop-color="rgb(255,0,128)"/></radialGradient></defs>` +
-      `<rect width="220" height="150" rx="24" fill="rgb(128,128,128)"/>` +
-      `<rect width="220" height="150" rx="24" fill="url(%23r)"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">` +
+      `<defs>` +
+      `<linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="rgb(255,128,128)"/><stop offset="1" stop-color="rgb(128,128,128)"/></linearGradient>` +
+      `<linearGradient id="r" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="rgb(128,128,128)"/><stop offset="1" stop-color="rgb(0,128,128)"/></linearGradient>` +
+      `<linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(128,255,128)"/><stop offset="1" stop-color="rgb(128,128,128)"/></linearGradient>` +
+      `<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(128,128,128)"/><stop offset="1" stop-color="rgb(128,0,128)"/></linearGradient>` +
+      `<clipPath id="rr"><rect width="${W}" height="${H}" rx="${RX}"/></clipPath></defs>` +
+      `<g clip-path="url(%23rr)">` +
+      `<rect width="${W}" height="${H}" fill="rgb(128,128,128)"/>` +
+      // top/bottom G bands first, inset from the corners (x: BAND..W−BAND)
+      `<rect x="${BAND}" y="0" width="${W - 2 * BAND}" height="${BAND}" fill="url(%23t)"/>` +
+      `<rect x="${BAND}" y="${H - BAND}" width="${W - 2 * BAND}" height="${BAND}" fill="url(%23b)"/>` +
+      // left/right R bands full height → they own the corners
+      `<rect x="0" y="0" width="${BAND}" height="${H}" fill="url(%23l)"/>` +
+      `<rect x="${W - BAND}" y="0" width="${BAND}" height="${H}" fill="url(%23r)"/>` +
+      `</g></svg>`,
   );
 
 function Filters({ scale }: { scale: number }) {
@@ -70,30 +84,26 @@ const recipeA = {
   border: '1px solid var(--beam-nav-edge)',
 } as const;
 
-const recipeB = (filterId: string) =>
+// B/C — refraction via DIRECT `backdrop-filter: blur() url(#svg)` (Chromium 141: identical to the former
+// ::after blur(0)+filter trick, so the pseudo is gone). Specular inset edge + outer shadow + isolation stay.
+const recipeRefract = (filterId: string) =>
   ({
     isolation: 'isolate',
     background: 'color-mix(in oklab, var(--mui-palette-background-paper) 20%, transparent)',
     boxShadow: '0 12px 40px -12px rgba(0,0,0,0.5)', // outer shadow
+    backdropFilter: `blur(var(--lg-blur)) url(#${filterId})`,
+    WebkitBackdropFilter: `blur(var(--lg-blur)) url(#${filterId})`,
     // specular inset edge
     '&::before': {
       content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', cornerShape: 'squircle',
       pointerEvents: 'none', zIndex: 1,
       boxShadow: 'inset 0 1px 1px rgba(255,255,255,calc(0.6 * var(--lg-specular))), inset 0 -1px 1px rgba(255,255,255,calc(0.25 * var(--lg-specular)))',
     },
-    // refraction: force a backdrop layer (blur 0) then displace it with the SVG filter
-    '&::after': {
-      content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', cornerShape: 'squircle',
-      pointerEvents: 'none', zIndex: 0,
-      backdropFilter: `blur(var(--lg-blur))`,
-      WebkitBackdropFilter: `blur(var(--lg-blur))`,
-      filter: `url(#${filterId})`,
-    },
   }) as const;
 
 function GlassPanel({ label, recipe, filterId }: { label: string; recipe: 'A' | 'B' | 'C'; filterId?: string }) {
   const sx =
-    recipe === 'A' ? recipeA : recipeB(filterId ?? 'beam-liquid-glass');
+    recipe === 'A' ? recipeA : recipeRefract(filterId ?? 'beam-liquid-glass');
   return (
     <Box
       sx={{
@@ -110,7 +120,7 @@ function GlassPanel({ label, recipe, filterId }: { label: string; recipe: 'A' | 
 }
 
 function FringeBox({ label, recipe, offset, filterId }: { label: string; recipe: 'A' | 'B' | 'C'; offset: number; filterId?: string }) {
-  const sx = recipe === 'A' ? recipeA : recipeB(filterId ?? 'beam-liquid-glass');
+  const sx = recipe === 'A' ? recipeA : recipeRefract(filterId ?? 'beam-liquid-glass');
   return (
     // wrap carries the glass platter (inset -offset, behind); inner solid box is the opaque panel.
     <Box sx={{ position: 'relative', width: 240, height: 150 }}>
@@ -150,7 +160,7 @@ function Backdrop() {
 export const Bench: Story = {
   render: () => {
     const [blur, setBlur] = useState(8);
-    const [scale, setScale] = useState(40);
+    const [scale, setScale] = useState(12); // subtle Beam-appropriate default (range stays 0–200)
     const [specular, setSpecular] = useState(0.6);
     return (
       <Box sx={{ minHeight: '100vh', ['--lg-blur' as string]: `${blur}px`, ['--lg-specular' as string]: String(specular) }}>
