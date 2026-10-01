@@ -19,7 +19,7 @@ const trailMax = Math.max(...TRAIL);
 
 export function KpiCardWidget() {
   // Clip content HERE, on the widget's own box — NOT on the rim-bearing Paper
-  // (WidgetShell), which must stay unclipped or beamGradientBorder's outward `::after`
+  // (WidgetShell), which must stay unclipped or beamPlatter's outward `::after`
   // rim gets sliced (same reason as the WidgetShell registry comment).
   // The height budget is fixed in the CONFIG (kpi is rowSpan 2, so the chart actually
   // fits — dashboardConfig). THIS clip is defence-in-depth, not that fix: it keeps

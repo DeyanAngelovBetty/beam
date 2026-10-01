@@ -521,7 +521,7 @@ export const gradientSeeds: Record<
 
 /**
  * SEED — gradient-border intensity, PER SCHEME (tunable dials, not inline
- * numbers). The opt-in gradient border (`beamGradientBorder`) reuses the page-
+ * numbers). The opt-in gradient border (`beamPlatter`) reuses the page-
  * mesh tint points; this is how strongly they read at the 1px edge. `calm` is
  * the always-on state (constant geometry — the border never appears on hover);
  * `hover` is the interactive lift. LIGHT needs MORE than dark: a low-contrast

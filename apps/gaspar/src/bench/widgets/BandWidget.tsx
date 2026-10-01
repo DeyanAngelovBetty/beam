@@ -72,7 +72,7 @@ export function BandWidget() {
       </Stack>
 
       {/* Clip the chart HERE, on its own box — NOT on the rim-bearing Paper
-          (WidgetShell), which must stay unclipped or beamGradientBorder's outward rim
+          (WidgetShell), which must stay unclipped or beamPlatter's outward rim
           gets sliced. The SVG is overflow:visible (for its edge strokes/marker); that
           spill used to be caught by the Paper's clip, so it's contained here instead.
           The chart fits its box — this is spill containment, not a sizing fix. */}

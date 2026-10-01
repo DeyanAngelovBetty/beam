@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 
 /**
  * usePointerAngleTracking — the cursor leads, the gradient rim's bright sector follows. Pairs with
- * `beamGradientBorder({ track: true })` on the SAME element: this writes --beam-track-angle inline
+ * `beamPlatter({ track: true })` on the SAME element: this writes --beam-track-angle inline
  * on the element, the track-mode pseudo reads it, and the CSS transition eases the lean.
  *
  * Simey's angle-from-center technique (angle only — no mesh/glow/masks). NO deps, one rAF write/

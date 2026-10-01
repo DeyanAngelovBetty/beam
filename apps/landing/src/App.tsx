@@ -12,7 +12,7 @@ import {
   BeamPage,
   BeamStat,
   DetailsPanel,
-  beamGradientBorder,
+  beamPlatter,
   usePointerAngleTracking,
 } from '@betty/beam';
 import { ThemeLabDrawer } from '@betty/beam-lab';
@@ -54,7 +54,7 @@ function TrackedPaper({ children }: { children: ReactNode }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
-        ...(beamGradientBorder({ interaction: 'track', surface: CARD_SURFACE, radius: CARD_RADIUS }) as object),
+        ...(beamPlatter({ interaction: 'track', surface: CARD_SURFACE, radius: CARD_RADIUS }) as object),
       }}
     >
       {children}

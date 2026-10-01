@@ -414,7 +414,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // (the Lab hydrates + exports it; CSS only consumes the mask). Both mode-invariant.
             '--beam-star-mask': starMaskUri(g.dark.starSizeRatio),
             '--beam-star-size-ratio': String(g.dark.starSizeRatio),
-            // Gradient-border intensity (opt-in beamGradientBorder). Per-scheme
+            // Gradient-border intensity (opt-in beamPlatter). Per-scheme
             // dial: light needs more than dark. :root default = dark.
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
@@ -683,7 +683,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
           },
           '*::-webkit-scrollbar-corner': { backgroundColor: 'transparent' },
 
-          // Gradient-border angle (opt-in beamGradientBorder). Registered as an
+          // Gradient-border angle (opt-in beamPlatter). Registered as an
           // @property so it's a typed <angle> and can be INTERPOLATED — an
           // unregistered custom prop cannot animate. `inherits: false` so the
           // angle doesn't leak into nested bordered elements. The keyframe spins
@@ -693,7 +693,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inherits: 'false',
             initialValue: '135deg',
           },
-          // Pointer-tracked rim angle (beamGradientBorder({ track })). SEPARATE from
+          // Pointer-tracked rim angle (beamPlatter({ track })). SEPARATE from
           // --beam-border-angle on purpose: that one is `inherits: false` (no leak into nested
           // rims) AND owned by the spin keyframe ON THE PSEUDO — but JS can only write element
           // inline styles, and inherits:false blocks the element→pseudo path. So the tracked angle
@@ -706,7 +706,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inherits: 'true',
             initialValue: '135deg',
           },
-          // Gradient-rim beacon half-width (beamGradientBorder). The primary "beacon" spans ~2×
+          // Gradient-rim beacon half-width (beamPlatter). The primary "beacon" spans ~2×
           // this, centred on the seam (the tracked cursor / rest / spin angle); the rest of the ring
           // falls to hue-b/hue-c. Registered <percentage> so a later pass could ANIMATE the spread,
           // and so devtools can tune it live. Scheme-INDEPENDENT (geometry, not colour), so it lives
@@ -717,7 +717,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             inherits: 'true',
             initialValue: '12%',
           },
-          // Gradient-border rim width (beamGradientBorder). The pseudo-rim's own width;
+          // Gradient-border rim width (beamPlatter). The pseudo-rim's own width;
           // registered <length> so it INTERPOLATES — an unregistered custom prop would
           // snap, not transition (same trap as the angle). Calm 1px → hover 2px, grown
           // OUTWARD on the pseudo (no layout, out of flow). `inherits: false` so it

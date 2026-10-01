@@ -23,7 +23,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
 import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, NAV_INSET, BORDER_RADIUS_24 } from '../theme/tokens';
-import { beamGradientBorder } from '../theme/gradientBorder';
+import { beamPlatter } from '../theme/platter';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
 // Floating nav (§6.20): a 258px glass panel inset NAV_INSET inside a 270px docked rail column.
@@ -33,7 +33,7 @@ const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the 
 const NAV_INSET_PX = NAV_INSET * 8; // 12px — NAV_INSET as raw px, for position props (sx position props aren't spacing-scaled)
 // Calm gradient-border rim for the floating panel (both states) — interaction 'none' (no tracking/spin),
 // mixing toward the canvas base it floats over. Replaces the docked separation shadow.
-const NAV_BORDER_SX = beamGradientBorder({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24 });
+const NAV_BORDER_SX = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24 });
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
 // derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
 // cleared horizontally by the collapsed gutter). Local name for the shell's own strip height.

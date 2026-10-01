@@ -1,4 +1,4 @@
-import { Paper, Box, Stack, Typography, Tooltip, beamGradientBorder } from '@betty/beam';
+import { Paper, Box, Stack, Typography, Tooltip, beamPlatter } from '@betty/beam';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import { NodeKindChip } from './NodeKindChip';
@@ -9,11 +9,11 @@ import { summarizeNode, type NodeConfig, type FactAdvisory } from '../ruleSetSto
 export type RuleNodeData = { node: NodeConfig; advisories: FactAdvisory[]; selected: boolean };
 export type RuleFlowNode = Node<RuleNodeData, 'rule'>;
 
-const NODE_RADIUS = 12; // must match the beamGradientBorder radius below (the rim traces this)
+const NODE_RADIUS = 12; // must match the beamPlatter radius below (the rim traces this)
 
 /**
  * A rule-tree node as a themed Beam card. Selection = the gradient-border recipe. CARRIED
- * CONSTRAINT (registry.tsx): NEVER set `overflow: hidden` — beamGradientBorder draws its rim on an
+ * CONSTRAINT (registry.tsx): NEVER set `overflow: hidden` — beamPlatter draws its rim on an
  * OUTWARD `::after` a clip would eat. Advisories (unknown facts — a fact leaf not in the catalog)
  * show as an ERROR-pigment icon badge, distinct from the warning-pigmented condition chip.
  *
@@ -30,7 +30,7 @@ export function RuleNodeCard({ data }: NodeProps<RuleFlowNode>) {
         p: 1.25,
         borderRadius: `${NODE_RADIUS}px`,
         position: 'relative',
-        ...(selected ? beamGradientBorder({ radius: NODE_RADIUS }) : {}),
+        ...(selected ? beamPlatter({ radius: NODE_RADIUS }) : {}),
       }}
     >
       <Handle type="target" position={Position.Top} />
