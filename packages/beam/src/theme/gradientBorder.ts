@@ -65,14 +65,17 @@ export function beamGradientBorder(opts?: {
   const i = 'var(--beam-border-intensity)';
   // Three colours, mixing UNCHANGED (each toward the surface by --beam-border-intensity): primary
   // (hue-a) is the BEACON, hue-b flanks it, hue-c (primary +45°) is the calm far side.
-  const primary = `color-mix(in oklch, var(--mui-palette-primary-main) ${i}, ${surface})`;
-  const hueB = `color-mix(in oklch, var(--beam-gradient-hue-b) ${i}, ${surface})`;
+  // Cross-hue tints mix `in oklab` (docs/derived-color-tokens.md §2): oklch rotates a warm seed toward the
+  // surface hue — pronounced here at the high border intensities. Space reads from `--beam-mix-space`
+  // (default oklab, Theme-Lab A/B-able), matching the page mesh.
+  const primary = `color-mix(in var(--beam-mix-space, oklab), var(--mui-palette-primary-main) ${i}, ${surface})`;
+  const hueB = `color-mix(in var(--beam-mix-space, oklab), var(--beam-gradient-hue-b) ${i}, ${surface})`;
 
   const stops = [
     `${primary} 0%`,
     `${hueB} 20%`,
     `${hueB}`,
-    `color-mix(in oklch, ${hueB} 35%, ${surface}) 50%`,
+    `color-mix(in var(--beam-mix-space, oklab), ${hueB} 35%, ${surface}) 50%`,
     `${hueB}`,
     `${hueB} 80%`,
     `${primary} 100%`,
