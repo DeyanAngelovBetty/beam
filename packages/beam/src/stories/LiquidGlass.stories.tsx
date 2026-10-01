@@ -10,11 +10,12 @@ import { BORDER_RADIUS_24 } from '../theme/tokens';
 /**
  * Liquid Glass bench (Lab) — see real liquid glass over real Beam content and decide where it belongs.
  * Three recipes side by side, two forms each (platter fringe behind a solid box at offset 12/24, and a fully
- * translucent panel with text). Controls: blur, displacement scale, specular strength.
+ * translucent panel with text). Controls: blur, brightness (recipe A lift), displacement scale, specular.
  *
  * ⚠️ Chromium target. I could not visually verify any of this (no browser in the build env) — treat every
  * visual claim as UNVERIFIED until you eyeball it in Chrome. Known caveats are noted per recipe.
- *   A — today's glass (blur + saturate + tint): reliable everywhere.
+ *   A — light-driven glass (blur + saturate + BRIGHTNESS + diagonal sheen + specular shadow): reliable
+ *       everywhere; brightness slider (dark-mode lift). This is the recipe the nav glass A/B now uses.
  *   B — generator-style: specular ::before (inset box-shadow) + refraction ::after (backdrop-filter:blur(0)
  *       + filter:url(#…) feTurbulence→feGaussianBlur→feDisplacementMap) + outer shadow + isolation. The
  *       backdrop-displacement via `filter` on a backdrop-filtered pseudo is the EXPERIMENTAL bit — Chromium-
@@ -77,11 +78,17 @@ function Filters({ scale }: { scale: number }) {
 
 // ---- recipes as sx fragments (driven by CSS vars --lg-blur / --lg-specular; scale is the SVG attr) ----
 const RADIUS = `${BORDER_RADIUS_24}px`;
+// A — LIGHT-DRIVEN glass (2026-10-01): brightness(var(--lg-bright)) lifts our dark canvas (blur+saturate alone
+// read too dark), a diagonal sheen (--beam-nav-sheen) sits over the translucent tint, and a specular inset
+// edge + outer drop (--beam-nav-glass-shadow) are the "it's glass" cue. Sheen + shadow are the themed mode-
+// aware vars, so flipping the Storybook `mode` toolbar shows the dark vs light sheen live. This mirrors the
+// nav glass A/B (platter.ts fill:'glass') exactly — same vars — so the bench is a faithful preview.
 const recipeA = {
-  backdropFilter: 'blur(var(--lg-blur)) saturate(1.5)',
-  WebkitBackdropFilter: 'blur(var(--lg-blur)) saturate(1.5)',
-  background: 'color-mix(in oklab, var(--mui-palette-background-paper) 40%, transparent)',
+  backdropFilter: 'blur(var(--lg-blur)) saturate(1.6) brightness(var(--lg-bright))',
+  WebkitBackdropFilter: 'blur(var(--lg-blur)) saturate(1.6) brightness(var(--lg-bright))',
+  background: 'var(--beam-nav-sheen), color-mix(in oklab, var(--mui-palette-background-paper) 40%, transparent)',
   border: '1px solid var(--beam-nav-edge)',
+  boxShadow: 'var(--beam-nav-glass-shadow)',
 } as const;
 
 // B/C — refraction via DIRECT `backdrop-filter: blur() url(#svg)` (Chromium 141: identical to the former
@@ -159,16 +166,18 @@ function Backdrop() {
 
 export const Bench: Story = {
   render: () => {
-    const [blur, setBlur] = useState(8);
+    const [blur, setBlur] = useState(18); // light-driven default — matches the nav glass seed (navGlassBlur 18)
+    const [bright, setBright] = useState(2.0); // the LIFT — what makes dark-canvas glass read as lit (dark mode)
     const [scale, setScale] = useState(12); // subtle Beam-appropriate default (range stays 0–200)
     const [specular, setSpecular] = useState(0.6);
     return (
-      <Box sx={{ minHeight: '100vh', ['--lg-blur' as string]: `${blur}px`, ['--lg-specular' as string]: String(specular) }}>
+      <Box sx={{ minHeight: '100vh', ['--lg-blur' as string]: `${blur}px`, ['--lg-bright' as string]: String(bright), ['--lg-specular' as string]: String(specular) }}>
         <Filters scale={scale} />
 
         {/* Controls */}
         <Stack direction="row" spacing={4} sx={{ p: 2, position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.paper0', borderBottom: '1px solid', borderColor: 'divider', flexWrap: 'wrap' }}>
           <Stack sx={{ width: 180 }}><Typography variant="caption">blur {blur}px</Typography><Slider size="small" min={0} max={30} value={blur} onChange={(_, v) => setBlur(v as number)} /></Stack>
+          <Stack sx={{ width: 180 }}><Typography variant="caption">brightness {bright.toFixed(1)} (A)</Typography><Slider size="small" min={1} max={3} step={0.1} value={bright} onChange={(_, v) => setBright(v as number)} /></Stack>
           <Stack sx={{ width: 180 }}><Typography variant="caption">displacement {scale}</Typography><Slider size="small" min={0} max={200} value={scale} onChange={(_, v) => setScale(v as number)} /></Stack>
           <Stack sx={{ width: 180 }}><Typography variant="caption">specular {specular.toFixed(2)}</Typography><Slider size="small" min={0} max={1} step={0.05} value={specular} onChange={(_, v) => setSpecular(v as number)} /></Stack>
         </Stack>

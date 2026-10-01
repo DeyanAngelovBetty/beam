@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, FIELD_TWIN_HEIGHT, pageBackdropSx, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, NAV_GLASS, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, FIELD_TWIN_HEIGHT, pageBackdropSx, type BrandName, type ProductName } from './tokens';
 
 // Surface-ramp named stops (docs/surface-grammar.md). `default`/`paper` are MUI's; `paper0` (Paper
 // elevation 0) and `overlay` (all menus/popovers) are the two extra ramp levels, typed here so the
@@ -481,10 +481,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-3': 'var(--beam-ramp-3)',
             // Rail background — one swappable recipe, consumed at the two rail sites.
             '--beam-nav-surface': derived.navSurface,
-            // Frosted-glass rail. Blur is scheme-invariant; alpha + saturate flip.
+            // Frosted-glass rail. Blur is scheme-invariant; alpha + saturate + brightness flip. The glass is
+            // LIGHT-DRIVEN (2026-10-01): brightness lifts the dark backdrop; sheen + specular shadow are the
+            // lit-pane / "it's glass" cues (NAV_GLASS, tokens.ts). :root carries the DARK defaults.
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
             '--beam-nav-glass-blur': `${s.dark.navGlassBlur}px`,
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
+            '--beam-nav-glass-brightness': String(s.dark.navGlassBrightness),
+            '--beam-nav-sheen': NAV_GLASS.dark.sheen,
+            '--beam-nav-glass-shadow': NAV_GLASS.dark.shadow,
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
@@ -537,6 +542,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.light.navSpread),
             '--beam-nav-glass-alpha': String(s.light.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.light.navGlassSaturate),
+            '--beam-nav-glass-brightness': String(s.light.navGlassBrightness),
+            '--beam-nav-sheen': NAV_GLASS.light.sheen,
+            '--beam-nav-glass-shadow': NAV_GLASS.light.shadow,
             '--beam-nav-edge-offset': String(navEdgeOffset.light),
             '--beam-nav-edge-alpha': String(EDGE.light.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.light),
@@ -570,6 +578,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.dark.navSpread),
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
+            '--beam-nav-glass-brightness': String(s.dark.navGlassBrightness),
+            '--beam-nav-sheen': NAV_GLASS.dark.sheen,
+            '--beam-nav-glass-shadow': NAV_GLASS.dark.shadow,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),

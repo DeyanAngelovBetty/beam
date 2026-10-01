@@ -22,7 +22,7 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from '../theme/tokens';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, NAV_PLATTER_OFFSET, NAV_PLATTER_GLASS_OFFSET } from '../theme/tokens';
 import { beamPlatter } from '../theme/platter';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
@@ -33,12 +33,13 @@ const RAIL_WIDTH = 282; // 258 panel + 24 (PAGE_GUTTER) left inset
 const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
 const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px, for position props (sx position props aren't spacing-scaled)
-// The platter rim behind the floating panel (both states), extending NAV_PLATTER_OFFSET (8) — a hairline
-// halo in the inset gap. Default fill = gradient (calm, mixing toward the canvas it floats over). A LIVE A/B
-// for the glass exploration: set `data-beam-nav-platter="glass"` on <html> in DevTools to swap the rim to
-// the liquid-glass fill (no rebuild) — not a ruling, just to compare on the real nav.
+// The platter rim behind the floating panel (both states). Default fill = gradient at NAV_PLATTER_OFFSET (8)
+// — a hairline halo in the inset gap, mixing toward the canvas it floats over. A LIVE A/B for the glass
+// exploration: set `data-beam-nav-platter="glass"` on <html> in DevTools to swap the rim to the light-driven
+// liquid-glass fill (no rebuild) — not a ruling, just to compare on the real nav. The glass fringe gets its
+// OWN wider offset (NAV_PLATTER_GLASS_OFFSET = 18) so the blurred/sheened rim has room to read as glass.
 const NAV_PLATTER_GRADIENT = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET });
-const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET });
+const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_GLASS_OFFSET });
 const NAV_BORDER_SX = {
   ...NAV_PLATTER_GRADIENT,
   '[data-beam-nav-platter="glass"] &': NAV_PLATTER_GLASS,

@@ -50,9 +50,12 @@ export function beamPlatter(opts?: {
   const radiusExpr = `calc(${radius}px + ${ring})`;
 
   if (fill === 'glass') {
-    // Glass platter: a blurred, tinted fill behind the box, visible in the `offset` fringe (the opaque box
-    // occludes the centre). backdrop-filter on the pseudo blurs the CANVAS behind it. Same recipe as the
-    // nav's former NAV_GLASS_SX, moved onto the platter; fallbacks force opaque (alpha 1).
+    // Glass platter: a blurred, LIGHT-DRIVEN fill behind the box, visible in the `offset` fringe (the opaque
+    // box occludes the centre). backdrop-filter blurs + re-saturates + BRIGHTENS the canvas behind it
+    // (brightness is what lifts our dark canvas so it reads as lit glass, not a dark smear — 2026-10-01). The
+    // fill is a diagonal SHEEN over the translucent tint; a specular inset edge + outer drop shadow (one
+    // box-shadow) is the "it's glass" cue. All values are mode-aware CSS vars (NAV_GLASS, tokens.ts), so a
+    // mode flip reskins the glass with no rebuild. Fallbacks force opaque (alpha 1).
     return {
       position: 'relative',
       '&::after': {
@@ -63,10 +66,11 @@ export function beamPlatter(opts?: {
         cornerShape: 'squircle',
         zIndex: -1,
         pointerEvents: 'none',
-        background: 'var(--beam-nav-surface)',
-        backdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate))',
-        WebkitBackdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate))',
+        background: 'var(--beam-nav-sheen), var(--beam-nav-surface)', // diagonal sheen over the frosted tint
+        backdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate)) brightness(var(--beam-nav-glass-brightness))',
+        WebkitBackdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate)) brightness(var(--beam-nav-glass-brightness))',
         border: '1px solid var(--beam-nav-edge)', // the edge light
+        boxShadow: 'var(--beam-nav-glass-shadow)', // specular inset rim + outer drop — the main glass cue
         '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
           '--beam-nav-glass-alpha': '1',
         },

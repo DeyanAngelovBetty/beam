@@ -106,6 +106,10 @@ export const BORDER_RADIUS_24 = 24; // Figma: shape › borderRadius/24 — the 
 // 12 = too wide, 4/6 = too thin) — a tuned px, not a derived ratio. Stays < the 24px gap so the fringe
 // clears appFrame's overflow:hidden (left-edge clearance = PAGE_GUTTER(24) − NAV_PLATTER_OFFSET(8) = 16px).
 export const NAV_PLATTER_OFFSET = 8;
+// Glass platter wants a WIDER halo than the gradient's 8 — the blurred/sheened fringe needs room to read as
+// glass, not a hairline (Deyan to judge 16–20; 18 to start). Only the nav glass A/B uses it; still < the 24px
+// gap (clearance 24 − 18 = 6px). Separate from NAV_PLATTER_OFFSET so flipping fill doesn't retune the gradient.
+export const NAV_PLATTER_GLASS_OFFSET = 18;
 
 /**
  * RAIL_SEAT — the optical vertical (px) where TABLE CHROME-BAND action LABELS seat: **2 × spacing = 16px**,
@@ -451,20 +455,48 @@ type NavSchemeSeed = {
   navGlassAlpha: number;
   navGlassBlur: number;
   navGlassSaturate: number;
+  // Backdrop BRIGHTNESS (2026-10-01) — the light-driven lift. Blur+saturate over our DARK canvas reads too
+  // dark; brightness is what makes it read as lit glass. DARK > 1 (lift the dark backdrop); LIGHT < 1
+  // (a near-white backdrop needs damping, not lift). PROPOSED for light (UNVERIFIED). See NAV_GLASS below.
+  navGlassBrightness: number;
 };
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
-    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
-    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
+    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.0 },
+    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4, navGlassBrightness: 0.92 },
   },
   gaspar: {
     // TEAL adopted 2026-09-03 (derived-color-tokens §8): teal-tinted anchors from the recovered
     // 2026-07 palette, verbatim. step + nav params UNCHANGED (identical across eras — the graduation
     // moves colour only). Outgoing lavender anchors (#000104 / #EEEFF2) retained as a lab candidate.
-    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 24, navGlassSaturate: 1.5 },
-    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 24, navGlassSaturate: 1.4 },
+    dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6, navGlassBrightness: 2.0 },
+    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4, navGlassBrightness: 0.92 },
   },
 };
+
+/**
+ * Liquid-glass LIGHT CUES (2026-10-01). Blur + saturate alone read too dark on our dark canvas (tested in
+ * Chromium 141), so the glass is light-driven. Three cues beyond the backdrop brightness (`navGlassBrightness`
+ * in the seed above):
+ *   • sheen  — a DIAGONAL highlight layered OVER the translucent tint (`--beam-nav-surface`), replacing the
+ *              old flat-tint look. This is the "lit pane" read.
+ *   • shadow — a specular INSET edge (light caught on the rim) + an outer drop shadow. This is the main
+ *              "it's glass" cue (the generator's `::before`), folded into one box-shadow.
+ * Mode-aware, NOT per-product (sunlight == gaspar) — emitted as CSS vars in createBeamTheme's scheme blocks
+ * so a mode flip swaps them with NO theme rebuild (§5). LIGHT values are PROPOSED / UNVERIFIED: the sheen
+ * leans DARK, not white — a white sheen on a near-white pane washes out, whereas a faint dark diagonal reads
+ * as a tinted sheet of glass; the specular highlight stays white (light is white in both modes).
+ */
+export const NAV_GLASS = {
+  dark: {
+    sheen: 'linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06))',
+    shadow: 'inset 0 0 14px -4px rgba(255,255,255,0.90), 0 12px 32px -10px rgba(0,0,0,0.55)',
+  },
+  light: {
+    sheen: 'linear-gradient(135deg, rgba(20,24,33,0.10), rgba(20,24,33,0.02))',
+    shadow: 'inset 0 0 14px -4px rgba(255,255,255,0.95), 0 12px 32px -14px rgba(20,24,33,0.22)',
+  },
+} as const;
 
 /**
  * SEED — product-scoped page-mesh controls (Figma `product/gradient`). Same shape
