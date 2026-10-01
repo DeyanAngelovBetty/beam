@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -22,13 +22,15 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, CONTENT_GUTTER_LEFT_COLLAPSED, LOGO_BAR_HEIGHT, NAV_INSET, BORDER_RADIUS_24 } from '../theme/tokens';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, NAV_INSET, BORDER_RADIUS_24 } from '../theme/tokens';
 import { beamGradientBorder } from '../theme/gradientBorder';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
 // Floating nav (§6.20): a 258px glass panel inset NAV_INSET inside a 270px docked rail column.
 const RAIL_WIDTH = 270;
 const PANEL_WIDTH = 258;
+const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
+const NAV_INSET_PX = NAV_INSET * 8; // 12px — NAV_INSET as raw px, for position props (sx position props aren't spacing-scaled)
 // Calm gradient-border rim for the floating panel (both states) — interaction 'none' (no tracking/spin),
 // mixing toward the canvas base it floats over. Replaces the docked separation shadow.
 const NAV_BORDER_SX = beamGradientBorder({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24 });
@@ -58,7 +60,6 @@ const DEFAULT_CONTENT_GUTTER = CONTENT_INLINE; // { xs: 2, sm: 4, md: 5 } — 16
 // §4). Each names exactly one element per state so the browser can morph
 // between positions; the choreography that times them lives in createBeamTheme.
 const VT_BRANDMARK = 'beam-shell-brandmark'; // travels: strip ↔ locked header
-const VT_GHOST = 'beam-shell-ghost'; // fades out: the peek's watermark
 const VT_PANEL = 'beam-shell-sidebar'; // grows/collapses: the locked panel
 const VT_CONTENT = 'beam-shell-content'; // reflows: full-width ↔ right column
 
@@ -380,7 +381,6 @@ export function AppShell({
 
   const panelId = 'beam-shell-panel';
   const colorMark = brandMark?.color ?? <Wordmark title={title} />;
-  const ghostMark = brandMark?.ghost ?? <Wordmark title={title} ghost />;
   const footerContent = footer;
 
   const navList = (
@@ -447,9 +447,11 @@ export function AppShell({
             </>
           ) : nature === 'peek' ? (
             <>
-              {/* Ghost = the destination marker: where the brand lands on lock. */}
-              <Box style={{ viewTransitionName: VT_GHOST }} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-                {ghostMark}
+              {/* Peek shows the REAL brand mark (matches Figma). No VT name here: the lock↔unlock brand morph
+                  is VT_BRANDMARK between the collapsed toggle strip and the locked panel header — the peek is
+                  a transient overlay riding the panel's own slide/fade, never part of that morph. */}
+              <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                {colorMark}
               </Box>
               <Tooltip title={`Lock sidebar open · ${LOCK_SHORTCUT_LABEL}`}>
                 <IconButton
@@ -507,12 +509,12 @@ export function AppShell({
         minHeight: 0,
         height: '100%',
         overflowY: 'auto',
-        // Page gutters (§6.19, 2026-09-29): every edge is PAGE_GUTTER (3×) in BOTH nav states; only the LEFT
-        // is nav-state-aware — it opens to CONTENT_GUTTER_LEFT_COLLAPSED when collapsed to clear the floating
-        // toggle. Gated on the shell's collapsed state (`effectiveLocked`), not viewport width. (`contentGutter`
-        // is vestigial — no app passes it — kept this pass; not read here anymore.)
+        // Page gutters (§6.19, superseded 2026-10-01): PAGE_GUTTER (3×) on ALL edges in BOTH nav states — no
+        // nav-state-aware edge anymore. The floating-nav toggle lives in its own collapsed column (§6.20), so
+        // main no longer opens its left to clear it. (`contentGutter` + `CONTENT_GUTTER_LEFT_COLLAPSED` are
+        // now vestigial — no consumer.)
         pr: PAGE_GUTTER,
-        pl: effectiveLocked ? PAGE_GUTTER : CONTENT_GUTTER_LEFT_COLLAPSED,
+        pl: PAGE_GUTTER,
         pb: CONTENT_BOTTOM,
         pt: PAGE_TOP_GAP,
         // STICKY-CHROME CONTRACT: a grid with `stickyChrome` publishes `data-beam-sticky-chrome`; it takes
@@ -533,110 +535,110 @@ export function AppShell({
     </Box>
   );
 
-  // ---- ONE frame, all nav states (BEAM.md §6.17). A SINGLE grid container renders in every state, with
-  // `main` as its CONSTANT keyed last child — so collapse/expand/peek swaps only the chrome sibling and NEVER
-  // remounts the page. LOCKED adds a real 264px rail column (in-flow, so the column can animate, grammar §4);
-  // COLLAPSED/NARROW drops to a single `1fr` column and layers its chrome (strip, hover zone, peek, drawer)
-  // OUT OF FLOW (absolute / portalled) — consuming no grid track, so `main` keeps the sole cell and never
-  // wraps to a second row. The rail is a plain full-height cell (main owns the scroll, no sticky needed). ----
+  // ---- ONE grid, all nav states (BEAM.md §6.17, §6.20). Columns `<nav> 1fr`; `<nav>` (key="beam-shell-rail")
+  // is col 1 and `{main}` (key) is col 2 — both CONSTANT keyed children, so collapse/expand/peek only swaps
+  // the nav column's contents + the grid template; `main` never remounts (its grid cell is pure CSS). The nav
+  // panel FLOATS in every state; the gradient border always rides a clean OUTER wrap (no filter/VT/z-index →
+  // its z-−1 ::after shows on the canvas), the glass panel is the inner child. ----
   const frameContent = (
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: effectiveLocked ? `${RAIL_WIDTH}px 1fr` : '1fr',
+        // Docked: 270 rail. Collapsed (wide): a 60 column holding the toggle. Narrow: no track — <nav> goes
+        // absolute, main is the sole 1fr column.
+        gridTemplateColumns: effectiveLocked
+          ? `${RAIL_WIDTH}px 1fr`
+          : isWide
+            ? `${COLLAPSED_RAIL_WIDTH}px 1fr`
+            : '1fr',
         height: '100%',
       }}
     >
-      {effectiveLocked ? (
-        // Rail cell (270); the panel floats inside it — inset NAV_INSET (12) top/bottom/left, 258 wide. The
-        // gradient border rides the OUTER wrap (no filter/VT/z-index → its z-−1 ::after shows on the canvas
-        // in the inset gap), the glass panel is the inner. overflow visible so the ring isn't clipped.
-        <Box component="nav" key="beam-shell-rail" sx={{ position: 'relative', height: '100%' }}>
-          <Box sx={{ position: 'absolute', top: NAV_INSET, bottom: NAV_INSET, left: NAV_INSET, width: PANEL_WIDTH, ...NAV_BORDER_SX }}>
+      <Box
+        component="nav"
+        key="beam-shell-rail"
+        aria-label="Primary"
+        // Wide + collapsed: hovering the column peeks. (Docked has no hover; narrow taps the drawer.)
+        onMouseEnter={!effectiveLocked && isWide && !peekOpen ? scheduleOpen : undefined}
+        // DOCKED: a flex column, PADDING = the gaps (spacing-aware → 12/0/12/12); the border wrap is a flex
+        // child that stretches (no absolute/inset maths/height calc). COLLAPSED (wide): a 60 column; z-index
+        // HERE (not the wrap) lifts the peek over main; overflow visible so the ring isn't clipped. NARROW:
+        // out of flow (main is the sole 1fr track); the hamburger floats top-left.
+        sx={
+          effectiveLocked
+            ? ({ display: 'flex', height: '100%', pt: NAV_INSET, pb: NAV_INSET, pl: NAV_INSET } as const)
+            : isWide
+              ? ({ position: 'relative', height: '100%', zIndex: theme.zIndex.appBar - 1 } as const)
+              : ({ position: 'absolute', top: 0, left: 0, zIndex: theme.zIndex.appBar } as const)
+        }
+      >
+        {effectiveLocked ? (
+          // Border wrap (in flow, flex child) > glass panel. Keeps the border's own position:relative — no
+          // clobber because nothing here needs absolute.
+          <Box sx={{ flex: 1, minWidth: 0, ...NAV_BORDER_SX }}>
             {panel('locked')}
           </Box>
-        </Box>
-      ) : (
-        // CLOSED (wide) or NARROW: brand strip + peek/drawer on demand. All `absolute` within appFrame (NOT
-        // `fixed` to the viewport), so they sit BELOW the app-alert bar and out of the grid flow. Keyed as a
-        // single fragment so `main` stays the same-index, same-key sibling as in the locked branch.
-        <Fragment key="beam-shell-chrome">
-          {/* Brand strip (grammar §3): hamburger + color mark, top-left, no bar. */}
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ alignItems: 'center', position: 'absolute', top: 0, left: 0, zIndex: theme.zIndex.appBar, height: STRIP_HEIGHT, px: 1 }}
-          >
-            {/* Hamburger, dual role (grammar §3, §6): wide = lock toggle (hover still
-                peeks); narrow = open the modal drawer, no lock. */}
-            <Tooltip title={isWide ? `Lock sidebar open · ${LOCK_SHORTCUT_LABEL}` : 'Open navigation'}>
-              <IconButton
-                ref={hamburgerRef}
-                aria-label={isWide ? 'Lock sidebar open' : 'Open navigation'}
-                aria-expanded={isWide ? effectiveLocked : peekOpen}
-                aria-controls={panelId}
-                aria-keyshortcuts={isWide ? LOCK_ARIA_KEYSHORTCUTS : undefined}
-                onMouseEnter={isWide ? scheduleOpen : undefined}
-                onClick={() => {
-                  if (isWide) lockOpen();
-                  else if (peekOpen) closeNow();
-                  else openNow();
-                }}
+        ) : (
+          <>
+            {/* Toggle strip — the hamburger (wide = lock/dock, hover peeks; narrow = open drawer). Collapsed
+                brand mark is OFF by default estate-wide (§6.16), so the 60 column shows only the control. */}
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: STRIP_HEIGHT, px: 1 }}>
+              <Tooltip title={isWide ? `Lock sidebar open · ${LOCK_SHORTCUT_LABEL}` : 'Open navigation'}>
+                <IconButton
+                  ref={hamburgerRef}
+                  aria-label={isWide ? 'Lock sidebar open' : 'Open navigation'}
+                  aria-expanded={isWide ? effectiveLocked : peekOpen}
+                  aria-controls={panelId}
+                  aria-keyshortcuts={isWide ? LOCK_ARIA_KEYSHORTCUTS : undefined}
+                  onClick={() => {
+                    if (isWide) lockOpen();
+                    else if (peekOpen) closeNow();
+                    else openNow();
+                  }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              </Tooltip>
+              {isWide && showCollapsedBrandMark && (
+                <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
+                  {colorMark}
+                </Box>
+              )}
+            </Stack>
+
+            {isWide ? (
+              peekOpen && (
+                // Peek = the floating panel, sliding out of the 60 column. Border wrap (spread FIRST so our
+                // `position:absolute` wins over the border's `relative`); top/bottom PINNED (no height calc);
+                // left NAV_INSET_PX so the ring clears appFrame's overflow:hidden. z-index lives on <nav>.
+                <Box
+                  sx={{
+                    ...NAV_BORDER_SX,
+                    position: 'absolute',
+                    top: STRIP_HEIGHT,
+                    left: NAV_INSET_PX,
+                    bottom: NAV_INSET_PX,
+                    width: PANEL_WIDTH,
+                  }}
+                >
+                  {panel('peek')}
+                </Box>
+              )
+            ) : (
+              // Narrow: the peek wearing mobile clothes — a modal drawer (portalled, out of flow).
+              <Drawer
+                variant="temporary"
+                open={peekOpen}
+                onClose={closeNow}
+                ModalProps={{ keepMounted: true }}
+                sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, ...NAV_GLASS_SX } }}
               >
-                <MenuIcon />
-              </IconButton>
-            </Tooltip>
-            {/* Collapsed-strip brand mark — OFF by default estate-wide (Chavdar 2026-09-28, BEAM.md §6.16): the
-                collapsed rail shows only the expand/collapse control, so the top band is reclaimed for content +
-                the sticky chrome. Opt back in with `showCollapsedBrandMark`. Expanded panel keeps its mark. */}
-            {showCollapsedBrandMark && (
-              <Box style={{ viewTransitionName: VT_BRANDMARK }} sx={{ display: 'flex', alignItems: 'center' }}>
-                {colorMark}
-              </Box>
+                {panel('peek', true)}
+              </Drawer>
             )}
-          </Stack>
-
-          {/* Left-edge hover zone opens the peek (wide, closed). */}
-          {isWide && !peekOpen && (
-            <Box
-              onMouseEnter={scheduleOpen}
-              sx={{ position: 'absolute', top: 0, left: 0, width: 8, height: '100%', zIndex: theme.zIndex.appBar - 1 }}
-            />
-          )}
-
-          {isWide ? (
-            peekOpen && (
-              // Peek = floating panel, non-modal (grammar §2, §6). Inset below the strip so the strip stays
-              // visible; left: NAV_INSET so the gradient-border ring clears appFrame's overflow:hidden (not
-              // left:0). This Box is the border WRAP (no filter/VT); the glass panel is its child.
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: STRIP_HEIGHT,
-                  left: NAV_INSET,
-                  width: PANEL_WIDTH,
-                  height: `calc(100% - ${STRIP_HEIGHT * 2}px)`,
-                  zIndex: theme.zIndex.appBar - 1,
-                  ...NAV_BORDER_SX,
-                }}
-              >
-                {panel('peek')}
-              </Box>
-            )
-          ) : (
-            // Narrow: the peek wearing mobile clothes — a modal drawer.
-            <Drawer
-              variant="temporary"
-              open={peekOpen}
-              onClose={closeNow}
-              ModalProps={{ keepMounted: true }}
-              sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, ...NAV_GLASS_SX } }}
-            >
-              {panel('peek', true)}
-            </Drawer>
-          )}
-        </Fragment>
-      )}
+          </>
+        )}
+      </Box>
 
       {main}
     </Box>

@@ -419,6 +419,10 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     ONE rule for every page. This **supersedes** the earlier symmetric-`CONTENT_INLINE` (5×) gutter + the
     nav-state-aware `right` (collapsed 1.5×); those constants + the `contentGutter` prop are now vestigial
     (no app passes `contentGutter`). Set once on `AppShell` `main`; all sticky chrome inherits.
+    **Superseded 2026-10-01 (§6.20):** once the collapsed nav toggle moved into its OWN 60px column, `main`
+    no longer opens its left to clear it — so `left` = `PAGE_GUTTER` in BOTH states too. **There is no
+    nav-state-aware page edge any more** — all four edges are `PAGE_GUTTER`, always. `CONTENT_GUTTER_LEFT_COLLAPSED`
+    joins `CONTENT_INLINE` / `contentGutter` as vestigial.
 20. **Floating nav + gradient-border intent tiers (2026-10-01).** The nav panel floats in both states
     (docked: 270 rail, 258 panel inset `NAV_INSET`, radius `borderRadius/24`, glass over the canvas; peek:
     same panel, keeps shadows) — full rule in docs/shell-grammar.md §7; preserves §6.17 (main never

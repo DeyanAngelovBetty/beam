@@ -26,6 +26,10 @@ import type { SxProps, Theme } from '@mui/material/styles';
  * relies on the element NOT establishing its own stacking context (no transform/opacity/
  * filter/z-index on it); every current consumer complies.
  *
+ * ⚠️ This factory sets `position: relative`. If the consuming element needs its OWN position
+ * (e.g. `absolute`), spread `beamGradientBorder(...)` FIRST, then set `position` after it, or the
+ * relative wins and your positioning is silently dropped.
+ *
  * SURFACE: `surface` MUST be the actual surface behind the element (a var) — the stops
  * mix toward it so it's a lit edge, not a rainbow. Defaults to `background.paper`
  * (surface 1); pass `--beam-surface-2/-3` for Menu/Dialog.
