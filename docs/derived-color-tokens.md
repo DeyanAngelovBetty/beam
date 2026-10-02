@@ -107,7 +107,8 @@ is concentric `calc(radius + offset)`.
 > **Glass fill — FINAL recipe (2026-10-01, Deyan).** Stripped to the minimum: refraction + blur carry the
 > effect. Brightness, saturate, the opacity-lift, and the box-shadow are all gone.
 > - **backdrop-filter** = `blur(--beam-nav-glass-blur) url(#refract)` — blur, then a feTurbulence→
->   feDisplacementMap NOISE refraction (`refract` id; nav = `'beam-nav-glass-noise'`, rendered in AppShell).
+>   feDisplacementMap NOISE refraction (`refract` id; nav = `'beam-nav-glass-noise'`, rendered by `BeamSvgDefs`
+>   — idempotent, document-global by id, so chrome glass works outside the shell too).
 >   Nothing else. Degrades to blur-only (then opaque tint) where url() filters / backdrop-filter are unsupported.
 > - **fill** = ONE tint dial `--beam-nav-glass-tint` over a `--beam-nav-glass-tint-base` colour,
 >   `color-mix(… base <tint>, transparent)`, range 0–100%, where **0 = no background at all**. No sheen.
@@ -161,6 +162,16 @@ Values are **PROVISIONAL except `chrome`** (test-driven on the nav).
   CONTEXT params (radius to match the box, the actual surface behind, the refraction filter id) belong there.
 
 *(This absorbs the earlier "fill by ROLE" note: chrome = glass + wider platter; content = gradient.)*
+
+> **Finding — `chrome` is a real preset, but NOT a drop-in (2026-10-02).** The Theme Lab is the first `chrome`
+> consumer outside the nav. Applying it surfaced that the chrome platter has structural requirements the nav
+> already satisfies but a naive consumer does not: the platter `::after` can't sit on a surface that **clips**
+> (`overflow`), carries an **opaque/translucent background**, or runs its own **backdrop-filter** — it needs a
+> CLEAN outer wrap (no overflow, no background), with the scroll + the solid surface on an INNER panel. The Lab
+> drawer had all three problems (scroll, translucent bg, its own glass) and had to be split into outer-wrap +
+> solid-inner-panel, exactly like the nav. It also needed the refraction filter available document-wide
+> (`BeamSvgDefs`). **Takeaway:** `chrome` should ship with that structure — ideally a small wrapper component
+> (e.g. `BeamChrome`) so dialogs/popovers get it right without re-deriving the layering. Ledgered, not built.
 
 The gradient fill: the rim is a `conic-gradient(from var(--beam-border-angle), …)`
 drawn on an absolutely-positioned `::after` that sits just OUTSIDE the element (negative

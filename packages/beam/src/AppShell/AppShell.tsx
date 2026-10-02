@@ -24,6 +24,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
 import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from '../theme/tokens';
 import { beamPlatter } from '../theme/platter';
+import { BeamSvgDefs, BEAM_GLASS_FILTER_ID } from '../BeamSvgDefs';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
 // Floating nav (§6.20): a 258px panel inset by the page gutter (PAGE_GUTTER = 24 at md) inside a 282px docked
@@ -33,7 +34,7 @@ const RAIL_WIDTH = 282; // 258 panel + 24 (PAGE_GUTTER) left inset
 const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
 const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px, for position props (sx position props aren't spacing-scaled)
-const NAV_GLASS_FILTER_ID = 'beam-nav-glass-noise';
+const NAV_GLASS_FILTER_ID = BEAM_GLASS_FILTER_ID;
 // Offset as a LIVE var (Theme Lab tunes it; fallback = the token). Both the platter geometry AND main's docked
 // left padding read it, so dragging offset moves the fringe + the content gutter in the same paint (§6.20).
 const NAV_PLATTER_OFFSET_VAR = `var(--beam-nav-platter-offset, ${NAV_PLATTER_OFFSET}px)`;
@@ -656,19 +657,9 @@ export function AppShell({
   // pages). Root is a FIXED viewport height so the app scrolls inside main, not the document. ----
   return (
     <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Nav-glass NOISE refraction filter — referenced by the glass platter layer's backdrop-filter
-          (url(#beam-nav-glass-noise)); live whenever the glass layer is shown (the default). Matches the bench's
-          recipe B (feTurbulence→feGaussianBlur→feDisplacementMap, displacement 12). NOTE: this filter is to be
-          HOISTED to a global spot (see report) so chrome glass works outside AppShell — pending that proposal. */}
-      <svg aria-hidden width="0" height="0" style={{ position: 'absolute' }}>
-        <defs>
-          <filter id={NAV_GLASS_FILTER_ID} x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves={2} seed={7} result="noise" />
-            <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
-            <feDisplacementMap in="SourceGraphic" in2="blurred" scale={12} xChannelSelector="R" yChannelSelector="G" />
-          </filter>
-        </defs>
-      </svg>
+      {/* Glass refraction filter — hoisted to BeamSvgDefs (idempotent, document-global by id) so chrome glass
+          works outside the shell too. Rendering it here covers every app that mounts AppShell. */}
+      <BeamSvgDefs />
       {appAlert}
       {/* minHeight:0 = the flexbox footgun guard: without it a flex child refuses to shrink below
           its content, main's internal scroll never engages, and the document scrolls instead. */}

@@ -105,6 +105,7 @@ export type { Theme } from '@mui/material/styles';
 
 // ---- Organisms (Beam-owned) ----
 export { AppShell } from './AppShell/AppShell';
+export { BeamSvgDefs, BEAM_GLASS_FILTER_ID, BEAM_GLASS_DISPLACEMENT_DEFAULT } from './BeamSvgDefs';
 export type { AppShellProps, BeamNavItem, BeamBrandMark } from './AppShell/AppShell.types';
 export { BeamBadge } from './BeamBadge/BeamBadge';
 export type { BeamBadgeProps, BeamBadgeHue } from './BeamBadge/BeamBadge.types';

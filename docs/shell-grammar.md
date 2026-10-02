@@ -202,14 +202,11 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 
 ## Open
 
-- **Known issue — platter-fill swap jumped nav state — ADDRESSED 2026-10-02, pending confirm.** The old swap
-  flipped the `data-beam-nav-platter` attribute, which jumped the nav (peek tooltip appeared). Fix: the
-  attribute is gone — fill is now two coexisting layers toggled by display vars (a pure paint change that can't
-  touch layout or state). Deyan to confirm the swap is smooth; remove this entry once confirmed.
-- **Queue — platter fill as a Theme Lab control (`gradient | glass`).** (In progress — the nav now reads the
-  fill/offset/dials as live vars; the Lab Platter section is the next step.) Promote the
-  A/B off the DevTools attribute spell onto a Theme Lab toggle so the switch is
-  demoable. (Depends on the clean-swap issue above being understood.)
+- **Platter fill swap + Theme Lab control — DONE 2026-10-02 (swap confirmed by Deyan).** The old attribute
+  swap jumped the nav; the fill is now two coexisting layers (glass `::after` + gradient `::before`) toggled by
+  per-mode display vars — a pure paint change. Theme Lab has a **Platter section** (fill / offset / blur / tint
+  per mode + a shared displacement) that drives the live vars + pokes the refraction filter, and exports to the
+  combo v4 `platter` block. The refraction filter lives in `BeamSvgDefs` (idempotent, document-global).
 - Per-app audit results of §5 migrations.
 - Motion token values (bench).
 - Whether the ghost appears in the narrow-viewport drawer (probably not —

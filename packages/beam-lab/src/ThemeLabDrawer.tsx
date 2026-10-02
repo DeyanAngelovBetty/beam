@@ -16,6 +16,10 @@ import {
   useColorScheme,
   starMaskUri,
   logoGradient,
+  beamPlatter,
+  BeamSvgDefs,
+  BEAM_GLASS_FILTER_ID,
+  BEAM_GLASS_DISPLACEMENT_DEFAULT,
   GASPAR_BODY_FACE_LABEL,
   GASPAR_BODY_WGHT,
   BODY_WGHT_VAR,
@@ -216,6 +220,38 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const [copied, setCopied] = useState(false);
   const [comboName, setComboName] = useState('');
   const bump = () => setTick((t) => t + 1);
+
+  // ── Platter dimension (nav fill + glass dials; 2026-10-02) ──────────────────────────────────────
+  // fill / offset / blur / tint are LIVE CSS vars (written per scheme via the sheet; the nav reads them with
+  // no rebuild — same seam as the colour combo). DISPLACEMENT is the SVG feDisplacementMap `scale` (not a CSS
+  // property), so it's held here and applied by poking the single #beam-nav-glass-noise filter (BeamSvgDefs,
+  // idempotent) — a session mechanism, but the VALUE exports per scheme in the combo. The filter is shared, so
+  // the slider previews the EDITING scheme's displacement; a dark≠light export signals a code split later.
+  const [displacement, setDisplacement] = useState<Record<Scheme, number>>({
+    dark: BEAM_GLASS_DISPLACEMENT_DEFAULT,
+    light: BEAM_GLASS_DISPLACEMENT_DEFAULT,
+  });
+  const pokeDisplacement = (n: number) => {
+    document.querySelector(`#${BEAM_GLASS_FILTER_ID} feDisplacementMap`)?.setAttribute('scale', String(n));
+  };
+  useEffect(() => {
+    pokeDisplacement(displacement[editing]); // re-poke the shared filter for whichever scheme is being edited
+  }, [editing, displacement]);
+  // Current per-scheme reads (re-run each render; `tick` forces it after a write).
+  const platterFill: 'glass' | 'gradient' =
+    readVarForScheme(editing, '--beam-nav-platter-glass-on') === 'none' ? 'gradient' : 'glass';
+  const platterOffset = parseFloat(readVarForScheme(editing, '--beam-nav-platter-offset')) || 12;
+  const platterBlur = parseFloat(readVarForScheme(editing, '--beam-nav-glass-blur')) || (editing === 'light' ? 4 : 18);
+  const platterTint = parseFloat(readVarForScheme(editing, '--beam-nav-glass-tint')) || (editing === 'light' ? 12 : 15);
+  const setPlatterFill = (fill: 'glass' | 'gradient') => {
+    setVar(editing, '--beam-nav-platter-glass-on', fill === 'glass' ? 'block' : 'none');
+    setVar(editing, '--beam-nav-platter-gradient-on', fill === 'glass' ? 'none' : 'block');
+    bump();
+  };
+  const setPlatterOffset = (n: number) => { setVar(editing, '--beam-nav-platter-offset', `${n}px`); bump(); };
+  const setPlatterBlur = (n: number) => { setVar(editing, '--beam-nav-glass-blur', `${n}px`); bump(); };
+  const setPlatterTint = (n: number) => { setVar(editing, '--beam-nav-glass-tint', `${n}%`); bump(); };
+  const setPlatterDisplacement = (n: number) => { setDisplacement((d) => ({ ...d, [editing]: n })); pokeDisplacement(n); };
 
   // ── Candidate presets (variant registry, lab-internal) ──────────────────────────────────────────
   // A preset LOADS a variant's seed bundle into the drawer's live editing state, so every knob + Copy
@@ -537,8 +573,16 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
     const logo: { dark?: Record<string, string>; light?: Record<string, string> } = {};
     if (Object.keys(logoDark).length) logo.dark = logoDark;
     if (Object.keys(logoLight).length) logo.light = logoLight;
+    // Platter (2026-10-02): fill/offset/blur/tint per scheme from the live vars; displacement from Lab state.
+    const platterOf = (s: Scheme) => ({
+      fill: readVarForScheme(s, '--beam-nav-platter-glass-on') === 'none' ? 'gradient' : 'glass',
+      offset: parseFloat(readVarForScheme(s, '--beam-nav-platter-offset')) || 12,
+      blur: parseFloat(readVarForScheme(s, '--beam-nav-glass-blur')) || (s === 'light' ? 4 : 18),
+      tint: readVarForScheme(s, '--beam-nav-glass-tint') || (s === 'light' ? '12%' : '15%'),
+      displacement: displacement[s],
+    });
     const combo = {
-      version: 3, // v3: combos know their scope (name / scope / createdAt)
+      version: 4, // v4: adds the `platter` block (nav fill + glass dials, per scheme)
       name: slug(comboName || 'untitled-combo'),
       // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
       // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
@@ -560,6 +604,9 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       },
       // logo present ONLY when a stop is overridden (sparse); absent = fully derived.
       ...(logo.dark || logo.light ? { logo } : {}),
+      // Nav platter — fill + glass dials per scheme. displacement is one filter today; a dark≠light value is
+      // the signal to split it into two filters in code.
+      platter: { dark: platterOf('dark'), light: platterOf('light') },
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -612,11 +659,21 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
 
   return (
     <>
+      {/* The glass refraction filter — rendered here too (idempotent) so the Lab's OWN chrome platter works in
+          Storybook / without a shell, and so the displacement control has a filter to poke. */}
+      <BeamSvgDefs />
+      {/* CHROME PLATTER CONSUMER (2026-10-02) — the Lab is the first chrome surface outside the nav, a live test
+          of whether `chrome` is a real preset. The platter (glass fringe) rides this OUTER wrap; the SOLID panel
+          is the inner Box. FINDINGS (see report): the platter can't sit on the old scrolling/translucent drawer
+          surface — it needs a clean, non-clipping, non-opaque wrap, with overflow + the solid surface moved to an
+          inner panel. That structure is nav-shaped, so `chrome` is not a drop-in on an arbitrary panel. */}
       <Box
         role="complementary"
         aria-label="Theme Lab"
         sx={{
-          position: 'fixed',
+          // chrome preset applied by hand (presets not yet wired): glass fill, offset 12, noise refraction.
+          ...(beamPlatter({ fill: 'glass', offset: 12, radius: 24, refract: BEAM_GLASS_FILTER_ID }) as object),
+          position: 'fixed', // MUST win over beamPlatter's position:relative — spread above, set here.
           top: 0,
           right: 0,
           height: '100vh',
@@ -624,15 +681,22 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
           zIndex: (t) => t.zIndex.drawer,
           transform: open ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform var(--beam-motion-move)',
-          backgroundColor: 'color-mix(in oklch, var(--mui-palette-background-paper), transparent 18%)',
-          backdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(1.4)',
-          borderLeft: '1px solid',
-          borderColor: 'divider',
-          overflowY: 'auto',
-          p: 2,
           pointerEvents: open ? 'auto' : 'none',
         }}
       >
+        {/* SOLID inner panel — occludes the platter centre (fringe shows only at the left edge, over content);
+            owns scroll + padding so the outer wrap's platter ::after isn't clipped. */}
+        <Box
+          sx={{
+            height: '100%',
+            bgcolor: 'background.paper0',
+            border: '1px solid var(--beam-nav-edge)',
+            borderRadius: '24px 0 0 24px', // round the visible (left) corners; right is flush to the viewport
+            cornerShape: 'squircle',
+            overflowY: 'auto',
+            p: 2,
+          }}
+        >
         <Stack spacing={2}>
           {/* Header */}
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
@@ -745,6 +809,34 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                 </Button>
               ))}
             </Stack>
+          </Stack>
+
+          <Divider />
+
+          {/* Nav platter — fill + glass dials, per editing scheme (2026-10-02). fill/offset/blur/tint are live
+              CSS vars (the nav reads them with no rebuild); displacement pokes the shared SVG filter. All land
+              in the combo's v4 `platter` block on Copy. */}
+          <Stack spacing={1}>
+            <Typography variant="overline" color="text.secondary">Nav platter ({editing})</Typography>
+            <FormControl size="small" fullWidth>
+              <Select value={platterFill} onChange={(e) => setPlatterFill(e.target.value as 'glass' | 'gradient')} aria-label="Nav platter fill">
+                <MenuItem value="glass">Glass</MenuItem>
+                <MenuItem value="gradient">Gradient</MenuItem>
+              </Select>
+            </FormControl>
+            <Box>
+              <Typography variant="caption" color="text.secondary">Offset · {platterOffset}px — moves the content gutter live</Typography>
+              <Slider size="small" value={platterOffset} min={0} max={24} step={1} aria-label="Nav platter offset" onChange={(_, v) => setPlatterOffset(v as number)} />
+            </Box>
+            {/* glass dials — dimmed when the fill is gradient (they don't apply) */}
+            <Box sx={{ opacity: platterFill === 'glass' ? 1 : 0.45, pointerEvents: platterFill === 'glass' ? 'auto' : 'none' }}>
+              <Typography variant="caption" color="text.secondary">Blur · {platterBlur}px</Typography>
+              <Slider size="small" value={platterBlur} min={0} max={30} step={1} aria-label="Nav glass blur" onChange={(_, v) => setPlatterBlur(v as number)} />
+              <Typography variant="caption" color="text.secondary">Tint · {platterTint}%</Typography>
+              <Slider size="small" value={platterTint} min={0} max={100} step={1} aria-label="Nav glass tint" onChange={(_, v) => setPlatterTint(v as number)} />
+              <Typography variant="caption" color="text.secondary">Displacement · {displacement[editing]} — shared filter, previews {editing}</Typography>
+              <Slider size="small" value={displacement[editing]} min={0} max={60} step={1} aria-label="Nav glass displacement" onChange={(_, v) => setPlatterDisplacement(v as number)} />
+            </Box>
           </Stack>
 
           <Divider />
@@ -1023,6 +1115,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
             </Typography>
           </Stack>
         </Stack>
+        </Box>
       </Box>
 
       <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)} message="Combo JSON copied to clipboard" />
