@@ -17,7 +17,12 @@ import { logoGradient } from '../theme/brandLogos';
  * NO nav wiring — this is a tuning bench. Controls: edge width (where the mask fades), layer opacity (the
  * "just dim it" lever), right-balance (dim the hotter RIGHT edge — the warm logo stops land there), and
  * linear vs radial mask. Shown in BOTH modes, on a selected item with/without an icon, and on a sub-item.
- * Pick values here, then we wire it to the nav as a named recipe.
+ *
+ * TRIED AND PARKED (2026-10-02, kept as the record — BEAM.md §9). Not wired to the nav: a nav item is too
+ * small and dense to carry decoration, and the selected TINT is the correct treatment under the loudness
+ * budget — the nav already carries the platter + the brand gradient + the glass fringe. The shared
+ * `--beam-selected-surface` token stays (the selected table row + the active nav item read it); the selected
+ * row keeps the flat token, no vignette. This bench remains as the evidence the idea was tested.
  */
 const meta: Meta = { title: 'Lab/Beam/Selected Vignette', parameters: { layout: 'fullscreen' } };
 export default meta;
