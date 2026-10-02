@@ -16,7 +16,7 @@ import {
   useColorScheme,
   starMaskUri,
   logoGradient,
-  beamPlatter,
+  BeamChrome,
   BeamSvgDefs,
   BEAM_GLASS_FILTER_ID,
   BEAM_GLASS_DISPLACEMENT_DEFAULT,
@@ -659,44 +659,26 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
 
   return (
     <>
-      {/* The glass refraction filter — rendered here too (idempotent) so the Lab's OWN chrome platter works in
-          Storybook / without a shell, and so the displacement control has a filter to poke. */}
+      {/* <BeamSvgDefs/> provides the refraction filter document-wide — mounted here too (idempotent) so the
+          Lab's chrome works in Storybook / without a shell, and gives the displacement control a filter to poke. */}
       <BeamSvgDefs />
-      {/* CHROME PLATTER CONSUMER (2026-10-02) — the Lab is the first chrome surface outside the nav, a live test
-          of whether `chrome` is a real preset. The platter (glass fringe) rides this OUTER wrap; the SOLID panel
-          is the inner Box. FINDINGS (see report): the platter can't sit on the old scrolling/translucent drawer
-          surface — it needs a clean, non-clipping, non-opaque wrap, with overflow + the solid surface moved to an
-          inner panel. That structure is nav-shaped, so `chrome` is not a drop-in on an arbitrary panel. */}
+      {/* Theme Lab is the FIRST BeamChrome consumer — chrome as a component (clean wrap + solid panel + the
+          float gap, all by construction). The slide TRANSFORM runs on THIS container so the platter wrap inside
+          BeamChrome stays transform-free; the container is 48px wider than the panel to hold the float gap. */}
       <Box
-        role="complementary"
-        aria-label="Theme Lab"
         sx={{
-          // chrome preset applied by hand (presets not yet wired): glass fill, offset 12, noise refraction.
-          ...(beamPlatter({ fill: 'glass', offset: 12, radius: 24, refract: BEAM_GLASS_FILTER_ID }) as object),
-          position: 'fixed', // MUST win over beamPlatter's position:relative — spread above, set here.
+          position: 'fixed',
           top: 0,
           right: 0,
           height: '100vh',
-          width: 360,
+          width: 408, // ~360 panel + 2 × PAGE_GUTTER float gap
           zIndex: (t) => t.zIndex.drawer,
           transform: open ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform var(--beam-motion-move)',
           pointerEvents: open ? 'auto' : 'none',
         }}
       >
-        {/* SOLID inner panel — occludes the platter centre (fringe shows only at the left edge, over content);
-            owns scroll + padding so the outer wrap's platter ::after isn't clipped. */}
-        <Box
-          sx={{
-            height: '100%',
-            bgcolor: 'background.paper0',
-            border: '1px solid var(--beam-nav-edge)',
-            borderRadius: '24px 0 0 24px', // round the visible (left) corners; right is flush to the viewport
-            cornerShape: 'squircle',
-            overflowY: 'auto',
-            p: 2,
-          }}
-        >
+        <BeamChrome role="complementary" aria-label="Theme Lab" innerSx={{ p: 2 }}>
         <Stack spacing={2}>
           {/* Header */}
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1115,7 +1097,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
             </Typography>
           </Stack>
         </Stack>
-        </Box>
+        </BeamChrome>
       </Box>
 
       <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)} message="Combo JSON copied to clipboard" />

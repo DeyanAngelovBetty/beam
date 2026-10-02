@@ -163,15 +163,16 @@ Values are **PROVISIONAL except `chrome`** (test-driven on the nav).
 
 *(This absorbs the earlier "fill by ROLE" note: chrome = glass + wider platter; content = gradient.)*
 
-> **Finding — `chrome` is a real preset, but NOT a drop-in (2026-10-02).** The Theme Lab is the first `chrome`
-> consumer outside the nav. Applying it surfaced that the chrome platter has structural requirements the nav
-> already satisfies but a naive consumer does not: the platter `::after` can't sit on a surface that **clips**
-> (`overflow`), carries an **opaque/translucent background**, or runs its own **backdrop-filter** — it needs a
-> CLEAN outer wrap (no overflow, no background), with the scroll + the solid surface on an INNER panel. The Lab
-> drawer had all three problems (scroll, translucent bg, its own glass) and had to be split into outer-wrap +
-> solid-inner-panel, exactly like the nav. It also needed the refraction filter available document-wide
-> (`BeamSvgDefs`). **Takeaway:** `chrome` should ship with that structure — ideally a small wrapper component
-> (e.g. `BeamChrome`) so dialogs/popovers get it right without re-deriving the layering. Ledgered, not built.
+> **Finding → `BeamChrome` (2026-10-02).** `chrome` is a real preset but NOT a drop-in: the platter `::after`
+> can't sit on a surface that **clips** (`overflow`), carries an **opaque/translucent background**, or runs its
+> own **backdrop-filter** — it needs a CLEAN outer wrap (no overflow, no bg, no filter) with the scroll + solid
+> surface on an INNER panel, PLUS a float gap so the fringe shows all round. Converting the Theme Lab hit all
+> three traps. **Resolved:** these are now baked into the **`BeamChrome`** component (barrel-exported) — clean
+> wrap + solid inner panel + the chrome platter + the float gap (`gap`, default `PAGE_GUTTER`); positioning +
+> any slide TRANSFORM stay on the consumer's parent, never on BeamChrome. The Lab is the first consumer.
+> **The nav stays bespoke** — it does NOT drop into BeamChrome: its platter is two coexisting layers with a
+> live fill swap, across docked/peek/collapsed states with the VT morph, which the single-glass BeamChrome
+> doesn't model. Dialogs/popovers should use `BeamChrome`; the nav keeps its own two-layer rig.
 
 The gradient fill: the rim is a `conic-gradient(from var(--beam-border-angle), …)`
 drawn on an absolutely-positioned `::after` that sits just OUTSIDE the element (negative
