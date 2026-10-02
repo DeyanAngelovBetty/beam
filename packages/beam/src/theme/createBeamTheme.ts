@@ -189,8 +189,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
   // 0.5 while KEEPING the negative lift — do NOT flip the lift positive (that's glare,
   // the thing this avoids). Commented consts, no Figma seed. TUNABLE.
   const EDGE = {
-    dark: { lift: 2, alpha: 0.5 },
-    light: { lift: -1.5, alpha: 0.5 }, // alpha raised from 0.35 — the refraction line was too faint
+    dark: { lift: 2, alpha: 0.3 },
+    light: { lift: -1.5, alpha: 0.3 }, // alpha raised from 0.35 — the refraction line was too faint
   };
   // Well shadow the DOCKED rail receives from the content plane above it, per scheme
   // (the recurring surface asymmetry, 5th time). LIGHT stronger — a shadow on a
