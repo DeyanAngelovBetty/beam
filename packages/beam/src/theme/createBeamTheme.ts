@@ -488,6 +488,7 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-glass-blur': `${s.dark.navGlassBlur}px`,
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
             '--beam-nav-glass-tint': NAV_GLASS.dark.tint,
+            '--beam-nav-glass-tint-base': NAV_GLASS.dark.tintBase,
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
@@ -540,7 +541,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.light.navSpread),
             '--beam-nav-glass-alpha': String(s.light.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.light.navGlassSaturate),
+            '--beam-nav-glass-blur': `${s.light.navGlassBlur}px`, // PER MODE: light 4 (blur smears a bright backdrop)
             '--beam-nav-glass-tint': NAV_GLASS.light.tint,
+            '--beam-nav-glass-tint-base': NAV_GLASS.light.tintBase, // PER MODE: a dark wash, not white
             '--beam-nav-edge-offset': String(navEdgeOffset.light),
             '--beam-nav-edge-alpha': String(EDGE.light.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.light),
@@ -574,7 +577,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-spread': String(s.dark.navSpread),
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
+            '--beam-nav-glass-blur': `${s.dark.navGlassBlur}px`, // re-assert dark (18) when mode is explicitly dark
             '--beam-nav-glass-tint': NAV_GLASS.dark.tint,
+            '--beam-nav-glass-tint-base': NAV_GLASS.dark.tintBase,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),

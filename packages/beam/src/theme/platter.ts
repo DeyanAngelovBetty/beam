@@ -76,7 +76,7 @@ export function beamPlatter(opts?: {
         cornerShape: 'squircle',
         zIndex: -1,
         pointerEvents: 'none',
-        background: 'color-mix(in oklab, var(--mui-palette-background-paper) var(--beam-nav-glass-tint, 15%), transparent)',
+        background: 'color-mix(in oklab, var(--beam-nav-glass-tint-base, var(--mui-palette-background-paper)) var(--beam-nav-glass-tint, 15%), transparent)',
         backdropFilter: glassFilter,
         WebkitBackdropFilter: glassFilter,
         border: '1px solid var(--beam-nav-edge)', // the only edge

@@ -92,7 +92,7 @@ const glassSx = (refract?: string, tintFloor?: string) => {
   const bf = refract ? `blur(var(--beam-nav-glass-blur)) url(#${refract})` : `blur(var(--beam-nav-glass-blur))`;
   const tint = tintFloor ? `max(var(--beam-nav-glass-tint, 15%), ${tintFloor})` : 'var(--beam-nav-glass-tint, 15%)';
   return {
-    background: `color-mix(in oklab, var(--mui-palette-background-paper) ${tint}, transparent)`,
+    background: `color-mix(in oklab, var(--beam-nav-glass-tint-base, var(--mui-palette-background-paper)) ${tint}, transparent)`,
     border: '1px solid var(--beam-nav-edge)',
     backdropFilter: bf,
     WebkitBackdropFilter: bf,

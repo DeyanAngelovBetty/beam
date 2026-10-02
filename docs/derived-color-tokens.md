@@ -109,18 +109,30 @@ is concentric `calc(radius + offset)`.
 > - **backdrop-filter** = `blur(--beam-nav-glass-blur) url(#refract)` — blur, then a feTurbulence→
 >   feDisplacementMap NOISE refraction (`refract` id; nav = `'beam-nav-glass-noise'`, rendered in AppShell).
 >   Nothing else. Degrades to blur-only (then opaque tint) where url() filters / backdrop-filter are unsupported.
-> - **fill** = ONE tint dial `--beam-nav-glass-tint`: a wash of `background.paper`, `color-mix(… paper <tint>,
->   transparent)`, range 0–100%, where **0 = no background at all**. No sheen.
+> - **fill** = ONE tint dial `--beam-nav-glass-tint` over a `--beam-nav-glass-tint-base` colour,
+>   `color-mix(… base <tint>, transparent)`, range 0–100%, where **0 = no background at all**. No sheen.
 > - **edge** = the 1px `--beam-nav-edge` border, the ONLY edge. **No box-shadow.**
 >
-> Mode-aware (CSS var from `createBeamTheme`'s scheme blocks, so a mode flip reskins with no rebuild): **tint**,
-> plus **blur** (seed). Recipe constants: `NAV_GLASS` in tokens.ts (dark **15%**; **LIGHT 22% PROPOSED /
-> UNVERIFIED** — a near-white backdrop needs more wash to read as a distinct pane). Live as the nav platter's
-> DEFAULT fill (test-drive, 2026-10-02, offset 12; escape hatch `data-beam-nav-platter="gradient"` swaps back
-> to gradient) + the Liquid Glass bench (recipe B = the nav recipe; all bench recipes differ only in
-> refraction). The bench's sliders: blur / displacement / tint. **Legibility:** a full glass
-> PANEL over content floors tint at ~12% so text doesn't wash out; the fringe form (opaque box in front) can
-> sit at 0.
+> **Dials are PER MODE (2026-10-02)** — glass reads differently on the two canvases, so blur, tint, and
+> tint-base all flip (CSS vars from `createBeamTheme`'s scheme blocks, so a mode flip reskins with no rebuild):
+> - **DARK** (test-driven): blur **18**, tint **15%**, tint-base `background.paper` (a paper wash). Refraction +
+>   blur carry it over the dark canvas.
+> - **LIGHT** (PROPOSED / UNVERIFIED): blur **4** — blur just smears a bright backdrop, so light leans on the
+>   REFRACTION, not blur; tint **12%** over a **DARK** tint-base (`rgb(28 32 42)`) — a white wash dissolves into
+>   the bright page, a smoky-dark pane gives the glass body and lets the refraction read. **Displacement is
+>   still shared (12)** — whether it needs to differ per mode is an open proposal.
+>
+> Recipe constants: `NAV_GLASS` + `surfaceSeeds.*.navGlassBlur` in tokens.ts. Live as the nav platter's DEFAULT
+> fill (test-drive, 2026-10-02, offset 12; escape hatch `data-beam-nav-platter="gradient"` swaps back to
+> gradient) + the Liquid Glass bench (recipe B = the nav recipe). The bench's sliders: blur / displacement /
+> tint (blur is one slider for both modes — set it to 4 to preview light). **Legibility:** a full glass PANEL
+> over content floors tint at ~12% so text doesn't wash out; the fringe form (opaque box in front) can sit at 0.
+
+> **Open question — should `chrome` be MODE-AWARE (2026-10-02, UNDECIDED)?** Glass reads poorly on the light
+> canvas even tuned (blur 4 + dark tint + refraction). Honest read is parked in the session report. The
+> question: does `chrome` stay **glass in both modes**, or become **glass in dark, gradient in light** — which
+> would make the preset (and the role rule) mode-aware? Deyan to decide after eyeballing light at its best.
+> Not decided here.
 
 #### Platter presets — the doctrine *(2026-10-02)*
 

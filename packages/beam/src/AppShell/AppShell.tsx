@@ -83,7 +83,7 @@ const VT_CONTENT = 'beam-shell-content'; // reflows: full-width ↔ right column
 //     unblurred smear looks broken; plain opaque is intentional).
 //   • No `will-change`: it can force a layer that breaks the effect outright.
 const NAV_GLASS_SX = {
-  background: 'color-mix(in oklab, var(--mui-palette-background-paper) var(--beam-nav-glass-tint, 15%), transparent)',
+  background: 'color-mix(in oklab, var(--beam-nav-glass-tint-base, var(--mui-palette-background-paper)) var(--beam-nav-glass-tint, 15%), transparent)',
   backdropFilter: `blur(var(--beam-nav-glass-blur)) url(#${NAV_GLASS_FILTER_ID})`,
   WebkitBackdropFilter: `blur(var(--beam-nav-glass-blur)) url(#${NAV_GLASS_FILTER_ID})`,
   border: '1px solid var(--beam-nav-edge)', // the only edge

@@ -447,8 +447,10 @@ type NavSchemeSeed = {
   navSpread: number;
   // Frosted-glass rail. glassAlpha is HIGHER in light on purpose: blur over a
   // near-white backdrop returns near-white, so a light rail must keep more of its
-  // own tint or it dissolves into the page. Blur stays at the seed (bigger erases
-  // the 56px mesh dots). See docs/shell-grammar.md §2 / derived-color-tokens §2.
+  // own tint or it dissolves into the page. navGlassBlur is PER MODE (2026-10-02):
+  // DARK 18 (blur carries it over the dark canvas); LIGHT 4 — blur just smears a bright
+  // backdrop, so light leans on the refraction, not blur (Deyan's DevTools finding).
+  // See docs/shell-grammar.md §2 / derived-color-tokens §2.
   navGlassAlpha: number;
   navGlassBlur: number;
   navGlassSaturate: number; // backdrop saturate — now ONLY the narrow drawer (NAV_GLASS_SX); the locked glass recipe dropped it.
@@ -456,30 +458,35 @@ type NavSchemeSeed = {
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
     dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
-    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4 },
+    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 4, navGlassSaturate: 1.4 },
   },
   gaspar: {
     // TEAL adopted 2026-09-03 (derived-color-tokens §8): teal-tinted anchors from the recovered
     // 2026-07 palette, verbatim. step + nav params UNCHANGED (identical across eras — the graduation
     // moves colour only). Outgoing lavender anchors (#000104 / #EEEFF2) retained as a lab candidate.
     dark: { anchor: '#041213', step: 0.085, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
-    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 18, navGlassSaturate: 1.4 },
+    light: { anchor: '#EDF1F1', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 4, navGlassSaturate: 1.4 },
   },
 };
 
 /**
- * Liquid-glass recipe — FINAL 2026-10-01 (Deyan). Refraction + blur carry the effect; everything else was
- * stripped. The glass is `blur(--beam-nav-glass-blur) url(#refract)` as the backdrop filter (NO saturate,
- * brightness, opacity-lift), over a single TINT fill, with NO box-shadow — the 1px `--beam-nav-edge` border
- * is the only edge. The tint is the lone fill dial: `--beam-nav-glass-tint`, a wash of `background.paper`,
- * range 0–100%, where 0 = no background at all (pure blurred/refracted backdrop). Mode-aware, emitted as a
- * CSS var in createBeamTheme's scheme blocks so a mode flip swaps it with NO rebuild (§5); the bench's three
- * sliders drive blur / displacement / tint. LIGHT default is PROPOSED / UNVERIFIED — a near-white backdrop
- * needs a touch more wash to read as a distinct pane.
+ * Liquid-glass recipe — FINAL 2026-10-01, dials made PER MODE 2026-10-02 (Deyan). Refraction + blur carry the
+ * effect; everything else was stripped. The glass is `blur(--beam-nav-glass-blur) url(#refract)` as the
+ * backdrop filter (NO saturate, brightness, opacity-lift), over a single TINT fill, with NO box-shadow — the
+ * 1px `--beam-nav-edge` border is the only edge. The fill dial is `--beam-nav-glass-tint` (0–100%, 0 = no
+ * background) over a `--beam-nav-glass-tint-base` colour, mixed `color-mix(… base <tint>, transparent)`. Both
+ * flip PER MODE (emitted in createBeamTheme's scheme blocks, no rebuild — §5), as does blur (seed). The bench's
+ * three sliders drive blur / displacement / tint.
+ *
+ * LIGHT is PROPOSED / UNVERIFIED: a WHITE wash dissolves into the bright canvas, so light's tint-base goes
+ * DARK (a smoky pane gives the glass body and lets the refraction read); dark keeps a paper wash. Blur is
+ * dark 18 / light 4 (seed) — light leans on refraction, not blur. Displacement is still shared (12); whether
+ * it needs to differ per mode is an open proposal (see the report / derived-color-tokens §2).
  */
 export const NAV_GLASS = {
-  dark: { tint: '15%' },
-  light: { tint: '22%' }, // PROPOSED — more wash so the frost reads against the bright page
+  dark: { tint: '15%', tintBase: 'var(--mui-palette-background-paper)' },
+  // PROPOSED — a dark tint-base (not white) so the pane reads against the bright page; lower % since dark reads stronger.
+  light: { tint: '12%', tintBase: 'rgb(28 32 42)' },
 } as const;
 
 /**
