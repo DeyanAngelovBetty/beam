@@ -182,27 +182,32 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 - **Glass in BOTH states** (the frosted `NAV_GLASS_SX` recipe, already applied to both the locked panel and
   the peek in code). `prefers-reduced-transparency: reduce` falls back to opaque (`--beam-nav-glass-alpha:
   1`), alongside the existing `backdrop-filter` `@supports` fallback.
-- **Platter rim behind the panel, both states** — `beamPlatter` at `NAV_PLATTER_OFFSET` (now 12). The
-  DEFAULT fill is **glass** (test-drive, 2026-10-02; the locked liquid-glass recipe — blur + noise refraction
-  + tint, 1px border, no shadow), with `data-beam-nav-platter="gradient"` on `<html>` as the escape hatch back
-  to the calm **gradient** rim (`interaction: 'none'`, same colours as the dashboard rim, no pointer tracking).
-  On the docked panel the rim **REPLACES** the old `6px 0 18px` separation shadow; the peek keeps its own shadows.
+- **Platter rim behind the panel, both states** — `beamPlatter` at `--beam-nav-platter-offset` (default 12).
+  TWO layers coexist on the wrap — **glass** on `::after`, **gradient** on `::before` — each gated by a per-mode
+  display var (`--beam-nav-platter-glass-on` / `-gradient-on`, `block`/`none`). DEFAULT fill is **glass**
+  (test-drive, 2026-10-02; the locked recipe — blur + noise refraction + tint, 1px border, no shadow). Swapping
+  fill flips the two display vars → a pure PAINT change (no attribute, no React, no layout). To swap manually in
+  DevTools until the Theme Lab control lands: on `<html>` set `--beam-nav-platter-glass-on: none` +
+  `--beam-nav-platter-gradient-on: block`. On the docked panel the rim **REPLACES** the old `6px 0 18px`
+  separation shadow; the peek keeps its own shadows.
 - **Content left gutter is nav-state-aware** (BEAM.md §6.20, supersedes §6.19). `main`'s top / right / bottom
-  stay `PAGE_GUTTER`; its **left** follows the nav state: **docked** = `PAGE_GUTTER + NAV_PLATTER_OFFSET`
-  (24 + 8 = 32px) so content clears the panel's platter fringe (which extends 8px into the gutter) and keeps a
-  true 24px gap to it; **collapsed** = `0` (the 60px nav column is the clearance); **narrow** = `PAGE_GUTTER`
-  (the drawer overlays main, no column). The nav column + the fringe own the left space — hence a state-aware
-  edge again.
+  stay `PAGE_GUTTER`; its **left** follows the nav state: **docked** = `calc(PAGE_GUTTER + --beam-nav-platter-offset)`
+  (24 + 12 = 36px at the default) so content clears the panel's platter fringe (which extends into the gutter)
+  and keeps a true 24px gap to it — and because both read the same offset var, dragging offset in the Lab moves
+  the fringe and this padding in one paint; **collapsed** = `0` (the 60px nav column is the clearance);
+  **narrow** = `PAGE_GUTTER` (the drawer overlays main, no column). The nav column + the fringe own the left
+  space — hence a state-aware edge again.
 - **§6.17 preserved:** only the rail column width (264→282) and the panel's own insets/radius/border change;
   `{main}` stays the constant keyed grid cell across every nav state — the nav toggle never remounts the page.
 
 ## Open
 
-- **Known issue — platter-fill swap isn't clean (2026-10-02).** Flipping
-  `data-beam-nav-platter` on `<html>` (now `="gradient"`, since glass is the default)
-  makes the nav JUMP STATE rather than just reskinning the fringe (the peek tooltip
-  appears). Investigate later — noted, not fixed. Unrelated to the glass recipe itself.
-- **Queue — platter fill as a Theme Lab control (`gradient | glass`).** Promote the
+- **Known issue — platter-fill swap jumped nav state — ADDRESSED 2026-10-02, pending confirm.** The old swap
+  flipped the `data-beam-nav-platter` attribute, which jumped the nav (peek tooltip appeared). Fix: the
+  attribute is gone — fill is now two coexisting layers toggled by display vars (a pure paint change that can't
+  touch layout or state). Deyan to confirm the swap is smooth; remove this entry once confirmed.
+- **Queue — platter fill as a Theme Lab control (`gradient | glass`).** (In progress — the nav now reads the
+  fill/offset/dials as live vars; the Lab Platter section is the next step.) Promote the
   A/B off the DevTools attribute spell onto a Theme Lab toggle so the switch is
   demoable. (Depends on the clean-swap issue above being understood.)
 - Per-app audit results of §5 migrations.

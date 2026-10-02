@@ -33,17 +33,21 @@ const RAIL_WIDTH = 282; // 258 panel + 24 (PAGE_GUTTER) left inset
 const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
 const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px, for position props (sx position props aren't spacing-scaled)
-// The platter rim behind the floating panel (both states), both fills at the SAME NAV_PLATTER_OFFSET (12) — a
-// fringe in the inset gap. DEFAULT fill = GLASS (the locked recipe: blur + noise refraction + tint, 1px
-// border, no shadow) — a TEST-DRIVE default (2026-10-02, Deyan), not a ruling. The escape hatch is INVERTED:
-// set `data-beam-nav-platter="gradient"` on <html> in DevTools to swap BACK to the calm gradient rim (no
-// rebuild). Glass refraction reads the `#beam-nav-glass-noise` filter rendered below.
-const NAV_PLATTER_GRADIENT = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET });
-const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET, refract: 'beam-nav-glass-noise' });
 const NAV_GLASS_FILTER_ID = 'beam-nav-glass-noise';
+// Offset as a LIVE var (Theme Lab tunes it; fallback = the token). Both the platter geometry AND main's docked
+// left padding read it, so dragging offset moves the fringe + the content gutter in the same paint (§6.20).
+const NAV_PLATTER_OFFSET_VAR = `var(--beam-nav-platter-offset, ${NAV_PLATTER_OFFSET}px)`;
+// The platter rim behind the floating panel (both states). TWO layers coexist on the wrap — glass on ::after,
+// gradient on ::before — each gated by a per-mode display var, so the fill swaps with a pure PAINT change (no
+// attribute, no React, no layout) — this is the clean-swap fix for the old data-attribute jump. DEFAULT = glass
+// (test-drive 2026-10-02): glass-on defaults to `block`, gradient-on to `none`. Theme Lab (or DevTools) flips
+// `--beam-nav-platter-glass-on` / `--beam-nav-platter-gradient-on` per mode to swap. Glass refraction reads the
+// `#beam-nav-glass-noise` filter rendered below.
+const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', pseudo: 'after', displayVar: 'var(--beam-nav-platter-glass-on, block)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET_VAR, refract: NAV_GLASS_FILTER_ID });
+const NAV_PLATTER_GRADIENT = beamPlatter({ fill: 'gradient', pseudo: 'before', displayVar: 'var(--beam-nav-platter-gradient-on, none)', interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET_VAR });
 const NAV_BORDER_SX = {
   ...NAV_PLATTER_GLASS,
-  '[data-beam-nav-platter="gradient"] &': NAV_PLATTER_GRADIENT,
+  ...NAV_PLATTER_GRADIENT,
 };
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
 // derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
@@ -510,7 +514,7 @@ export function AppShell({
         // toggle. (`contentGutter` + `CONTENT_GUTTER_LEFT_COLLAPSED` stay vestigial — no consumer.)
         pr: PAGE_GUTTER,
         pl: effectiveLocked
-          ? `calc(${PAGE_GUTTER.md * 8}px + ${NAV_PLATTER_OFFSET}px)` // 36: gutter + platter fringe
+          ? `calc(${PAGE_GUTTER.md * 8}px + ${NAV_PLATTER_OFFSET_VAR})` // gutter + platter fringe (live via the offset var)
           : isWide
             ? 0 // collapsed: the 60px nav column is the clearance
             : PAGE_GUTTER, // narrow: drawer overlays main, keep the full gutter
@@ -652,9 +656,10 @@ export function AppShell({
   // pages). Root is a FIXED viewport height so the app scrolls inside main, not the document. ----
   return (
     <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Nav-glass NOISE refraction filter (the glass A/B). Inert until a glass backdrop-filter references it
-          via url(#beam-nav-glass-noise) — i.e. only when data-beam-nav-platter="glass". Matches the bench's
-          recipe B (feTurbulence→feGaussianBlur→feDisplacementMap, displacement 12 = Deyan's reference). */}
+      {/* Nav-glass NOISE refraction filter — referenced by the glass platter layer's backdrop-filter
+          (url(#beam-nav-glass-noise)); live whenever the glass layer is shown (the default). Matches the bench's
+          recipe B (feTurbulence→feGaussianBlur→feDisplacementMap, displacement 12). NOTE: this filter is to be
+          HOISTED to a global spot (see report) so chrome glass works outside AppShell — pending that proposal. */}
       <svg aria-hidden width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
           <filter id={NAV_GLASS_FILTER_ID} x="-20%" y="-20%" width="140%" height="140%">

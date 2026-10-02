@@ -39,8 +39,11 @@ export function beamPlatter(opts?: {
   fill?: 'gradient' | 'glass';
   surface?: string;
   interaction?: 'none' | 'hover-step' | 'hover-spin' | 'track';
-  /** Outward extent (px). Omitted → `--beam-ring` (today's 1px/2px grow). A number pins a static offset. */
-  offset?: number;
+  /**
+   * Outward extent. Omitted → `--beam-ring` (today's 1px/2px grow). A NUMBER pins a static px offset; a
+   * STRING is used verbatim as a CSS length, so the nav can pass a live var (`var(--beam-nav-platter-offset)`).
+   */
+  offset?: number | string;
   radius?: number;
   /**
    * GLASS only — id of an SVG displacement filter (feTurbulence→feDisplacementMap) appended to the
@@ -49,12 +52,25 @@ export function beamPlatter(opts?: {
    * refraction); degrades cleanly where the url() filter is unsupported (Safari/FF).
    */
   refract?: string;
+  /**
+   * Which pseudo carries the platter — default `'after'`. Pass `'before'` to let TWO platters coexist on one
+   * element (the nav stacks glass on `::after` + gradient on `::before` and toggles between them live).
+   */
+  pseudo?: 'before' | 'after';
+  /**
+   * A CSS value for the pseudo's `display` (e.g. `'var(--beam-nav-platter-glass-on, block)'`), so a consumer
+   * can gate the layer on/off live via a var. Omitted → `display` is left to the default.
+   */
+  displayVar?: string;
 }): SxProps<Theme> {
   const fill = opts?.fill ?? 'gradient';
   const radius = opts?.radius ?? 24;
-  const ring = opts?.offset != null ? `${opts.offset}px` : 'var(--beam-ring)';
+  const ring = opts?.offset != null ? (typeof opts.offset === 'number' ? `${opts.offset}px` : opts.offset) : 'var(--beam-ring)';
   const insetExpr = `calc(-1 * ${ring})`;
   const radiusExpr = `calc(${radius}px + ${ring})`;
+  const pseudoSel = opts?.pseudo === 'before' ? '::before' : '::after'; // which pseudo carries the platter
+  const pseudoKey = `&${pseudoSel}`;
+  const displayDecl = opts?.displayVar ? { display: opts.displayVar } : {};
 
   if (fill === 'glass') {
     // FINAL recipe (2026-10-01): backdrop-filter is blur → (optional) refraction url(#id). NO saturate,
@@ -68,7 +84,7 @@ export function beamPlatter(opts?: {
     // forces the surface opaque (alpha 1) where backdrop-filter is unsupported.
     return {
       position: 'relative',
-      '&::after': {
+      [pseudoKey]: {
         content: '""',
         position: 'absolute',
         inset: insetExpr,
@@ -76,6 +92,7 @@ export function beamPlatter(opts?: {
         cornerShape: 'squircle',
         zIndex: -1,
         pointerEvents: 'none',
+        ...displayDecl,
         background: 'color-mix(in oklab, var(--beam-nav-glass-tint-base, var(--mui-palette-background-paper)) var(--beam-nav-glass-tint, 15%), transparent)',
         backdropFilter: glassFilter,
         WebkitBackdropFilter: glassFilter,
@@ -115,12 +132,13 @@ export function beamPlatter(opts?: {
   return {
     position: 'relative',
     border: 'none',
-    '&::after': {
+    [pseudoKey]: {
       content: '""',
       position: 'absolute',
       inset: insetExpr,
       borderRadius: radiusExpr,
       cornerShape: 'squircle',
+      ...displayDecl,
       border: `${ring} solid transparent`,
       background: `conic-gradient(from ${track ? 'var(--beam-track-angle)' : 'var(--beam-border-angle)'}, ${stops}) border-box`,
       pointerEvents: 'none',
@@ -137,18 +155,18 @@ export function beamPlatter(opts?: {
       '&:hover': {
         '--beam-border-intensity': 'var(--beam-border-intensity-hover)',
       },
-      '&:hover::after': {
+      [`&:hover${pseudoSel}`]: {
         '--beam-ring': '2px',
         ...(spin && { animationPlayState: 'running' }),
       },
     }),
     ...(spin && {
       '@media (prefers-reduced-motion: reduce)': {
-        '&:hover::after': { animationPlayState: 'paused' },
+        [`&:hover${pseudoSel}`]: { animationPlayState: 'paused' },
       },
     }),
     ...(track && {
-      '&[data-beam-tracking="on"]::after': {
+      [`&[data-beam-tracking="on"]${pseudoSel}`]: {
         transition: '--beam-ring var(--beam-motion-quick), --beam-track-angle var(--beam-motion-quick)',
       },
     }),

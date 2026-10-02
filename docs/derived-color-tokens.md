@@ -123,9 +123,11 @@ is concentric `calc(radius + offset)`.
 >   still shared (12)** — whether it needs to differ per mode is an open proposal.
 >
 > Recipe constants: `NAV_GLASS` + `surfaceSeeds.*.navGlassBlur` in tokens.ts. Live as the nav platter's DEFAULT
-> fill (test-drive, 2026-10-02, offset 12; escape hatch `data-beam-nav-platter="gradient"` swaps back to
-> gradient) + the Liquid Glass bench (recipe B = the nav recipe). The bench's sliders: blur / displacement /
-> tint (blur is one slider for both modes — set it to 4 to preview light). **Legibility:** a full glass PANEL
+> fill (test-drive, 2026-10-02, offset 12). The nav stacks glass + gradient as coexisting layers toggled by
+> per-mode display vars (`--beam-nav-platter-glass-on` / `-gradient-on`); to swap manually in DevTools until the
+> Theme Lab control lands, set those on `<html>`. Also on the Liquid Glass bench (recipe B = the nav recipe).
+> The bench's sliders: blur / displacement / tint (blur is one slider for both modes — set it to 4 to preview
+> light). **Legibility:** a full glass PANEL
 > over content floors tint at ~12% so text doesn't wash out; the fringe form (opaque box in front) can sit at 0.
 
 > **Open question — should `chrome` be MODE-AWARE (2026-10-02, UNDECIDED)?** Glass reads poorly on the light

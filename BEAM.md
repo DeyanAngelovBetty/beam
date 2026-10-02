@@ -436,7 +436,9 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     modal drawer OVER main, no column). **Why:** the nav column and the platter fringe own the left space now,
     not a floating toggle, so the left edge follows the nav state. The panel wears a `beamPlatter` rim at
     `NAV_PLATTER_OFFSET` (now 12); DEFAULT fill = **glass** (test-drive 2026-10-02, the locked liquid-glass
-    recipe), escape hatch `data-beam-nav-platter="gradient"` back to the calm **gradient** tier. **One border
+    recipe), gradient available as the alternate fill. The two fills coexist as layers (glass `::after` +
+    gradient `::before`) toggled by per-mode display vars — a pure paint swap (no attribute); Theme Lab drives
+    it. **One border
     foundation, four `interaction` tiers used with increasing intent — `none` (chrome default) → `hover-step` →
     `hover-spin` → `track` (flourish).** Tracking/spin is reserved for intent; chrome is `none`. Foundation +
     tiers: docs/derived-color-tokens.md (`beamPlatter`).

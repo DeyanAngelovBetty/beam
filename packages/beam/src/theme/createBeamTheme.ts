@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, NAV_GLASS, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, FIELD_TWIN_HEIGHT, pageBackdropSx, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, NAV_GLASS, NAV_PLATTER_OFFSET, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, FIELD_TWIN_HEIGHT, pageBackdropSx, type BrandName, type ProductName } from './tokens';
 
 // Surface-ramp named stops (docs/surface-grammar.md). `default`/`paper` are MUI's; `paper0` (Paper
 // elevation 0) and `overlay` (all menus/popovers) are the two extra ramp levels, typed here so the
@@ -489,6 +489,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
             '--beam-nav-glass-tint': NAV_GLASS.dark.tint,
             '--beam-nav-glass-tint-base': NAV_GLASS.dark.tintBase,
+            // Platter geometry + fill-swap gates (Theme Lab tunes these live; here are the defaults so they
+            // resolve under getComputedStyle for the Lab to hydrate from). offset drives the fringe AND main's
+            // docked left padding; the two *-on vars are the display gates for the coexisting glass/gradient
+            // layers (nav default = glass on, gradient off).
+            '--beam-nav-platter-offset': `${NAV_PLATTER_OFFSET}px`,
+            '--beam-nav-platter-glass-on': 'block',
+            '--beam-nav-platter-gradient-on': 'none',
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
