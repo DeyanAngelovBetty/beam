@@ -440,6 +440,11 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     foundation, four `interaction` tiers used with increasing intent — `none` (chrome default) → `hover-step` →
     `hover-spin` → `track` (flourish).** Tracking/spin is reserved for intent; chrome is `none`. Foundation +
     tiers: docs/derived-color-tokens.md (`beamPlatter`).
+    **Platter presets (doctrine, 2026-10-02).** The platter is Beam's one decorative layer; call sites use a
+    NAMED PRESET (`chrome` / `showcase` / `feature` / `active` / `none`), never raw fill/offset/interaction, so
+    taste changes land in one place. Default is `none` — a platter needs a reason; max one per surface (the
+    loudness budget, applied to decoration). Values PROVISIONAL except `chrome`. Table + rules:
+    docs/derived-color-tokens.md §2 "Platter presets".
 
 ## 7. Figma ↔ code sync mechanics
 

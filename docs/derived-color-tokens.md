@@ -122,12 +122,31 @@ is concentric `calc(radius + offset)`.
 > PANEL over content floors tint at ~12% so text doesn't wash out; the fringe form (opaque box in front) can
 > sit at 0.
 
-> **Proposed rule — platter fill by ROLE (2026-10-01; refined 2026-10-02, UNVERIFIED).** CONTENT boxes
-> (Sections, cards) get the **gradient** platter; CHROME floating over content (nav, dialogs, tooltips,
-> popovers) gets **glass** — *with a wider platter*. Bench finding from the nav A/B: at `NAV_PLATTER_OFFSET`
-> = 8 the **gradient reads better**; glass needs a wider fringe (bench reference **~12+**) before the
-> refraction is worth it at all. So the chrome rule is "**glass AND a wider platter**", not glass at the
-> content offset. Still UNVERIFIED — settles when chrome glass ships at a real width.
+#### Platter presets — the doctrine *(2026-10-02)*
+
+The platter is Beam's ONE decorative layer: a `::after` behind a box, extending `offset` outside it, filled
+`gradient` or `glass`. **Call sites use a NAMED PRESET, never raw settings**, so taste changes land in one
+place. The presets:
+
+| preset | where | fill | offset | interaction |
+|---|---|---|---|---|
+| **chrome** | nav, dialog, popover, menu | glass | 12 | none |
+| **showcase** | dashboard / landing cards | gradient | 4 | track |
+| **feature** | hero / marketing cards | gradient | 4 | hover-spin |
+| **active** | a section in an active state | gradient | 4 | none |
+| **none** | **DEFAULT — everything else** | — | — | — |
+
+Values are **PROVISIONAL except `chrome`** (test-driven on the nav).
+
+**Rules:**
+- **Platters are special. Default is `none`; a platter needs a reason.** Max ONE platter per surface — the
+  loudness budget, applied to decoration.
+- **Glass needs a wider fringe than gradient** (measured: 8 too thin, 12 works) *and* something detailed
+  behind it — so it suits **chrome floating over content**, not a content card on the page ground.
+- **Presets live in one place.** A raw `offset` / `fill` / `interaction` at a call site is a smell; only
+  CONTEXT params (radius to match the box, the actual surface behind, the refraction filter id) belong there.
+
+*(This absorbs the earlier "fill by ROLE" note: chrome = glass + wider platter; content = gradient.)*
 
 The gradient fill: the rim is a `conic-gradient(from var(--beam-border-angle), …)`
 drawn on an absolutely-positioned `::after` that sits just OUTSIDE the element (negative
