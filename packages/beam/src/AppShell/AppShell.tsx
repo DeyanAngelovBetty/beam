@@ -33,17 +33,17 @@ const RAIL_WIDTH = 282; // 258 panel + 24 (PAGE_GUTTER) left inset
 const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
 const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px, for position props (sx position props aren't spacing-scaled)
-// The platter rim behind the floating panel (both states), both fills at the SAME NAV_PLATTER_OFFSET (8) — a
-// hairline halo in the inset gap. Default fill = gradient (calm, mixing toward the canvas it floats over). A
-// LIVE A/B for the glass exploration: set `data-beam-nav-platter="glass"` on <html> in DevTools to swap the
-// rim to the light-driven liquid-glass fill with NOISE refraction (no rebuild) — not a ruling, just to
-// compare on the real nav. Glass refraction reads the `#beam-nav-glass-noise` filter rendered below.
+// The platter rim behind the floating panel (both states), both fills at the SAME NAV_PLATTER_OFFSET (12) — a
+// fringe in the inset gap. DEFAULT fill = GLASS (the locked recipe: blur + noise refraction + tint, 1px
+// border, no shadow) — a TEST-DRIVE default (2026-10-02, Deyan), not a ruling. The escape hatch is INVERTED:
+// set `data-beam-nav-platter="gradient"` on <html> in DevTools to swap BACK to the calm gradient rim (no
+// rebuild). Glass refraction reads the `#beam-nav-glass-noise` filter rendered below.
 const NAV_PLATTER_GRADIENT = beamPlatter({ interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET });
 const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET, refract: 'beam-nav-glass-noise' });
 const NAV_GLASS_FILTER_ID = 'beam-nav-glass-noise';
 const NAV_BORDER_SX = {
-  ...NAV_PLATTER_GRADIENT,
-  '[data-beam-nav-platter="glass"] &': NAV_PLATTER_GLASS,
+  ...NAV_PLATTER_GLASS,
+  '[data-beam-nav-platter="gradient"] &': NAV_PLATTER_GRADIENT,
 };
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
 // derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
@@ -501,8 +501,8 @@ export function AppShell({
         overflowY: 'auto',
         // Page gutters (§6.20, 2026-10-01). Top / right / bottom are always PAGE_GUTTER. The LEFT is
         // nav-state-aware, because the floating nav owns the left space differently per state:
-        //  • DOCKED — PAGE_GUTTER + NAV_PLATTER_OFFSET (24 + 8 = 32px): the panel's platter fringe extends 8px
-        //    into the gutter, so content opens an extra 8px to clear it and keep a true 24px gap to the fringe.
+        //  • DOCKED — PAGE_GUTTER + NAV_PLATTER_OFFSET (24 + 12 = 36px): the panel's platter fringe extends 12px
+        //    into the gutter, so content opens an extra 12px to clear it and keep a true 24px gap to the fringe.
         //  • COLLAPSED (wide) — 0: the 60px nav column already supplies the left clearance.
         //  • NARROW — PAGE_GUTTER: the nav is a modal drawer OVER main (no column), so main keeps its full gutter.
         // This re-introduces a nav-state-aware left edge (the 2026-10-01 "PAGE_GUTTER on all edges" rule is
@@ -510,7 +510,7 @@ export function AppShell({
         // toggle. (`contentGutter` + `CONTENT_GUTTER_LEFT_COLLAPSED` stay vestigial — no consumer.)
         pr: PAGE_GUTTER,
         pl: effectiveLocked
-          ? `calc(${PAGE_GUTTER.md * 8}px + ${NAV_PLATTER_OFFSET}px)` // 32: gutter + platter fringe
+          ? `calc(${PAGE_GUTTER.md * 8}px + ${NAV_PLATTER_OFFSET}px)` // 36: gutter + platter fringe
           : isWide
             ? 0 // collapsed: the 60px nav column is the clearance
             : PAGE_GUTTER, // narrow: drawer overlays main, keep the full gutter

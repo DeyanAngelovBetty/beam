@@ -115,9 +115,10 @@ is concentric `calc(radius + offset)`.
 >
 > Mode-aware (CSS var from `createBeamTheme`'s scheme blocks, so a mode flip reskins with no rebuild): **tint**,
 > plus **blur** (seed). Recipe constants: `NAV_GLASS` in tokens.ts (dark **15%**; **LIGHT 22% PROPOSED /
-> UNVERIFIED** — a near-white backdrop needs more wash to read as a distinct pane). Live on the nav glass A/B
-> (`data-beam-nav-platter="glass"`) + the Liquid Glass bench (recipe B = the nav recipe; all bench recipes
-> differ only in refraction). The bench's sliders: blur / displacement / tint. **Legibility:** a full glass
+> UNVERIFIED** — a near-white backdrop needs more wash to read as a distinct pane). Live as the nav platter's
+> DEFAULT fill (test-drive, 2026-10-02, offset 12; escape hatch `data-beam-nav-platter="gradient"` swaps back
+> to gradient) + the Liquid Glass bench (recipe B = the nav recipe; all bench recipes differ only in
+> refraction). The bench's sliders: blur / displacement / tint. **Legibility:** a full glass
 > PANEL over content floors tint at ~12% so text doesn't wash out; the fringe form (opaque box in front) can
 > sit at 0.
 

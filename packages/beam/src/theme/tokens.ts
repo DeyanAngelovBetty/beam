@@ -102,10 +102,11 @@ export const CONTENT_GUTTER_RIGHT_COLLAPSED = 1.5; // 12px
  * NAV_INSET token; AppShell reads `PAGE_GUTTER` directly.
  */
 export const BORDER_RADIUS_24 = 24; // Figma: shape › borderRadius/24 — the soft/rounded radius (nav panel, MuiPaper).
-// How far the platter rim extends outside the panel. A hairline halo, NOT a second panel (8 eyeballed over
-// 12 = too wide, 4/6 = too thin) — a tuned px, not a derived ratio. Stays < the 24px gap so the fringe
-// clears appFrame's overflow:hidden (left-edge clearance = PAGE_GUTTER(24) − NAV_PLATTER_OFFSET(8) = 16px).
-export const NAV_PLATTER_OFFSET = 8;
+// How far the platter rim extends outside the panel (both fills share this). NOW 12 (2026-10-02): the nav
+// default fill is GLASS, which wants a wider fringe than the gradient's eyeballed 8 to read as glass (role
+// rule, derived-color-tokens §2). A TEST-DRIVE value, not a ruling. Stays < the 24px gap so the fringe clears
+// appFrame's overflow:hidden (left-edge clearance = PAGE_GUTTER(24) − NAV_PLATTER_OFFSET(12) = 12px).
+export const NAV_PLATTER_OFFSET = 12;
 
 /**
  * RAIL_SEAT — the optical vertical (px) where TABLE CHROME-BAND action LABELS seat: **2 × spacing = 16px**,

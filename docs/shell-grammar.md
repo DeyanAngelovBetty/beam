@@ -182,9 +182,11 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 - **Glass in BOTH states** (the frosted `NAV_GLASS_SX` recipe, already applied to both the locked panel and
   the peek in code). `prefers-reduced-transparency: reduce` falls back to opaque (`--beam-nav-glass-alpha:
   1`), alongside the existing `backdrop-filter` `@supports` fallback.
-- **Gradient border on the panel, both states** — `beamGradientBorder` at the **calm** tier
-  (`interaction: 'none'`): same foundation/colours as the dashboard rim, no pointer tracking. On the docked
-  panel the border **REPLACES** the old `6px 0 18px` separation shadow; the peek keeps its own shadows.
+- **Platter rim behind the panel, both states** — `beamPlatter` at `NAV_PLATTER_OFFSET` (now 12). The
+  DEFAULT fill is **glass** (test-drive, 2026-10-02; the locked liquid-glass recipe — blur + noise refraction
+  + tint, 1px border, no shadow), with `data-beam-nav-platter="gradient"` on `<html>` as the escape hatch back
+  to the calm **gradient** rim (`interaction: 'none'`, same colours as the dashboard rim, no pointer tracking).
+  On the docked panel the rim **REPLACES** the old `6px 0 18px` separation shadow; the peek keeps its own shadows.
 - **Content left gutter is nav-state-aware** (BEAM.md §6.20, supersedes §6.19). `main`'s top / right / bottom
   stay `PAGE_GUTTER`; its **left** follows the nav state: **docked** = `PAGE_GUTTER + NAV_PLATTER_OFFSET`
   (24 + 8 = 32px) so content clears the panel's platter fringe (which extends 8px into the gutter) and keeps a
@@ -196,10 +198,10 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 
 ## Open
 
-- **Known issue — platter-fill A/B doesn't swap cleanly (2026-10-02).** Flipping
-  `data-beam-nav-platter="glass"` on `<html>` makes the nav JUMP STATE rather than
-  just reskinning the fringe (the peek tooltip appears). Investigate later — noted,
-  not fixed. The fix is unrelated to the glass recipe itself.
+- **Known issue — platter-fill swap isn't clean (2026-10-02).** Flipping
+  `data-beam-nav-platter` on `<html>` (now `="gradient"`, since glass is the default)
+  makes the nav JUMP STATE rather than just reskinning the fringe (the peek tooltip
+  appears). Investigate later — noted, not fixed. Unrelated to the glass recipe itself.
 - **Queue — platter fill as a Theme Lab control (`gradient | glass`).** Promote the
   A/B off the DevTools attribute spell onto a Theme Lab toggle so the switch is
   demoable. (Depends on the clean-swap issue above being understood.)

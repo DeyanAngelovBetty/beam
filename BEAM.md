@@ -434,11 +434,12 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     — content opens an extra 8px so the panel's platter fringe (which extends into the gutter) keeps a true
     24px gap — `0` COLLAPSED (the 60px nav column supplies the clearance), `PAGE_GUTTER` NARROW (the nav is a
     modal drawer OVER main, no column). **Why:** the nav column and the platter fringe own the left space now,
-    not a floating toggle, so the left edge follows the nav state. The panel wears `beamGradientBorder` at the
-    **calm** tier. **One border foundation, four
-    `interaction` tiers used with increasing intent — `none` (chrome default) → `hover-step` → `hover-spin`
-    → `track` (flourish).** Tracking/spin is reserved for intent; chrome is `none`. Foundation + tiers:
-    docs/derived-color-tokens.md (`beamGradientBorder`).
+    not a floating toggle, so the left edge follows the nav state. The panel wears a `beamPlatter` rim at
+    `NAV_PLATTER_OFFSET` (now 12); DEFAULT fill = **glass** (test-drive 2026-10-02, the locked liquid-glass
+    recipe), escape hatch `data-beam-nav-platter="gradient"` back to the calm **gradient** tier. **One border
+    foundation, four `interaction` tiers used with increasing intent — `none` (chrome default) → `hover-step` →
+    `hover-spin` → `track` (flourish).** Tracking/spin is reserved for intent; chrome is `none`. Foundation +
+    tiers: docs/derived-color-tokens.md (`beamPlatter`).
 
 ## 7. Figma ↔ code sync mechanics
 
