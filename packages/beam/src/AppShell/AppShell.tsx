@@ -22,8 +22,8 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
-import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from '../theme/tokens';
-import { beamPlatter } from '../theme/platter';
+import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, CHROME_PLATTER_OFFSET } from '../theme/tokens';
+import { chromePlatterLayers } from '../theme/platter';
 import { BeamSvgDefs, BEAM_GLASS_FILTER_ID } from '../BeamSvgDefs';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
@@ -37,19 +37,12 @@ const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px
 const NAV_GLASS_FILTER_ID = BEAM_GLASS_FILTER_ID;
 // Offset as a LIVE var (Theme Lab tunes it; fallback = the token). Both the platter geometry AND main's docked
 // left padding read it, so dragging offset moves the fringe + the content gutter in the same paint (§6.20).
-const NAV_PLATTER_OFFSET_VAR = `var(--beam-nav-platter-offset, ${NAV_PLATTER_OFFSET}px)`;
-// The platter rim behind the floating panel (both states). TWO layers coexist on the wrap — glass on ::after,
-// gradient on ::before — each gated by a per-mode display var, so the fill swaps with a pure PAINT change (no
-// attribute, no React, no layout) — this is the clean-swap fix for the old data-attribute jump. DEFAULT = glass
-// (test-drive 2026-10-02): glass-on defaults to `block`, gradient-on to `none`. Theme Lab (or DevTools) flips
-// `--beam-nav-platter-glass-on` / `--beam-nav-platter-gradient-on` per mode to swap. Glass refraction reads the
-// `#beam-nav-glass-noise` filter rendered below.
-const NAV_PLATTER_GLASS = beamPlatter({ fill: 'glass', pseudo: 'after', displayVar: 'var(--beam-nav-platter-glass-on, block)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET_VAR, refract: NAV_GLASS_FILTER_ID });
-const NAV_PLATTER_GRADIENT = beamPlatter({ fill: 'gradient', pseudo: 'before', displayVar: 'var(--beam-nav-platter-gradient-on, none)', interaction: 'none', surface: 'var(--mui-palette-background-default)', radius: BORDER_RADIUS_24, offset: NAV_PLATTER_OFFSET_VAR });
-const NAV_BORDER_SX = {
-  ...NAV_PLATTER_GLASS,
-  ...NAV_PLATTER_GRADIENT,
-};
+const CHROME_PLATTER_OFFSET_VAR = `var(--beam-chrome-offset, ${CHROME_PLATTER_OFFSET}px)`;
+// The CHROME platter rim behind the floating nav panel (both states) — the SHARED two-layer rig (glass ::after
+// + gradient ::before, display-gated by the `--beam-chrome-*-on` vars), identical to every other chrome
+// consumer (BeamChrome). Flipping fill is one paint across all of them; the Theme Lab's Chrome Platter section
+// drives the `--beam-chrome-*` dials. Glass refraction reads the `#beam-nav-glass-noise` filter rendered below.
+const NAV_BORDER_SX = chromePlatterLayers({ radius: BORDER_RADIUS_24, refract: NAV_GLASS_FILTER_ID });
 // The floating brand strip's height. Since the density rework (2026-09-23) the sticky chrome NO LONGER
 // derives its pin offset from this (it pins at CHROME_PIN_OFFSET and shares the top band with the toggle,
 // cleared horizontally by the collapsed gutter). Local name for the shell's own strip height.
@@ -88,17 +81,17 @@ const VT_CONTENT = 'beam-shell-content'; // reflows: full-width ↔ right column
 //     unblurred smear looks broken; plain opaque is intentional).
 //   • No `will-change`: it can force a layer that breaks the effect outright.
 const NAV_GLASS_SX = {
-  background: 'color-mix(in oklab, var(--beam-nav-glass-tint-base, var(--mui-palette-background-paper)) var(--beam-nav-glass-tint, 15%), transparent)',
-  backdropFilter: `blur(var(--beam-nav-glass-blur)) url(#${NAV_GLASS_FILTER_ID})`,
-  WebkitBackdropFilter: `blur(var(--beam-nav-glass-blur)) url(#${NAV_GLASS_FILTER_ID})`,
+  background: 'color-mix(in oklab, var(--beam-chrome-tint-base, var(--mui-palette-background-paper)) var(--beam-chrome-tint, 15%), transparent)',
+  backdropFilter: `blur(var(--beam-chrome-blur)) url(#${NAV_GLASS_FILTER_ID})`,
+  WebkitBackdropFilter: `blur(var(--beam-chrome-blur)) url(#${NAV_GLASS_FILTER_ID})`,
   border: '1px solid var(--beam-nav-edge)', // the only edge
   '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
-    '--beam-nav-glass-tint': '100%',
+    '--beam-chrome-tint': '100%',
   },
   // Accessibility: a viewer who asks for less transparency gets the opaque rail (same tint:100% path as the
   // no-backdrop-filter fallback) — the glass is decorative, the nav must stay legible.
   '@media (prefers-reduced-transparency: reduce)': {
-    '--beam-nav-glass-tint': '100%',
+    '--beam-chrome-tint': '100%',
   },
 };
 
@@ -506,7 +499,7 @@ export function AppShell({
         overflowY: 'auto',
         // Page gutters (§6.20, 2026-10-01). Top / right / bottom are always PAGE_GUTTER. The LEFT is
         // nav-state-aware, because the floating nav owns the left space differently per state:
-        //  • DOCKED — PAGE_GUTTER + NAV_PLATTER_OFFSET (24 + 12 = 36px): the panel's platter fringe extends 12px
+        //  • DOCKED — PAGE_GUTTER + CHROME_PLATTER_OFFSET (24 + 12 = 36px): the panel's platter fringe extends 12px
         //    into the gutter, so content opens an extra 12px to clear it and keep a true 24px gap to the fringe.
         //  • COLLAPSED (wide) — 0: the 60px nav column already supplies the left clearance.
         //  • NARROW — PAGE_GUTTER: the nav is a modal drawer OVER main (no column), so main keeps its full gutter.
@@ -515,7 +508,7 @@ export function AppShell({
         // toggle. (`contentGutter` + `CONTENT_GUTTER_LEFT_COLLAPSED` stay vestigial — no consumer.)
         pr: PAGE_GUTTER,
         pl: effectiveLocked
-          ? `calc(${PAGE_GUTTER.md * 8}px + ${NAV_PLATTER_OFFSET_VAR})` // gutter + platter fringe (live via the offset var)
+          ? `calc(${PAGE_GUTTER.md * 8}px + ${CHROME_PLATTER_OFFSET_VAR})` // gutter + platter fringe (live via the offset var)
           : isWide
             ? 0 // collapsed: the 60px nav column is the clearance
             : PAGE_GUTTER, // narrow: drawer overlays main, keep the full gutter

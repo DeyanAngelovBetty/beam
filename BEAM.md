@@ -422,20 +422,20 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     **History — superseded then reinstated (both 2026-10-01, §6.20):** first, once the collapsed nav toggle
     moved into its OWN 60px column, `main` stopped opening its left to clear it and `left` went to `PAGE_GUTTER`
     in every state (briefly, no nav-state-aware edge). Then the platter fringe landed: the floating panel's
-    rim extends `NAV_PLATTER_OFFSET` (8px) OUTWARD into the gutter, so **`left` is nav-state-aware again** —
+    rim extends `CHROME_PLATTER_OFFSET` (8px) OUTWARD into the gutter, so **`left` is nav-state-aware again** —
     see §6.20 for the three-way rule and the why. `CONTENT_GUTTER_LEFT_COLLAPSED` stays vestigial
-    (the new left values are derived from `PAGE_GUTTER` + `NAV_PLATTER_OFFSET`, not from it), alongside
+    (the new left values are derived from `PAGE_GUTTER` + `CHROME_PLATTER_OFFSET`, not from it), alongside
     `CONTENT_INLINE` / `contentGutter`.
 20. **Floating nav + gradient-border intent tiers (2026-10-01).** The nav panel floats in both states
     (docked: 282 rail, 258 panel inset by `PAGE_GUTTER`, radius `borderRadius/24`, over the canvas; peek:
     same panel, keeps shadows) — full rule in docs/shell-grammar.md §7; preserves §6.17 (main never
     remounts). **`main`'s left gutter is nav-state-aware** (supersedes §6.19's "all edges PAGE_GUTTER"): top /
-    right / bottom are always `PAGE_GUTTER`; left is `PAGE_GUTTER + NAV_PLATTER_OFFSET` (24 + 8 = 32px) DOCKED
+    right / bottom are always `PAGE_GUTTER`; left is `PAGE_GUTTER + CHROME_PLATTER_OFFSET` (24 + 8 = 32px) DOCKED
     — content opens an extra 8px so the panel's platter fringe (which extends into the gutter) keeps a true
     24px gap — `0` COLLAPSED (the 60px nav column supplies the clearance), `PAGE_GUTTER` NARROW (the nav is a
     modal drawer OVER main, no column). **Why:** the nav column and the platter fringe own the left space now,
     not a floating toggle, so the left edge follows the nav state. The panel wears a `beamPlatter` rim at
-    `NAV_PLATTER_OFFSET` (now 12); DEFAULT fill = **glass** (test-drive 2026-10-02, the locked liquid-glass
+    `CHROME_PLATTER_OFFSET` (now 12); DEFAULT fill = **glass** (test-drive 2026-10-02, the locked liquid-glass
     recipe), gradient available as the alternate fill. The two fills coexist as layers (glass `::after` +
     gradient `::before`) toggled by per-mode display vars — a pure paint swap (no attribute); Theme Lab drives
     it. **One border

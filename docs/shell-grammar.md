@@ -182,16 +182,16 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 - **Glass in BOTH states** (the frosted `NAV_GLASS_SX` recipe, already applied to both the locked panel and
   the peek in code). `prefers-reduced-transparency: reduce` falls back to opaque (`--beam-nav-glass-alpha:
   1`), alongside the existing `backdrop-filter` `@supports` fallback.
-- **Platter rim behind the panel, both states** — `beamPlatter` at `--beam-nav-platter-offset` (default 12).
+- **Platter rim behind the panel, both states** — `beamPlatter` at `--beam-chrome-offset` (default 12).
   TWO layers coexist on the wrap — **glass** on `::after`, **gradient** on `::before` — each gated by a per-mode
-  display var (`--beam-nav-platter-glass-on` / `-gradient-on`, `block`/`none`). DEFAULT fill is **glass**
+  display var (`--beam-chrome-glass-on` / `-gradient-on`, `block`/`none`). DEFAULT fill is **glass**
   (test-drive, 2026-10-02; the locked recipe — blur + noise refraction + tint, 1px border, no shadow). Swapping
   fill flips the two display vars → a pure PAINT change (no attribute, no React, no layout). To swap manually in
-  DevTools until the Theme Lab control lands: on `<html>` set `--beam-nav-platter-glass-on: none` +
-  `--beam-nav-platter-gradient-on: block`. On the docked panel the rim **REPLACES** the old `6px 0 18px`
+  DevTools until the Theme Lab control lands: on `<html>` set `--beam-chrome-glass-on: none` +
+  `--beam-chrome-gradient-on: block`. On the docked panel the rim **REPLACES** the old `6px 0 18px`
   separation shadow; the peek keeps its own shadows.
 - **Content left gutter is nav-state-aware** (BEAM.md §6.20, supersedes §6.19). `main`'s top / right / bottom
-  stay `PAGE_GUTTER`; its **left** follows the nav state: **docked** = `calc(PAGE_GUTTER + --beam-nav-platter-offset)`
+  stay `PAGE_GUTTER`; its **left** follows the nav state: **docked** = `calc(PAGE_GUTTER + --beam-chrome-offset)`
   (24 + 12 = 36px at the default) so content clears the panel's platter fringe (which extends into the gutter)
   and keeps a true 24px gap to it — and because both read the same offset var, dragging offset in the Lab moves
   the fringe and this padding in one paint; **collapsed** = `0` (the 60px nav column is the clearance);
@@ -202,11 +202,12 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 
 ## Open
 
-- **Platter fill swap + Theme Lab control — DONE 2026-10-02 (swap confirmed by Deyan).** The old attribute
-  swap jumped the nav; the fill is now two coexisting layers (glass `::after` + gradient `::before`) toggled by
-  per-mode display vars — a pure paint change. Theme Lab has a **Platter section** (fill / offset / blur / tint
-  per mode + a shared displacement) that drives the live vars + pokes the refraction filter, and exports to the
-  combo v4 `platter` block. The refraction filter lives in `BeamSvgDefs` (idempotent, document-global).
+- **Chrome platter — CHROME-LEVEL dials (2026-10-02).** The fill is two coexisting layers (glass `::after` +
+  gradient `::before`) toggled by per-mode display vars — a pure paint change (fixed the old attribute jump).
+  The dials are `--beam-chrome-*` (one set for EVERY chrome consumer): the nav + `BeamChrome` (the Theme Lab
+  today; dialogs/popovers later) both spread the same `chromePlatterLayers()`, so flipping fill/offset/blur/tint
+  in the Theme Lab's **Chrome Platter section** moves all of them in one paint. Exports to the combo v4 `chrome`
+  block. The refraction filter lives in `BeamSvgDefs` (idempotent, document-global).
 - Per-app audit results of §5 migrations.
 - Motion token values (bench).
 - Whether the ghost appears in the narrow-viewport drawer (probably not —

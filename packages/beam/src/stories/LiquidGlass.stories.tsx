@@ -80,19 +80,19 @@ function Filters({ scale }: { scale: number }) {
 
 // ---- recipes = the FINAL glass recipe, differing ONLY in refraction (Deyan's ruling 2026-10-01) ----
 // backdrop-filter = blur → (optional) refraction url(#id). NO saturate/brightness/opacity, NO box-shadow —
-// the 1px border is the only edge. Fill = a single TINT (a wash of background.paper at --beam-nav-glass-tint;
+// the 1px border is the only edge. Fill = a single TINT (a wash of background.paper at --beam-chrome-tint;
 // 0 = no background). Mirrors platter.ts fill:'glass' byte-for-byte, reading the SAME themed vars — the
-// bench's three sliders drive --beam-nav-glass-blur / -tint + the SVG displacement — so A/B/C differ only in
+// bench's three sliders drive --beam-chrome-blur / -tint + the SVG displacement — so A/B/C differ only in
 // refraction: none (A) / noise (B) / edge-lens (C).
 const RADIUS = `${BORDER_RADIUS_24}px`;
 // Legibility floor for the translucent-PANEL form only (text over the glass). The fringe form has an opaque
 // box in front, so it can sit at tint 0; a full glass panel can't — below this the text washes out.
 const PANEL_TINT_FLOOR = '12%';
 const glassSx = (refract?: string, tintFloor?: string) => {
-  const bf = refract ? `blur(var(--beam-nav-glass-blur)) url(#${refract})` : `blur(var(--beam-nav-glass-blur))`;
-  const tint = tintFloor ? `max(var(--beam-nav-glass-tint, 15%), ${tintFloor})` : 'var(--beam-nav-glass-tint, 15%)';
+  const bf = refract ? `blur(var(--beam-chrome-blur)) url(#${refract})` : `blur(var(--beam-chrome-blur))`;
+  const tint = tintFloor ? `max(var(--beam-chrome-tint, 15%), ${tintFloor})` : 'var(--beam-chrome-tint, 15%)';
   return {
-    background: `color-mix(in oklab, var(--beam-nav-glass-tint-base, var(--mui-palette-background-paper)) ${tint}, transparent)`,
+    background: `color-mix(in oklab, var(--beam-chrome-tint-base, var(--mui-palette-background-paper)) ${tint}, transparent)`,
     border: '1px solid var(--beam-nav-edge)',
     backdropFilter: bf,
     WebkitBackdropFilter: bf,
@@ -155,11 +155,11 @@ function Backdrop() {
 export const Bench: Story = {
   render: () => {
     // Two controls + the tint dial (Deyan's ruling) — driving the real themed vars, so the bench == the nav.
-    const [blur, setBlur] = useState(18); // --beam-nav-glass-blur (seed default 18)
+    const [blur, setBlur] = useState(18); // --beam-chrome-blur (seed default 18)
     const [scale, setScale] = useState(12); // SVG displacement scale (B/C) — range 0–200
-    const [tint, setTint] = useState(15); // --beam-nav-glass-tint (%) — the lone fill dial; 0 = no background
+    const [tint, setTint] = useState(15); // --beam-chrome-tint (%) — the lone fill dial; 0 = no background
     return (
-      <Box sx={{ minHeight: '100vh', ['--beam-nav-glass-blur' as string]: `${blur}px`, ['--beam-nav-glass-tint' as string]: `${tint}%` }}>
+      <Box sx={{ minHeight: '100vh', ['--beam-chrome-blur' as string]: `${blur}px`, ['--beam-chrome-tint' as string]: `${tint}%` }}>
         <Filters scale={scale} />
 
         {/* Controls — blur, displacement, tint (nothing else) */}

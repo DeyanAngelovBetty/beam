@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { beamPlatter } from './theme/platter';
-import { PAGE_GUTTER, BORDER_RADIUS_24, NAV_PLATTER_OFFSET } from './theme/tokens';
+import { chromePlatterLayers } from './theme/platter';
+import { PAGE_GUTTER, BORDER_RADIUS_24, CHROME_PLATTER_OFFSET } from './theme/tokens';
 import { BEAM_GLASS_FILTER_ID } from './BeamSvgDefs';
 
 /**
@@ -30,7 +30,7 @@ export interface BeamChromeProps {
   gap?: number | { xs: number; md: number };
   /** Panel corner radius (px). Default `BORDER_RADIUS_24`. */
   radius?: number;
-  /** Platter outward extent (px). Default the chrome offset (`NAV_PLATTER_OFFSET`, 12). */
+  /** Platter outward extent (px). Default the chrome offset (`CHROME_PLATTER_OFFSET`, 12). */
   offset?: number;
   /** Extra sx for the OUTER wrap — positioning goes here (default `position:absolute; inset:0`). */
   sx?: SxProps<Theme>;
@@ -45,7 +45,7 @@ export function BeamChrome({
   children,
   gap = PAGE_GUTTER,
   radius = BORDER_RADIUS_24,
-  offset = NAV_PLATTER_OFFSET,
+  offset = CHROME_PLATTER_OFFSET,
   sx,
   innerSx,
   role,
@@ -56,9 +56,11 @@ export function BeamChrome({
       role={role}
       aria-label={ariaLabel}
       sx={[
-        // Clean outer wrap: the chrome platter (glass + noise refraction) + the float gap. NO overflow / bg /
+        // Clean outer wrap: the SHARED chrome platter — two coexisting layers (glass + gradient) gated by the
+        // `--beam-chrome-*-on` vars, so a fill flip in the Theme Lab swaps THIS fringe and the nav's in one
+        // paint. Reads `--beam-chrome-offset` live (fallback = the `offset` prop). NO overflow / bg /
         // backdrop-filter here — those are the three traps.
-        beamPlatter({ fill: 'glass', offset, radius, refract: BEAM_GLASS_FILTER_ID }),
+        chromePlatterLayers({ offset: `var(--beam-chrome-offset, ${offset}px)`, radius, refract: BEAM_GLASS_FILTER_ID }),
         { position: 'absolute', inset: 0, m: gap }, // fills a positioned parent; `position` wins over platter's relative
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}

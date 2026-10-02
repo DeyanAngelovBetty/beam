@@ -105,8 +105,8 @@ export const BORDER_RADIUS_24 = 24; // Figma: shape › borderRadius/24 — the 
 // How far the platter rim extends outside the panel (both fills share this). NOW 12 (2026-10-02): the nav
 // default fill is GLASS, which wants a wider fringe than the gradient's eyeballed 8 to read as glass (role
 // rule, derived-color-tokens §2). A TEST-DRIVE value, not a ruling. Stays < the 24px gap so the fringe clears
-// appFrame's overflow:hidden (left-edge clearance = PAGE_GUTTER(24) − NAV_PLATTER_OFFSET(12) = 12px).
-export const NAV_PLATTER_OFFSET = 12;
+// appFrame's overflow:hidden (left-edge clearance = PAGE_GUTTER(24) − CHROME_PLATTER_OFFSET(12) = 12px).
+export const CHROME_PLATTER_OFFSET = 12;
 
 /**
  * RAIL_SEAT — the optical vertical (px) where TABLE CHROME-BAND action LABELS seat: **2 × spacing = 16px**,
@@ -453,7 +453,7 @@ type NavSchemeSeed = {
   // See docs/shell-grammar.md §2 / derived-color-tokens §2.
   navGlassAlpha: number;
   navGlassBlur: number;
-  navGlassSaturate: number; // backdrop saturate — now ONLY the narrow drawer (NAV_GLASS_SX); the locked glass recipe dropped it.
+  navGlassSaturate: number; // VESTIGIAL — the locked chrome recipe dropped saturate; no longer emitted (kept on the seed only to avoid churning every seed literal).
 };
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
@@ -471,10 +471,10 @@ export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: Nav
 
 /**
  * Liquid-glass recipe — FINAL 2026-10-01, dials made PER MODE 2026-10-02 (Deyan). Refraction + blur carry the
- * effect; everything else was stripped. The glass is `blur(--beam-nav-glass-blur) url(#refract)` as the
+ * effect; everything else was stripped. The glass is `blur(--beam-chrome-blur) url(#refract)` as the
  * backdrop filter (NO saturate, brightness, opacity-lift), over a single TINT fill, with NO box-shadow — the
- * 1px `--beam-nav-edge` border is the only edge. The fill dial is `--beam-nav-glass-tint` (0–100%, 0 = no
- * background) over a `--beam-nav-glass-tint-base` colour, mixed `color-mix(… base <tint>, transparent)`. Both
+ * 1px `--beam-nav-edge` border is the only edge. The fill dial is `--beam-chrome-tint` (0–100%, 0 = no
+ * background) over a `--beam-chrome-tint-base` colour, mixed `color-mix(… base <tint>, transparent)`. Both
  * flip PER MODE (emitted in createBeamTheme's scheme blocks, no rebuild — §5), as does blur (seed). The bench's
  * three sliders drive blur / displacement / tint.
  *

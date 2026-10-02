@@ -101,16 +101,16 @@ A barrel-exported sx factory (`theme/platter.ts`). The `::after` is the **platte
 box, extended `offset` outside it (a card's outward ring; or, behind an opaque box, a fringe/halo). Two
 **fills**: `gradient` (below) and `glass` (the **light-driven + refracting** liquid-glass recipe). `offset`
 omitted = today's `--beam-ring` (1px→2px); a number pins a static offset — the nav uses the SAME
-`NAV_PLATTER_OFFSET` = 8 for BOTH fills (one offset token; flipping fill doesn't move the halo). Platter radius
+`CHROME_PLATTER_OFFSET` = 8 for BOTH fills (one offset token; flipping fill doesn't move the halo). Platter radius
 is concentric `calc(radius + offset)`.
 
 > **Glass fill — FINAL recipe (2026-10-01, Deyan).** Stripped to the minimum: refraction + blur carry the
 > effect. Brightness, saturate, the opacity-lift, and the box-shadow are all gone.
-> - **backdrop-filter** = `blur(--beam-nav-glass-blur) url(#refract)` — blur, then a feTurbulence→
+> - **backdrop-filter** = `blur(--beam-chrome-blur) url(#refract)` — blur, then a feTurbulence→
 >   feDisplacementMap NOISE refraction (`refract` id; nav = `'beam-nav-glass-noise'`, rendered by `BeamSvgDefs`
 >   — idempotent, document-global by id, so chrome glass works outside the shell too).
 >   Nothing else. Degrades to blur-only (then opaque tint) where url() filters / backdrop-filter are unsupported.
-> - **fill** = ONE tint dial `--beam-nav-glass-tint` over a `--beam-nav-glass-tint-base` colour,
+> - **fill** = ONE tint dial `--beam-chrome-tint` over a `--beam-chrome-tint-base` colour,
 >   `color-mix(… base <tint>, transparent)`, range 0–100%, where **0 = no background at all**. No sheen.
 > - **edge** = the 1px `--beam-nav-edge` border, the ONLY edge. **No box-shadow.**
 >
@@ -125,7 +125,7 @@ is concentric `calc(radius + offset)`.
 >
 > Recipe constants: `NAV_GLASS` + `surfaceSeeds.*.navGlassBlur` in tokens.ts. Live as the nav platter's DEFAULT
 > fill (test-drive, 2026-10-02, offset 12). The nav stacks glass + gradient as coexisting layers toggled by
-> per-mode display vars (`--beam-nav-platter-glass-on` / `-gradient-on`); to swap manually in DevTools until the
+> per-mode display vars (`--beam-chrome-glass-on` / `-gradient-on`); to swap manually in DevTools until the
 > Theme Lab control lands, set those on `<html>`. Also on the Liquid Glass bench (recipe B = the nav recipe).
 > The bench's sliders: blur / displacement / tint (blur is one slider for both modes — set it to 4 to preview
 > light). **Legibility:** a full glass PANEL

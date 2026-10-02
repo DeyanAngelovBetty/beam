@@ -1,4 +1,5 @@
 import type { SxProps, Theme } from '@mui/material/styles';
+import { CHROME_PLATTER_OFFSET } from './tokens';
 
 /**
  * beamPlatter — the decorative layer SERVED BEHIND a box (the "platter"). A single absolutely-positioned
@@ -41,7 +42,7 @@ export function beamPlatter(opts?: {
   interaction?: 'none' | 'hover-step' | 'hover-spin' | 'track';
   /**
    * Outward extent. Omitted → `--beam-ring` (today's 1px/2px grow). A NUMBER pins a static px offset; a
-   * STRING is used verbatim as a CSS length, so the nav can pass a live var (`var(--beam-nav-platter-offset)`).
+   * STRING is used verbatim as a CSS length, so the nav can pass a live var (`var(--beam-chrome-offset)`).
    */
   offset?: number | string;
   radius?: number;
@@ -58,7 +59,7 @@ export function beamPlatter(opts?: {
    */
   pseudo?: 'before' | 'after';
   /**
-   * A CSS value for the pseudo's `display` (e.g. `'var(--beam-nav-platter-glass-on, block)'`), so a consumer
+   * A CSS value for the pseudo's `display` (e.g. `'var(--beam-chrome-glass-on, block)'`), so a consumer
    * can gate the layer on/off live via a var. Omitted → `display` is left to the default.
    */
   displayVar?: string;
@@ -76,10 +77,10 @@ export function beamPlatter(opts?: {
     // FINAL recipe (2026-10-01): backdrop-filter is blur → (optional) refraction url(#id). NO saturate,
     // brightness, opacity, or box-shadow — refraction + blur carry it, the 1px border is the only edge.
     const glassFilter = opts?.refract
-      ? `blur(var(--beam-nav-glass-blur)) url(#${opts.refract})`
-      : `blur(var(--beam-nav-glass-blur))`;
+      ? `blur(var(--beam-chrome-blur)) url(#${opts.refract})`
+      : `blur(var(--beam-chrome-blur))`;
     // Glass platter: a blurred fill behind the box, visible in the `offset` fringe (the opaque box occludes
-    // the centre). The fill is a single TINT — a wash of background.paper at `--beam-nav-glass-tint` (0 = no
+    // the centre). The fill is a single TINT — a wash of background.paper at `--beam-chrome-tint` (0 = no
     // background at all). Mode-aware via the themed var, so a mode flip reskins with no rebuild. Fallback
     // forces the surface opaque (alpha 1) where backdrop-filter is unsupported.
     return {
@@ -93,17 +94,17 @@ export function beamPlatter(opts?: {
         zIndex: -1,
         pointerEvents: 'none',
         ...displayDecl,
-        background: 'color-mix(in oklab, var(--beam-nav-glass-tint-base, var(--mui-palette-background-paper)) var(--beam-nav-glass-tint, 15%), transparent)',
+        background: 'color-mix(in oklab, var(--beam-chrome-tint-base, var(--mui-palette-background-paper)) var(--beam-chrome-tint, 15%), transparent)',
         backdropFilter: glassFilter,
         WebkitBackdropFilter: glassFilter,
         border: '1px solid var(--beam-nav-edge)', // the only edge
         // No backdrop-filter / reduced transparency → force the tint fully opaque (a solid paper surface),
         // since a faint translucent tint with no blur behind it looks broken, not like glass.
         '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
-          '--beam-nav-glass-tint': '100%',
+          '--beam-chrome-tint': '100%',
         },
         '@media (prefers-reduced-transparency: reduce)': {
-          '--beam-nav-glass-tint': '100%',
+          '--beam-chrome-tint': '100%',
         },
       },
     };
@@ -171,4 +172,29 @@ export function beamPlatter(opts?: {
       },
     }),
   };
+}
+
+/**
+ * chromePlatterLayers — the CHROME preset's platter as the two coexisting fill layers: glass on `::after`,
+ * gradient on `::before`, each gated by a shared display var (`--beam-chrome-glass-on` / `-gradient-on`). So
+ * flipping the chrome fill is ONE paint that moves EVERY chrome consumer at once (the nav + BeamComponent
+ * consumers like the Theme Lab, dialogs, popovers — all spread this). Reads the `--beam-chrome-*` dials:
+ * offset/glass-on/gradient-on here, blur/tint/tint-base inside the glass branch. Spread onto a CLEAN wrap (no
+ * overflow / background / backdrop-filter); set `position` AFTER it (it sets `position: relative`).
+ */
+export function chromePlatterLayers(opts?: {
+  radius?: number;
+  /** Outward extent. Default reads `--beam-chrome-offset` (live, Theme-Lab-tunable) with the token fallback. */
+  offset?: number | string;
+  /** The surface the GRADIENT fill mixes toward (what's behind the chrome). Default the canvas base. */
+  surface?: string;
+  /** SVG displacement filter id for the GLASS refraction (required for the glass fill to refract). */
+  refract?: string;
+}): SxProps<Theme> {
+  const radius = opts?.radius ?? 24;
+  const offset = opts?.offset ?? `var(--beam-chrome-offset, ${CHROME_PLATTER_OFFSET}px)`;
+  const surface = opts?.surface ?? 'var(--mui-palette-background-default)';
+  const glass = beamPlatter({ fill: 'glass', pseudo: 'after', displayVar: 'var(--beam-chrome-glass-on, block)', radius, offset, refract: opts?.refract });
+  const gradient = beamPlatter({ fill: 'gradient', pseudo: 'before', displayVar: 'var(--beam-chrome-gradient-on, none)', interaction: 'none', surface, radius, offset });
+  return { ...(glass as object), ...(gradient as object) } as SxProps<Theme>;
 }

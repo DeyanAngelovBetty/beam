@@ -239,18 +239,18 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   }, [editing, displacement]);
   // Current per-scheme reads (re-run each render; `tick` forces it after a write).
   const platterFill: 'glass' | 'gradient' =
-    readVarForScheme(editing, '--beam-nav-platter-glass-on') === 'none' ? 'gradient' : 'glass';
-  const platterOffset = parseFloat(readVarForScheme(editing, '--beam-nav-platter-offset')) || 12;
-  const platterBlur = parseFloat(readVarForScheme(editing, '--beam-nav-glass-blur')) || (editing === 'light' ? 4 : 18);
-  const platterTint = parseFloat(readVarForScheme(editing, '--beam-nav-glass-tint')) || (editing === 'light' ? 12 : 15);
+    readVarForScheme(editing, '--beam-chrome-glass-on') === 'none' ? 'gradient' : 'glass';
+  const platterOffset = parseFloat(readVarForScheme(editing, '--beam-chrome-offset')) || 12;
+  const platterBlur = parseFloat(readVarForScheme(editing, '--beam-chrome-blur')) || (editing === 'light' ? 4 : 18);
+  const platterTint = parseFloat(readVarForScheme(editing, '--beam-chrome-tint')) || (editing === 'light' ? 12 : 15);
   const setPlatterFill = (fill: 'glass' | 'gradient') => {
-    setVar(editing, '--beam-nav-platter-glass-on', fill === 'glass' ? 'block' : 'none');
-    setVar(editing, '--beam-nav-platter-gradient-on', fill === 'glass' ? 'none' : 'block');
+    setVar(editing, '--beam-chrome-glass-on', fill === 'glass' ? 'block' : 'none');
+    setVar(editing, '--beam-chrome-gradient-on', fill === 'glass' ? 'none' : 'block');
     bump();
   };
-  const setPlatterOffset = (n: number) => { setVar(editing, '--beam-nav-platter-offset', `${n}px`); bump(); };
-  const setPlatterBlur = (n: number) => { setVar(editing, '--beam-nav-glass-blur', `${n}px`); bump(); };
-  const setPlatterTint = (n: number) => { setVar(editing, '--beam-nav-glass-tint', `${n}%`); bump(); };
+  const setPlatterOffset = (n: number) => { setVar(editing, '--beam-chrome-offset', `${n}px`); bump(); };
+  const setPlatterBlur = (n: number) => { setVar(editing, '--beam-chrome-blur', `${n}px`); bump(); };
+  const setPlatterTint = (n: number) => { setVar(editing, '--beam-chrome-tint', `${n}%`); bump(); };
   const setPlatterDisplacement = (n: number) => { setDisplacement((d) => ({ ...d, [editing]: n })); pokeDisplacement(n); };
 
   // ── Candidate presets (variant registry, lab-internal) ──────────────────────────────────────────
@@ -573,16 +573,17 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
     const logo: { dark?: Record<string, string>; light?: Record<string, string> } = {};
     if (Object.keys(logoDark).length) logo.dark = logoDark;
     if (Object.keys(logoLight).length) logo.light = logoLight;
-    // Platter (2026-10-02): fill/offset/blur/tint per scheme from the live vars; displacement from Lab state.
-    const platterOf = (s: Scheme) => ({
-      fill: readVarForScheme(s, '--beam-nav-platter-glass-on') === 'none' ? 'gradient' : 'glass',
-      offset: parseFloat(readVarForScheme(s, '--beam-nav-platter-offset')) || 12,
-      blur: parseFloat(readVarForScheme(s, '--beam-nav-glass-blur')) || (s === 'light' ? 4 : 18),
-      tint: readVarForScheme(s, '--beam-nav-glass-tint') || (s === 'light' ? '12%' : '15%'),
+    // Chrome (2026-10-02): CHROME-LEVEL dials — fill/offset/blur/tint per scheme from the live --beam-chrome-*
+    // vars; displacement from Lab state. These move every chrome consumer (nav + BeamChrome), not just the nav.
+    const chromeOf = (s: Scheme) => ({
+      fill: readVarForScheme(s, '--beam-chrome-glass-on') === 'none' ? 'gradient' : 'glass',
+      offset: parseFloat(readVarForScheme(s, '--beam-chrome-offset')) || 12,
+      blur: parseFloat(readVarForScheme(s, '--beam-chrome-blur')) || (s === 'light' ? 4 : 18),
+      tint: readVarForScheme(s, '--beam-chrome-tint') || (s === 'light' ? '12%' : '15%'),
       displacement: displacement[s],
     });
     const combo = {
-      version: 4, // v4: adds the `platter` block (nav fill + glass dials, per scheme)
+      version: 4, // v4: adds the `chrome` block (chrome fill + glass dials, per scheme)
       name: slug(comboName || 'untitled-combo'),
       // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
       // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
@@ -604,9 +605,9 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       },
       // logo present ONLY when a stop is overridden (sparse); absent = fully derived.
       ...(logo.dark || logo.light ? { logo } : {}),
-      // Nav platter — fill + glass dials per scheme. displacement is one filter today; a dark≠light value is
-      // the signal to split it into two filters in code.
-      platter: { dark: platterOf('dark'), light: platterOf('light') },
+      // Chrome — fill + glass dials per scheme, for ALL chrome consumers (nav + BeamChrome). displacement is one
+      // filter today; a dark≠light value is the signal to split it into two filters in code.
+      chrome: { dark: chromeOf('dark'), light: chromeOf('light') },
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -795,11 +796,15 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
 
           <Divider />
 
-          {/* Nav platter — fill + glass dials, per editing scheme (2026-10-02). fill/offset/blur/tint are live
-              CSS vars (the nav reads them with no rebuild); displacement pokes the shared SVG filter. All land
-              in the combo's v4 `platter` block on Copy. */}
+          {/* CHROME platter — CHROME-LEVEL, not nav-level (2026-10-02). fill/offset/blur/tint are live
+              `--beam-chrome-*` CSS vars (no rebuild); displacement pokes the shared SVG filter. All land in the
+              combo's v4 `chrome` block on Copy. */}
           <Stack spacing={1}>
-            <Typography variant="overline" color="text.secondary">Nav platter ({editing})</Typography>
+            <Typography variant="overline" color="text.secondary">Chrome platter ({editing})</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+              Drives ALL chrome at once — the nav, this Lab drawer, and future dialogs/popovers. Watch the drawer
+              restyle itself live as you drag.
+            </Typography>
             <FormControl size="small" fullWidth>
               <Select value={platterFill} onChange={(e) => setPlatterFill(e.target.value as 'glass' | 'gradient')} aria-label="Nav platter fill">
                 <MenuItem value="glass">Glass</MenuItem>

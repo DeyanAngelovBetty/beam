@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { products, productFonts, surfaceSeeds, NAV_GLASS, NAV_PLATTER_OFFSET, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, FIELD_TWIN_HEIGHT, pageBackdropSx, type BrandName, type ProductName } from './tokens';
+import { products, productFonts, surfaceSeeds, NAV_GLASS, CHROME_PLATTER_OFFSET, gradientSeeds, borderIntensity, markLightness, titleSeeds, derived, FIELD_GEOMETRY, FIELD_TWIN_HEIGHT, pageBackdropSx, type BrandName, type ProductName } from './tokens';
 
 // Surface-ramp named stops (docs/surface-grammar.md). `default`/`paper` are MUI's; `paper0` (Paper
 // elevation 0) and `overlay` (all menus/popovers) are the two extra ramp levels, typed here so the
@@ -481,21 +481,19 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-3': 'var(--beam-ramp-3)',
             // Rail background — one swappable recipe, consumed at the two rail sites.
             '--beam-nav-surface': derived.navSurface,
-            // Frosted-glass rail. Blur is scheme-invariant; alpha + saturate flip (saturate now only the
-            // narrow drawer). The FINAL glass recipe (2026-10-01, NAV_GLASS in tokens.ts): blur + refraction
-            // carry it; the lone fill dial is the TINT. :root carries the DARK default.
+            // CHROME dials (2026-10-02) — one set for EVERY chrome consumer (nav, BeamChrome: the Lab today,
+            // dialogs/popovers later), tuned live by the Theme Lab's Chrome Platter section. Emitted here so
+            // they resolve under getComputedStyle for the Lab to hydrate; blur/tint/tint-base flip per mode
+            // (below), offset + the two *-on display gates are mode-flippable too (fill swap = flip the gates).
+            // :root carries the DARK default. (`--beam-nav-glass-alpha` is NOT a chrome dial — it feeds the
+            // nav rail's own `--beam-nav-surface`; stays nav-scoped.)
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
-            '--beam-nav-glass-blur': `${s.dark.navGlassBlur}px`,
-            '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
-            '--beam-nav-glass-tint': NAV_GLASS.dark.tint,
-            '--beam-nav-glass-tint-base': NAV_GLASS.dark.tintBase,
-            // Platter geometry + fill-swap gates (Theme Lab tunes these live; here are the defaults so they
-            // resolve under getComputedStyle for the Lab to hydrate from). offset drives the fringe AND main's
-            // docked left padding; the two *-on vars are the display gates for the coexisting glass/gradient
-            // layers (nav default = glass on, gradient off).
-            '--beam-nav-platter-offset': `${NAV_PLATTER_OFFSET}px`,
-            '--beam-nav-platter-glass-on': 'block',
-            '--beam-nav-platter-gradient-on': 'none',
+            '--beam-chrome-blur': `${s.dark.navGlassBlur}px`,
+            '--beam-chrome-tint': NAV_GLASS.dark.tint,
+            '--beam-chrome-tint-base': NAV_GLASS.dark.tintBase,
+            '--beam-chrome-offset': `${CHROME_PLATTER_OFFSET}px`,
+            '--beam-chrome-glass-on': 'block',
+            '--beam-chrome-gradient-on': 'none',
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
@@ -547,10 +545,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-chroma': String(s.light.navChroma),
             '--beam-surface-nav-spread': String(s.light.navSpread),
             '--beam-nav-glass-alpha': String(s.light.navGlassAlpha),
-            '--beam-nav-glass-saturate': String(s.light.navGlassSaturate),
-            '--beam-nav-glass-blur': `${s.light.navGlassBlur}px`, // PER MODE: light 4 (blur smears a bright backdrop)
-            '--beam-nav-glass-tint': NAV_GLASS.light.tint,
-            '--beam-nav-glass-tint-base': NAV_GLASS.light.tintBase, // PER MODE: a dark wash, not white
+            '--beam-chrome-blur': `${s.light.navGlassBlur}px`, // PER MODE: light 4 (blur smears a bright backdrop)
+            '--beam-chrome-tint': NAV_GLASS.light.tint,
+            '--beam-chrome-tint-base': NAV_GLASS.light.tintBase, // PER MODE: a dark wash, not white
             '--beam-nav-edge-offset': String(navEdgeOffset.light),
             '--beam-nav-edge-alpha': String(EDGE.light.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.light),
@@ -583,10 +580,9 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-nav-chroma': String(s.dark.navChroma),
             '--beam-surface-nav-spread': String(s.dark.navSpread),
             '--beam-nav-glass-alpha': String(s.dark.navGlassAlpha),
-            '--beam-nav-glass-saturate': String(s.dark.navGlassSaturate),
-            '--beam-nav-glass-blur': `${s.dark.navGlassBlur}px`, // re-assert dark (18) when mode is explicitly dark
-            '--beam-nav-glass-tint': NAV_GLASS.dark.tint,
-            '--beam-nav-glass-tint-base': NAV_GLASS.dark.tintBase,
+            '--beam-chrome-blur': `${s.dark.navGlassBlur}px`, // re-assert dark (18) when mode is explicitly dark
+            '--beam-chrome-tint': NAV_GLASS.dark.tint,
+            '--beam-chrome-tint-base': NAV_GLASS.dark.tintBase,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),
