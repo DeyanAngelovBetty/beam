@@ -156,6 +156,16 @@ function Wordmark({ title, ghost = false }: { title?: string; ghost?: boolean })
   );
 }
 
+// Nav items sit INSET from the panel edge (not bleeding) and read as a rounded PILL: the hover/selected wash
+// clips to BORDER_RADIUS_24 + squircle — the SAME shape token as the panel + platter, so the language is
+// consistent (at the ~40px item height a 24 radius renders as a stadium pill). The inset is the nav <List>'s
+// own horizontal padding, so items, section dividers, and subheaders all sit in one inset column — mirroring
+// how a selected table row sits within its gutter rather than touching the edge.
+const NAV_LIST_INSET = 1; // 8px horizontal padding on the nav <List>
+// + a 1px gap between pills: without it, a hovered item sitting next to the active one reads as fused (two
+// washes touching). The gap keeps each pill a discrete shape.
+const NAV_ITEM_PILL_SX = { borderRadius: `${BORDER_RADIUS_24}px`, cornerShape: 'squircle', mb: '1px' } as const;
+
 function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }) {
   return (
     <ListItemButton
@@ -165,6 +175,7 @@ function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }
         // Same CSS-vars-aware access Table uses for hover overlays.
         const hover = (theme.vars || theme).palette.action.hover;
         return {
+          ...NAV_ITEM_PILL_SX,
           ...(inset && { pl: 4 }),
           // Active item uses the SHARED selected surface (--beam-selected-surface) — the same "this is selected"
           // wash as the selected table row, so the estate's selected states agree (2026-10-02, supersedes the
@@ -208,7 +219,7 @@ function NavItem({ item }: { item: BeamNavItem }) {
 
   return (
     <>
-      <ListItemButton selected={item.selected} onClick={() => setOpen(!open)}>
+      <ListItemButton selected={item.selected} onClick={() => setOpen(!open)} sx={NAV_ITEM_PILL_SX}>
         {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
         <ListItemText primary={item.label} />
         {open ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
@@ -374,7 +385,7 @@ export function AppShell({
   const footerContent = footer;
 
   const navList = (
-    <List dense component="nav" aria-label="Main navigation" sx={{ flexGrow: 1, overflowY: 'auto' }}>
+    <List dense component="nav" aria-label="Main navigation" sx={{ flexGrow: 1, overflowY: 'auto', px: NAV_LIST_INSET }}>
       {navItems.map((item) => (
         <NavItem key={item.label} item={item} />
       ))}
