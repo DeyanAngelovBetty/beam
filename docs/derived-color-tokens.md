@@ -121,10 +121,12 @@ is concentric `calc(radius + offset)`.
 > PANEL over content floors tint at ~12% so text doesn't wash out; the fringe form (opaque box in front) can
 > sit at 0.
 
-> **Proposed rule — platter fill by ROLE (2026-10-01, UNVERIFIED).** CONTENT boxes (Sections, cards) get
-> the **gradient** platter; CHROME floating over content (nav, dialogs, tooltips, popovers) gets **glass**.
-> Flagged pending the nav gradient-vs-glass comparison (live A/B via `data-beam-nav-platter="glass"` on
-> `<html>`); it settles the rule.
+> **Proposed rule — platter fill by ROLE (2026-10-01; refined 2026-10-02, UNVERIFIED).** CONTENT boxes
+> (Sections, cards) get the **gradient** platter; CHROME floating over content (nav, dialogs, tooltips,
+> popovers) gets **glass** — *with a wider platter*. Bench finding from the nav A/B: at `NAV_PLATTER_OFFSET`
+> = 8 the **gradient reads better**; glass needs a wider fringe (bench reference **~12+**) before the
+> refraction is worth it at all. So the chrome rule is "**glass AND a wider platter**", not glass at the
+> content offset. Still UNVERIFIED — settles when chrome glass ships at a real width.
 
 The gradient fill: the rim is a `conic-gradient(from var(--beam-border-angle), …)`
 drawn on an absolutely-positioned `::after` that sits just OUTSIDE the element (negative

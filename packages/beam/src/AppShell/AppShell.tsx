@@ -74,44 +74,26 @@ const VT_BRANDMARK = 'beam-shell-brandmark'; // travels: strip ↔ locked header
 const VT_PANEL = 'beam-shell-sidebar'; // grows/collapses: the locked panel
 const VT_CONTENT = 'beam-shell-content'; // reflows: full-width ↔ right column
 
-// Frosted-glass rail — ONE recipe applied at both rail sites (locked panel +
-// narrow MuiDrawer-paper). Extending it (alpha, blur, saturate, the edge) happens
-// HERE, not per-site. The nav-surface gradient is now translucent (its stops carry
-// --beam-nav-glass-alpha), and backdrop-filter blurs + re-saturates what shows
-// through (blur desaturates; the boost makes it a tinted pane, not fog).
-//   • blur stays at the 24px seed — a bigger radius erases the 56px mesh dots, the
-//     only structure the backdrop has.
-//   • The lit EDGE is a ::after pseudo (1px top+right inner catch, the rail's own
-//     tint lifted — never white), so it adds no width and doesn't collide with the
-//     peek's drop shadow. `position` is added by each site (the locked panel is
-//     static → relative; the drawer paper is already MUI-fixed → leave it).
-//   • Fallback: where backdrop-filter is unsupported, recompute the gradient fully
-//     opaque (alpha 1) — a translucent unblurred smear looks broken; plain is
-//     intentional. backdrop-filter is simply ignored where unsupported.
+// Frosted glass for the NARROW modal drawer — converged onto the FINAL locked glass recipe (2026-10-02), so
+// it's no longer the odd one out: blur + NOISE refraction carry it, a single TINT is the fill, and the 1px
+// --beam-nav-edge border is the only edge (no saturate, no ::after edge-light, no shadow). Same vars as the
+// nav platter glass + the bench, so all glass in the estate is one recipe.
+//   • blur stays at the seed; the refraction reads the #beam-nav-glass-noise filter rendered in the shell.
+//   • Fallback: no backdrop-filter / reduced transparency → force the tint fully opaque (a translucent
+//     unblurred smear looks broken; plain opaque is intentional).
 //   • No `will-change`: it can force a layer that breaks the effect outright.
 const NAV_GLASS_SX = {
-  background: 'var(--beam-nav-surface)',
-  backdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate))',
-  WebkitBackdropFilter: 'blur(var(--beam-nav-glass-blur)) saturate(var(--beam-nav-glass-saturate))',
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    inset: 0,
-    pointerEvents: 'none',
-    // Inherit the panel's radius or the square pseudo overhangs the rounded
-    // corner (a hard right-angle around the peek). Works for every state — locked
-    // (r0), peek (r2 top/bottom-right), narrow — each inherits its own radius.
-    borderRadius: 'inherit',
-    borderTop: '1px solid var(--beam-nav-edge)',
-    borderRight: '1px solid var(--beam-nav-edge)',
-  },
+  background: 'color-mix(in oklab, var(--mui-palette-background-paper) var(--beam-nav-glass-tint, 15%), transparent)',
+  backdropFilter: `blur(var(--beam-nav-glass-blur)) url(#${NAV_GLASS_FILTER_ID})`,
+  WebkitBackdropFilter: `blur(var(--beam-nav-glass-blur)) url(#${NAV_GLASS_FILTER_ID})`,
+  border: '1px solid var(--beam-nav-edge)', // the only edge
   '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
-    '--beam-nav-glass-alpha': '1',
+    '--beam-nav-glass-tint': '100%',
   },
-  // Accessibility: a viewer who asks for less transparency gets the opaque rail (same alpha=1 path as the
+  // Accessibility: a viewer who asks for less transparency gets the opaque rail (same tint:100% path as the
   // no-backdrop-filter fallback) — the glass is decorative, the nav must stay legible.
   '@media (prefers-reduced-transparency: reduce)': {
-    '--beam-nav-glass-alpha': '1',
+    '--beam-nav-glass-tint': '100%',
   },
 };
 
@@ -648,7 +630,7 @@ export function AppShell({
                 open={peekOpen}
                 onClose={closeNow}
                 ModalProps={{ keepMounted: true }}
-                sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 0, ...NAV_GLASS_SX } }}
+                sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, ...NAV_GLASS_SX } }}
               >
                 {panel('peek', true)}
               </Drawer>

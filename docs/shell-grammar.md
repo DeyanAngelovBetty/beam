@@ -196,6 +196,13 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 
 ## Open
 
+- **Known issue — platter-fill A/B doesn't swap cleanly (2026-10-02).** Flipping
+  `data-beam-nav-platter="glass"` on `<html>` makes the nav JUMP STATE rather than
+  just reskinning the fringe (the peek tooltip appears). Investigate later — noted,
+  not fixed. The fix is unrelated to the glass recipe itself.
+- **Queue — platter fill as a Theme Lab control (`gradient | glass`).** Promote the
+  A/B off the DevTools attribute spell onto a Theme Lab toggle so the switch is
+  demoable. (Depends on the clean-swap issue above being understood.)
 - Per-app audit results of §5 migrations.
 - Motion token values (bench).
 - Whether the ghost appears in the narrow-viewport drawer (probably not —
