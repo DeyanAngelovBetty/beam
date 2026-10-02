@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { BeamPageProps, BeamBackLink } from './Page.types';
 import Box from '@mui/material/Box';
+import { logoGradient } from '../theme/brandLogos';
 
 /**
  * Header actions are sized by the ORGANISM, never the page (the showExpandedActions lesson: one
@@ -116,8 +117,15 @@ export function BeamPage({ title, back, subtitle, action, secondaryActions }: Be
                 zIndex: 1,
                 height: 'var(--beam-title-underline-weight)',
                 borderRadius: 'var(--beam-title-underline-weight)',
-                backgroundImage:
-                  'linear-gradient(to right, var(--mui-palette-primary-main), color-mix(in oklch, var(--mui-palette-primary-main) var(--beam-title-underline-fade), var(--mui-palette-background-default)))',
+                // Brand gradient — the SAME source as the logo/wordmark (`logoGradient` → `--beam-logo-stop-*`,
+                // brandLogos.ts). Was a lone primary→background fade; now one brand-gradient source for both
+                // (2026-10-02). The DISSOLVE (cap reads as an accent, not a ruler) moves from a colour fade to a
+                // MASK fade so the gradient's stops stay intact; `--beam-title-underline-fade` = the dissolve span.
+                backgroundImage: logoGradient('to right'),
+                maskImage:
+                  'linear-gradient(to right, #000, #000 calc(100% - var(--beam-title-underline-fade)), transparent)',
+                WebkitMaskImage:
+                  'linear-gradient(to right, #000, #000 calc(100% - var(--beam-title-underline-fade)), transparent)',
                 transformOrigin: 'left',
                 transform: 'scaleX(1)',
                 animation:

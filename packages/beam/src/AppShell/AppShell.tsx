@@ -166,14 +166,13 @@ function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }
         const hover = (theme.vars || theme).palette.action.hover;
         return {
           ...(inset && { pl: 4 }),
-          // Active item rises to PAPER (surface 1) out of the recessed rail — the
-          // page at the altitude of the content it shows. Opaque paper REPLACES
-          // MUI's faint action.selected tint; altitude carries the state.
-          '&.Mui-selected': { backgroundColor: 'var(--mui-palette-background-paper)' },
-          // Hover on the selected item composes action.hover OVER paper — the case
-          // to judge: does the overlay read as ABOVE paper (outranking content)?
+          // Active item uses the SHARED selected surface (--beam-selected-surface) — the same "this is selected"
+          // wash as the selected table row, so the estate's selected states agree (2026-10-02, supersedes the
+          // earlier paper/altitude treatment).
+          '&.Mui-selected': { backgroundColor: 'var(--beam-selected-surface)' },
+          // Hover on the selected item composes action.hover OVER the selected wash.
           '&.Mui-selected:hover': {
-            backgroundColor: 'var(--mui-palette-background-paper)',
+            backgroundColor: 'var(--beam-selected-surface)',
             backgroundImage: `linear-gradient(${hover}, ${hover})`,
           },
         };

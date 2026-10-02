@@ -479,6 +479,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-surface-1': 'var(--beam-ramp-1)',
             '--beam-surface-2': 'var(--beam-ramp-2)',
             '--beam-surface-3': 'var(--beam-ramp-3)',
+            // SELECTED SURFACE (2026-10-02) — the ONE "this is selected" wash, read by both the selected table
+            // row and the active nav item (was duplicated: the row used this primary tint, the nav item used
+            // paper). Primary @ action.selectedOpacity; both inputs are mode-aware vars, so this flips for free.
+            '--beam-selected-surface':
+              'rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity))',
             // Rail background — one swappable recipe, consumed at the two rail sites.
             '--beam-nav-surface': derived.navSurface,
             // CHROME dials (2026-10-02) — one set for EVERY chrome consumer (nav, BeamChrome: the Lab today,
@@ -966,8 +971,8 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
               backgroundImage: 'linear-gradient(var(--mui-palette-action-hover), var(--mui-palette-action-hover))',
             },
             '& .MuiTableBody-root .MuiTableRow-root.Mui-selected > .beam-rail': {
-              backgroundImage:
-                'linear-gradient(rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity)), rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity)))',
+              // The shared selected surface (see --beam-selected-surface) — same wash the active nav item reads.
+              backgroundImage: 'linear-gradient(var(--beam-selected-surface), var(--beam-selected-surface))',
             },
             '& .MuiTableBody-root .MuiTableRow-root.Mui-selected:hover > .beam-rail': {
               backgroundImage:
