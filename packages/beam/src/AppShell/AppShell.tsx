@@ -7,8 +7,8 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
+import Collapse from '@mui/material/Collapse';
 import ListSubheader from '@mui/material/ListSubheader';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -164,7 +164,17 @@ function Wordmark({ title, ghost = false }: { title?: string; ghost?: boolean })
 const NAV_LIST_INSET = 1; // 8px horizontal padding on the nav <List>
 // + a 1px gap between pills: without it, a hovered item sitting next to the active one reads as fused (two
 // washes touching). The gap keeps each pill a discrete shape.
-const NAV_ITEM_PILL_SX = { borderRadius: `${BORDER_RADIUS_24}px`, cornerShape: 'squircle', mb: '1px' } as const;
+// LOUDNESS BUDGET (2026-10-02): the selected item stands out by QUIETING its neighbours, not by adding to
+// itself — inactive items (icon + label) drop to text.secondary; the active one returns to text.primary on
+// its selected wash. Icon follows the label colour (inherit) so both quiet/brighten together.
+const NAV_ITEM_PILL_SX = {
+  borderRadius: `${BORDER_RADIUS_24}px`,
+  cornerShape: 'squircle',
+  mb: '1px',
+  color: 'text.secondary',
+  '& .MuiListItemIcon-root': { color: 'inherit' },
+  '&.Mui-selected': { color: 'text.primary' }, // parents (which use this directly) brighten when selected
+} as const;
 
 function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }) {
   return (
@@ -180,9 +190,10 @@ function NavLeaf({ item, inset = false }: { item: BeamNavItem; inset?: boolean }
           // Active item uses the SHARED selected surface (--beam-selected-surface) — the same "this is selected"
           // wash as the selected table row, so the estate's selected states agree (2026-10-02, supersedes the
           // earlier paper/altitude treatment).
-          '&.Mui-selected': { backgroundColor: 'var(--beam-selected-surface)' },
+          '&.Mui-selected': { color: 'text.primary', backgroundColor: 'var(--beam-selected-surface)' },
           // Hover on the selected item composes action.hover OVER the selected wash.
           '&.Mui-selected:hover': {
+            color: 'text.primary',
             backgroundColor: 'var(--beam-selected-surface)',
             backgroundImage: `linear-gradient(${hover}, ${hover})`,
           },
@@ -202,7 +213,10 @@ function NavItem({ item }: { item: BeamNavItem }) {
   if (item.section) {
     return (
       <>
-        <Divider sx={{ my: 1 }} />
+        {/* Divider kept INSET (as-is) but QUIETED (2026-10-02, loudness budget): opacity 0.4 so it's a faint
+            break, not a rule competing with the selected pill. The inset pill column + this subheader already
+            carry most of the grouping. (Further-quiet option: drop it entirely — the subheader alone groups.) */}
+        <Divider sx={{ my: 1, opacity: 0.4 }} />
         <ListSubheader disableSticky sx={{ bgcolor: 'transparent', letterSpacing: '0.06em' }}>
           {item.label}
         </ListSubheader>

@@ -202,6 +202,11 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 
 ## Open
 
+- **Candidate — 1px platter ring on the ACTIVE nav item (2026-10-02, noted, NOT built).** Only if quieting
+  the surroundings (inactive items → text.secondary; dividers quieted to opacity 0.4) doesn't make the selected item stand
+  out enough. BENCH it before wiring: it would be the FOURTH decoration in that panel (platter + brand
+  gradient + glass fringe + ring), and a bright ring at a ~40px item sits right next to text — the same trap
+  as the parked selected vignette. Quiet-first; reach for the ring last.
 - **Chrome platter — CHROME-LEVEL dials (2026-10-02).** The fill is two coexisting layers (glass `::after` +
   gradient `::before`) toggled by per-mode display vars — a pure paint change (fixed the old attribute jump).
   The dials are `--beam-chrome-*` (one set for EVERY chrome consumer): the nav + `BeamChrome` (the Theme Lab
