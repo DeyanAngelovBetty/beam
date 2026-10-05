@@ -252,6 +252,13 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const setPlatterBlur = (n: number) => { setVar(editing, '--beam-chrome-blur', `${n}px`); bump(); };
   const setPlatterTint = (n: number) => { setVar(editing, '--beam-chrome-tint', `${n}%`); bump(); };
   const setPlatterDisplacement = (n: number) => { setDisplacement((d) => ({ ...d, [editing]: n })); pokeDisplacement(n); };
+  // GRADIENT group — border intensity. A SHARED foundation var (`--beam-border-intensity`): every gradient
+  // platter (chrome nav gradient, dashboard, landing, rule nodes) mixes its stops `color-mix(primary|hue-b
+  // <intensity>, surface)`, so this dial re-derives ALL gradient borders live — the stop colours stay derived,
+  // never hand-edited. Per mode; calm only (the hover tier's `--beam-border-intensity-hover` isn't exposed —
+  // chrome is interaction:'none').
+  const borderIntensity = parseFloat(readVarForScheme(editing, '--beam-border-intensity')) || 0;
+  const setBorderIntensity = (n: number) => { setVar(editing, '--beam-border-intensity', `${n}%`); bump(); };
 
   // ── Candidate presets (variant registry, lab-internal) ──────────────────────────────────────────
   // A preset LOADS a variant's seed bundle into the drawer's live editing state, so every knob + Copy
@@ -582,8 +589,12 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       tint: readVarForScheme(s, '--beam-chrome-tint') || (s === 'light' ? '12%' : '15%'),
       displacement: displacement[s],
     });
+    // Border intensity — its OWN top-level field, NOT under `chrome`: it's the shared foundation behind every
+    // gradient border (chrome + dashboard + landing + rule nodes), so its provenance is estate-wide. The
+    // tunable is the intensity %, never the derived stop colours.
+    const borderIntensityOf = (s: Scheme) => readVarForScheme(s, '--beam-border-intensity');
     const combo = {
-      version: 4, // v4: adds the `chrome` block (chrome fill + glass dials, per scheme)
+      version: 4, // v4: adds the `chrome` block (chrome fill + glass dials) + `borderIntensity` (per scheme)
       name: slug(comboName || 'untitled-combo'),
       // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
       // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
@@ -608,6 +619,8 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       // Chrome — fill + glass dials per scheme, for ALL chrome consumers (nav + BeamChrome). displacement is one
       // filter today; a dark≠light value is the signal to split it into two filters in code.
       chrome: { dark: chromeOf('dark'), light: chromeOf('light') },
+      // Border intensity (its own field) — the derived gradient-border stops' single tunable, estate-wide.
+      borderIntensity: { dark: borderIntensityOf('dark'), light: borderIntensityOf('light') },
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -796,34 +809,48 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
 
           <Divider />
 
-          {/* CHROME platter — CHROME-LEVEL, not nav-level (2026-10-02). fill/offset/blur/tint are live
-              `--beam-chrome-*` CSS vars (no rebuild); displacement pokes the shared SVG filter. All land in the
-              combo's v4 `chrome` block on Copy. */}
-          <Stack spacing={1}>
-            <Typography variant="overline" color="text.secondary">Chrome platter ({editing})</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
-              Drives ALL chrome at once — the nav, this Lab drawer, and future dialogs/popovers. Watch the drawer
-              restyle itself live as you drag.
-            </Typography>
-            <FormControl size="small" fullWidth>
-              <Select value={platterFill} onChange={(e) => setPlatterFill(e.target.value as 'glass' | 'gradient')} aria-label="Nav platter fill">
-                <MenuItem value="glass">Glass</MenuItem>
-                <MenuItem value="gradient">Gradient</MenuItem>
-              </Select>
-            </FormControl>
-            <Box>
-              <Typography variant="caption" color="text.secondary">Offset · {platterOffset}px — moves the content gutter live</Typography>
-              <Slider size="small" value={platterOffset} min={0} max={24} step={1} aria-label="Nav platter offset" onChange={(_, v) => setPlatterOffset(v as number)} />
-            </Box>
-            {/* glass dials — dimmed when the fill is gradient (they don't apply) */}
-            <Box sx={{ opacity: platterFill === 'glass' ? 1 : 0.45, pointerEvents: platterFill === 'glass' ? 'auto' : 'none' }}>
-              <Typography variant="caption" color="text.secondary">Blur · {platterBlur}px</Typography>
-              <Slider size="small" value={platterBlur} min={0} max={30} step={1} aria-label="Nav glass blur" onChange={(_, v) => setPlatterBlur(v as number)} />
-              <Typography variant="caption" color="text.secondary">Tint · {platterTint}%</Typography>
-              <Slider size="small" value={platterTint} min={0} max={100} step={1} aria-label="Nav glass tint" onChange={(_, v) => setPlatterTint(v as number)} />
-              <Typography variant="caption" color="text.secondary">Displacement · {displacement[editing]} — shared filter, previews {editing}</Typography>
-              <Slider size="small" value={displacement[editing]} min={0} max={60} step={1} aria-label="Nav glass displacement" onChange={(_, v) => setPlatterDisplacement(v as number)} />
-            </Box>
+          {/* PLATTER — the decorative layer (the concept). Two groups: CHROME (one preset of it — fill /
+              offset / glass dials, live --beam-chrome-* vars, drives every chrome consumer) and GRADIENT (the
+              border-intensity foundation behind ALL gradient borders). Both export in combo v4. (2026-10-05) */}
+          <Stack spacing={1.5}>
+            <Typography variant="overline" color="text.secondary">Platter ({editing})</Typography>
+
+            {/* Chrome group */}
+            <Stack spacing={1}>
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>Chrome</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+                One preset of the platter — drives ALL chrome at once (the nav, this Lab drawer, future
+                dialogs/popovers). Watch the drawer restyle live as you drag.
+              </Typography>
+              <FormControl size="small" fullWidth>
+                <Select value={platterFill} onChange={(e) => setPlatterFill(e.target.value as 'glass' | 'gradient')} aria-label="Chrome platter fill">
+                  <MenuItem value="glass">Glass</MenuItem>
+                  <MenuItem value="gradient">Gradient</MenuItem>
+                </Select>
+              </FormControl>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Offset · {platterOffset}px — moves the content gutter live</Typography>
+                <Slider size="small" value={platterOffset} min={0} max={24} step={1} aria-label="Chrome platter offset" onChange={(_, v) => setPlatterOffset(v as number)} />
+              </Box>
+              {/* glass dials — dimmed when the fill is gradient (they don't apply) */}
+              <Box sx={{ opacity: platterFill === 'glass' ? 1 : 0.45, pointerEvents: platterFill === 'glass' ? 'auto' : 'none' }}>
+                <Typography variant="caption" color="text.secondary">Blur · {platterBlur}px</Typography>
+                <Slider size="small" value={platterBlur} min={0} max={30} step={1} aria-label="Chrome glass blur" onChange={(_, v) => setPlatterBlur(v as number)} />
+                <Typography variant="caption" color="text.secondary">Tint · {platterTint}%</Typography>
+                <Slider size="small" value={platterTint} min={0} max={100} step={1} aria-label="Chrome glass tint" onChange={(_, v) => setPlatterTint(v as number)} />
+                <Typography variant="caption" color="text.secondary">Displacement · {displacement[editing]} — shared filter, previews {editing}</Typography>
+                <Slider size="small" value={displacement[editing]} min={0} max={60} step={1} aria-label="Chrome glass displacement" onChange={(_, v) => setPlatterDisplacement(v as number)} />
+              </Box>
+            </Stack>
+
+            {/* Gradient group */}
+            <Stack spacing={1}>
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>Gradient</Typography>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Border intensity · {borderIntensity}% — all gradient borders</Typography>
+                <Slider size="small" value={borderIntensity} min={0} max={100} step={1} aria-label="Gradient border intensity" onChange={(_, v) => setBorderIntensity(v as number)} />
+              </Box>
+            </Stack>
           </Stack>
 
           <Divider />
