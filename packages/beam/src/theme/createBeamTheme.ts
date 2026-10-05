@@ -418,6 +418,13 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // dial: light needs more than dark. :root default = dark.
             '--beam-border-intensity': `${borderIntensity.dark.calm}%`,
             '--beam-border-intensity-hover': `${borderIntensity.dark.hover}%`,
+            // Gradient-border SHAPE (stage 2, 2026-10-05) — mode-invariant defaults, byte-identical to the
+            // former literals; the Theme Lab's Chrome › Gradient tab drives them. Seeds stay fallbacks in the
+            // recipe (primary/hue-b) until the Lab points a role at another seed. seam-angle is a PLAIN
+            // inheriting var for the static tiers (the @property --beam-border-angle stays for spin/track).
+            '--beam-border-flank-pos': '20%',
+            '--beam-border-calm': '35%',
+            '--beam-border-seam-angle': '135deg',
             // Brand-mark lightness (app-owned mask consumes it). :root default = dark.
             '--beam-mark-l': String(markLightness.dark),
             // Native `color-scheme` DEFAULT (§5). Themes the browser's OWN

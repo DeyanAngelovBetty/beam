@@ -117,19 +117,27 @@ export function beamPlatter(opts?: {
   const track = interaction === 'track';
   const spin = interaction === 'hover-spin'; // the former `interactive` rotation (Kevin-Powell, d94531a)
   const hoverGrow = spin || track; // lift intensity + grow the ring 1→2px on hover; none/hover-step stay calm
+  // 5-stop conic beacon, now fully variable (stage 2, 2026-10-05) — defaults are byte-identical to the former
+  // literals. THREE ROLE-SEEDS (symmetric beacon): seam (0/100%) · flank (the 20/80% pair) · calm (50%). Each
+  // seed is a VAR REFERENCE the Theme Lab swaps among primary / hue-b / hue-c / anchor — it never writes a
+  // literal colour, so the resolved stops stay DERIVED (primary + seed + intensity, mixed toward surface).
+  // Positions, calm strength, and the seam angle are vars too; intensity stays `--beam-border-intensity`.
+  const mix = 'in var(--beam-mix-space, oklab)';
   const i = 'var(--beam-border-intensity)';
-  const primary = `color-mix(in var(--beam-mix-space, oklab), var(--mui-palette-primary-main) ${i}, ${surface})`;
-  const hueB = `color-mix(in var(--beam-mix-space, oklab), var(--beam-gradient-hue-b) ${i}, ${surface})`;
-  // 5 stops (2026-10-05): primary (the bright SEAM at 0/100%) · hue-b · calm centre · hue-b · primary. The
-  // two UNPOSITIONED `${hueB}` stops that only held hue-b flat between 20→50 and 50→80 are dropped — same
-  // beacon, fewer stops; hue-b now eases straight into the calm centre instead of plateauing.
+  const seam = `color-mix(${mix}, var(--beam-border-seam-seed, var(--mui-palette-primary-main)) ${i}, ${surface})`;
+  const flank = `color-mix(${mix}, var(--beam-border-flank-seed, var(--beam-gradient-hue-b)) ${i}, ${surface})`;
+  const calm = `color-mix(${mix}, var(--beam-border-calm-seed, var(--beam-gradient-hue-b)) var(--beam-border-calm, 35%), ${surface})`;
+  const flankPos = 'var(--beam-border-flank-pos, 20%)';
   const stops = [
-    `${primary} 0%`,
-    `${hueB} 20%`,
-    `color-mix(in var(--beam-mix-space, oklab), ${hueB} 35%, ${surface}) 50%`,
-    `${hueB} 80%`,
-    `${primary} 100%`,
+    `${seam} 0%`,
+    `${flank} ${flankPos}`,
+    `${calm} 50%`,
+    `${flank} calc(100% - ${flankPos})`,
+    `${seam} 100%`,
   ].join(', ');
+  // Angle: track → pointer var; spin → the animated @property; STATIC tiers (none/hover-step) → the Lab-tunable
+  // `--beam-border-seam-angle` (default 135deg = the @property rest, so static + animated agree until retuned).
+  const fromAngle = track ? 'var(--beam-track-angle)' : spin ? 'var(--beam-border-angle)' : 'var(--beam-border-seam-angle, 135deg)';
 
   return {
     position: 'relative',
@@ -142,7 +150,7 @@ export function beamPlatter(opts?: {
       cornerShape: 'squircle',
       ...displayDecl,
       border: `${ring} solid transparent`,
-      background: `conic-gradient(from ${track ? 'var(--beam-track-angle)' : 'var(--beam-border-angle)'}, ${stops}) border-box`,
+      background: `conic-gradient(from ${fromAngle}, ${stops}) border-box`,
       pointerEvents: 'none',
       zIndex: -1,
       transition: track
