@@ -1,4 +1,5 @@
 import { PAYOUT_CONFIGS, type GameType, type PayoutStatus } from './payoutConfigs';
+import type { ConditionValue } from './conditionTree';
 
 export type GcIdPrefix = 'gc' | 'tr';
 
@@ -8,7 +9,7 @@ export type TargetingConditionField = 'Audience' | 'LoyaltyStatus' | 'RccSegment
 
 export type TargetingCondition =
   | { operator: MatchMode; statements: TargetingCondition[] }
-  | { operator: TargetingLeafOperator; field: TargetingConditionField; values: (string | number)[] };
+  | { operator: TargetingLeafOperator; field: TargetingConditionField; values: ConditionValue[] };
 
 export interface TargetingRule {
   id: string;
@@ -42,7 +43,7 @@ export const GAME_CONFIGS: GameConfig[] = [
         condition: {
           operator: 'All',
           statements: [
-            { field: 'Audience', operator: 'IsOneOf', values: [1001] },
+            { field: 'Audience', operator: 'IsOneOf', values: [{ audienceId: 1001, cohortIds: [10, 11] }, 1002] },
             { field: 'RccSegment', operator: 'IsNoneOf', values: ['Toddler'] },
             {
               operator: 'Any',
@@ -133,6 +134,14 @@ export function newGcId(prefix: GcIdPrefix): string {
 
 export function getGameConfig(id: string): GameConfig | undefined {
   return GAME_CONFIGS.find((config) => config.id === id);
+}
+
+/** Mock GET /gameConfigs/lookup: all statuses, no pagination, optional gameType. */
+export function getGameConfigsLookup(gameType?: GameType): Pick<GameConfig, 'id' | 'name' | 'status'>[] {
+  return GAME_CONFIGS
+    .filter((config) => !gameType || config.gameType === gameType)
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+    .map(({ id, name, status }) => ({ id, name, status }));
 }
 
 export function gameConfigNameIsUnique(name: string, gameType: GameType, excludeId?: string): boolean {

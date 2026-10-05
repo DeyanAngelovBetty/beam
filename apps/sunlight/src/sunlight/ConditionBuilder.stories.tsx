@@ -9,6 +9,7 @@ import type {
   ConditionNode,
   GroupOperator,
   LeafOperator,
+  ConditionValue,
 } from './conditionTree';
 
 /**
@@ -33,7 +34,7 @@ const g = (operator: GroupOperator, children: ConditionNode[]): ConditionGroup =
 const l = (
   field: ConditionField,
   operator: LeafOperator,
-  values: (string | number)[]
+  values: ConditionValue[]
 ): ConditionNode => ({ kind: 'leaf', field, operator, values });
 
 function Harness({ initial, summary = false }: { initial: ConditionGroup; summary?: boolean }) {
@@ -55,6 +56,16 @@ function Harness({ initial, summary = false }: { initial: ConditionGroup; summar
 /** A single leaf inside the (always-Group) root. */
 export const SingleLeaf: Story = {
   render: () => <Harness initial={g('All', [l('Audience', 'IsOneOf', [1001])])} />,
+};
+
+/** Scoped cohorts beside a legacy whole-audience selection, with a live summary. */
+export const AudienceCohorts: Story = {
+  render: () => (
+    <Harness summary initial={g('All', [
+      l('Audience', 'IsOneOf', [{ audienceId: 1001, cohortIds: [10, 11] }, 1002]),
+      g('Any', [l('Audience', 'IsNoneOf', [{ audienceId: 1004, cohortIds: [41] }])]),
+    ])} />
+  ),
 };
 
 /** Flat ALL group — the sketch's rule 1. */

@@ -39,7 +39,9 @@ export type {
 } from './theme/tokens';
 
 // ---- Atoms (MUI pass-through) ----
+export type { AutocompleteRenderInputParams } from '@mui/material';
 export {
+  Autocomplete,
   Button,
   IconButton,
   TextField,

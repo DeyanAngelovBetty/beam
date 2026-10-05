@@ -3,24 +3,24 @@ import test, { after } from 'node:test';
 import { createServer } from 'vite';
 const vite = await createServer({ root: process.cwd(), appType: 'custom', logLevel: 'silent', server: { middlewareMode: true } });
 after(() => vite.close());
-const { GAME_CONFIGS } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/gameConfigs.ts');
+const { GAME_CONFIGS, getGameConfigsLookup } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/gameConfigs.ts');
 const { GAME_TYPES } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/payoutConfigs.ts');
 const {
   DISABLED_GAME_CONFIG_WARNING,
   INITIAL_DEFAULT_GAME_CONFIGS,
+  DEFAULT_CONFIGURABLE_GAME_TYPES,
   disabledGameConfigWarning,
-  filterGameConfigsByGameType,
   isDefaultGameConfigChanged,
   replaceDefaultGameConfig,
 } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/defaultGameConfigHelpers.ts');
 
-test('the demo exposes exactly four valid Enabled default mappings', () => {
+test('default management exposes only the three supported Betty games', () => {
   assert.deepEqual(GAME_TYPES, ['BettyWheel', 'BettyScratcher', 'BettyWheelOfWins', 'BettyMultiplierMadness']);
+  assert.deepEqual(DEFAULT_CONFIGURABLE_GAME_TYPES, ['BettyWheel', 'BettyScratcher', 'BettyWheelOfWins']);
   assert.deepEqual(INITIAL_DEFAULT_GAME_CONFIGS, [
     { gameType: 'BettyWheel', gameConfigId: 'gc-betty-wheel-default' },
     { gameType: 'BettyScratcher', gameConfigId: 'gc-scratcher-default' },
     { gameType: 'BettyWheelOfWins', gameConfigId: 'gc-betty-wheel-of-wins-default' },
-    { gameType: 'BettyMultiplierMadness', gameConfigId: 'gc-mm-default' },
   ]);
 
   for (const mapping of INITIAL_DEFAULT_GAME_CONFIGS) {
@@ -32,21 +32,21 @@ test('the demo exposes exactly four valid Enabled default mappings', () => {
 });
 
 test('selectors offer only same-GameType GameConfigs', () => {
-  const mysteryBoxConfigs = filterGameConfigsByGameType(GAME_CONFIGS, 'BettyWheel');
+  const wheelConfigs = getGameConfigsLookup('BettyWheel');
   assert.deepEqual(
-    mysteryBoxConfigs.map((config) => `${config.name} — ${config.status}`),
+    wheelConfigs.map((config) => `${config.name} — ${config.status}`),
     ['BETTY_WHEEL_DEFAULT — Enabled', 'BETTY_WHEEL_PROMOTION — Disabled', 'WHEEL_DEFAULT — Enabled']
   );
   assert.deepEqual(
-    filterGameConfigsByGameType(GAME_CONFIGS, 'BettyWheel').map((config) => config.name),
+    getGameConfigsLookup('BettyWheel').map((config) => config.name),
     ['BETTY_WHEEL_DEFAULT', 'BETTY_WHEEL_PROMOTION', 'WHEEL_DEFAULT']
   );
   assert.deepEqual(
-    filterGameConfigsByGameType(GAME_CONFIGS, 'BettyScratcher').map((config) => config.name),
+    getGameConfigsLookup('BettyScratcher').map((config) => config.name),
     ['SCRATCHER_DEFAULT']
   );
   assert.deepEqual(
-    filterGameConfigsByGameType(GAME_CONFIGS, 'BettyWheelOfWins').map((config) => config.name),
+    getGameConfigsLookup('BettyWheelOfWins').map((config) => config.name),
     ['BETTY_WHEEL_OF_WINS_DEFAULT']
   );
 });

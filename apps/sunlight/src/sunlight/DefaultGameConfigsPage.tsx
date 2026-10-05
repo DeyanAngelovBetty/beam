@@ -10,15 +10,15 @@ import {
   Typography,
 } from '@betty/beam';
 import type { BeamColumn } from '@betty/beam';
-import { GAME_CONFIGS, type GameConfig } from './gameConfigs';
-import { GAME_TYPES, gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
+import { GAME_CONFIGS, getGameConfigsLookup, type GameConfig } from './gameConfigs';
+import { gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
 import {
   getDefaultGameConfigs,
   putDefaultGameConfig,
 } from './defaultGameConfigs';
 import {
   disabledGameConfigWarning,
-  filterGameConfigsByGameType,
+  DEFAULT_CONFIGURABLE_GAME_TYPES,
   isDefaultGameConfigChanged,
 } from './defaultGameConfigHelpers';
 
@@ -34,7 +34,7 @@ function selectionsFromMappings(): Partial<Record<GameType, string>> {
 
 export function DefaultGameConfigsPage() {
   const rows = useMemo<DefaultGameConfigRow[]>(
-    () => [...GAME_TYPES].sort((left, right) => left.localeCompare(right)).map((gameType) => ({ gameType })),
+    () => [...DEFAULT_CONFIGURABLE_GAME_TYPES].sort((left, right) => left.localeCompare(right)).map((gameType) => ({ gameType })),
     []
   );
   const [savedSelections, setSavedSelections] = useState<Partial<Record<GameType, string>>>(selectionsFromMappings);
@@ -70,7 +70,7 @@ export function DefaultGameConfigsPage() {
       header: 'Default Game Config',
       width: 520,
       render: (row) => {
-        const options = filterGameConfigsByGameType(GAME_CONFIGS, row.gameType);
+        const options = getGameConfigsLookup(row.gameType);
         const config = selectedConfig(row.gameType);
         const warning = disabledGameConfigWarning(config);
         return (
@@ -145,7 +145,7 @@ export function DefaultGameConfigsPage() {
     <Stack spacing={3}>
       <BeamPage
         title="Default Game Configs"
-        subtitle="Choose the GameConfig used for each game type when a game is awarded without a Preset."
+        subtitle="Manage defaults for Betty Wheel, Betty Scratcher and Betty Wheel of Wins."
       />
       <Table
         columns={columns}

@@ -3,7 +3,7 @@ import test, { after } from 'node:test';
 import { createServer } from 'vite';
 const vite = await createServer({ root: process.cwd(), appType: 'custom', logLevel: 'silent', server: { middlewareMode: true } });
 after(() => vite.close());
-const { GAME_CONFIGS } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/gameConfigs.ts');
+const { GAME_CONFIGS, getGameConfigsLookup } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/gameConfigs.ts');
 const { PAYOUT_CONFIGS } = await vite.ssrLoadModule('/apps/sunlight/src/sunlight/payoutConfigs.ts');
 
 const GROUP_OPERATORS = new Set(['All', 'Any']);
@@ -23,7 +23,13 @@ function assertCondition(condition) {
   assert.ok(Array.isArray(condition.values));
   assert.ok(condition.values.length > 0);
   if (condition.field === 'Audience') {
-    assert.ok(condition.values.every(Number.isInteger), 'Audience values must be numeric IDs');
+    for (const value of condition.values) {
+      if (typeof value === 'number') assert.ok(Number.isInteger(value));
+      else {
+        assert.ok(Number.isInteger(value.audienceId));
+        assert.ok(value.cohortIds == null || value.cohortIds.every(Number.isInteger));
+      }
+    }
   }
 }
 
@@ -52,7 +58,7 @@ test('BettyWheel targeting rule matches the exact recursive condition', () => {
       condition: {
         operator: 'All',
         statements: [
-          { field: 'Audience', operator: 'IsOneOf', values: [1001] },
+          { field: 'Audience', operator: 'IsOneOf', values: [{ audienceId: 1001, cohortIds: [10, 11] }, 1002] },
           { field: 'RccSegment', operator: 'IsNoneOf', values: ['Toddler'] },
           {
             operator: 'Any',
@@ -112,4 +118,16 @@ test('Disabled BettyWheel promotion is isolated from Enabled configurations', ()
   assert.equal(config.targetingRules[0].priority, 0);
   assert.equal(config.targetingRules[0].condition, undefined);
   assert.equal(config.targetingRules[0].payoutConfigId, 'pc-betty-wheel-promotion');
+});
+
+test('game config lookup returns the exact unpaginated contract with optional gameType', () => {
+  const all = getGameConfigsLookup();
+  assert.equal(all.length, GAME_CONFIGS.length);
+  assert.deepEqual(new Set(all.map(config => config.status)), new Set(['Enabled', 'Disabled']));
+  assert.ok(all.every(config => Object.keys(config).join(',') === 'id,name,status'));
+  const expected = GAME_CONFIGS.filter(config => config.gameType === 'BettyWheel')
+    .map(({ id, name, status }) => ({ id, name, status }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  assert.deepEqual(getGameConfigsLookup('BettyWheel'), expected);
+  assert.equal(getGameConfigsLookup('BettyMultiplierMadness').length, 1);
 });
