@@ -265,6 +265,11 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const borderIntensity = parseFloat(readVarForScheme(editing, '--beam-border-intensity')) || 0;
   const setBorderIntensity = (n: number) => { setVar(editing, '--beam-border-intensity', `${n}%`); bump(); };
 
+  // The Chrome sub-tab FOLLOWS the active fill: switching fill (or the editing scheme) opens the matching
+  // sub-tab — glass fill → Glass dials, gradient fill → Gradient recipe. You can still click the other sub-tab
+  // to peek; it re-syncs on the next fill change. (platterFill is read from the live var above.)
+  useEffect(() => { setChromeTab(platterFill); }, [platterFill]);
+
   // ── Candidate presets (variant registry, lab-internal) ──────────────────────────────────────────
   // A preset LOADS a variant's seed bundle into the drawer's live editing state, so every knob + Copy
   // Combo then operate on the candidate. Preset #1 = current shipped (no overrides) = default.
