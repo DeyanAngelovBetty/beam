@@ -120,12 +120,13 @@ export function beamPlatter(opts?: {
   const i = 'var(--beam-border-intensity)';
   const primary = `color-mix(in var(--beam-mix-space, oklab), var(--mui-palette-primary-main) ${i}, ${surface})`;
   const hueB = `color-mix(in var(--beam-mix-space, oklab), var(--beam-gradient-hue-b) ${i}, ${surface})`;
+  // 5 stops (2026-10-05): primary (the bright SEAM at 0/100%) · hue-b · calm centre · hue-b · primary. The
+  // two UNPOSITIONED `${hueB}` stops that only held hue-b flat between 20→50 and 50→80 are dropped — same
+  // beacon, fewer stops; hue-b now eases straight into the calm centre instead of plateauing.
   const stops = [
     `${primary} 0%`,
     `${hueB} 20%`,
-    `${hueB}`,
     `color-mix(in var(--beam-mix-space, oklab), ${hueB} 35%, ${surface}) 50%`,
-    `${hueB}`,
     `${hueB} 80%`,
     `${primary} 100%`,
   ].join(', ');
