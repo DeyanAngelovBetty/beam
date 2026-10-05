@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
-import { pageBackdropSx } from '../theme/tokens';
+import { pageBackdropSx, derived } from '../theme/tokens';
 
 /**
  * Nav Surface — the case for the SOLID panel (Lab, DECISION RECORD — BEAM.md §9; NOT a proposal to adopt B).
@@ -31,6 +31,19 @@ const TINT_LOW = 0.45;
 const TINT_HIGH = 0.85;
 const AA = 4.5;
 
+// The surface ramp + mesh are registered @property colours computed at :root, so a nested data-beam-mode
+// alone can't flip them (it flips the MUI palette + the anchor/step, but the ramp inherits :root's already-
+// computed colour). Re-declaring the ramp/mesh EXPRESSIONS on the nested element forces them to recompute
+// with that element's (flipped) anchor/step — so a cell/probe can truly render a mode different from :root.
+const MODE_REDECL: Record<string, string> = {
+  '--beam-ramp--1': derived.ramp.sunken,
+  '--beam-ramp-0': derived.ramp.anchor,
+  '--beam-ramp-1': derived.ramp.paper,
+  '--beam-ramp-2': derived.ramp.raised,
+  '--beam-ramp-3': derived.ramp.top,
+  '--beam-page-mesh': derived.pageMesh,
+};
+
 // ---- colour maths (WCAG 2), resolved per mode via a hidden data-beam-mode probe ---------------------------
 const probes: Partial<Record<Scheme, HTMLSpanElement>> = {};
 function resolve(mode: Scheme, value: string): Rgba {
@@ -39,6 +52,7 @@ function resolve(mode: Scheme, value: string): Rgba {
     el = document.createElement('span');
     el.setAttribute('data-beam-mode', mode);
     el.style.cssText = 'position:absolute;width:0;height:0;visibility:hidden;pointer-events:none';
+    Object.entries(MODE_REDECL).forEach(([k, v]) => el!.style.setProperty(k, v)); // recompute ramp in this mode
     document.body.appendChild(el);
     probes[mode] = el;
   }
@@ -116,7 +130,7 @@ function Scene({ mode, kind, data }: { mode: Scheme; kind: 'docked' | 'peek'; da
   const bSx = (t: number) => ({ background: `color-mix(in oklab, ${paper} ${Math.round(t * 100)}%, transparent)`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' });
   const panelSx = [{ bgcolor: 'background.paper0' }, bSx(TINT_LOW), bSx(TINT_HIGH)];
   return (
-    <Box data-beam-mode={mode} sx={{ ...pageBackdropSx, position: 'relative', minWidth: 360, minHeight: 300, borderRadius: 3, overflow: 'hidden', p: 2, color: 'text.primary' }}>
+    <Box data-beam-mode={mode} sx={{ ...MODE_REDECL, ...pageBackdropSx, position: 'relative', minWidth: 360, minHeight: 300, borderRadius: 3, overflow: 'hidden', p: 2, color: 'text.primary' }}>
       <Typography variant="overline" sx={{ color: kind === 'peek' && mode === 'light' ? 'warning.main' : 'text.secondary', position: 'relative', zIndex: 2 }}>
         {mode} · {kind}{kind === 'docked' ? ' (nav over canvas, bento beside)' : ' (nav over bento)'}
       </Typography>
