@@ -1140,7 +1140,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                 <Stack spacing={1}>
                   {/* 3 role-seeds — each reads one of primary / hue-b / hue-c / anchor (a var reference, never a
                       literal). Symmetric beacon: seam = 0/100%, flank = the 20/80% pair, calm = 50%. */}
-                  {([['seam', 'Seam seed (0/100%)'], ['flank', 'Flank seed (20/80%)'], ['calm', 'Calm seed (centre)']] as const).map(([role, label]) => (
+                  {([['seam', 'Seam seed (0/100%)'], ['flank', 'Flank seed (20/80%)'], ['calm', 'Calm seed (opposite the seam, 50%)']] as const).map(([role, label]) => (
                     <FormControl key={role} size="small" fullWidth>
                       <Typography variant="caption" color="text.secondary">{label}</Typography>
                       <Select value={seeds[role]} onChange={(e) => setSeed(role, e.target.value as SeedKey)} aria-label={label}>

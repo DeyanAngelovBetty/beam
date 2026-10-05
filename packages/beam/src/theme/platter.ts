@@ -118,7 +118,8 @@ export function beamPlatter(opts?: {
   const spin = interaction === 'hover-spin'; // the former `interactive` rotation (Kevin-Powell, d94531a)
   const hoverGrow = spin || track; // lift intensity + grow the ring 1→2px on hover; none/hover-step stay calm
   // 5-stop conic beacon, now fully variable (stage 2, 2026-10-05) — defaults are byte-identical to the former
-  // literals. THREE ROLE-SEEDS (symmetric beacon): seam (0/100%) · flank (the 20/80% pair) · calm (50%). Each
+  // literals. THREE ROLE-SEEDS (symmetric beacon): seam (0/100%) · flank (the 20/80% pair) · calm (50%, the
+  // midpoint of the turn, OPPOSITE the seam — not the shape's centre). Each
   // seed is a VAR REFERENCE the Theme Lab swaps among primary / hue-b / hue-c / anchor — it never writes a
   // literal colour, so the resolved stops stay DERIVED (primary + seed + intensity, mixed toward surface).
   // Positions, calm strength, and the seam angle are vars too; intensity stays `--beam-border-intensity`.
