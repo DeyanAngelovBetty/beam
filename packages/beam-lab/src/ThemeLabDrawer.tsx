@@ -265,10 +265,31 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const borderIntensity = parseFloat(readVarForScheme(editing, '--beam-border-intensity')) || 0;
   const setBorderIntensity = (n: number) => { setVar(editing, '--beam-border-intensity', `${n}%`); bump(); };
 
-  // The Chrome sub-tab FOLLOWS the active fill: switching fill (or the editing scheme) opens the matching
-  // sub-tab — glass fill → Glass dials, gradient fill → Gradient recipe. You can still click the other sub-tab
-  // to peek; it re-syncs on the next fill change. (platterFill is read from the live var above.)
-  useEffect(() => { setChromeTab(platterFill); }, [platterFill]);
+  // GRADIENT RECIPE (stage 2b) — the conic beacon's SHAPE: 3 role-seeds + positions + calm + seam angle. Shape
+  // is MODE-INVARIANT (the beacon is the same in both modes; only intensity differs), so writers touch BOTH
+  // schemes via setBoth. Seeds are VAR REFERENCES (never literals) — the choice is tracked in local state
+  // since the DOM only resolves to a colour; everything else reads back from the var.
+  const setBoth = (name: string, value: string) => { setVar('dark', name, value); setVar('light', name, value); bump(); };
+  const SEED_VARS = { primary: 'var(--mui-palette-primary-main)', 'hue-b': 'var(--beam-gradient-hue-b)', 'hue-c': 'var(--beam-gradient-hue-c)', anchor: 'var(--beam-surface-anchor)' } as const;
+  type SeedKey = keyof typeof SEED_VARS;
+  const [seeds, setSeeds] = useState<{ seam: SeedKey; flank: SeedKey; calm: SeedKey }>({ seam: 'primary', flank: 'hue-b', calm: 'hue-b' });
+  const setSeed = (role: 'seam' | 'flank' | 'calm', key: SeedKey) => { setSeeds((s) => ({ ...s, [role]: key })); setBoth(`--beam-border-${role}-seed`, SEED_VARS[key]); };
+  const flankPos = parseFloat(readVar('--beam-border-flank-pos')) || 20;
+  const calmStrength = parseFloat(readVar('--beam-border-calm')) || 35;
+  const seamAngle = parseFloat(readVar('--beam-border-seam-angle')) || 135;
+  const setFlankPos = (n: number) => setBoth('--beam-border-flank-pos', `${n}%`);
+  const setCalm = (n: number) => setBoth('--beam-border-calm', `${n}%`);
+  const setSeamAngle = (n: number) => setBoth('--beam-border-seam-angle', `${n}deg`);
+  // The resolved stop colours — DERIVED, shown read-only in the editing scheme (color-mix over the canvas the
+  // chrome gradient floats on, background.default). intensity is per-mode so it's read for `editing`.
+  const SEAM_SURFACE = 'var(--mui-palette-background-default)';
+  const resolvedStop = (seedKey: SeedKey, amount: number) =>
+    resolveForScheme(editing, `color-mix(in oklab, ${SEED_VARS[seedKey]} ${amount}%, ${SEAM_SURFACE})`);
+
+  // Open the Chrome sub-tab on the ACTIVE fill once (mount). After that the tab is a VIEW you drive manually:
+  // viewing a fill ≠ shipping it, so you can tune Gradient while Glass ships (the ● marks what ships; a
+  // "Ship this fill" button sets it). No auto-jumps on fill/scheme change.
+  useEffect(() => { setChromeTab(platterFill); /* eslint-disable-next-line */ }, []);
 
   // ── Candidate presets (variant registry, lab-internal) ──────────────────────────────────────────
   // A preset LOADS a variant's seed bundle into the drawer's live editing state, so every knob + Copy
@@ -599,12 +620,19 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       tint: readVarForScheme(s, '--beam-chrome-tint') || (s === 'light' ? '12%' : '15%'),
       displacement: displacement[s],
     });
-    // Border intensity — its OWN top-level field, NOT under `chrome`: it's the shared foundation behind every
-    // gradient border (chrome + dashboard + landing + rule nodes), so its provenance is estate-wide. The
-    // tunable is the intensity %, never the derived stop colours.
-    const borderIntensityOf = (s: Scheme) => readVarForScheme(s, '--beam-border-intensity');
+    // Border — its OWN top-level block (NOT under `chrome`): the gradient-border recipe is the shared
+    // foundation behind EVERY gradient border (chrome + dashboard + landing + rule nodes). SHAPE (seeds /
+    // positions / calm / seam angle) is mode-invariant; only intensity is per scheme. The tunables are the
+    // inputs — the derived stop colours are never exported (no second source of truth).
+    const border = {
+      seeds,                                                      // { seam, flank, calm } token names
+      flankPos: readVar('--beam-border-flank-pos'),               // e.g. "20%"
+      calm: readVar('--beam-border-calm'),                        // e.g. "35%"
+      seamAngle: readVar('--beam-border-seam-angle'),             // e.g. "135deg"
+      intensity: { dark: readVarForScheme('dark', '--beam-border-intensity'), light: readVarForScheme('light', '--beam-border-intensity') },
+    };
     const combo = {
-      version: 4, // v4: adds the `chrome` block (chrome fill + glass dials) + `borderIntensity` (per scheme)
+      version: 4, // v4: adds the `chrome` block (fill + glass dials) + the `border` block (gradient recipe)
       name: slug(comboName || 'untitled-combo'),
       // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
       // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
@@ -629,8 +657,8 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       // Chrome — fill + glass dials per scheme, for ALL chrome consumers (nav + BeamChrome). displacement is one
       // filter today; a dark≠light value is the signal to split it into two filters in code.
       chrome: { dark: chromeOf('dark'), light: chromeOf('light') },
-      // Border intensity (its own field) — the derived gradient-border stops' single tunable, estate-wide.
-      borderIntensity: { dark: borderIntensityOf('dark'), light: borderIntensityOf('light') },
+      // Border — the gradient-border recipe (shape mode-invariant + intensity per scheme); estate-wide.
+      border,
     };
     void navigator.clipboard?.writeText(JSON.stringify(combo, null, 2));
     setCopied(true);
@@ -1070,29 +1098,34 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
             </Stack>
           )}
 
-          {/* CHROME tab — the platter. Fill + offset are fill-agnostic (Chrome level); the sub-tabs hold the
-              fill-specific dials. Glass = blur/tint/displacement; Gradient = border intensity (stage 2 adds the
-              full conic recipe — seeds/positions/calm/seam angle). All drive the live --beam-chrome-* /
-              --beam-border-* vars; the drawer itself restyles as you drag (it's a chrome consumer). */}
+          {/* CHROME tab — the platter. ONE fill control: the sub-tabs VIEW/edit a fill; the ● tab is the one
+              that SHIPS (the active fill). "Ship this fill" sets active — so you can tune Gradient while Glass
+              ships. Offset is fill-agnostic (above the tabs). All drive live --beam-chrome-* / --beam-border-*
+              vars; the drawer restyles as you drag (it's a chrome consumer). */}
           {tab === 'chrome' && (
             <Stack spacing={2}>
               <Typography variant="caption" color="text.secondary">
-                Drives ALL chrome at once — the nav, this Lab drawer, future dialogs/popovers ({editing}).
+                Drives ALL chrome at once — the nav, this Lab drawer, future dialogs/popovers ({editing}). The ●
+                tab is what ships; the tab you view is what you edit.
               </Typography>
-              <FormControl size="small" fullWidth>
-                <Select value={platterFill} onChange={(e) => setPlatterFill(e.target.value as 'glass' | 'gradient')} aria-label="Chrome platter fill">
-                  <MenuItem value="glass">Glass</MenuItem>
-                  <MenuItem value="gradient">Gradient</MenuItem>
-                </Select>
-              </FormControl>
               <Box>
                 <Typography variant="caption" color="text.secondary">Offset · {platterOffset}px — moves the content gutter live</Typography>
                 <Slider size="small" value={platterOffset} min={0} max={24} step={1} aria-label="Chrome platter offset" onChange={(_, v) => setPlatterOffset(v as number)} />
               </Box>
+              {/* Tabs = view/edit; ● marks the shipping fill */}
               <Tabs value={chromeTab} onChange={(_, v) => setChromeTab(v as 'glass' | 'gradient')} variant="fullWidth" sx={{ minHeight: 0 }}>
-                <Tab value="glass" label="Glass" sx={{ minHeight: 36 }} />
-                <Tab value="gradient" label="Gradient" sx={{ minHeight: 36 }} />
+                <Tab value="glass" label={platterFill === 'glass' ? 'Glass ●' : 'Glass'} sx={{ minHeight: 36, fontWeight: platterFill === 'glass' ? 700 : 400 }} />
+                <Tab value="gradient" label={platterFill === 'gradient' ? 'Gradient ●' : 'Gradient'} sx={{ minHeight: 36, fontWeight: platterFill === 'gradient' ? 700 : 400 }} />
               </Tabs>
+              {/* Ship control — sets the active fill to the viewed tab (view ≠ ship) */}
+              {platterFill === chromeTab ? (
+                <Typography variant="caption" sx={{ color: 'success.main' }}>● Active — this fill ships.</Typography>
+              ) : (
+                <Button size="small" variant="outlined" onClick={() => setPlatterFill(chromeTab)} sx={{ alignSelf: 'flex-start' }}>
+                  Ship this fill ({chromeTab})
+                </Button>
+              )}
+
               {chromeTab === 'glass' && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">Blur · {platterBlur}px</Typography>
@@ -1104,13 +1137,51 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                 </Box>
               )}
               {chromeTab === 'gradient' && (
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Border intensity · {borderIntensity}% — all gradient borders</Typography>
-                  <Slider size="small" value={borderIntensity} min={0} max={100} step={1} aria-label="Gradient border intensity" onChange={(_, v) => setBorderIntensity(v as number)} />
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    Stage 2 exposes the full conic recipe here (seeds · positions · calm · seam angle).
-                  </Typography>
-                </Box>
+                <Stack spacing={1}>
+                  {/* 3 role-seeds — each reads one of primary / hue-b / hue-c / anchor (a var reference, never a
+                      literal). Symmetric beacon: seam = 0/100%, flank = the 20/80% pair, calm = 50%. */}
+                  {([['seam', 'Seam seed (0/100%)'], ['flank', 'Flank seed (20/80%)'], ['calm', 'Calm seed (centre)']] as const).map(([role, label]) => (
+                    <FormControl key={role} size="small" fullWidth>
+                      <Typography variant="caption" color="text.secondary">{label}</Typography>
+                      <Select value={seeds[role]} onChange={(e) => setSeed(role, e.target.value as SeedKey)} aria-label={label}>
+                        {(Object.keys(SEED_VARS) as SeedKey[]).map((k) => (
+                          <MenuItem key={k} value={k}>{k}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  ))}
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Flank position · {flankPos}% (80% mirrors it)</Typography>
+                    <Slider size="small" value={flankPos} min={5} max={45} step={1} aria-label="Flank position" onChange={(_, v) => setFlankPos(v as number)} />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Calm strength · {calmStrength}%</Typography>
+                    <Slider size="small" value={calmStrength} min={0} max={100} step={1} aria-label="Calm strength" onChange={(_, v) => setCalm(v as number)} />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Border intensity · {borderIntensity}% — all gradient borders (per mode)</Typography>
+                    <Slider size="small" value={borderIntensity} min={0} max={100} step={1} aria-label="Gradient border intensity" onChange={(_, v) => setBorderIntensity(v as number)} />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Seam angle · {seamAngle}° (static tiers)</Typography>
+                    <Slider size="small" value={seamAngle} min={0} max={360} step={1} aria-label="Seam angle" onChange={(_, v) => setSeamAngle(v as number)} />
+                    {seamAngle !== 135 && (
+                      <Typography variant="caption" sx={{ color: 'warning.main', display: 'block' }}>
+                        ⚠ Static seam {seamAngle}° ≠ animated rest 135° — spin/track borders will JUMP on first hover. Match them, or update the @property rest in code.
+                      </Typography>
+                    )}
+                  </Box>
+                  {/* Derived, READ-ONLY — the resolved stop colours on the canvas (mesh pattern). */}
+                  <Typography variant="caption" color="text.secondary">→ on surface (derived)</Typography>
+                  <Stack direction="row" spacing={1}>
+                    {([['seam', seeds.seam, borderIntensity], ['flank', seeds.flank, borderIntensity], ['calm', seeds.calm, calmStrength]] as const).map(([role, seedKey, amount]) => (
+                      <Stack key={role} sx={{ alignItems: 'center', flex: 1 }}>
+                        <Box sx={{ width: '100%', height: 28, borderRadius: 1, border: '1px solid', borderColor: 'divider', backgroundColor: resolvedStop(seedKey, amount) }} />
+                        <Typography variant="caption" color="text.secondary">{role}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Stack>
               )}
             </Stack>
           )}
