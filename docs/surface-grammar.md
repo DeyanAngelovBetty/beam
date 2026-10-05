@@ -42,6 +42,17 @@ live in a box; a readable element placed straight on the canvas (a bare validati
 empty-state) is a review finding, not a supported surface. Corollary: the page-sink and mesh intensity are
 tunable precisely *because* only this list reads against them.
 
+> **The nav panel is a box for the same reason — the SOLID-surface case (decision record, §9).** The nav's
+> labels are readable text, so by the containment premise they need an opaque surface, not the canvas (or a
+> translucent pane onto it). The bench **Lab › Beam › Nav Surface** (`packages/beam/src/stories/NavSurface.stories.tsx`)
+makes it visual on the REAL app background (canvas + mesh), across dark/light × docked/peek: a solid panel
+> (what ships) gives the label ONE fixed contrast ratio; a translucent panel (the simpler alternative) gives a
+> RANGE that drifts with whatever is behind — worst over light, busy content. Two things the grid exposes: in
+> the DOCKED cases glass has only canvas behind it, so the refraction barely reads; and the tint needed to
+> make the label reliably legible is high enough that the panel is effectively solid — the more legible the
+> glass, the less glassy it looks. Only a solid surface guarantees a contrast level. Recorded as evidence; not
+> a proposal to adopt translucency.
+
 **App background** = the canvas: base + page mesh + stars, painted globally by the theme
 (`body::before` / `body::after`). Same name in Figma, Storybook (`Foundations/App Background`), and here.
 **Not a component** (2026-09-30): it's a fixed body-level layer at `z −1`, sampled by stickyChrome's bands
