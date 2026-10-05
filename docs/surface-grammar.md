@@ -105,3 +105,40 @@ and the level *mapping* is structural — the same aliases apply — so light in
 separable, and whether light-mode's page should also sink to −1 (vs. staying at the anchor) is **open
 for Vasco**. Recorded, not decided here — no light ramp was invented; light simply follows the dark
 structure until he rules.
+
+## Open question — contrast marks the working plane, not proximity (Deyan, 2026-10-05)
+
+**Principle.** Text contrast should mark the surface **in constant use**, not the one nearest the viewer.
+The working plane — bentos / content — gets the **HIGHEST** text contrast; **chrome** above it (the nav) is
+deliberately **lower** contrast so it doesn't compete; **overlays** above that are lower still. This
+deliberately **inverts** the photographic "closest = most contrast" convention: here the thing you read all
+day wins, and the frame recedes.
+
+**The stack is semantic and fixed:** `canvas → content → chrome → overlay`.
+
+**Mapping that satisfies the principle** (contrast = how far a surface sits from the text colour):
+- **DARK** — content is **darkest** (max contrast with light ink); chrome lighter; overlay lighter still.
+  In today's tokens that is **nav = paper / bentos = paper0** — i.e. the swap Deyan circled (content drops
+  below chrome).
+- **LIGHT** — content is **lightest / white** (max contrast with dark ink); chrome greyer; overlay greyer
+  still. That is **nav = paper0 / bentos = paper** — the CURRENT assignment.
+
+⚠️ **Conflict to resolve first — it's a ramp-DIRECTION question per mode, not just a reassignment.** Our
+ramp ascends in lightness in **both** modes. In LIGHT that means the overlay step (ramp 2) is the *lightest*
+= **highest** contrast with dark ink — which **breaks the rule** for menus and dialogs (they'd out-contrast
+content). To satisfy the principle, levels **above** content in light must step **back toward grey**, not
+further toward white. So light can't just re-map the existing ascending ramp; its ramp above content has to
+reverse direction.
+
+**Naming.** `paper0` literally implies "below paper", which contradicts the stack once content sits lower
+than chrome. Candidate role names that match the stack: **`canvas` / `content` / `chrome` / `overlay`**.
+Open: keep MUI's `background.paper` contract (consumers still name a level, §"The levels"), and **check
+official Beam's names first** — the superset rule means we adopt theirs if they've named these roles.
+
+**Caveat on headroom.** Light's ramp step (~0.01 L) is roughly **7× smaller** than dark's (~0.07), so in
+light the four levels are barely separable **either way** — whatever direction light's ramp takes, it has
+little contrast budget to spend. (Ties into the open light-ramp question above.)
+
+**Undecided — parked for a dedicated surfaces pass.** Recorded here as the principle + the conflict to
+resolve; no tokens changed. Related: this is why the nav's inactive items were quieted to `text.secondary`
+(shell-grammar) as a stopgap — the real fix is the plane-contrast re-map, once ruled.
