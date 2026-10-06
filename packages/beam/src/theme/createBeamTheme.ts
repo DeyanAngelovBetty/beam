@@ -506,6 +506,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-chrome-offset': `${CHROME_PLATTER_OFFSET}px`,
             '--beam-chrome-glass-on': 'block',
             '--beam-chrome-gradient-on': 'none',
+            // Gates the showroom / widget RIM (the conic gradient on dashboard grid items): `block` under BOTH
+            // platter treatments, flipped to `none` by the just-glass preset (below). A dedicated gate because
+            // --beam-chrome-gradient-on is `none` under the shipping default (platter.glass) — gating the rim on
+            // THAT would vanish it with no toggle (2026-10-06, treatment-model correction 1).
+            '--beam-chrome-platter-on': 'block',
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
@@ -707,6 +712,33 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             backgroundClip: 'padding-box',
           },
           '*::-webkit-scrollbar-corner': { backgroundColor: 'transparent' },
+
+          // CHROME TREATMENT presets (2026-10-06) — ONE attribute on <html> (`data-beam-chrome`) swaps every
+          // chrome surface in a single paint, no remount (§6.17). `platter-glass` is the shipping default and
+          // is IDENTICAL to the no-attribute state, so until `just-glass` is chosen nothing changes (the
+          // attribute only ever OVERRIDES). `:root[...]` is 0,2,0 — it beats the scheme-level (0,1,0) var
+          // defaults regardless of mode. `just-glass` turns both fringe layers AND the rim off and lets
+          // chromeSurface() make the box itself translucent (its backdrop-filter is gated by THIS attribute,
+          // never a blur(0) value). Box dials are 1a PLACEHOLDERS — the Lab + Alex tune them in 1b.
+          ':root[data-beam-chrome="platter-glass"]': {
+            '--beam-chrome-glass-on': 'block',
+            '--beam-chrome-gradient-on': 'none',
+            '--beam-chrome-platter-on': 'block',
+          },
+          ':root[data-beam-chrome="platter-gradient"]': {
+            '--beam-chrome-glass-on': 'none',
+            '--beam-chrome-gradient-on': 'block',
+            '--beam-chrome-platter-on': 'block',
+          },
+          ':root[data-beam-chrome="just-glass"]': {
+            '--beam-chrome-glass-on': 'none',
+            '--beam-chrome-gradient-on': 'none',
+            '--beam-chrome-platter-on': 'none',
+            '--beam-chrome-box-blur': '16px',
+            '--beam-chrome-box-tint': '72%',
+            '--beam-chrome-box-saturate': '1.2',
+            '--beam-chrome-box-edge': 'var(--beam-nav-edge)',
+          },
 
           // Gradient-border angle (opt-in beamPlatter). Registered as an
           // @property so it's a typed <angle> and can be INTERPOLATED — an

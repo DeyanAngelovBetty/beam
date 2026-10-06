@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Stack,
   Divider,
@@ -6,6 +7,7 @@ import {
   Select,
   MenuItem,
   IconButton,
+  Tooltip,
   useColorScheme,
   products,
 } from '@betty/beam';
@@ -13,6 +15,7 @@ import type { BrandName } from '@betty/beam';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import ContrastIcon from '@mui/icons-material/Contrast';
 import { MilestoneSwitcher } from './MilestoneSwitcher';
 
 const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -24,6 +27,30 @@ function ModeToggle() {
     <IconButton onClick={() => setMode(next)} aria-label={`Switch to ${next} mode`} color="inherit">
       {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
     </IconButton>
+  );
+}
+
+// TEMPORARY dev switch (2026-10-06, chrome-treatment gate 1a) — cycles `data-beam-chrome` on <html> so the
+// three treatments can be eyeballed in the running app before the Theme Lab three-way control lands (1b).
+// `platter-glass` (the mount default) is identical to the shipping no-attribute state.
+const CHROME_TREATMENTS = ['platter-glass', 'platter-gradient', 'just-glass'] as const;
+function ChromeDevSwitch() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    document.documentElement.setAttribute('data-beam-chrome', CHROME_TREATMENTS[i]);
+  }, [i]);
+  const current = CHROME_TREATMENTS[i];
+  const next = CHROME_TREATMENTS[(i + 1) % CHROME_TREATMENTS.length];
+  return (
+    <Tooltip title={`Chrome: ${current} — click for ${next} (dev)`}>
+      <IconButton
+        onClick={() => setI((n) => (n + 1) % CHROME_TREATMENTS.length)}
+        aria-label={`Chrome treatment ${current}; switch to ${next}`}
+        color="inherit"
+      >
+        <ContrastIcon />
+      </IconButton>
+    </Tooltip>
   );
 }
 
@@ -73,6 +100,7 @@ export function ShellFooter({
             <PaletteOutlinedIcon />
           </IconButton>
         )}
+        {import.meta.env.DEV && <ChromeDevSwitch />}
         <ModeToggle />
       </Stack>
     </Stack>

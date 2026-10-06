@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { chromePlatterLayers } from './theme/platter';
+import { chromePlatterLayers, chromeSurface } from './theme/platter';
 import { PAGE_GUTTER, BORDER_RADIUS_24, CHROME_PLATTER_OFFSET } from './theme/tokens';
 import { BEAM_GLASS_FILTER_ID } from './BeamSvgDefs';
 
@@ -75,6 +75,9 @@ export function BeamChrome({
             borderRadius: `${radius}px`,
             cornerShape: 'squircle',
             overflow: 'auto',
+            // Solid by default; translucent ONLY under the just-glass treatment (attribute-gated no-op
+            // otherwise), so this Lab fringe surface swaps in lockstep with the nav on one flip.
+            ...(chromeSurface() as object),
           },
           ...(Array.isArray(innerSx) ? innerSx : [innerSx]),
         ]}

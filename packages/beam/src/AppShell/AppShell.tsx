@@ -23,7 +23,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { AppShellProps, BeamNavItem } from './AppShell.types';
 import { PAGE_GUTTER, PAGE_TOP_GAP, CONTENT_BOTTOM, CONTENT_INLINE, LOGO_BAR_HEIGHT, BORDER_RADIUS_24, CHROME_PLATTER_OFFSET } from '../theme/tokens';
-import { chromePlatterLayers } from '../theme/platter';
+import { chromePlatterLayers, chromeSurface } from '../theme/platter';
 import { BeamSvgDefs, BEAM_GLASS_FILTER_ID } from '../BeamSvgDefs';
 
 const DRAWER_WIDTH = 264; // narrow-viewport modal drawer paper (unchanged)
@@ -435,7 +435,10 @@ export function AppShell({
           // floating platter.
           ...(drawer
             ? { ...NAV_GLASS_SX, borderStyle: 'solid', borderWidth: '1px', borderColor: 'transparent' }
-            : { bgcolor: 'background.paper0', border: '1px solid var(--beam-nav-edge)' }),
+            // SOLID surface by default; chromeSurface() turns it translucent ONLY under the just-glass
+            // treatment (attribute-gated — a no-op under both platter treatments, so the docked/peek nav is
+            // byte-identical to today until just-glass is chosen).
+            : { bgcolor: 'background.paper0', border: '1px solid var(--beam-nav-edge)', ...(chromeSurface() as object) }),
           // Peek keeps its drop shadow; the docked panel's separation is the platter rim (no shadow).
           ...(floating ? { boxShadow: 8 } : {}),
         }}

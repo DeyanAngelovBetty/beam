@@ -185,6 +185,32 @@ export function beamPlatter(opts?: {
 }
 
 /**
+ * chromeSurface — the chrome BOX's OWN fill, for the `just-glass` treatment (2026-10-06). Spread onto the
+ * SOLID panel of every chrome surface (nav panel, BeamChrome inner, the dialog panel later). Under the two
+ * PLATTER treatments it emits NOTHING — the box stays the solid surface it is today, byte-identical — because
+ * the translucency is gated by the SCOPE ATTRIBUTE, not a var value. (A `backdrop-filter` of ANY value but
+ * `none` opens a stacking context + a containing block for fixed descendants; a `blur(0)` "no-op" would still
+ * trap a `z-index:-1` platter pseudo and reparent fixed children. So the property only EXISTS under
+ * `[data-beam-chrome="just-glass"]`.) One attribute flip swaps every chrome surface in one paint, no remount
+ * (§6.17). The `--beam-chrome-box-*` dials are written by the treatment preset (createBeamTheme).
+ */
+export function chromeSurface(): SxProps<Theme> {
+  return {
+    '[data-beam-chrome="just-glass"] &': {
+      background:
+        'color-mix(in oklab, var(--beam-chrome-box-tint-base, var(--mui-palette-background-paper)) var(--beam-chrome-box-tint, 72%), transparent)',
+      backdropFilter: 'blur(var(--beam-chrome-box-blur, 16px)) saturate(var(--beam-chrome-box-saturate, 1.2))',
+      WebkitBackdropFilter: 'blur(var(--beam-chrome-box-blur, 16px)) saturate(var(--beam-chrome-box-saturate, 1.2))',
+      borderColor: 'var(--beam-chrome-box-edge, var(--beam-nav-edge))',
+      // No backdrop-filter → force opaque (a faint tint with no blur behind it reads as broken, not glass).
+      '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
+        background: 'var(--mui-palette-background-paper)',
+      },
+    },
+  };
+}
+
+/**
  * chromePlatterLayers — the CHROME preset's platter as the two coexisting fill layers: glass on `::after`,
  * gradient on `::before`, each gated by a shared display var (`--beam-chrome-glass-on` / `-gradient-on`). So
  * flipping the chrome fill is ONE paint that moves EVERY chrome consumer at once (the nav + BeamComponent

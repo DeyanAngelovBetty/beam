@@ -79,7 +79,13 @@ function GridItem({ item, rim }: { item: DashboardGridItem; rim: boolean }) {
     <Box
       ref={rim ? ref : undefined}
       style={{ gridColumn: SIZE_SPAN[item.size] } as CSSProperties}
-      sx={{ minWidth: 0, containerType: 'inline-size', ...(rim ? (beamPlatter({ interaction: 'track' }) as object) : {}) }}
+      sx={{
+        minWidth: 0,
+        containerType: 'inline-size',
+        // The rim gates on --beam-chrome-platter-on (block under both platter treatments, none under
+        // just-glass), so a treatment flip drops the rims with no remount (treatment-model correction 1).
+        ...(rim ? (beamPlatter({ interaction: 'track', displayVar: 'var(--beam-chrome-platter-on, block)' }) as object) : {}),
+      }}
     >
       {item.node}
     </Box>

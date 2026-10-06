@@ -45,8 +45,23 @@ const withRouter: Decorator = (Story, context) =>
     </MemoryRouter>
   );
 
+/**
+ * Chrome TREATMENT dev switch (2026-10-06, gate 1a — TEMPORARY, until the Theme Lab three-way control lands
+ * in 1b). Writes `data-beam-chrome` on <html>; the treatment presets (createBeamTheme) + chromeSurface() do
+ * the rest in one paint. `platter-glass` is the shipping default (identical to no attribute).
+ */
+const withChrome: Decorator = (Story, context) => {
+  const chrome = context.globals.chrome as string;
+  useEffect(() => {
+    const el = document.documentElement;
+    el.setAttribute('data-beam-chrome', chrome);
+    return () => el.removeAttribute('data-beam-chrome');
+  }, [chrome]);
+  return <Story />;
+};
+
 const preview: Preview = {
-  decorators: [withBeamTheme, withRouter],
+  decorators: [withBeamTheme, withRouter, withChrome],
   globalTypes: {
     mode: {
       description: 'Theme mode (palette collection modes)',
@@ -84,11 +99,25 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+    chrome: {
+      description: 'Chrome treatment (dev switch — temporary, gate 1a)',
+      toolbar: {
+        title: 'Chrome',
+        icon: 'contrast',
+        items: [
+          { value: 'platter-glass', title: 'Platter · glass (default)' },
+          { value: 'platter-gradient', title: 'Platter · gradient' },
+          { value: 'just-glass', title: 'Just-glass' },
+        ],
+        dynamicTitle: true,
+      },
+    },
   },
   initialGlobals: {
     product: 'sunlight',
     mode: 'dark',
     brand: 'ontario',
+    chrome: 'platter-glass',
   },
   parameters: {
     controls: { matchers: { color: /(background|color)$/i } },
