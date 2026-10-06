@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Favicons live in public/ → emitted to the build root. %BASE_URL% bakes to Vite's `base`
+         (/beam/gaspar/ in the Pages build, / in dev), so the path survives the subdir deploy; the
+         HashRouter hash only changes the fragment, never the document path these resolve against. -->
+    <link rel="icon" href="%BASE_URL%favicon.ico" sizes="32x32" />
+    <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Gaspar: Geist body (300 = `meta` keys; carries tabular figures) + Sora display
