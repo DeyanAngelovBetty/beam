@@ -197,9 +197,16 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
    a `Section` — its title band is the widget title — and that broad use is **parity with official, not a lane
    extension** (nothing to ledger in beam-alignment §4 as divergence; §4's dashboard entry is the *grid +
    manager* lane, not the shell). Two consequences, both doctrine:
-   - **No decoration beyond Section's own.** Widgets drop the product gradient rim (the old `WidgetShell`
-     `gradientBorder`); the Section border (field-driven / `isEdit`) is the only frame. `WidgetShell` survives
-     for the **bench only** (`Lab/Bench/Dashboard`, the record), never on a shipped page.
+   - **Section owns no decoration; the dashboard rim is a SHOWROOM layer outside it *(amended 2026-10-06)*.**
+     Section's contract stays a mirror of official — no `platter`/rim prop, no decoration of its own, the
+     field-driven / `isEdit` border its only frame. The dashboard is a **showroom surface** (same category as
+     the nav): the product gradient rim is deliberate decoration there, so it rides on the **`DashboardGrid`
+     item** (via `beamPlatter`), concentric *outside* the borderless Section — the rim is the edge. This is
+     **DESIGN-REPO SCOPE / showroom** (like the wght-240 entry §14), not a Section or embedded-table-contract
+     change; it stays Gaspar-local. Rim clearance is derived from the platter's outward extent (`--beam-ring`,
+     max 2px at hover): the grid gets that as all-sides padding (so the collapsed-nav gutter of 0 can't clip
+     the `::after`), and `gap ≥ 2 ×` it so neighbouring rims never touch. `WidgetShell` survives for the
+     **bench only** (`Lab/Bench/Dashboard`, the record), never on a shipped page.
    - **Filters is page chrome, not a widget.** A filter strip is the page's control band, not a managed,
      hideable widget: it lifts OUT of the managed list and pins above the grid, outside the manager. The
      `useItemManager` merge must tolerate stored arrangements that still name a lifted id (`filter`) without
