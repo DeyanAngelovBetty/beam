@@ -46,7 +46,7 @@ export function DashboardPage() {
           />
         }
       />
-      <DashboardGrid items={gridItems} />
+      <DashboardGrid items={gridItems} rim />
     </Stack>
   );
 }

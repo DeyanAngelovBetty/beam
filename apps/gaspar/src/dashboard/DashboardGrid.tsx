@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { Box } from '@betty/beam';
+import { useRef, type CSSProperties, type ReactNode } from 'react';
+import { Box, beamPlatter, usePointerAngleTracking } from '@betty/beam';
 
 /**
  * DashboardGrid — the dashboard's LAYOUT (2026-10-06). The browser places; the dashboard only owns the
@@ -25,6 +25,13 @@ const TRACK = BASE + GAP; // 256 — a track's full footprint; shared by both de
 const MAX_COLS = 8; // ladder ceiling; a 'full' widget bypasses it (1 / -1)
 const trackStart = (n: number) => TRACK * n - GAP; // auto-fit yields n tracks at ≥ this width
 
+// SHOWROOM RIM clearance (design-repo scope, BEAM.md §6.3a). The `rim` platter is a gradient `beamPlatter`
+// whose outward extent is `--beam-ring` — a registered @property, 1px at rest → 2px at hover (createBeamTheme).
+// So the rim never reaches past this many px: it's the all-sides padding the grid needs (the collapsed-nav
+// gutter of 0 would otherwise let an overflow-clipping ancestor crop the leftmost widget's `::after`), and the
+// gap must stay ≥ 2× it so two neighbours' rims never touch. GAP(16) ≥ 2×2 already — asserted, not re-derived.
+const RIM_REACH = 2; // == --beam-ring hover max (keep in step if that @property's hover value moves)
+
 export type WidgetSize = 'compact' | 'standard' | 'wide' | 'full';
 
 /**
@@ -49,45 +56,69 @@ export interface DashboardGridItem {
 export interface DashboardGridProps {
   /** Widgets in the order the manager fixed — rendered strictly in this order (no dense repack). */
   items: DashboardGridItem[];
+  /**
+   * Opt into the SHOWROOM RIM (design-repo scope, BEAM.md §6.3a) — a product gradient platter concentric
+   * outside each (borderless) widget, plus the clearance padding that keeps it unclipped. Off by default, so
+   * the bench stories render the plain grid; the real DashboardPage turns it on.
+   */
+  rim?: boolean;
 }
 
-export function DashboardGrid({ items }: DashboardGridProps) {
+/**
+ * One grid cell. `container-type` so a widget's OWN container queries read THIS item's resolved width;
+ * `minWidth: 0` so the item can shrink below its content (the grid never overflows → a wide widget's table
+ * scrolls internally, not the page). `style={}` not `sx` for the span so the `min()`/`clamp()` string isn't
+ * parsed/transformed. When `rim`, the gradient platter rides HERE (outside the borderless Section) and the
+ * pointer hook leans its bright sector toward the cursor — the same recipe the shells shipped with before the
+ * Section swap (`beamPlatter({ interaction: 'track' })`, byte-identical: offset omitted ⇒ `--beam-ring`).
+ */
+function GridItem({ item, rim }: { item: DashboardGridItem; rim: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  usePointerAngleTracking(ref); // no-op unless the ref is attached (rim off ⇒ ref.current null ⇒ returns early)
   return (
-    // The query container. NO padding — its width must equal the grid width auto-fit measures, or the two
-    // track-count sources drift.
-    <Box sx={{ containerType: 'inline-size' }}>
-      <Box
-        sx={{
-          display: 'grid',
-          // TRACK COUNT #1 — auto-fit from width + minmax. min(BASE,100%) stops a lone track overflowing a
-          // sub-BASE viewport. KEEP IN SYNC with the --cols ladder (both read BASE/TRACK/GAP).
-          gridTemplateColumns: `repeat(auto-fit, minmax(min(${BASE}px, 100%), 1fr))`,
-          gridAutoFlow: 'row', // STRICT ORDER — not `dense`. Widgets render in the manager's order.
-          gridAutoRows: 'auto', // content-sized rows
-          gap: `${GAP}px`,
-          // TRACK COUNT #2 — the container publishes it as --cols (the ladder is trackStart() inverted into
-          // min-width rungs, reporting the SAME count auto-fit produced). Each item reads --cols for its span.
-          '--cols': 1,
-          ...Object.fromEntries(
-            Array.from({ length: MAX_COLS - 1 }, (_, i) => {
-              const n = i + 2; // rungs for 2..MAX_COLS tracks
-              return [`@container (min-width: ${trackStart(n)}px)`, { '--cols': n }];
-            }),
-          ),
-        }}
-      >
-        {items.map((item) => (
-          // container-type so a widget's OWN container queries read this item's resolved width; minWidth:0 so
-          // the item can shrink below its content (the grid never overflows). style={} not sx so the span
-          // string isn't parsed/transformed.
-          <Box
-            key={item.id}
-            style={{ gridColumn: SIZE_SPAN[item.size] } as CSSProperties}
-            sx={{ minWidth: 0, containerType: 'inline-size' }}
-          >
-            {item.node}
-          </Box>
-        ))}
+    <Box
+      ref={rim ? ref : undefined}
+      style={{ gridColumn: SIZE_SPAN[item.size] } as CSSProperties}
+      sx={{ minWidth: 0, containerType: 'inline-size', ...(rim ? (beamPlatter({ interaction: 'track' }) as object) : {}) }}
+    >
+      {item.node}
+    </Box>
+  );
+}
+
+export function DashboardGrid({ items, rim = false }: DashboardGridProps) {
+  return (
+    // SHOWROOM clearance wrapper (rim only): all-sides padding = the rim's outward reach, so an edge widget's
+    // `::after` draws INSIDE this box — safe from any overflow-clipping ancestor and from a collapsed-nav
+    // gutter of 0. Kept OUTSIDE the query container below so that container's width stays byte-identical to
+    // what auto-fit measures (the two track-count sources must not drift). No padding when rim is off.
+    <Box sx={{ p: rim ? `${RIM_REACH}px` : 0 }}>
+      {/* The query container. NO padding — its width must equal the grid width auto-fit measures. */}
+      <Box sx={{ containerType: 'inline-size' }}>
+        <Box
+          sx={{
+            display: 'grid',
+            // TRACK COUNT #1 — auto-fit from width + minmax. min(BASE,100%) stops a lone track overflowing a
+            // sub-BASE viewport. KEEP IN SYNC with the --cols ladder (both read BASE/TRACK/GAP).
+            gridTemplateColumns: `repeat(auto-fit, minmax(min(${BASE}px, 100%), 1fr))`,
+            gridAutoFlow: 'row', // STRICT ORDER — not `dense`. Widgets render in the manager's order.
+            gridAutoRows: 'auto', // content-sized rows
+            gap: `${GAP}px`, // ≥ 2×RIM_REACH, so neighbouring rims never touch (showroom clearance)
+            // TRACK COUNT #2 — the container publishes it as --cols (the ladder is trackStart() inverted into
+            // min-width rungs, reporting the SAME count auto-fit produced). Each item reads --cols for its span.
+            '--cols': 1,
+            ...Object.fromEntries(
+              Array.from({ length: MAX_COLS - 1 }, (_, i) => {
+                const n = i + 2; // rungs for 2..MAX_COLS tracks
+                return [`@container (min-width: ${trackStart(n)}px)`, { '--cols': n }];
+              }),
+            ),
+          }}
+        >
+          {items.map((item) => (
+            <GridItem key={item.id} item={item} rim={rim} />
+          ))}
+        </Box>
       </Box>
     </Box>
   );
