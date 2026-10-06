@@ -463,7 +463,12 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     (`platter offset × a 1/0 treatment flag`, both set by the treatment preset), so the attribute flip reflows
     geometry in one paint with NO React state (§6.17). Same mechanism zeroes the dashboard showroom-rim
     clearance under just-glass (the rims are gone). The platter treatments are pixel-identical to before (reach
-    = the offset). **Split:** the **treatment** is a VIEWING PREFERENCE — persisted (own localStorage), applied
+    = the offset). **Reach moves CONTENT gaps only, never the nav's own box.** The nav's viewport inset
+    (top / left / bottom + peek) stays `PAGE_GUTTER` in EVERY treatment: under a platter the fringe sits
+    *inside* that gutter (painted edge at `gutter − offset` — the appFrame clearance), and under just-glass
+    there's no fringe so the box edge IS the painted edge, at the gutter. So the platter nav never moves
+    (pixel-identical), and under just-glass nav-to-window and nav-to-content both read a true `PAGE_GUTTER`.
+    **Split:** the **treatment** is a VIEWING PREFERENCE — persisted (own localStorage), applied
     before first paint by a shared boot helper in `@betty/beam` (every app entry calls it; the nav is shared so
     the treatment is too). The just-glass **dials** are DESIGN WORK — Theme-Lab session state + combo export,
     like the rest of the Lab (not persisted, not reload-surviving). The panel wears a `beamPlatter` rim at
