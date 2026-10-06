@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { ChainedExperienceEditor } from './ChainedExperienceEditor';
 import { ChainedExperiencesPage } from './ChainedExperiencesPage';
 
-const meta: Meta = { title: 'Lab/Sunlight/ChainedExperiences', parameters: { layout: 'fullscreen' } };
+const meta: Meta = { title: 'Lab/Sunlight/ChainedExperiences', parameters: { layout: 'fullscreen', router: false /* brings its own data router */ } };
 export default meta;
 type Story = StoryObj;
 

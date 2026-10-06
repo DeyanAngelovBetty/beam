@@ -8,7 +8,7 @@ import { GameConfigEditor } from './GameConfigEditor';
  * text, targeting rules read-only grid); Edit flips to the direct-write editor. `/new` = create.
  * Needs a DATA router (useBlocker).
  */
-const meta: Meta = { title: 'Lab/Sunlight/GameConfigEditor', parameters: { layout: 'fullscreen' } };
+const meta: Meta = { title: 'Lab/Sunlight/GameConfigEditor', parameters: { layout: 'fullscreen', router: false /* brings its own data router */ } };
 export default meta;
 type Story = StoryObj;
 

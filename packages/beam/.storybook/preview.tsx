@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import type { Preview, Decorator } from '@storybook/react-vite';
 import { ThemeProvider, useColorScheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { MemoryRouter } from 'react-router-dom';
 import { createBeamTheme } from '../src/theme/createBeamTheme';
 import type { BrandName, ProductName, ThemeMode } from '../src/theme/tokens';
 
@@ -30,8 +31,22 @@ const withBeamTheme: Decorator = (Story, context) => {
   );
 };
 
+/**
+ * Default Router context (2026-10-06): many components reach react-router (`useSearchParams` via
+ * `useTableFilters`, `useNavigate`, `<Link>`), so every story gets a `MemoryRouter` here instead of each
+ * re-wrapping one. Stories that bring their OWN router — the sunlight page/editor stories use a DATA router
+ * (`createMemoryRouter`/`RouterProvider`) with per-story route state, which THROWS if nested — opt out with
+ * `parameters: { router: false }`.
+ */
+const withRouter: Decorator = (Story, context) =>
+  context.parameters?.router === false ? <Story /> : (
+    <MemoryRouter>
+      <Story />
+    </MemoryRouter>
+  );
+
 const preview: Preview = {
-  decorators: [withBeamTheme],
+  decorators: [withBeamTheme, withRouter],
   globalTypes: {
     mode: {
       description: 'Theme mode (palette collection modes)',

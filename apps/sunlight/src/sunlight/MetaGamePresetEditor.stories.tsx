@@ -8,7 +8,7 @@ import { MetaGamePresetEditor } from './MetaGamePresetEditor';
  * preset fields as text + image preview); Edit flips to the direct-write editor. `/new` = create.
  * Needs a DATA router (useBlocker).
  */
-const meta: Meta = { title: 'Lab/Sunlight/MetaGamePresetEditor', parameters: { layout: 'fullscreen' } };
+const meta: Meta = { title: 'Lab/Sunlight/MetaGamePresetEditor', parameters: { layout: 'fullscreen', router: false /* brings its own data router */ } };
 export default meta;
 type Story = StoryObj;
 

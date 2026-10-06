@@ -9,7 +9,7 @@ import { PayoutConfigEditor } from './PayoutConfigEditor';
  * Edit flips to the direct-write editor ([Cancel] [Save]). `/new` opens straight in create mode.
  * Needs a DATA router (useBlocker).
  */
-const meta: Meta = { title: 'Lab/Sunlight/PayoutConfigEditor', parameters: { layout: 'fullscreen' } };
+const meta: Meta = { title: 'Lab/Sunlight/PayoutConfigEditor', parameters: { layout: 'fullscreen', router: false /* brings its own data router */ } };
 export default meta;
 type Story = StoryObj;
 

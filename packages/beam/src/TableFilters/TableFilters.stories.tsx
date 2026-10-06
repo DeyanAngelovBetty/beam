@@ -1,13 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter } from 'react-router-dom';
 import { TableFilters } from './TableFilters';
 import { defineTableFilters } from './TableFilters.helpers';
 import { useTableFilters } from './hooks';
 
 /**
  * TableFilters — the typed-definition filter bar (official Beam model). `definitions` describe the controls;
- * `useTableFilters` owns the draft/applied state + the Filter/Clear controller. Ported from beam-alex; our
- * hook syncs to the URL via react-router, so the story is wrapped in a MemoryRouter.
+ * `useTableFilters` owns the draft/applied state + the Filter/Clear controller. Ported from beam-alex; the
+ * hook syncs to the URL via react-router — the Router context now comes from preview.tsx's global decorator.
  */
 interface DemoFilters {
   q: string;
@@ -17,15 +16,7 @@ interface DemoFilters {
 
 const meta: Meta<typeof TableFilters<DemoFilters>> = {
   title: 'Components/TableFilters',
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <div style={{ maxWidth: 900 }}>
-          <Story />
-        </div>
-      </MemoryRouter>
-    ),
-  ],
+  decorators: [(Story) => <div style={{ maxWidth: 900 }}><Story /></div>],
 };
 export default meta;
 type Story = StoryObj<typeof meta>;

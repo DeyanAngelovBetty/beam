@@ -14,7 +14,7 @@ import { DEMO_MAKER, DEMO_CHECKER } from './currentUser';
  * Needs a DATA router. NOTE: the module store is shared across stories — approving/rejecting here
  * mutates it (a live tracer); the fixtures below are each created once, on separate entities.
  */
-const meta: Meta = { title: 'Lab/Sunlight/PendingApprovalDetail', parameters: { layout: 'fullscreen' } };
+const meta: Meta = { title: 'Lab/Sunlight/PendingApprovalDetail', parameters: { layout: 'fullscreen', router: false /* brings its own data router */ } };
 export default meta;
 type Story = StoryObj;
 

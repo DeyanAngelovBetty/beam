@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter } from 'react-router-dom';
 import { PendingApprovalsPage } from './PendingApprovalsPage';
 // REGISTRATION CONTRACT (doctrine, not decoration): PendingApprovalsPage only TYPE-imports
 // the entity store, so in isolation nothing registers the 'loyaltyStatus' applicator and
@@ -46,13 +45,7 @@ const meta: Meta<typeof PendingApprovalsPage> = {
   title: 'Lab/Sunlight/PendingApprovalsPage',
   component: PendingApprovalsPage,
   parameters: { layout: 'padded' },
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <Story />
-      </MemoryRouter>
-    ),
-  ],
+  // Router context comes from preview.tsx's global decorator (no local wrapper needed).
 };
 export default meta;
 type Story = StoryObj<typeof PendingApprovalsPage>;

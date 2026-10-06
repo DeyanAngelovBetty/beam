@@ -28,7 +28,7 @@ import { DEMO_CHECKER } from './currentUser';
 })();
 const meta: Meta = {
   title: 'Lab/Sunlight/LoyaltyStatusEditor',
-  parameters: { layout: 'fullscreen' },
+  parameters: { layout: 'fullscreen', router: false /* brings its own data router */ },
 };
 export default meta;
 type Story = StoryObj;
