@@ -272,14 +272,17 @@ function TruncateCopyCell({ value, mono, mode = 'middle', onCopied }: { value: s
 // wire vocabulary [Q3] and the interim Failed eligibility anchor [Q4] have a single source, not literals
 // scattered across the badge, the accent, and the action guards.
 
-/** The card summary is now ENRICHED onto every row [Q6]: brand •••• last4, with the FK kept in the reveal
- *  (Payment method column). The former Phase-A GUID fallback is retired — the summary is always present. */
+/** The card summary is ENRICHED onto every row [Q6], with the FK kept in the reveal. Payment-method cell shows
+ *  BIN + masked middle + last four (Boryana, 2026-10-06 — replacing the bot's "Visa ••••last4"). BRAND moves to
+ *  the tooltip since the Card Type column already carries it; the cell is the PAN silhouette. Mask is 6 bullets
+ *  = a 16-digit PAN (6 BIN + 6 masked + 4 last); fixed-vs-length-accurate is with Boryana (Amex = 15 → 5). */
 function PaymentMethodCell({ row }: { row: TransactionRow }) {
   const { brand, last4, bin, expiry, paymentMethodId } = row.cardSummary;
-  const detail = [`pm #${paymentMethodId} (FK)`, bin && `BIN ${bin}`, expiry && `exp ${expiry}`].filter(Boolean).join(' · ');
+  const pan = bin ? `${bin}••••••${last4}` : `••••${last4}`; // graceful if BIN ever absent (bin? is optional)
+  const detail = [`pm #${paymentMethodId} (FK)`, brand, expiry && `exp ${expiry}`].filter(Boolean).join(' · ');
   return (
     <Tooltip title={detail}>
-      <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{brand} •••• {last4}</Box>
+      <Box component="span" sx={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{pan}</Box>
     </Tooltip>
   );
 }
