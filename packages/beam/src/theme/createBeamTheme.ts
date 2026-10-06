@@ -504,6 +504,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-chrome-tint': NAV_GLASS.dark.tint,
             '--beam-chrome-tint-base': NAV_GLASS.dark.tintBase,
             '--beam-chrome-offset': `${CHROME_PLATTER_OFFSET}px`,
+            // just-glass BOX dials (DARK default). They live in the normal mode blocks — NOT the just-glass
+            // preset — at (0,1,0), so the Lab's per-scheme adopted-sheet writes (same specificity, later in the
+            // cascade) WIN and the sliders actually move them (the old preset at (0,2,0)+ out-specified the Lab).
+            // Consumed only under [data-beam-chrome="just-glass"] (chromeSurface), so setting them always is inert
+            // under the platter treatments. edge = a text-primary wash so the slider tunes its strength uniformly.
+            '--beam-chrome-box-blur': '16px',
+            '--beam-chrome-box-tint': '72%',
+            '--beam-chrome-box-saturate': '1.2',
+            '--beam-chrome-box-edge': 'color-mix(in oklab, var(--mui-palette-text-primary) 12%, transparent)',
             '--beam-chrome-glass-on': 'block',
             '--beam-chrome-gradient-on': 'none',
             // Gates the showroom / widget RIM (the conic gradient on dashboard grid items): `block` under BOTH
@@ -574,6 +583,12 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-chrome-blur': `${s.light.navGlassBlur}px`, // PER MODE: light 4 (blur smears a bright backdrop)
             '--beam-chrome-tint': NAV_GLASS.light.tint,
             '--beam-chrome-tint-base': NAV_GLASS.light.tintBase, // PER MODE: a dark wash, not white
+            // just-glass BOX dials (LIGHT): higher tint/frost so the KPI teal stops hazing through, lower
+            // saturation to neutralise it, stronger edge (--beam-nav-edge vanishes on the light page). First guesses.
+            '--beam-chrome-box-blur': '14px',
+            '--beam-chrome-box-tint': '84%',
+            '--beam-chrome-box-saturate': '0.7',
+            '--beam-chrome-box-edge': 'color-mix(in oklab, var(--mui-palette-text-primary) 20%, transparent)',
             '--beam-nav-edge-offset': String(navEdgeOffset.light),
             '--beam-nav-edge-alpha': String(EDGE.light.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.light),
@@ -609,6 +624,11 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-chrome-blur': `${s.dark.navGlassBlur}px`, // re-assert dark (18) when mode is explicitly dark
             '--beam-chrome-tint': NAV_GLASS.dark.tint,
             '--beam-chrome-tint-base': NAV_GLASS.dark.tintBase,
+            // just-glass BOX dials — re-assert dark when mode is explicitly dark (mirrors the fringe dials above).
+            '--beam-chrome-box-blur': '16px',
+            '--beam-chrome-box-tint': '72%',
+            '--beam-chrome-box-saturate': '1.2',
+            '--beam-chrome-box-edge': 'color-mix(in oklab, var(--mui-palette-text-primary) 12%, transparent)',
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
             '--beam-nav-shadow-alpha': String(WELL_SHADOW.dark),
@@ -742,26 +762,14 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-chrome-platter-flag': '1',
           },
           // just-glass: both fringe layers + the rim OFF, geometry reach collapses to 0, the box turns
-          // translucent (chromeSurface). Box dials are PER-MODE — these are the DARK defaults; the light block
-          // below retunes them (first guesses; Deyan's eyeball decides). The Lab edits both modes (combo export).
+          // translucent (chromeSurface reads the box dials). ONLY the gates + flag live here — the box DIALS
+          // live in the mode blocks above at (0,1,0), so the Lab's adopted-sheet writes can win (the old
+          // in-preset dials at (0,2,0)+ out-specified every Lab write — that was the "sliders do nothing" bug).
           ':root[data-beam-chrome="just-glass"]': {
             '--beam-chrome-glass-on': 'none',
             '--beam-chrome-gradient-on': 'none',
             '--beam-chrome-platter-on': 'none',
             '--beam-chrome-platter-flag': '0',
-            '--beam-chrome-box-blur': '16px',
-            '--beam-chrome-box-tint': '72%', // opacity of the paper wash (100% = opaque); dark reads at 72%
-            '--beam-chrome-box-saturate': '1.2',
-            '--beam-chrome-box-edge': 'var(--beam-nav-edge)',
-          },
-          // LIGHT just-glass retune (0,3,0 — wins over the :root just-glass block): HIGHER tint (more frost, so
-          // coloured content like the KPI teal stops hazing through), LOWER saturation (neutralise that colour),
-          // and a STRONGER edge (--beam-nav-edge nearly vanishes on the light page). First guesses — Deyan tunes.
-          ':root[data-beam-mode="light"][data-beam-chrome="just-glass"]': {
-            '--beam-chrome-box-blur': '14px',
-            '--beam-chrome-box-tint': '84%',
-            '--beam-chrome-box-saturate': '0.7',
-            '--beam-chrome-box-edge': 'color-mix(in oklab, var(--mui-palette-text-primary) 20%, transparent)',
           },
 
           // Gradient-border angle (opt-in beamPlatter). Registered as an
