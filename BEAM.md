@@ -450,11 +450,23 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
     (docked: 282 rail, 258 panel inset by `PAGE_GUTTER`, radius `borderRadius/24`, over the canvas; peek:
     same panel, keeps shadows) — full rule in docs/shell-grammar.md §7; preserves §6.17 (main never
     remounts). **`main`'s left gutter is nav-state-aware** (supersedes §6.19's "all edges PAGE_GUTTER"): top /
-    right / bottom are always `PAGE_GUTTER`; left is `PAGE_GUTTER + CHROME_PLATTER_OFFSET` (24 + 8 = 32px) DOCKED
-    — content opens an extra 8px so the panel's platter fringe (which extends into the gutter) keeps a true
-    24px gap — `0` COLLAPSED (the 60px nav column supplies the clearance), `PAGE_GUTTER` NARROW (the nav is a
-    modal drawer OVER main, no column). **Why:** the nav column and the platter fringe own the left space now,
-    not a floating toggle, so the left edge follows the nav state. The panel wears a `beamPlatter` rim at
+    right / bottom are always `PAGE_GUTTER`; left is `PAGE_GUTTER + var(--beam-chrome-reach)` DOCKED
+    — content opens an extra REACH so the panel's platter fringe (which extends into the gutter) keeps a true
+    `PAGE_GUTTER` gap — `0` COLLAPSED (the 60px nav column supplies the clearance), `PAGE_GUTTER` NARROW (the nav
+    is a modal drawer OVER main, no column). **Why:** the nav column and the platter fringe own the left space
+    now, not a floating toggle, so the left edge follows the nav state.
+    **GUTTERS ARE MEASURED FROM THE OUTERMOST PAINTED EDGE — treatment-aware *(amended 2026-10-06, §6.17
+    chrome-treatment model)*.** A gutter is the gap from the surface's *painted* edge, not its box: under a
+    platter treatment the painted edge is the FRINGE (offset beyond the box), so content clears
+    `PAGE_GUTTER + offset`; under `just-glass` there is no fringe, the box IS the painted edge, so content
+    clears `PAGE_GUTTER` and gains the width back. This is driven by **`--beam-chrome-reach`** — DERIVED
+    (`platter offset × a 1/0 treatment flag`, both set by the treatment preset), so the attribute flip reflows
+    geometry in one paint with NO React state (§6.17). Same mechanism zeroes the dashboard showroom-rim
+    clearance under just-glass (the rims are gone). The platter treatments are pixel-identical to before (reach
+    = the offset). **Split:** the **treatment** is a VIEWING PREFERENCE — persisted (own localStorage), applied
+    before first paint by a shared boot helper in `@betty/beam` (every app entry calls it; the nav is shared so
+    the treatment is too). The just-glass **dials** are DESIGN WORK — Theme-Lab session state + combo export,
+    like the rest of the Lab (not persisted, not reload-surviving). The panel wears a `beamPlatter` rim at
     `CHROME_PLATTER_OFFSET` (now 12); DEFAULT fill = **glass** (test-drive 2026-10-02, the locked liquid-glass
     recipe), gradient available as the alternate fill. The two fills coexist as layers (glass `::after` +
     gradient `::before`) toggled by per-mode display vars — a pure paint swap (no attribute); Theme Lab drives

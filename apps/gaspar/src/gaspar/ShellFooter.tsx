@@ -10,6 +10,9 @@ import {
   Tooltip,
   useColorScheme,
   products,
+  CHROME_TREATMENTS,
+  applyChromeTreatment,
+  readChromeTreatment,
 } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -30,14 +33,14 @@ function ModeToggle() {
   );
 }
 
-// TEMPORARY dev switch (2026-10-06, chrome-treatment gate 1a) — cycles `data-beam-chrome` on <html> so the
-// three treatments can be eyeballed in the running app before the Theme Lab three-way control lands (1b).
-// `platter-glass` (the mount default) is identical to the shipping no-attribute state.
-const CHROME_TREATMENTS = ['platter-glass', 'platter-gradient', 'just-glass'] as const;
+// TEMPORARY dev switch (2026-10-06) — cycles the chrome treatment so it can be eyeballed in the running app
+// until the Theme Lab three-way control replaces it (the remaining 1b step). It now PERSISTS via
+// applyChromeTreatment (localStorage) and INITIALISES from the persisted value, so the treatment survives nav
+// remounts / reload / route changes instead of the switch owning transient state (gate-1a bug, fixed).
 function ChromeDevSwitch() {
-  const [i, setI] = useState(0);
+  const [i, setI] = useState(() => Math.max(0, CHROME_TREATMENTS.indexOf(readChromeTreatment())));
   useEffect(() => {
-    document.documentElement.setAttribute('data-beam-chrome', CHROME_TREATMENTS[i]);
+    applyChromeTreatment(CHROME_TREATMENTS[i]);
   }, [i]);
   const current = CHROME_TREATMENTS[i];
   const next = CHROME_TREATMENTS[(i + 1) % CHROME_TREATMENTS.length];

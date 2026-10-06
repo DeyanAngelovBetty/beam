@@ -511,6 +511,15 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             // --beam-chrome-gradient-on is `none` under the shipping default (platter.glass) — gating the rim on
             // THAT would vanish it with no toggle (2026-10-06, treatment-model correction 1).
             '--beam-chrome-platter-on': 'block',
+            // GEOMETRY follows the treatment (§6.20, amended). The reach is DERIVED — platter offset × a 1/0
+            // treatment flag (1 under both platter treatments, 0 under just-glass) — so one attribute flip
+            // reflows geometry (main's left gutter, the dashboard rim clearance) in one paint, no React state.
+            // Not exported (derived from treatment). `main`'s docked left = PAGE_GUTTER + reach.
+            '--beam-chrome-platter-flag': '1',
+            '--beam-chrome-reach': 'calc(var(--beam-chrome-offset, 12px) * var(--beam-chrome-platter-flag, 1))',
+            // Modal scrim strength for the chrome dialog (gate 2). The var lands now (model-complete); the Lab
+            // dial arrives with BeamDialog, which is the only thing that paints a scrim.
+            '--beam-chrome-scrim': 'rgb(0 0 0 / 32%)',
             '--beam-nav-edge': derived.navEdge,
             '--beam-nav-edge-offset': String(navEdgeOffset.dark),
             '--beam-nav-edge-alpha': String(EDGE.dark.alpha),
@@ -724,20 +733,35 @@ export function createBeamTheme(brand: BrandName, product: ProductName = 'sunlig
             '--beam-chrome-glass-on': 'block',
             '--beam-chrome-gradient-on': 'none',
             '--beam-chrome-platter-on': 'block',
+            '--beam-chrome-platter-flag': '1',
           },
           ':root[data-beam-chrome="platter-gradient"]': {
             '--beam-chrome-glass-on': 'none',
             '--beam-chrome-gradient-on': 'block',
             '--beam-chrome-platter-on': 'block',
+            '--beam-chrome-platter-flag': '1',
           },
+          // just-glass: both fringe layers + the rim OFF, geometry reach collapses to 0, the box turns
+          // translucent (chromeSurface). Box dials are PER-MODE — these are the DARK defaults; the light block
+          // below retunes them (first guesses; Deyan's eyeball decides). The Lab edits both modes (combo export).
           ':root[data-beam-chrome="just-glass"]': {
             '--beam-chrome-glass-on': 'none',
             '--beam-chrome-gradient-on': 'none',
             '--beam-chrome-platter-on': 'none',
+            '--beam-chrome-platter-flag': '0',
             '--beam-chrome-box-blur': '16px',
-            '--beam-chrome-box-tint': '72%',
+            '--beam-chrome-box-tint': '72%', // opacity of the paper wash (100% = opaque); dark reads at 72%
             '--beam-chrome-box-saturate': '1.2',
             '--beam-chrome-box-edge': 'var(--beam-nav-edge)',
+          },
+          // LIGHT just-glass retune (0,3,0 — wins over the :root just-glass block): HIGHER tint (more frost, so
+          // coloured content like the KPI teal stops hazing through), LOWER saturation (neutralise that colour),
+          // and a STRONGER edge (--beam-nav-edge nearly vanishes on the light page). First guesses — Deyan tunes.
+          ':root[data-beam-mode="light"][data-beam-chrome="just-glass"]': {
+            '--beam-chrome-box-blur': '14px',
+            '--beam-chrome-box-tint': '84%',
+            '--beam-chrome-box-saturate': '0.7',
+            '--beam-chrome-box-edge': 'color-mix(in oklab, var(--mui-palette-text-primary) 20%, transparent)',
           },
 
           // Gradient-border angle (opt-in beamPlatter). Registered as an

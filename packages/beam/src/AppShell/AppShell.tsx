@@ -35,9 +35,8 @@ const PANEL_WIDTH = 258;
 const COLLAPSED_RAIL_WIDTH = 60; // the collapsed nav column — holds just the toggle (brand mark off, §6.16)
 const PAGE_GUTTER_PX = PAGE_GUTTER.md * 8; // 24px — the page gutter as raw px, for position props (sx position props aren't spacing-scaled)
 const NAV_GLASS_FILTER_ID = BEAM_GLASS_FILTER_ID;
-// Offset as a LIVE var (Theme Lab tunes it; fallback = the token). Both the platter geometry AND main's docked
-// left padding read it, so dragging offset moves the fringe + the content gutter in the same paint (§6.20).
-const CHROME_PLATTER_OFFSET_VAR = `var(--beam-chrome-offset, ${CHROME_PLATTER_OFFSET}px)`;
+// main's docked left padding now reads `--beam-chrome-reach` (= platter offset × treatment flag; §6.20), so a
+// treatment flip (and the Lab dragging the offset) moves the content gutter in the same paint — no TS literal.
 // The CHROME platter rim behind the floating nav panel (both states) — the SHARED two-layer rig (glass ::after
 // + gradient ::before, display-gated by the `--beam-chrome-*-on` vars), identical to every other chrome
 // consumer (BeamChrome). Flipping fill is one paint across all of them; the Theme Lab's Chrome Platter section
@@ -535,7 +534,9 @@ export function AppShell({
         // toggle. (`contentGutter` + `CONTENT_GUTTER_LEFT_COLLAPSED` stay vestigial — no consumer.)
         pr: PAGE_GUTTER,
         pl: effectiveLocked
-          ? `calc(${PAGE_GUTTER.md * 8}px + ${CHROME_PLATTER_OFFSET_VAR})` // gutter + platter fringe (live via the offset var)
+          // gutter + REACH — the content clears the nav's outermost PAINTED edge (§6.20): under a platter that's
+          // the fringe (reach = offset), under just-glass there's none (reach = 0, content gains the width back).
+          ? `calc(${PAGE_GUTTER.md * 8}px + var(--beam-chrome-reach, ${CHROME_PLATTER_OFFSET}px))`
           : isWide
             ? 0 // collapsed: the 60px nav column is the clearance
             : PAGE_GUTTER, // narrow: drawer overlays main, keep the full gutter

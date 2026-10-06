@@ -17,7 +17,11 @@ import '@fontsource-variable/roboto-flex/full.css';
 // FOLLOWS the body weight via --beam-mono-wght, so timestamps/IDs/tabular cells don't clamp heavier than
 // body at 240. Replaces the system `monospace` keyword in the Gaspar grid's mono cells.
 import '@fontsource-variable/roboto-mono';
+import { bootChromeTreatment } from '@betty/beam';
 import { App } from './App';
+
+// Apply the persisted chrome treatment BEFORE first paint (no flash / layout jump — geometry follows it).
+bootChromeTreatment();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

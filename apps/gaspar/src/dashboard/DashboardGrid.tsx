@@ -98,7 +98,7 @@ export function DashboardGrid({ items, rim = false }: DashboardGridProps) {
     // `::after` draws INSIDE this box — safe from any overflow-clipping ancestor and from a collapsed-nav
     // gutter of 0. Kept OUTSIDE the query container below so that container's width stays byte-identical to
     // what auto-fit measures (the two track-count sources must not drift). No padding when rim is off.
-    <Box sx={{ p: rim ? `${RIM_REACH}px` : 0 }}>
+    <Box sx={{ p: rim ? `calc(${RIM_REACH}px * var(--beam-chrome-platter-flag, 1))` : 0 }}>
       {/* The query container. NO padding — its width must equal the grid width auto-fit measures. */}
       <Box sx={{ containerType: 'inline-size' }}>
         <Box
