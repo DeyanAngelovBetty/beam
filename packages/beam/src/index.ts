@@ -109,7 +109,8 @@ export { BeamSvgDefs, BEAM_GLASS_FILTER_ID, BEAM_GLASS_DISPLACEMENT_DEFAULT } fr
 export { BeamChrome, type BeamChromeProps } from './BeamChrome';
 // Generic show/hide + reorder + localStorage manager — the backbone behind Table's column manager, shared
 // with the dashboard widget manager (2026-10-06).
-export { useItemManager, type ManagerItem, type ItemManagerConfig, type ItemManagerState, type ItemOnChange } from './useItemManager';
+export { useItemManager, bindItemManager, type ManagerItem, type ItemManagerConfig, type ItemManagerState, type ItemOnChange } from './useItemManager';
+export { BeamItemManager, type BeamItemManagerProps, type ManagerEntry } from './BeamItemManager';
 export type { AppShellProps, BeamNavItem, BeamBrandMark } from './AppShell/AppShell.types';
 export { BeamBadge } from './BeamBadge/BeamBadge';
 export type { BeamBadgeProps, BeamBadgeHue } from './BeamBadge/BeamBadge.types';

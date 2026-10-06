@@ -1,26 +1,8 @@
-import { useRef, useState } from 'react';
 import { BUTTON_PAD_X } from '../theme/tokens';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Popover from '@mui/material/Popover';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpwardRounded';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownwardRounded';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { BeamItemManager, type ManagerEntry } from '../BeamItemManager';
 
-/** A real, toggleable/reorderable column, in current order (hidden ones included). */
-export interface ManagerColumn {
-  id: string;
-  label: string;
-  visible: boolean;
-}
+/** A real, toggleable/reorderable column, in current order (hidden ones included). (= generic `ManagerEntry`.) */
+export type ManagerColumn = ManagerEntry;
 
 export interface BeamColumnManagerProps {
   columns: ManagerColumn[];
@@ -34,227 +16,26 @@ export interface BeamColumnManagerProps {
 }
 
 /**
- * BeamColumnManager — the toolbar trigger + popover for Table's column manager. Internal to
- * the organism (not barrel-exported). Show/hide via checkbox; reorder via a pointer DRAG HANDLE
- * (mouse/touch) OR the ▲/▼ buttons. Both write the same columnOrder through the parent, so the two
- * paths can't diverge. Reset returns to declared defaults. Minimum one visible column is enforced:
- * the last visible column's checkbox is disabled.
- *
- * Drag is hand-rolled on Pointer Events (no dnd-kit) — a simple vertical list doesn't justify the
- * dependency, and the a11y story is already carried by the labelled arrows. So the handle is a
- * pointer-only affordance: `aria-hidden`, non-focusable, `touch-action: none`. Assistive tech reorders
- * with the arrows (which announce "Move X up/down"); we don't ship a half-built ARIA drag.
+ * BeamColumnManager — Table's toolbar trigger + popover for the column manager, now a THIN WRAPPER over the
+ * generic `BeamItemManager` (2026-10-06). It fixes the table-toolbar presentation: a flat TEXT button labelled
+ * "Manage columns", seated on the chrome-band rail via a `-BUTTON_PAD_X` margin (BEAM.md §6.9) so the label
+ * shares one vertical with the bulk strip's EXPORT label and the row checkboxes. All the show/hide/reorder/
+ * drag logic lives in BeamItemManager; the dashboard widget manager uses that directly with `title="widgets"`.
  */
 export function BeamColumnManager({ columns, catalog, onToggle, onMove, onReorder, onReset }: BeamColumnManagerProps) {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const open = Boolean(anchorEl);
-  const visibleCount = columns.filter((c) => c.visible).length;
-
-  // Drag state. `dragId` is the row being dragged; `boundary` is where it would land — an insertion
-  // index in 0..columns.length (before row `boundary`, or after the last when === length). `indicatorTop`
-  // is that boundary's pixel offset within the list, for the drop line (absolute → no layout shift).
-  const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [boundary, setBoundary] = useState<number | null>(null);
-  const [indicatorTop, setIndicatorTop] = useState<number | null>(null);
-
-  const offsetForBoundary = (b: number) => {
-    const n = columns.length;
-    if (b <= 0) return rowRefs.current[0]?.offsetTop ?? 0;
-    if (b >= n) {
-      const last = rowRefs.current[n - 1];
-      return last ? last.offsetTop + last.offsetHeight : 0;
-    }
-    return rowRefs.current[b]?.offsetTop ?? 0;
-  };
-
-  const onHandleDown = (id: string) => (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setDragId(id);
-  };
-
-  const onHandleMove = (e: React.PointerEvent) => {
-    if (dragId === null) return;
-    const y = e.clientY;
-    // Boundary from the nearest row midpoint (above → before it, below → after it). Clamp to the ends.
-    let b = columns.length;
-    for (let i = 0; i < columns.length; i++) {
-      const el = rowRefs.current[i];
-      if (!el) continue;
-      const rect = el.getBoundingClientRect();
-      if (y < rect.top + rect.height / 2) {
-        b = i;
-        break;
-      }
-    }
-    setBoundary(b);
-    setIndicatorTop(offsetForBoundary(b));
-  };
-
-  const endDrag = (e: React.PointerEvent) => {
-    if (dragId !== null && boundary !== null) {
-      const from = columns.findIndex((c) => c.id === dragId);
-      // Boundary → target index in the post-removal array: a boundary past `from` shifts down by one.
-      if (from >= 0 && boundary !== from && boundary !== from + 1) {
-        onReorder(dragId, boundary > from ? boundary - 1 : boundary);
-      }
-    }
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      /* pointer already released */
-    }
-    setDragId(null);
-    setBoundary(null);
-    setIndicatorTop(null);
-  };
-
   return (
-    <>
-      {/* Discoverability (UX ruling 2026-09-23): a LABELLED flat TEXT button, not icon-only — small text/flat
-          per the BEAM.md §9 button grammar (same tier as the bulk strip; a table-toolbar control is the
-          quietest loudness). Text-only (no glyph); the visible label is the accessible name (the `aria-label`
-          is kept as a belt-and-braces). No Tooltip — the label speaks. Shared across BOTH trees (organism
-          Table's 18 consumers + the Wave-2 port), so every column-manager surface gets it. Size `small`
-          (~31px) sits inside the 44px chrome-datum footer band with no growth. */}
-      <Button
-        size="small"
-        variant="text"
-        aria-label="Manage columns"
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        // Chrome-band alignment (BEAM.md §6.9): the LABEL — not the button box — seats on the control-rail
-        // line (RAIL_SEAT). The footer actions Box pads to RAIL_SEAT; this negative inline-start margin =
-        // −BUTTON_PAD_X (the text button's own left padding, kept for the hover shape) cancels that padding
-        // so "Manage columns" lands on the seat, sharing one vertical with the bulk strip's EXPORT label,
-        // the select-all, and the row checkboxes. Composed off the constant so the seat holds if MUI's pad
-        // changes.
-        sx={{ ml: `${-BUTTON_PAD_X}px` }}
-      >
-        Manage columns
-      </Button>
-      <Popover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Box sx={{ minWidth: 300, py: 1 }} role="group" aria-label="Column manager">
-          {/* position: relative anchors the absolute drop indicator to the reorderable list. */}
-          <List dense disablePadding sx={{ position: 'relative' }}>
-            {dragId !== null && indicatorTop !== null && (
-              <Box
-                aria-hidden
-                sx={{
-                  position: 'absolute',
-                  left: 8,
-                  right: 8,
-                  top: indicatorTop,
-                  height: 2,
-                  borderRadius: 1,
-                  bgcolor: 'primary.main',
-                  pointerEvents: 'none',
-                  zIndex: 1,
-                }}
-              />
-            )}
-            {columns.map((c, i) => {
-              const lockedOn = c.visible && visibleCount <= 1; // last visible — can't hide it
-              const dragging = dragId === c.id;
-              return (
-                <ListItem
-                  key={c.id}
-                  ref={(el: HTMLLIElement | null) => {
-                    rowRefs.current[i] = el;
-                  }}
-                  disableGutters
-                  sx={{ pl: 0.5, pr: 0.5, opacity: dragging ? 0.4 : 1 }}
-                  secondaryAction={
-                    <Stack direction="row" sx={{ alignItems: 'center' }}>
-                      <IconButton
-                        size="small"
-                        aria-label={`Move ${c.label} up`}
-                        disabled={i === 0}
-                        onClick={() => onMove(c.id, 'up')}
-                      >
-                        <ArrowUpwardIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        aria-label={`Move ${c.label} down`}
-                        disabled={i === columns.length - 1}
-                        onClick={() => onMove(c.id, 'down')}
-                      >
-                        <ArrowDownwardIcon fontSize="small" />
-                      </IconButton>
-                    </Stack>
-                  }
-                >
-                  {/* Drag handle — pointer-only (mouse/touch). aria-hidden + non-focusable: the arrows
-                      are the assistive-tech path (see file header). touch-action:none so touch-drag
-                      doesn't scroll the popover. */}
-                  <Box
-                    aria-hidden
-                    component="span"
-                    onPointerDown={onHandleDown(c.id)}
-                    onPointerMove={onHandleMove}
-                    onPointerUp={endDrag}
-                    onPointerCancel={endDrag}
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      color: 'text.disabled',
-                      cursor: dragging ? 'grabbing' : 'grab',
-                      touchAction: 'none',
-                      mr: 0.5,
-                      '&:hover': { color: 'text.secondary' },
-                    }}
-                  >
-                    <DragIndicatorIcon fontSize="small" />
-                  </Box>
-                  <FormControlLabel
-                    sx={{ m: 0 }}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={c.visible}
-                        disabled={lockedOn}
-                        onChange={() => onToggle(c.id)}
-                        slotProps={{ input: { 'aria-label': `Show ${c.label}` } }}
-                      />
-                    }
-                    label={c.label}
-                  />
-                </ListItem>
-              );
-            })}
-          </List>
-
-          <List dense disablePadding>
-            {catalog.length > 0 && <Divider sx={{ my: 1 }} />}
-            {catalog.map((c) => (
-              <ListItem key={c.id} disableGutters sx={{ pl: 1, pr: 0.5, opacity: 0.6 }}>
-                <FormControlLabel
-                  sx={{ m: 0 }}
-                  control={<Checkbox size="small" checked={false} disabled />}
-                  label={
-                    <Stack>
-                      <Typography variant="body2">{c.label}</Typography>
-                      <Typography variant="caption" color="text.secondary">awaiting data</Typography>
-                    </Stack>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-
-          <Divider sx={{ my: 1 }} />
-          <Box sx={{ px: 2 }}>
-            <Button size="small" onClick={onReset}>Reset to defaults</Button>
-          </Box>
-        </Box>
-      </Popover>
-    </>
+    <BeamItemManager
+      items={columns}
+      catalog={catalog}
+      onToggle={onToggle}
+      onMove={onMove}
+      onReorder={onReorder}
+      onReset={onReset}
+      title="columns"
+      triggerVariant="text"
+      // The label — not the button box — seats on the control-rail line; this cancels the text button's own
+      // left padding so "Manage columns" lands on the seat (BEAM.md §6.9). Off the constant so it holds if the pad changes.
+      triggerSx={{ ml: `${-BUTTON_PAD_X}px` }}
+    />
   );
 }

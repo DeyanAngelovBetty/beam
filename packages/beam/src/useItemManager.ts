@@ -128,6 +128,54 @@ function mergeVisibility(items: ManagerItem[], persisted: Persisted | null): Rec
 const applyUpdater = <T>(updater: T | ((o: T) => T), old: T): T =>
   typeof updater === 'function' ? (updater as (o: T) => T)(old) : updater;
 
+/**
+ * bindItemManager — the glue from `ItemManagerState` to a `BeamItemManager`'s props (items + toggle/move/
+ * reorder/reset). Generic (the Table does the same derivation inline today). `entries` give labels + the
+ * declared fallback order. Enforces min-one-visible in the toggle (the UI also disables the last checkbox).
+ */
+export function bindItemManager(
+  state: ItemManagerState,
+  entries: { id: string; label: string }[]
+): {
+  items: { id: string; label: string; visible: boolean }[];
+  onToggle: (id: string) => void;
+  onMove: (id: string, dir: 'up' | 'down') => void;
+  onReorder: (id: string, toIndex: number) => void;
+  onReset: () => void;
+} {
+  const declaredIds = entries.map((e) => e.id);
+  const labelFor = (id: string) => entries.find((e) => e.id === id)?.label ?? id;
+  const ordered = state.order.length ? state.order : declaredIds;
+  const items = ordered
+    .filter((id) => declaredIds.includes(id))
+    .map((id) => ({ id, label: labelFor(id), visible: state.visibility[id] !== false }));
+  const visibleCount = items.filter((i) => i.visible).length;
+  const onToggle = (id: string) =>
+    state.onVisibilityChange((old) => {
+      const nowVisible = old[id] !== false;
+      if (nowVisible && visibleCount <= 1) return old; // keep at least one visible
+      return { ...old, [id]: !nowVisible };
+    });
+  const onMove = (id: string, dir: 'up' | 'down') =>
+    state.onOrderChange((old) => {
+      const base = old.length ? [...old] : declaredIds.slice();
+      const i = base.indexOf(id);
+      const j = dir === 'up' ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= base.length) return old;
+      [base[i], base[j]] = [base[j], base[i]];
+      return base;
+    });
+  const onReorder = (id: string, toIndex: number) =>
+    state.onOrderChange((old) => {
+      const base = old.length ? [...old] : declaredIds.slice();
+      const from = base.indexOf(id);
+      if (from < 0 || toIndex < 0 || toIndex >= base.length || toIndex === from) return old;
+      base.splice(toIndex, 0, base.splice(from, 1)[0]);
+      return base;
+    });
+  return { items, onToggle, onMove, onReorder, onReset: state.reset };
+}
+
 export function useItemManager(items: ManagerItem[], config?: ItemManagerConfig): ItemManagerState {
   const enabled = Boolean(config);
   const storageKey = config?.storageKey ?? '';
