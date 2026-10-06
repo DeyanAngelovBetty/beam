@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { WIDGETS, WidgetShell } from '../bench/widgets/registry';
+import { Section } from '@betty/beam';
+import { WIDGETS } from '../bench/widgets/registry';
 import type { WidgetSize } from './DashboardGrid';
 
 /** The operator dashboard's widget — id (into the registry) · label (manager) · named size (grid). */
@@ -25,9 +26,16 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   { id: 'nextgem', label: 'Next settlement', size: 'standard' },
 ];
 
-/** Render a widget's content in its shell (the product lit-rim treatment, as the page shipped). */
+/**
+ * Render a widget's content in its SHELL. A widget IS a Section now (BEAM.md §6.3a) — the title band is the
+ * widget title, the Section border (field-driven/isEdit) is the only frame, and nothing more: the product
+ * gradient rim is gone (WidgetShell survives for the bench only). The Transactions table is a `<Section bleed>`
+ * so the datagrid runs to the surface edges; the Table organism owns the 44px header, the no-static-separator
+ * convention (edge separators are its own overflow affordance), and the internal horizontal scroll (its scroll
+ * wrapper), so a narrow track scrolls the table, not the page.
+ */
 export const dashboardWidgetNode = (w: DashboardWidget): ReactNode => (
-  <WidgetShell title={w.label} gradientBorder>
+  <Section title={w.label} bleed={w.id === 'table'}>
     {WIDGETS[w.id as keyof typeof WIDGETS].node}
-  </WidgetShell>
+  </Section>
 );
