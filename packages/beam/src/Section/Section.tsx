@@ -41,8 +41,20 @@ import type { SectionProps } from './Section.types';
 //    expandable row's border follows its expansion (gone while collapsed, restored while expanded).
 const T = '& > .beam-section-bleed > table';
 const bodyCell = `${T} > tbody > tr:not(.beam-detail-row) > .MuiTableCell-root`;
+// 8. ORGANISM FRAME SUPPRESSION (2026-10-06) — the `Table` ORGANISM roots in its own `<Paper variant=
+//    "outlined">` (border + 24px radius + overflow:hidden); inside a bleed Section that reads as a redundant
+//    rounded card ~1px in from the Section edge (the double frame). A DIRECT-CHILD organism Paper drops its
+//    border + radius here, so the Section's OWN edge is the only frame and the Section's `overflow:hidden` +
+//    radius clip the organism's now-square corners (verify: header band top corners, last-row hover wash
+//    bottom corners — §6.12). Scoped to the direct child only (bleed is first-level), so a nested
+//    `.beam-detail-row` card Paper is untouched, and raw `> table` embeds (detail pages) never match this
+//    `.MuiPaper-root` selector. UPSTREAM CANDIDATE: official composes the same two Papers (its Table root is
+//    an outlined Paper too, its Section has no bleed), so `Section + Table` double-frames there as well —
+//    pitch a frameless-embed path. (beam-alignment §4; like the row-wash fix.)
+const orgPaper = '& > .beam-section-bleed > .MuiPaper-root';
 const embeddedTableContractSx = {
   [T]: { width: '100%' },
+  [orgPaper]: { border: 'none', borderRadius: 0 },
   // Header row (both modes) — chrome band at 44. No vertical column separators (rule 6).
   [`${T} > thead > tr > .MuiTableCell-root`]: { height: FIELD_TWIN_HEIGHT, py: 0, px: 1 },
   [`${T} > thead > tr > .MuiTableCell-root:first-of-type`]: { pl: 2 },
