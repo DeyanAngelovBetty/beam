@@ -50,12 +50,16 @@ const REFRACT_ATTR = 'data-beam-refract';
  */
 export function supportsBackdropRefraction(): boolean {
   if (typeof CSS === 'undefined' || !CSS.supports || typeof navigator === 'undefined') return false;
-  const syntaxOk =
-    CSS.supports('backdrop-filter', 'url(#x) blur(1px)') ||
-    CSS.supports('-webkit-backdrop-filter', 'url(#x) blur(1px)');
+  // Gate on BASE backdrop-filter support (reliable) + a Chromium UA hint. We deliberately do NOT test
+  // `CSS.supports('backdrop-filter','url(#x) …')`: CSS.supports checks SYNTAX, not render, and Chromium
+  // reports that url()-in-backdrop-filter form as UNSUPPORTED even though it RENDERS it — a false negative that
+  // left data-beam-refract="off" in Chrome, disabling the dial and the rule (the "nothing visible" bug). The
+  // SVG url() render is Chromium-only, so the UA hint is the gate; it errs toward the plain-blur fallback.
+  const backdropOk =
+    CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)');
   const ua = navigator.userAgent;
   const isChromium = /Chrome|Chromium|Edg/.test(ua) && !/Firefox|FxiOS/.test(ua);
-  return syntaxOk && isChromium;
+  return backdropOk && isChromium;
 }
 
 /**
