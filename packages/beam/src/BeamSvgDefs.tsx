@@ -17,6 +17,11 @@ import { useState, useEffect } from 'react';
  */
 export const BEAM_GLASS_FILTER_ID = 'beam-nav-glass-noise';
 export const BEAM_GLASS_DISPLACEMENT_DEFAULT = 12;
+// A SECOND, independent instance of the same noise recipe for the just-glass BOX refraction. Separate id so
+// the box and the fringe each own their own `feDisplacementMap` scale — the two Lab displacement dials never
+// touch each other (2026-10-06). Both filters live in the one idempotent BeamSvgDefs.
+export const BEAM_BOX_GLASS_FILTER_ID = 'beam-box-glass-noise';
+export const BEAM_BOX_GLASS_DISPLACEMENT_DEFAULT = 40;
 
 let claimed = false;
 
@@ -43,6 +48,12 @@ export function BeamSvgDefs() {
           <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves={2} seed={7} result="noise" />
           <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
           <feDisplacementMap in="SourceGraphic" in2="blurred" scale={BEAM_GLASS_DISPLACEMENT_DEFAULT} xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        {/* Same recipe, independent instance — the just-glass BOX refraction (its own tunable `scale`). */}
+        <filter id={BEAM_BOX_GLASS_FILTER_ID} x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves={2} seed={7} result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+          <feDisplacementMap in="SourceGraphic" in2="blurred" scale={BEAM_BOX_GLASS_DISPLACEMENT_DEFAULT} xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </defs>
     </svg>

@@ -40,12 +40,41 @@ export function applyChromeTreatment(treatment: ChromeTreatment): void {
   }
 }
 
+const REFRACT_ATTR = 'data-beam-refract';
+
+/**
+ * Best-effort: does this browser RENDER an SVG `url(#…)` filter inside `backdrop-filter`? It's a Chromium
+ * feature (the BO is Chrome-first; §Conventions). `CSS.supports` can't tell rendering from syntax (url() parses
+ * everywhere), so pair the syntax check with a Chromium UA hint. Errs toward the plain-blur fallback — a false
+ * negative only drops the refraction, which is pure progressive enhancement.
+ */
+export function supportsBackdropRefraction(): boolean {
+  if (typeof CSS === 'undefined' || !CSS.supports || typeof navigator === 'undefined') return false;
+  const syntaxOk =
+    CSS.supports('backdrop-filter', 'url(#x) blur(1px)') ||
+    CSS.supports('-webkit-backdrop-filter', 'url(#x) blur(1px)');
+  const ua = navigator.userAgent;
+  const isChromium = /Chrome|Chromium|Edg/.test(ua) && !/Firefox|FxiOS/.test(ua);
+  return syntaxOk && isChromium;
+}
+
+/**
+ * Stamp `data-beam-refract=on|off` on <html> so chromeSurface chains the just-glass refraction ONLY where it
+ * renders (elsewhere the box falls back to plain blur). Idempotent — called by bootChromeTreatment (apps) and
+ * by the Theme Lab on mount (Storybook / while tuning).
+ */
+export function applyRefractionSupport(): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.setAttribute(REFRACT_ATTR, supportsBackdropRefraction() ? 'on' : 'off');
+}
+
 /**
  * Apply the persisted treatment to <html> SYNCHRONOUSLY. Call from the app entry module BEFORE
  * `createRoot().render` so the attribute (and thus the reach geometry) is right on the first paint — no flash,
- * no layout jump. Reads localStorage only; it does not write.
+ * no layout jump. Reads localStorage only; it does not write. Also stamps the refraction-support attribute.
  */
 export function bootChromeTreatment(): void {
   if (typeof document === 'undefined') return;
   document.documentElement.setAttribute(ATTR, readChromeTreatment());
+  applyRefractionSupport();
 }

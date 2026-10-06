@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 import { CHROME_PLATTER_OFFSET } from './tokens';
+import { BEAM_BOX_GLASS_FILTER_ID } from '../BeamSvgDefs';
 
 /**
  * beamPlatter — the decorative layer SERVED BEHIND a box (the "platter"). A single absolutely-positioned
@@ -206,6 +207,14 @@ export function chromeSurface(): SxProps<Theme> {
       '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))': {
         background: 'var(--mui-palette-background-paper)',
       },
+    },
+    // Refraction (the "liquid" displacement) — chained ONLY where it renders (Chromium; data-beam-refract=on,
+    // stamped by applyRefractionSupport). The SVG filter's feDisplacementMap `scale` is poked per mode by the
+    // Lab. Elsewhere this rule never matches, so the box keeps the plain-blur fallback above. More specific
+    // (two ancestor attrs) than the base rule, so it wins when present.
+    '[data-beam-chrome="just-glass"][data-beam-refract="on"] &': {
+      backdropFilter: `blur(var(--beam-chrome-box-blur, 16px)) saturate(var(--beam-chrome-box-saturate, 1.2)) url(#${BEAM_BOX_GLASS_FILTER_ID})`,
+      WebkitBackdropFilter: `blur(var(--beam-chrome-box-blur, 16px)) saturate(var(--beam-chrome-box-saturate, 1.2)) url(#${BEAM_BOX_GLASS_FILTER_ID})`,
     },
   };
 }

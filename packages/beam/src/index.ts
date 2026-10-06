@@ -27,7 +27,7 @@ export { STAR_PATH, starMaskUri } from './theme/starGeometry';
 // Brand wordmark logos — envelope geometry + the mask-sizing helper (colour stays app-owned).
 export { brandLogos, brandLogoMaskSx, logoGradient, LOGO_ENVELOPE_ASPECT, LOGO_WORDMARK_FRACTION, type BrandLogoName } from './theme/brandLogos';
 export { beamPlatter, chromePlatterLayers, chromeSurface } from './theme/platter';
-export { bootChromeTreatment, applyChromeTreatment, readChromeTreatment, CHROME_TREATMENTS, DEFAULT_CHROME_TREATMENT, type ChromeTreatment } from './theme/chromeTreatment';
+export { bootChromeTreatment, applyChromeTreatment, readChromeTreatment, applyRefractionSupport, supportsBackdropRefraction, CHROME_TREATMENTS, DEFAULT_CHROME_TREATMENT, type ChromeTreatment } from './theme/chromeTreatment';
 export { usePointerAngleTracking } from './theme/usePointerAngleTracking';
 export { meta } from './theme/textStyles';
 export { products, derived, roleRamp, roleColor, gradientSeeds } from './theme/tokens';
@@ -108,7 +108,7 @@ export type { Theme } from '@mui/material/styles';
 
 // ---- Organisms (Beam-owned) ----
 export { AppShell } from './AppShell/AppShell';
-export { BeamSvgDefs, BEAM_GLASS_FILTER_ID, BEAM_GLASS_DISPLACEMENT_DEFAULT } from './BeamSvgDefs';
+export { BeamSvgDefs, BEAM_GLASS_FILTER_ID, BEAM_GLASS_DISPLACEMENT_DEFAULT, BEAM_BOX_GLASS_FILTER_ID, BEAM_BOX_GLASS_DISPLACEMENT_DEFAULT } from './BeamSvgDefs';
 export { BeamChrome, type BeamChromeProps } from './BeamChrome';
 // Generic show/hide + reorder + localStorage manager — the backbone behind Table's column manager, shared
 // with the dashboard widget manager (2026-10-06).

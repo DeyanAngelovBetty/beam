@@ -19,11 +19,15 @@ import {
   BeamChrome,
   applyChromeTreatment,
   readChromeTreatment,
+  applyRefractionSupport,
+  supportsBackdropRefraction,
   DEFAULT_CHROME_TREATMENT,
   type ChromeTreatment,
   BeamSvgDefs,
   BEAM_GLASS_FILTER_ID,
   BEAM_GLASS_DISPLACEMENT_DEFAULT,
+  BEAM_BOX_GLASS_FILTER_ID,
+  BEAM_BOX_GLASS_DISPLACEMENT_DEFAULT,
   GASPAR_BODY_FACE_LABEL,
   GASPAR_BODY_WGHT,
   BODY_WGHT_VAR,
@@ -258,12 +262,21 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   // just-glass box-EDGE strength % per scheme (local, like displacement — a colour var can't be parsed back).
   // Seeds mirror createBeamTheme's just-glass defaults (light edge stronger — it vanishes on the light page).
   const [boxEdge, setBoxEdge] = useState<Record<Scheme, number>>({ dark: 12, light: 20 });
-  const pokeDisplacement = (n: number) => {
-    document.querySelector(`#${BEAM_GLASS_FILTER_ID} feDisplacementMap`)?.setAttribute('scale', String(n));
+  // just-glass REFRACTION displacement per scheme — pokes the just-glass box's OWN SVG filter instance
+  // (separate id from the fringe's), so the two displacement dials are fully independent. Wider range than the
+  // fringe so it can reach "obviously liquid".
+  const [boxDisplacement, setBoxDisplacement] = useState<Record<Scheme, number>>({
+    dark: BEAM_BOX_GLASS_DISPLACEMENT_DEFAULT,
+    light: BEAM_BOX_GLASS_DISPLACEMENT_DEFAULT,
+  });
+  const refractionOk = supportsBackdropRefraction();
+  useEffect(() => { applyRefractionSupport(); }, []); // stamp data-beam-refract (covers Storybook; the app boot also does)
+  const pokeScale = (filterId: string, n: number) => {
+    document.querySelector(`#${filterId} feDisplacementMap`)?.setAttribute('scale', String(n));
   };
-  useEffect(() => {
-    pokeDisplacement(displacement[editing]); // re-poke the shared filter for whichever scheme is being edited
-  }, [editing, displacement]);
+  // Each filter tracks ITS OWN scheme displacement, independent of the other (separate SVG instances).
+  useEffect(() => { pokeScale(BEAM_GLASS_FILTER_ID, displacement[editing]); }, [editing, displacement]);
+  useEffect(() => { pokeScale(BEAM_BOX_GLASS_FILTER_ID, boxDisplacement[editing]); }, [editing, boxDisplacement]);
   // Current per-scheme reads (re-run each render; `tick` forces it after a write).
   // Glass-FRINGE dials (platter.glass) — per scheme. (glass-on/gradient-on are no longer written here; the
   // treatment attribute preset owns the fill now.)
@@ -273,7 +286,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const setPlatterOffset = (n: number) => { setVar(editing, '--beam-chrome-offset', `${n}px`); bump(); };
   const setPlatterBlur = (n: number) => { setVar(editing, '--beam-chrome-blur', `${n}px`); bump(); };
   const setPlatterTint = (n: number) => { setVar(editing, '--beam-chrome-tint', `${n}%`); bump(); };
-  const setPlatterDisplacement = (n: number) => { setDisplacement((d) => ({ ...d, [editing]: n })); pokeDisplacement(n); };
+  const setPlatterDisplacement = (n: number) => { setDisplacement((d) => ({ ...d, [editing]: n })); pokeScale(BEAM_GLASS_FILTER_ID, n); };
   // just-glass BOX dials — per scheme (the box itself is the glass; no fringe). blur/tint/saturate read back
   // from the vars; EDGE is a colour (can't be parsed back), so its strength % lives in local state like
   // displacement, and writes a text-primary color-mix (mode-aware: a light line on dark, a dark line on light).
@@ -288,6 +301,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
     setVar(editing, '--beam-chrome-box-edge', `color-mix(in oklab, var(--mui-palette-text-primary) ${n}%, transparent)`);
     bump();
   };
+  const setBoxDisplacementFor = (n: number) => { setBoxDisplacement((d) => ({ ...d, [editing]: n })); pokeScale(BEAM_BOX_GLASS_FILTER_ID, n); };
   // GRADIENT group — border intensity. A SHARED foundation var (`--beam-border-intensity`): every gradient
   // platter (chrome nav gradient, dashboard, landing, rule nodes) mixes its stops `color-mix(primary|hue-b
   // <intensity>, surface)`, so this dial re-derives ALL gradient borders live — the stop colours stay derived,
@@ -655,6 +669,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
         tint: readVarForScheme(s, '--beam-chrome-box-tint') || (s === 'light' ? '84%' : '72%'),
         saturate: parseFloat(readVarForScheme(s, '--beam-chrome-box-saturate')) || (s === 'light' ? 0.7 : 1.2),
         edge: `${boxEdge[s]}%`, // edge strength (local state) → text-primary color-mix in code
+        displacement: boxDisplacement[s], // SVG refraction scale (local state; Chromium-only at runtime)
       },
     });
     // Border — its OWN top-level block (NOT under `chrome`): the gradient-border recipe is the shared
@@ -1194,6 +1209,13 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                   <Slider size="small" value={boxSaturate} min={0} max={2} step={0.05} aria-label="Just-glass box saturation" onChange={(_, v) => setBoxSaturate(v as number)} />
                   <Typography variant="caption" color="text.secondary">Edge · {boxEdge[editing]}% — stronger on light (it vanishes otherwise)</Typography>
                   <Slider size="small" value={boxEdge[editing]} min={0} max={60} step={1} aria-label="Just-glass box edge" onChange={(_, v) => setBoxEdgeFor(v as number)} />
+                  <Typography variant="caption" color="text.secondary">Displacement · {boxDisplacement[editing]} — SVG refraction (0 flat → liquid)</Typography>
+                  <Slider size="small" value={boxDisplacement[editing]} min={0} max={120} step={1} disabled={!refractionOk} aria-label="Just-glass box displacement" onChange={(_, v) => setBoxDisplacementFor(v as number)} />
+                  {!refractionOk && (
+                    <Typography variant="caption" sx={{ color: 'warning.main', display: 'block' }}>
+                      ⚠ Refraction is Chromium-only — this browser falls back to plain blur (blur/tint/saturation still apply).
+                    </Typography>
+                  )}
                 </Box>
               )}
 
