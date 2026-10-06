@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   Stack,
   Divider,
@@ -7,18 +6,13 @@ import {
   Select,
   MenuItem,
   IconButton,
-  Tooltip,
   useColorScheme,
   products,
-  CHROME_TREATMENTS,
-  applyChromeTreatment,
-  readChromeTreatment,
 } from '@betty/beam';
 import type { BrandName } from '@betty/beam';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
-import ContrastIcon from '@mui/icons-material/Contrast';
 import { MilestoneSwitcher } from './MilestoneSwitcher';
 
 const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -30,30 +24,6 @@ function ModeToggle() {
     <IconButton onClick={() => setMode(next)} aria-label={`Switch to ${next} mode`} color="inherit">
       {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
     </IconButton>
-  );
-}
-
-// TEMPORARY dev switch (2026-10-06) — cycles the chrome treatment so it can be eyeballed in the running app
-// until the Theme Lab three-way control replaces it (the remaining 1b step). It now PERSISTS via
-// applyChromeTreatment (localStorage) and INITIALISES from the persisted value, so the treatment survives nav
-// remounts / reload / route changes instead of the switch owning transient state (gate-1a bug, fixed).
-function ChromeDevSwitch() {
-  const [i, setI] = useState(() => Math.max(0, CHROME_TREATMENTS.indexOf(readChromeTreatment())));
-  useEffect(() => {
-    applyChromeTreatment(CHROME_TREATMENTS[i]);
-  }, [i]);
-  const current = CHROME_TREATMENTS[i];
-  const next = CHROME_TREATMENTS[(i + 1) % CHROME_TREATMENTS.length];
-  return (
-    <Tooltip title={`Chrome: ${current} — click for ${next} (dev)`}>
-      <IconButton
-        onClick={() => setI((n) => (n + 1) % CHROME_TREATMENTS.length)}
-        aria-label={`Chrome treatment ${current}; switch to ${next}`}
-        color="inherit"
-      >
-        <ContrastIcon />
-      </IconButton>
-    </Tooltip>
   );
 }
 
@@ -103,7 +73,6 @@ export function ShellFooter({
             <PaletteOutlinedIcon />
           </IconButton>
         )}
-        {import.meta.env.DEV && <ChromeDevSwitch />}
         <ModeToggle />
       </Stack>
     </Stack>

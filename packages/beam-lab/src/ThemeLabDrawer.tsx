@@ -17,6 +17,10 @@ import {
   starMaskUri,
   logoGradient,
   BeamChrome,
+  applyChromeTreatment,
+  readChromeTreatment,
+  DEFAULT_CHROME_TREATMENT,
+  type ChromeTreatment,
   BeamSvgDefs,
   BEAM_GLASS_FILTER_ID,
   BEAM_GLASS_DISPLACEMENT_DEFAULT,
@@ -223,7 +227,11 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const [comboName, setComboName] = useState('');
   // Top tabs (Colors | Chrome) + the Chrome sub-tabs (Glass | Gradient). Stage-1 scaffold (2026-10-05).
   const [tab, setTab] = useState<'colors' | 'chrome'>('colors');
-  const [chromeTab, setChromeTab] = useState<'glass' | 'gradient'>('glass');
+  // The chrome TREATMENT (viewing preference, mode-independent) — applied live via applyChromeTreatment
+  // (persisted + the before-first-paint boot reads it). This is the ONE fill control now; the old per-scheme
+  // Glass/Gradient sub-tabs folded into it. The React mirror re-renders the drawer (which dials show).
+  const [treatment, setTreatmentState] = useState<ChromeTreatment>(() => readChromeTreatment());
+  const setTreatment = (t: ChromeTreatment) => { applyChromeTreatment(t); setTreatmentState(t); };
   const bump = () => setTick((t) => t + 1);
 
   // ── Platter dimension (nav fill + glass dials; 2026-10-02) ──────────────────────────────────────
@@ -236,6 +244,9 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
     dark: BEAM_GLASS_DISPLACEMENT_DEFAULT,
     light: BEAM_GLASS_DISPLACEMENT_DEFAULT,
   });
+  // just-glass box-EDGE strength % per scheme (local, like displacement — a colour var can't be parsed back).
+  // Seeds mirror createBeamTheme's just-glass defaults (light edge stronger — it vanishes on the light page).
+  const [boxEdge, setBoxEdge] = useState<Record<Scheme, number>>({ dark: 12, light: 20 });
   const pokeDisplacement = (n: number) => {
     document.querySelector(`#${BEAM_GLASS_FILTER_ID} feDisplacementMap`)?.setAttribute('scale', String(n));
   };
@@ -243,20 +254,29 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
     pokeDisplacement(displacement[editing]); // re-poke the shared filter for whichever scheme is being edited
   }, [editing, displacement]);
   // Current per-scheme reads (re-run each render; `tick` forces it after a write).
-  const platterFill: 'glass' | 'gradient' =
-    readVarForScheme(editing, '--beam-chrome-glass-on') === 'none' ? 'gradient' : 'glass';
+  // Glass-FRINGE dials (platter.glass) — per scheme. (glass-on/gradient-on are no longer written here; the
+  // treatment attribute preset owns the fill now.)
   const platterOffset = parseFloat(readVarForScheme(editing, '--beam-chrome-offset')) || 12;
   const platterBlur = parseFloat(readVarForScheme(editing, '--beam-chrome-blur')) || (editing === 'light' ? 4 : 18);
   const platterTint = parseFloat(readVarForScheme(editing, '--beam-chrome-tint')) || (editing === 'light' ? 12 : 15);
-  const setPlatterFill = (fill: 'glass' | 'gradient') => {
-    setVar(editing, '--beam-chrome-glass-on', fill === 'glass' ? 'block' : 'none');
-    setVar(editing, '--beam-chrome-gradient-on', fill === 'glass' ? 'none' : 'block');
-    bump();
-  };
   const setPlatterOffset = (n: number) => { setVar(editing, '--beam-chrome-offset', `${n}px`); bump(); };
   const setPlatterBlur = (n: number) => { setVar(editing, '--beam-chrome-blur', `${n}px`); bump(); };
   const setPlatterTint = (n: number) => { setVar(editing, '--beam-chrome-tint', `${n}%`); bump(); };
   const setPlatterDisplacement = (n: number) => { setDisplacement((d) => ({ ...d, [editing]: n })); pokeDisplacement(n); };
+  // just-glass BOX dials — per scheme (the box itself is the glass; no fringe). blur/tint/saturate read back
+  // from the vars; EDGE is a colour (can't be parsed back), so its strength % lives in local state like
+  // displacement, and writes a text-primary color-mix (mode-aware: a light line on dark, a dark line on light).
+  const boxBlur = parseFloat(readVarForScheme(editing, '--beam-chrome-box-blur')) || (editing === 'light' ? 14 : 16);
+  const boxTint = parseFloat(readVarForScheme(editing, '--beam-chrome-box-tint')) || (editing === 'light' ? 84 : 72);
+  const boxSaturate = parseFloat(readVarForScheme(editing, '--beam-chrome-box-saturate')) || (editing === 'light' ? 0.7 : 1.2);
+  const setBoxBlur = (n: number) => { setVar(editing, '--beam-chrome-box-blur', `${n}px`); bump(); };
+  const setBoxTint = (n: number) => { setVar(editing, '--beam-chrome-box-tint', `${n}%`); bump(); };
+  const setBoxSaturate = (n: number) => { setVar(editing, '--beam-chrome-box-saturate', String(n)); bump(); };
+  const setBoxEdgeFor = (n: number) => {
+    setBoxEdge((e) => ({ ...e, [editing]: n }));
+    setVar(editing, '--beam-chrome-box-edge', `color-mix(in oklab, var(--mui-palette-text-primary) ${n}%, transparent)`);
+    bump();
+  };
   // GRADIENT group — border intensity. A SHARED foundation var (`--beam-border-intensity`): every gradient
   // platter (chrome nav gradient, dashboard, landing, rule nodes) mixes its stops `color-mix(primary|hue-b
   // <intensity>, surface)`, so this dial re-derives ALL gradient borders live — the stop colours stay derived,
@@ -286,10 +306,8 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   const resolvedStop = (seedKey: SeedKey, amount: number) =>
     resolveForScheme(editing, `color-mix(in oklab, ${SEED_VARS[seedKey]} ${amount}%, ${SEAM_SURFACE})`);
 
-  // Open the Chrome sub-tab on the ACTIVE fill once (mount). After that the tab is a VIEW you drive manually:
-  // viewing a fill ≠ shipping it, so you can tune Gradient while Glass ships (the ● marks what ships; a
-  // "Ship this fill" button sets it). No auto-jumps on fill/scheme change.
-  useEffect(() => { setChromeTab(platterFill); /* eslint-disable-next-line */ }, []);
+  // The treatment initialises from the persisted value (readChromeTreatment) and is applied live on change —
+  // no mount sub-tab sync needed (the old Glass/Gradient view/ship split is gone).
 
   // ── Candidate presets (variant registry, lab-internal) ──────────────────────────────────────────
   // A preset LOADS a variant's seed bundle into the drawer's live editing state, so every knob + Copy
@@ -613,12 +631,20 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
     if (Object.keys(logoLight).length) logo.light = logoLight;
     // Chrome (2026-10-02): CHROME-LEVEL dials — fill/offset/blur/tint per scheme from the live --beam-chrome-*
     // vars; displacement from Lab state. These move every chrome consumer (nav + BeamChrome), not just the nav.
+    // Per-scheme chrome dials. The FRINGE dials (offset/blur/tint/displacement) tune platter-glass; the BOX
+    // dials (box*) tune just-glass. Fill is no longer per-scheme — it's the top-level `treatment` (a viewing
+    // preference). Reach is NOT exported (derived from treatment × offset).
     const chromeOf = (s: Scheme) => ({
-      fill: readVarForScheme(s, '--beam-chrome-glass-on') === 'none' ? 'gradient' : 'glass',
       offset: parseFloat(readVarForScheme(s, '--beam-chrome-offset')) || 12,
       blur: parseFloat(readVarForScheme(s, '--beam-chrome-blur')) || (s === 'light' ? 4 : 18),
       tint: readVarForScheme(s, '--beam-chrome-tint') || (s === 'light' ? '12%' : '15%'),
       displacement: displacement[s],
+      box: {
+        blur: parseFloat(readVarForScheme(s, '--beam-chrome-box-blur')) || (s === 'light' ? 14 : 16),
+        tint: readVarForScheme(s, '--beam-chrome-box-tint') || (s === 'light' ? '84%' : '72%'),
+        saturate: parseFloat(readVarForScheme(s, '--beam-chrome-box-saturate')) || (s === 'light' ? 0.7 : 1.2),
+        edge: `${boxEdge[s]}%`, // edge strength (local state) → text-primary color-mix in code
+      },
     });
     // Border — its OWN top-level block (NOT under `chrome`): the gradient-border recipe is the shared
     // foundation behind EVERY gradient border (chrome + dashboard + landing + rule nodes). SHAPE (seeds /
@@ -632,8 +658,11 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       intensity: { dark: readVarForScheme('dark', '--beam-border-intensity'), light: readVarForScheme('light', '--beam-border-intensity') },
     };
     const combo = {
-      version: 4, // v4: adds the `chrome` block (fill + glass dials) + the `border` block (gradient recipe)
+      version: 5, // v5: `treatment` (the three-way fill, replacing per-scheme chrome.fill) + per-mode chrome.box dials
       name: slug(comboName || 'untitled-combo'),
+      // Chrome TREATMENT — the viewing preference (mode-independent), one of platter-gradient/platter-glass/
+      // just-glass. Replaces the old per-scheme chrome.fill. Reach is derived (not exported).
+      treatment,
       // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
       // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
       // author field — the Lab has no identity; the git commit that lands the combo carries it.
@@ -654,8 +683,9 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       },
       // logo present ONLY when a stop is overridden (sparse); absent = fully derived.
       ...(logo.dark || logo.light ? { logo } : {}),
-      // Chrome — fill + glass dials per scheme, for ALL chrome consumers (nav + BeamChrome). displacement is one
-      // filter today; a dark≠light value is the signal to split it into two filters in code.
+      // Chrome — per-scheme dials for ALL chrome consumers (nav + BeamChrome): the platter-glass FRINGE
+      // (offset/blur/tint/displacement) + the just-glass BOX (box.*). The fill itself is the top-level
+      // `treatment`. displacement is one shared filter today; a dark≠light value signals a code split later.
       chrome: { dark: chromeOf('dark'), light: chromeOf('light') },
       // Border — the gradient-border recipe (shape mode-invariant + intensity per scheme); estate-wide.
       border,
@@ -1098,35 +1128,49 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
             </Stack>
           )}
 
-          {/* CHROME tab — the platter. ONE fill control: the sub-tabs VIEW/edit a fill; the ● tab is the one
-              that SHIPS (the active fill). "Ship this fill" sets active — so you can tune Gradient while Glass
-              ships. Offset is fill-agnostic (above the tabs). All drive live --beam-chrome-* / --beam-border-*
-              vars; the drawer restyles as you drag (it's a chrome consumer). */}
+          {/* CHROME tab — the platter. ONE control: the three-way TREATMENT (platter-gradient · platter-glass ·
+              just-glass), a VIEWING PREFERENCE applied live + persisted (the old Glass/Gradient sub-tabs folded
+              into it). ● marks the shipped DEFAULT. Each treatment reveals its own dials; all drive live
+              --beam-chrome-* / --beam-border-* vars and the drawer restyles as you drag (it's a chrome consumer). */}
           {tab === 'chrome' && (
             <Stack spacing={2}>
               <Typography variant="caption" color="text.secondary">
-                Drives ALL chrome at once — the nav, this Lab drawer, future dialogs/popovers ({editing}). The ●
-                tab is what ships; the tab you view is what you edit.
+                Drives ALL chrome at once — the nav, this Lab drawer, future dialogs/popovers. Applied live +
+                persisted (survives reload); ● marks the shipped default. Dials edit {editing}.
               </Typography>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Offset · {platterOffset}px — moves the content gutter live</Typography>
-                <Slider size="small" value={platterOffset} min={0} max={24} step={1} aria-label="Chrome platter offset" onChange={(_, v) => setPlatterOffset(v as number)} />
-              </Box>
-              {/* Tabs = view/edit; ● marks the shipping fill */}
-              <Tabs value={chromeTab} onChange={(_, v) => setChromeTab(v as 'glass' | 'gradient')} variant="fullWidth" sx={{ minHeight: 0 }}>
-                <Tab value="glass" label={platterFill === 'glass' ? 'Glass ●' : 'Glass'} sx={{ minHeight: 36, fontWeight: platterFill === 'glass' ? 700 : 400 }} />
-                <Tab value="gradient" label={platterFill === 'gradient' ? 'Gradient ●' : 'Gradient'} sx={{ minHeight: 36, fontWeight: platterFill === 'gradient' ? 700 : 400 }} />
+              {/* THREE-WAY treatment — the one fill control. Writes via applyChromeTreatment (persisted; the
+                  before-first-paint boot reads it). */}
+              <Tabs value={treatment} onChange={(_, v) => setTreatment(v as ChromeTreatment)} variant="fullWidth" sx={{ minHeight: 0 }}>
+                <Tab value="platter-gradient" label={DEFAULT_CHROME_TREATMENT === 'platter-gradient' ? 'Gradient ●' : 'Gradient'} sx={{ minHeight: 36 }} />
+                <Tab value="platter-glass" label={DEFAULT_CHROME_TREATMENT === 'platter-glass' ? 'Glass fringe ●' : 'Glass fringe'} sx={{ minHeight: 36 }} />
+                <Tab value="just-glass" label={DEFAULT_CHROME_TREATMENT === 'just-glass' ? 'Just-glass ●' : 'Just-glass'} sx={{ minHeight: 36 }} />
               </Tabs>
-              {/* Ship control — sets the active fill to the viewed tab (view ≠ ship) */}
-              {platterFill === chromeTab ? (
-                <Typography variant="caption" sx={{ color: 'success.main' }}>● Active — this fill ships.</Typography>
-              ) : (
-                <Button size="small" variant="outlined" onClick={() => setPlatterFill(chromeTab)} sx={{ alignSelf: 'flex-start' }}>
-                  Ship this fill ({chromeTab})
-                </Button>
+              {treatment !== DEFAULT_CHROME_TREATMENT && (
+                <Typography variant="caption" color="text.secondary">● {DEFAULT_CHROME_TREATMENT} is the shipped default — this is a live preview.</Typography>
+              )}
+              {/* Offset — platter treatments only (just-glass has no fringe); moves the content gutter live. */}
+              {treatment !== 'just-glass' && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Offset · {platterOffset}px — moves the content gutter live</Typography>
+                  <Slider size="small" value={platterOffset} min={0} max={24} step={1} aria-label="Chrome platter offset" onChange={(_, v) => setPlatterOffset(v as number)} />
+                </Box>
               )}
 
-              {chromeTab === 'glass' && (
+              {/* just-glass BOX dials — per mode (edit {editing}; switch the mode toolbar to tune the other). */}
+              {treatment === 'just-glass' && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Blur · {boxBlur}px</Typography>
+                  <Slider size="small" value={boxBlur} min={0} max={40} step={1} aria-label="Just-glass box blur" onChange={(_, v) => setBoxBlur(v as number)} />
+                  <Typography variant="caption" color="text.secondary">Tint · {boxTint}% (frost — 100% opaque)</Typography>
+                  <Slider size="small" value={boxTint} min={0} max={100} step={1} aria-label="Just-glass box tint" onChange={(_, v) => setBoxTint(v as number)} />
+                  <Typography variant="caption" color="text.secondary">Saturation · {boxSaturate} (≤1 neutralises coloured content)</Typography>
+                  <Slider size="small" value={boxSaturate} min={0} max={2} step={0.05} aria-label="Just-glass box saturation" onChange={(_, v) => setBoxSaturate(v as number)} />
+                  <Typography variant="caption" color="text.secondary">Edge · {boxEdge[editing]}% — stronger on light (it vanishes otherwise)</Typography>
+                  <Slider size="small" value={boxEdge[editing]} min={0} max={60} step={1} aria-label="Just-glass box edge" onChange={(_, v) => setBoxEdgeFor(v as number)} />
+                </Box>
+              )}
+
+              {treatment === 'platter-glass' && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">Blur · {platterBlur}px</Typography>
                   <Slider size="small" value={platterBlur} min={0} max={30} step={1} aria-label="Chrome glass blur" onChange={(_, v) => setPlatterBlur(v as number)} />
@@ -1136,7 +1180,7 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
                   <Slider size="small" value={displacement[editing]} min={0} max={60} step={1} aria-label="Chrome glass displacement" onChange={(_, v) => setPlatterDisplacement(v as number)} />
                 </Box>
               )}
-              {chromeTab === 'gradient' && (
+              {treatment === 'platter-gradient' && (
                 <Stack spacing={1}>
                   {/* 3 role-seeds — each reads one of primary / hue-b / hue-c / anchor (a var reference, never a
                       literal). Symmetric beacon: seam = 0/100%, flank = the 20/80% pair, calm = 50%. */}
