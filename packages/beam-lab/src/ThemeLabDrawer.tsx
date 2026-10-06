@@ -92,6 +92,12 @@ const GRADIENT_TARGETS: Target[] = ['hueB', 'hueC']; // share the mesh suggestio
 const LOGO_STOPS = [1, 2, 3, 4] as const; // the four logo gradient stop slots
 const logoStopVar = (n: number) => `--beam-logo-stop-${n}`;
 const LOGO_GRADIENT_CSS = logoGradient(); // the live 4-stop gradient (chip swatch + note)
+// ONE user-facing name per treatment — used in every label + helper line (never the internal id).
+const TREATMENT_LABEL: Record<ChromeTreatment, string> = {
+  'platter-gradient': 'Gradient',
+  'platter-glass': 'Glass fringe',
+  'just-glass': 'Just-glass',
+};
 const LOGO_STOP_DERIVED_NOTE = 'Following the logo recipe — edit this stop to override.';
 const PRIMARY_TOOLTIP =
   'Brand-axis seed (jurisdiction). Drafts here; export routes it to the brand collection, not product.';
@@ -232,6 +238,11 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
   // Glass/Gradient sub-tabs folded into it. The React mirror re-renders the drawer (which dials show).
   const [treatment, setTreatmentState] = useState<ChromeTreatment>(() => readChromeTreatment());
   const setTreatment = (t: ChromeTreatment) => { applyChromeTreatment(t); setTreatmentState(t); };
+  // The SHIPPED default is a DESIGN DECISION (not the per-viewer preference): which treatment the estate ships
+  // as its default. The ● follows it; "Make default" moves it; it exports as combo.shipped and syncs into code
+  // (DEFAULT_CHROME_TREATMENT) later. Starts at the current code default. Changing it does NOT change what's
+  // being viewed live (that's `treatment`).
+  const [shipped, setShipped] = useState<ChromeTreatment>(DEFAULT_CHROME_TREATMENT);
   const bump = () => setTick((t) => t + 1);
 
   // ── Platter dimension (nav fill + glass dials; 2026-10-02) ──────────────────────────────────────
@@ -658,10 +669,12 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
       intensity: { dark: readVarForScheme('dark', '--beam-border-intensity'), light: readVarForScheme('light', '--beam-border-intensity') },
     };
     const combo = {
-      version: 5, // v5: `treatment` (the three-way fill, replacing per-scheme chrome.fill) + per-mode chrome.box dials
+      version: 5, // v5: `shipped` (the design-decision default) + `treatment` (the live view) + per-mode chrome.box dials
       name: slug(comboName || 'untitled-combo'),
-      // Chrome TREATMENT — the viewing preference (mode-independent), one of platter-gradient/platter-glass/
-      // just-glass. Replaces the old per-scheme chrome.fill. Reach is derived (not exported).
+      // Chrome treatment — mode-independent, one of platter-gradient/platter-glass/just-glass. `shipped` is the
+      // DESIGN DECISION (the estate default; syncs into DEFAULT_CHROME_TREATMENT in code). `treatment` is the
+      // viewer's live preview at export time. Replaces the old per-scheme chrome.fill. Reach is derived (not exported).
+      shipped,
       treatment,
       // scope routes the seeds: surface/gradient → the PRODUCT collection at scope.product's
       // mode; brand.primary → the BRAND collection at scope.jurisdiction (never cross). No
@@ -1140,13 +1153,27 @@ function ThemeLabBody({ open, onClose, product, jurisdiction, typeScale, onTypeS
               </Typography>
               {/* THREE-WAY treatment — the one fill control. Writes via applyChromeTreatment (persisted; the
                   before-first-paint boot reads it). */}
-              <Tabs value={treatment} onChange={(_, v) => setTreatment(v as ChromeTreatment)} variant="fullWidth" sx={{ minHeight: 0 }}>
-                <Tab value="platter-gradient" label={DEFAULT_CHROME_TREATMENT === 'platter-gradient' ? 'Gradient ●' : 'Gradient'} sx={{ minHeight: 36 }} />
-                <Tab value="platter-glass" label={DEFAULT_CHROME_TREATMENT === 'platter-glass' ? 'Glass fringe ●' : 'Glass fringe'} sx={{ minHeight: 36 }} />
-                <Tab value="just-glass" label={DEFAULT_CHROME_TREATMENT === 'just-glass' ? 'Just-glass ●' : 'Just-glass'} sx={{ minHeight: 36 }} />
+              {/* Selecting a tab = VIEWING preference (live preview, persisted). ● marks the shipped DEFAULT
+                  (a design decision, moved by "Make default" below — never by switching tabs). Labels: no
+                  uppercase + nowrap so the three stay on one line at the drawer width. */}
+              <Tabs
+                value={treatment}
+                onChange={(_, v) => setTreatment(v as ChromeTreatment)}
+                variant="fullWidth"
+                sx={{ minHeight: 0, '& .MuiTab-root': { minWidth: 0, minHeight: 36, px: 0.75, fontSize: 12, textTransform: 'none', whiteSpace: 'nowrap' } }}
+              >
+                {(['platter-gradient', 'platter-glass', 'just-glass'] as const).map((t) => (
+                  <Tab key={t} value={t} label={`${shipped === t ? '● ' : ''}${TREATMENT_LABEL[t]}`} />
+                ))}
               </Tabs>
-              {treatment !== DEFAULT_CHROME_TREATMENT && (
-                <Typography variant="caption" color="text.secondary">● {DEFAULT_CHROME_TREATMENT} is the shipped default — this is a live preview.</Typography>
+              {/* Ship control — moves the ● to the SELECTED treatment (design decision → draft + export v5).
+                  Shown only when the selection isn't already the default; it does not change the live preview. */}
+              {treatment === shipped ? (
+                <Typography variant="caption" sx={{ color: 'success.main' }}>● {TREATMENT_LABEL[shipped]} ships as the default.</Typography>
+              ) : (
+                <Button size="small" variant="outlined" onClick={() => setShipped(treatment)} sx={{ alignSelf: 'flex-start' }}>
+                  Make {TREATMENT_LABEL[treatment]} the default
+                </Button>
               )}
               {/* Offset — platter treatments only (just-glass has no fringe); moves the content gutter live. */}
               {treatment !== 'just-glass' && (
