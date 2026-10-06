@@ -1,11 +1,18 @@
 import type { ReactNode } from 'react';
 
 /**
- * Section — the ONE sanctioned SECTION SURFACE on detail pages. An elevated Paper carrying an
+ * Section — the ONE sanctioned SECTION SURFACE. An elevated Paper carrying an
  * optional section title INSIDE it (headings never free-float above a surface) and the
  * EDITABILITY border (the shared `editabilityBorderSx`): borderless until the surface contains a
  * field, then a quiet divider frame. Because the border is per-surface and field-driven, a surface
  * whose content is view-only (e.g. a child-list summary) stays borderless even in edit mode.
+ *
+ * SCOPE (2026-10-06). Official Beam ships `Section` as a generic `Components/Section` — a titled,
+ * elevated region with no page-type scoping. Our earlier doc said "on detail pages"; that was a
+ * narrower scope WE imposed, not official's. So Section is the section surface wherever a page needs
+ * a bordered, headed region — detail pages AND the operator dashboard, where each widget IS a Section
+ * (its title band is the widget title; no decoration beyond Section's own — see dashboardWidgets.tsx).
+ * Using Section this broadly is PARITY with official, not a lane extension. (BEAM.md §6; beam-alignment §4.)
  */
 export interface SectionProps {
   /** Section heading, rendered INSIDE the surface at the top (headings never free-float). REQUIRED,

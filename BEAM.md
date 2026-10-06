@@ -191,6 +191,19 @@ API + implementation** (definitions + `useTableFilters`, old children API delete
      - **`Sunlight/` · `Gaspar/`** (top-level) — **product artifacts**: finished product-specific surfaces
        that aren't Beam organisms (Email, Rule Builder), distinct from `Lab/Sunlight`·`Lab/Gaspar` (which
        are experiments not yet graduated).
+3a. **`Section` is the general section surface — and the dashboard widget shell *(2026-10-06)*.** Official
+   Beam ships `Section` as a generic `Components/Section` (a titled, elevated region) with NO page-type
+   scoping; our earlier "on detail pages" wording was a tighter scope *we* imposed. So a dashboard widget IS
+   a `Section` — its title band is the widget title — and that broad use is **parity with official, not a lane
+   extension** (nothing to ledger in beam-alignment §4 as divergence; §4's dashboard entry is the *grid +
+   manager* lane, not the shell). Two consequences, both doctrine:
+   - **No decoration beyond Section's own.** Widgets drop the product gradient rim (the old `WidgetShell`
+     `gradientBorder`); the Section border (field-driven / `isEdit`) is the only frame. `WidgetShell` survives
+     for the **bench only** (`Lab/Bench/Dashboard`, the record), never on a shipped page.
+   - **Filters is page chrome, not a widget.** A filter strip is the page's control band, not a managed,
+     hideable widget: it lifts OUT of the managed list and pins above the grid, outside the manager. The
+     `useItemManager` merge must tolerate stored arrangements that still name a lifted id (`filter`) without
+     breaking — a removed-from-catalog id is dropped on merge, not rendered.
 4. **Statuses are semantic vocabulary, not colors.** `BeamStatusBadge` accepts
    `active | scheduled | draft | paused | expired | error`; extending the union is a
    vocabulary decision made deliberately, never a color pick. (Approval-flow states like
