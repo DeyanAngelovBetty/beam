@@ -2,12 +2,13 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from '@betty/beam';
 import { DashboardBench } from './DashboardBench';
 import { BenchDashboardStatic } from './BenchDashboardStatic';
-import { BenchDashboardDock } from './BenchDashboardDock';
 import { BenchDashboardDeclare } from './BenchDashboardDeclare';
 
 /**
- * Lab/Bench — head-to-head dashboard layout spike (Gaspar). Two implementations
- * of the same config + permission set. Not shipped; a decision aid.
+ * Lab/Bench — head-to-head dashboard layout spike (Gaspar). CSS-grid implementations
+ * of the same config + permission set. Not shipped; a decision aid. (Variant 2, a
+ * dockview DRAG workspace, was retired 2026-10-06 — Variant 1 won + graduated, and the
+ * dashboard-is-a-widget-manager-not-a-layout-engine thesis rules out drag.)
  * Toggle the toolbar globals (mode / product / jurisdiction) — both variants
  * are token-driven and should hold up in every corner.
  */
@@ -26,11 +27,6 @@ export const Comparison: Story = {};
 /** Variant 1 in isolation — resize the canvas to watch container queries fire. */
 export const StaticGrid: StoryObj<typeof BenchDashboardStatic> = {
   render: () => <BenchDashboardStatic />,
-};
-
-/** Variant 2 in isolation — drag panels; layout persists via the stub hook. */
-export const Dockview: StoryObj<typeof BenchDashboardDock> = {
-  render: () => <BenchDashboardDock />,
 };
 
 /**

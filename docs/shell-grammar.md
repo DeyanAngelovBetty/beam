@@ -202,6 +202,11 @@ The nav panel **floats** in both states — it no longer reaches the frame edges
 
 ## Open
 
+- **Parked — selected-item vignette (2026-10-02; bench deleted 2026-10-06).** The brand gradient masked
+  inward on the active nav item (the platter idea turned inward). Tried on a bench, NOT wired: a nav item is
+  too small/dense to carry decoration, and the selected TINT (`--beam-selected-surface`) is the right
+  treatment under the loudness budget. The bench (`Lab › Beam › Selected Vignette`) was removed once the
+  decision was clear; this note is the record.
 - **Candidate — 1px platter ring on the ACTIVE nav item (2026-10-02, noted, NOT built).** Only if quieting
   the surroundings (inactive items → text.secondary; dividers quieted to opacity 0.4) doesn't make the selected item stand
   out enough. BENCH it before wiring: it would be the FOURTH decoration in that panel (platter + brand

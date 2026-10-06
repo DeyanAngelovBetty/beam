@@ -4,7 +4,6 @@ import { ALL_WIDGET_IDS } from './dashboardConfig';
 import type { WidgetId } from './dashboardConfig';
 import { WIDGETS } from './widgets/registry';
 import { BenchDashboardStatic } from './BenchDashboardStatic';
-import { BenchDashboardDock } from './BenchDashboardDock';
 import { BenchDashboardDeclare } from './BenchDashboardDeclare';
 
 /**
@@ -13,9 +12,13 @@ import { BenchDashboardDeclare } from './BenchDashboardDeclare';
  * control. Toggling a widget chip removes it from WHICHEVER variant is shown,
  * proving the same permission-filter contract with zero layout code — the whole
  * point of the bench.
+ *
+ * Variant 2 (dockview, a DRAG workspace) was RETIRED 2026-10-06: Variant 1 (static grid) won and graduated
+ * to DashboardPage, and the dashboard-is-not-a-layout-engine thesis rules out drag/dockview entirely. The
+ * record is the two CSS-grid variants — static (ships) + declarative (cards-declare exploration).
  */
 export function DashboardBench() {
-  const [variant, setVariant] = useState<'static' | 'dock' | 'declare'>('static');
+  const [variant, setVariant] = useState<'static' | 'declare'>('static');
   const [hidden, setHidden] = useState<ReadonlySet<WidgetId>>(new Set());
 
   const visibleWidgetIds = ALL_WIDGET_IDS.filter((id) => !hidden.has(id));
@@ -39,9 +42,8 @@ export function DashboardBench() {
         </Typography>
       </Stack>
 
-      <Tabs value={variant} onChange={(_e, v) => setVariant(v as 'static' | 'dock' | 'declare')}>
-        <Tab value="static" label="Variant 1 · Static grid" />
-        <Tab value="dock" label="Variant 2 · Dockview" />
+      <Tabs value={variant} onChange={(_e, v) => setVariant(v as 'static' | 'declare')}>
+        <Tab value="static" label="Variant 1 · Static grid (ships)" />
         <Tab value="declare" label="Variant 3 · Declarative" />
       </Tabs>
 
@@ -68,15 +70,8 @@ export function DashboardBench() {
       <Box sx={{ mt: 1 }}>
         {variant === 'static' ? (
           <BenchDashboardStatic visibleWidgetIds={visibleWidgetIds} />
-        ) : variant === 'declare' ? (
-          <BenchDashboardDeclare visibleWidgetIds={visibleWidgetIds} />
         ) : (
-          // key forces a fresh dockview when the visible set changes (bench:
-          // simplest correct behaviour; a real impl would diff panels).
-          <BenchDashboardDock
-            key={visibleWidgetIds.join(',')}
-            visibleWidgetIds={visibleWidgetIds}
-          />
+          <BenchDashboardDeclare visibleWidgetIds={visibleWidgetIds} />
         )}
       </Box>
     </Stack>
