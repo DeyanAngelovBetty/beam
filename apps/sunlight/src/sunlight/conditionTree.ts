@@ -10,11 +10,19 @@ export type ConditionField = 'Audience' | 'LoyaltyStatus' | 'RccSegment';
 export type LeafOperator = 'IsOneOf' | 'IsNoneOf';
 export type GroupOperator = 'All' | 'Any';
 
+export interface AudienceConditionValue {
+  audienceId: number;
+  cohortIds?: number[] | null;
+}
+
+export type AudienceValue = number | AudienceConditionValue;
+export type ConditionValue = string | AudienceValue;
+
 export interface ConditionLeaf {
   kind: 'leaf';
   field: ConditionField;
   operator: LeafOperator;
-  values: (string | number)[];
+  values: ConditionValue[];
 }
 
 export interface ConditionGroup {
@@ -48,19 +56,23 @@ export const CONDITION_FIELDS: ConditionField[] = ['Audience', 'LoyaltyStatus', 
 export const LEAF_OPERATORS: LeafOperator[] = ['IsOneOf', 'IsNoneOf'];
 export const GROUP_OPERATORS: GroupOperator[] = ['All', 'Any'];
 
-/**
- * PLACEHOLDER value options per field — the lookup endpoints don't exist yet
- * (brief §14). Audience = numeric ids; LoyaltyStatus / RccSegment = strings from
- * the docs' examples. These become async-populated when the lookup API is
- * decided; the control (a constrained multi-select) stays the same.
- */
+/** Demo memberships: cohorts belong to one audience, never to the whole leaf. */
+export const AUDIENCE_OPTIONS = [
+  { value: 1001, label: 'VIP High Rollers', cohorts: [
+    { value: 10, label: 'Control' }, { value: 11, label: 'Variant A' }, { value: 12, label: 'Variant B' },
+  ] },
+  { value: 1002, label: 'Weekend Warriors', cohorts: [
+    { value: 20, label: 'Control' }, { value: 21, label: 'Variant A' },
+  ] },
+  { value: 1003, label: 'New Depositors', cohorts: [] },
+  { value: 1004, label: 'Lapsed 30d', cohorts: [
+    { value: 40, label: 'Control' }, { value: 41, label: 'Variant A' },
+  ] },
+];
+
+/** Mock lookup data; this demo does not call Segmentation or other services. */
 export const FIELD_OPTIONS: Record<ConditionField, { value: string | number; label: string }[]> = {
-  Audience: [
-    { value: 1001, label: '1001 — VIP High Rollers' },
-    { value: 1002, label: '1002 — Weekend Warriors' },
-    { value: 1003, label: '1003 — New Depositors' },
-    { value: 1004, label: '1004 — Lapsed 30d' },
-  ],
+  Audience: AUDIENCE_OPTIONS,
   LoyaltyStatus: [
     { value: 'Member', label: 'Member' },
     { value: 'Amethyst', label: 'Amethyst' },
@@ -77,8 +89,39 @@ export const FIELD_OPTIONS: Record<ConditionField, { value: string | number; lab
 };
 
 /** Label for a stored value (falls back to the raw value if unknown). */
-export function labelForValue(field: ConditionField, value: string | number): string {
+export function labelForValue(field: ConditionField, value: ConditionValue): string {
+  if (field === 'Audience') {
+    const audienceId = audienceIdOf(value as AudienceValue);
+    const cohortIds = typeof value === 'object' ? value.cohortIds : undefined;
+    const selection = cohortIds?.length
+      ? `cohorts: ${cohortIds.map((id) => labelForCohort(audienceId, id)).join(' or ')}`
+      : 'whole audience';
+    return `${labelForAudience(audienceId)} (${selection})`;
+  }
   return FIELD_OPTIONS[field].find((o) => o.value === value)?.label ?? String(value);
+}
+
+export function audienceIdOf(value: AudienceValue): number {
+  return typeof value === 'number' ? value : value.audienceId;
+}
+
+export function labelForAudience(audienceId: number): string {
+  return AUDIENCE_OPTIONS.find((option) => option.value === audienceId)?.label ?? `Audience ${audienceId}`;
+}
+
+export function labelForCohort(audienceId: number, cohortId: number): string {
+  const audience = AUDIENCE_OPTIONS.find((option) => option.value === audienceId);
+  const cohort = audience?.cohorts.find((option) => option.value === cohortId);
+  return cohort?.label ?? `Cohort ${cohortId}`;
+}
+
+export function selectAudienceCohorts(values: AudienceValue[], audienceId: number, cohortIds: number[]): AudienceValue[] {
+  return values.map((value) => {
+    if (audienceIdOf(value) !== audienceId) return value;
+    const previousIds = typeof value === 'number' ? [] : value.cohortIds ?? [];
+    if (previousIds.length === cohortIds.length && previousIds.every((id, index) => id === cohortIds[index])) return value;
+    return cohortIds.length ? { audienceId, cohortIds } : audienceId;
+  });
 }
 
 // ---- Construction -----------------------------------------------------------

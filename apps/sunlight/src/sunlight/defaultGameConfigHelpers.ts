@@ -5,16 +5,14 @@ import type { GameType } from './payoutConfigs';
 export const DISABLED_GAME_CONFIG_WARNING =
   'This GameConfig is currently disabled and cannot be used by the game engine.';
 
+/** Only these Betty games expose default configuration management. */
+export const DEFAULT_CONFIGURABLE_GAME_TYPES: GameType[] = ['BettyWheel', 'BettyScratcher', 'BettyWheelOfWins'];
+
 export const INITIAL_DEFAULT_GAME_CONFIGS: DefaultGameConfigMapping[] = [
   { gameType: 'BettyWheel', gameConfigId: 'gc-betty-wheel-default' },
   { gameType: 'BettyScratcher', gameConfigId: 'gc-scratcher-default' },
   { gameType: 'BettyWheelOfWins', gameConfigId: 'gc-betty-wheel-of-wins-default' },
-  { gameType: 'BettyMultiplierMadness', gameConfigId: 'gc-mm-default' },
 ];
-
-export function filterGameConfigsByGameType(configs: GameConfig[], gameType: GameType): GameConfig[] {
-  return configs.filter((config) => config.gameType === gameType);
-}
 
 export function replaceDefaultGameConfig(
   mappings: DefaultGameConfigMapping[],

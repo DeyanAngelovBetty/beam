@@ -11,6 +11,7 @@ import {
 } from '@betty/beam';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import { AudienceConditionValues } from './AudienceConditionValues';
 import {
   CONDITION_FIELDS,
   LEAF_OPERATORS,
@@ -31,6 +32,8 @@ import {
   type ConditionField,
   type GroupOperator,
   type LeafOperator,
+  type AudienceValue,
+  type ConditionValue,
 } from './conditionTree';
 
 /**
@@ -40,8 +43,8 @@ import {
  * no children controls.
  *
  * Values: a CONSTRAINED multi-select (no free entry) over placeholder option
- * lists — the lookup endpoints don't exist yet (brief §14). Validation is
- * server-side eventually; the client just prevents unknown ids.
+ * lists. Audience values also offer cohorts scoped to each selected audience.
+ * These are mock options; no live lookup requests are made.
  *
  * Scaffold plain. The visual language of NESTING (indentation + connector) is a
  * design pass — spine-motif territory, reserved: `// nesting visuals: pending
@@ -167,10 +170,10 @@ function LeafEditor({
   // Changing field resets values — old ids don't belong to the new field.
   const setField = (field: ConditionField) => emit({ ...node, field, values: [] });
   const setOperator = (operator: LeafOperator) => emit({ ...node, operator });
-  const setValues = (values: (string | number)[]) => emit({ ...node, values });
+  const setValues = (values: ConditionValue[]) => emit({ ...node, values });
 
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', ...(err && { pb: 1 }) }}>
+    <Stack direction="row" spacing={1} sx={{ width: '100%', alignItems: 'flex-start', ...(err && { pb: 1 }) }}>
       <TextField
         select
         size="small"
@@ -199,32 +202,36 @@ function LeafEditor({
           </MenuItem>
         ))}
       </TextField>
-      <TextField
-        select
-        size="small"
-        label="Values"
-        sx={{ minWidth: 260 }}
-        value={node.values}
-        onChange={(e) => setValues(e.target.value as unknown as (string | number)[])}
-        error={Boolean(err)}
-        helperText={err}
-        slotProps={{ select: {
-          multiple: true,
-          renderValue: (selected) => (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {(selected as (string | number)[]).map((val) => (
-                <Chip key={String(val)} size="small" label={labelForValue(node.field, val)} />
-              ))}
-            </Box>
-          ),
-        } }}
-      >
-        {FIELD_OPTIONS[node.field].map((o) => (
-          <MenuItem key={String(o.value)} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
+      {node.field === 'Audience' ? (
+        <AudienceConditionValues values={node.values as AudienceValue[]} onChange={setValues} error={err} />
+      ) : (
+        <TextField
+          select
+          size="small"
+          label="Values"
+          sx={{ minWidth: 260 }}
+          value={node.values}
+          onChange={(e) => setValues(e.target.value as unknown as (string | number)[])}
+          error={Boolean(err)}
+          helperText={err}
+          slotProps={{ select: {
+            multiple: true,
+            renderValue: (selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {(selected as (string | number)[]).map((val) => (
+                  <Chip key={String(val)} size="small" label={labelForValue(node.field, val)} />
+                ))}
+              </Box>
+            ),
+          } }}
+        >
+          {FIELD_OPTIONS[node.field].map((o) => (
+            <MenuItem key={String(o.value)} value={o.value}>
+              {o.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
       {onRemove && (
         <Tooltip title="Remove condition">
           <IconButton size="small" aria-label="Remove condition" onClick={onRemove}>

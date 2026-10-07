@@ -9,7 +9,21 @@ import {
   formatRewards,
   gameTypeLabel,
   getPayoutRows,
+  getPayoutConfigsLookup,
 } from './payoutConfigs.ts';
+
+test('payout lookup returns the exact unpaginated contract with optional gameType', () => {
+  const all = getPayoutConfigsLookup();
+  assert.equal(all.length, PAYOUT_CONFIGS.length);
+  assert.deepEqual(new Set(all.map(config => config.status)), new Set(['Enabled', 'Disabled']));
+  assert.ok(all.every(config => Object.keys(config).join(',') === 'id,name,status'));
+  const expected = PAYOUT_CONFIGS.filter(config => config.gameType === 'BettyWheel')
+    .map(({ id, name, status }) => ({ id, name, status }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  assert.deepEqual(getPayoutConfigsLookup('BettyWheel'), expected);
+  assert.deepEqual(getPayoutConfigsLookup('BettyMultiplierMadness').map(config => config.id).sort(),
+    ['pc-mm-promotion', 'pc-mm-standard']);
+});
 
 test('the payout catalog covers the four internal game types and RTP-only MM', () => {
   assert.deepEqual(GAME_TYPES, ['BettyWheel', 'BettyScratcher', 'BettyWheelOfWins', 'BettyMultiplierMadness']);

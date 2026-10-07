@@ -45,6 +45,7 @@ import {
   type PresetSource,
 } from './metaGamePresetHelpers';
 import { GAME_TYPES, gameTypeLabel, statusBadge, type GameType } from './payoutConfigs';
+import { DEFAULT_CONFIGURABLE_GAME_TYPES } from './defaultGameConfigHelpers';
 import { PresetImagePreview } from './PresetImagePreview';
 
 type TouchedField = 'displayName' | 'gameConfigId' | 'gameType' | 'configCode' | 'expiryHours';
@@ -85,6 +86,8 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
   const model = presetToEditorModel(preset);
   const badge = statusBadge(preset.status);
   const gameConfig = gameConfigForId(GAME_CONFIGS, model.gameConfigId);
+  const emptyConfigLabel = DEFAULT_CONFIGURABLE_GAME_TYPES.includes(model.gameType as GameType)
+    ? 'Default for this game type' : 'No explicit GameConfig';
 
   return (
     <Stack spacing={3}>
@@ -110,7 +113,7 @@ function PresetView({ preset, onEdit }: { preset: MetaGamePreset; onEdit: () => 
       <DetailsPanel aria-label="Preset details">
         <BeamStat label="Display Name" value={model.displayName || '—'} />
         {model.source === 'Betty' ? (
-          <BeamStat label="GameConfig" value={gameConfig ? `${gameConfig.name} — ${gameTypeLabel(gameConfig.gameType)} — ${gameConfig.status}` : model.gameConfigId || 'Default for this game type'} />
+          <BeamStat label="GameConfig" value={gameConfig ? `${gameConfig.name} — ${gameTypeLabel(gameConfig.gameType)} — ${gameConfig.status}` : model.gameConfigId || emptyConfigLabel} />
         ) : (
           <BeamStat label="Config Code" value={model.configCode || '—'} />
         )}
@@ -147,6 +150,11 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
   const validation = validatePresetModel(model, GAME_CONFIGS);
   const selectedGameConfig = gameConfigForId(GAME_CONFIGS, model.gameConfigId);
   const gameConfigOptions = presetGameConfigOptions(GAME_CONFIGS, model);
+  const supportsDefaultConfig = DEFAULT_CONFIGURABLE_GAME_TYPES.includes(model.gameType as GameType);
+  const emptyConfigLabel = supportsDefaultConfig ? 'Use default game configuration' : 'No explicit GameConfig';
+  const gameConfigHelp = supportsDefaultConfig
+    ? 'Optional. Without a selection, the game uses its default configuration.'
+    : 'Optional. This game type has no managed default. Chained targets require an explicit GameConfig.';
   const saveLabel = isEdit ? 'Save' : 'Create';
 
   const blocker = useBlocker(
@@ -289,8 +297,8 @@ function PresetForm({ existing, onCancel }: { existing?: MetaGamePreset; onCance
               slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
               onChange={changeGameConfig} onBlur={() => markTouched('gameConfigId')}
               error={showError('gameConfigId') && Boolean(validation.gameConfigId)}
-              helperText={showError('gameConfigId') && validation.gameConfigId ? validation.gameConfigId : 'Optional. Without a selection, the game uses its default configuration.'}>
-              <MenuItem value="">Use default game configuration</MenuItem>
+              helperText={showError('gameConfigId') && validation.gameConfigId ? validation.gameConfigId : gameConfigHelp}>
+              <MenuItem value="">{emptyConfigLabel}</MenuItem>
               {gameConfigOptions.map(config => <MenuItem key={config.id} value={config.id}>{config.name} — {config.status}</MenuItem>)}
             </BeamField>
             {disabledGameConfigWarning && (

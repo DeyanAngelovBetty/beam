@@ -15,7 +15,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { PAYOUT_CONFIGS, type GameType, type PayoutStatus } from './payoutConfigs';
+import { getPayoutConfigsLookup, type GameType, type PayoutStatus } from './payoutConfigs';
 import { ConditionBuilder } from './ConditionBuilder';
 import type { ConditionGroup } from './conditionTree';
 import {
@@ -228,10 +228,10 @@ function PayoutConfigSelect({
   onChange: (id: string) => void;
   ariaLabel: string;
 }) {
-  const options = PAYOUT_CONFIGS.filter((p) => gameType && p.gameType === gameType).map((p) => ({
+  const options = (gameType ? getPayoutConfigsLookup(gameType) : []).map((p) => ({
     id: p.id,
     label: p.name,
-    status: p.status as PayoutStatus | undefined,
+    status: p.status,
   }));
   const selectedOption = options.find((option) => option.id === value);
   return (

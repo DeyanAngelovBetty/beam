@@ -265,6 +265,14 @@ export function getPayoutConfig(id: string): PayoutConfig | undefined {
   return PAYOUT_CONFIGS.find((config) => config.id === id);
 }
 
+/** Mock GET /payoutConfigs/lookup: all statuses, no pagination, optional gameType. */
+export function getPayoutConfigsLookup(gameType?: GameType): Pick<PayoutConfig, 'id' | 'name' | 'status'>[] {
+  return PAYOUT_CONFIGS
+    .filter((config) => !gameType || config.gameType === gameType)
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+    .map(({ id, name, status }) => ({ id, name, status }));
+}
+
 export function nameIsUnique(name: string, gameType: GameType, excludeId?: string): boolean {
   const normalizedName = name.trim().toLowerCase();
   return !PAYOUT_CONFIGS.some(
