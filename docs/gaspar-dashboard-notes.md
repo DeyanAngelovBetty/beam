@@ -131,6 +131,15 @@ as a series colour; dark mode is **designed, not inverted**.
   **unrecognised** provider renders neutrally with its raw label ("nothing invented").
 - Where it lives: **gaspar-local first, promote on a second consumer** (BEAM.md §2) — **approved 2026-10-06**.
   (Promotes into Beam tokens the moment a second surface needs a fixed categorical palette.)
+- **Colour-blindness over-constraint — OPEN for Boryana/design (2026-10-07).** On this palette the only
+  non-semantic, non-teal-primary space is the purple→magenta band, which red-green CVD flattens. A **4-way**
+  CVD-distinct set (2 providers + 2 directions, shown on the same page) is **not achievable** (best 4-way
+  worst-pair ΔE ≈ 5). Shipped resolution: each FAMILY gets a hue centre (providers = violet, directions =
+  rose) with lightness contrast WITHIN the pair, so **within a chart** the pair is strongly distinct
+  (deutan/protan ΔE 33–44) while the families read apart for normal vision; CROSS-family CVD is weaker (≈ 8–18),
+  carried by the spec's mandated legend + direct labels (colour never the sole channel). **Decision needed if
+  stronger CVD is required:** relax the teal/semantic reservation for charts, or add a second channel (dashes/
+  patterns per series). Not decided here.
 
 ---
 

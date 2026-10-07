@@ -27,13 +27,15 @@ export function Report3Chart({ view }: { view: 'share' | 'absolute' }) {
       { id: `${ser.key}Tail`, data: full.map((v, i) => (i >= n - 1 ? v : null)), color: col, stack: 'deposits' }, // no label
     ];
   });
-  const tailDim = Object.fromEntries(data.series.map((s) => [`& .MuiBarElement-series-${s.key}Tail`, { opacity: 0.5 }]));
+  // Faded partial: the last-bucket "tail" bars at low opacity. skipAnimation so the class-based opacity lands.
+  const tailDim = Object.fromEntries(data.series.map((s) => [`& .MuiBarElement-series-${s.key}Tail`, { opacity: 0.4 }]));
 
   return (
     <Box>
       <Box sx={{ width: '100%', aspectRatio: '16 / 7', minHeight: 200, ...tailDim }}>
         <BarChart
           height={240}
+          skipAnimation
           xAxis={[{ scaleType: 'band', data: data.buckets, label: `Bucket (${data.bucket})` }]}
           yAxis={[view === 'share' ? { label: 'Share %', min: 0, max: 100, width: 56 } : { label: `${data.currency} value`, width: 64 }]}
           series={series}
