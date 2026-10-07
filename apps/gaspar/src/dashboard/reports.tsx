@@ -3,6 +3,7 @@ import { Box, Stack, Button, Typography, Tooltip, IconButton, Section } from '@b
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import type { WidgetSize } from './DashboardGrid';
 import { Report1Chart, Report2Chart, Report3Chart, Report4Chart, Report5Chart } from './reportImpls';
+import { CHART_HEIGHT } from './reportCharts';
 
 /**
  * Boryana's v1.1 dashboard reports (spec: apps/gaspar/docs/specs/gaspar-dashboard-requirements.md; reconciled
@@ -60,7 +61,7 @@ function Toggle({ options, active, onChange, disabled }: { options: readonly [st
 
 function ReportDraftBody() {
   return (
-    <Box sx={{ aspectRatio: '16 / 7', minHeight: 160, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    <Box sx={{ height: CHART_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center',
       border: '1px dashed', borderColor: 'divider', borderRadius: 1, color: 'text.secondary', bgcolor: 'action.hover' }}>
       <Stack spacing={0.5} sx={{ alignItems: 'center', textAlign: 'center', px: 2 }}>
         <Typography variant="body2">Chart — draft</Typography>

@@ -1,6 +1,21 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createBeamTheme, gasparOfficialOverrides, gasparBodyFont, AppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import { ThemeProvider, CssBaseline, createBeamTheme, createTheme, gasparOfficialOverrides, gasparBodyFont, AppShell, Box, Typography, brandLogos, brandLogoMaskSx, logoGradient } from '@betty/beam';
+import '@mui/x-charts/themeAugmentation'; // gaspar-local: adds the MuiCharts* component slots to the MUI theme types
+
+// GASPAR-LOCAL x-charts theme layer (x-charts is a gaspar-only dependency — Beam never sees its types). Axis
+// tick labels + axis titles take text.secondary (the dashboard reports' chart chrome is quiet, like the
+// captions). One place, theme-level, so every x-charts usage inherits it rather than per-chart sx.
+const CHART_OVERRIDES = {
+  components: {
+    MuiChartsAxis: {
+      styleOverrides: {
+        tickLabel: { fill: 'var(--mui-palette-text-secondary)' },
+        label: { fill: 'var(--mui-palette-text-secondary)' },
+      },
+    },
+  },
+} as const;
 import type { BrandName, BeamNavItem, TypeScale, BodyFace } from '@betty/beam';
 import { GASPAR_NAV, VIEW_PATH, allowedViews, landingView, pruneNav, type GasparNavItem } from './gaspar/navItems';
 import { ShellFooter } from './gaspar/ShellFooter';
@@ -92,7 +107,10 @@ function GasparApp() {
   // tokens carry it. Revert (to today's teal) = drop the third arg. The Theme Lab's "Teal (previous shipped)"
   // renders today's teal without a revert. The Body-face dimension injects the chosen face into bodyFont.
   const theme = useMemo(
-    () => createBeamTheme(brand, 'gaspar', { ...gasparOfficialOverrides(brand), bodyFont: gasparBodyFont(bodyFace) }, typeScale),
+    () => createTheme(
+      createBeamTheme(brand, 'gaspar', { ...gasparOfficialOverrides(brand), bodyFont: gasparBodyFont(bodyFace) }, typeScale),
+      CHART_OVERRIDES,
+    ),
     [brand, typeScale, bodyFace],
   );
 
