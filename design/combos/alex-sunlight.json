@@ -1,0 +1,95 @@
+{
+  "version": 5,
+  "name": "modern-wisdom-current-tuned",
+  "shipped": "platter-glass",
+  "treatment": "platter-glass",
+  "scope": {
+    "product": "sunlight",
+    "jurisdiction": "ontario"
+  },
+  "createdAt": "2026-10-07T07:55:01.918Z",
+  "brand": {
+    "primary": {
+      "dark": {
+        "main": "#ff8e64",
+        "light": "#ff9f74",
+        "dark": "#cf6137"
+      },
+      "light": {
+        "main": "#a33800",
+        "light": "#da6b40",
+        "dark": "#7d0e00"
+      }
+    }
+  },
+  "surface": {
+    "dark": {
+      "anchor": "#16110b"
+    },
+    "light": {
+      "anchor": "#e1d5c8"
+    }
+  },
+  "gradient": {
+    "dark": {
+      "hueB": "#fff3c2",
+      "intensity": "24%"
+    },
+    "light": {
+      "hueB": "#d3c68f",
+      "intensity": "6%"
+    }
+  },
+  "star": {
+    "pitch": "59px",
+    "sizeRatio": 0.23,
+    "dark": {
+      "intensity": "5%"
+    },
+    "light": {
+      "intensity": "5%"
+    }
+  },
+  "chrome": {
+    "dark": {
+      "offset": 12,
+      "blur": 18,
+      "tint": "15%",
+      "displacement": 12,
+      "box": {
+        "blur": 16,
+        "tint": "72%",
+        "saturate": 1.2,
+        "edge": "12%",
+        "displacement": 40
+      }
+    },
+    "light": {
+      "offset": 12,
+      "blur": 4,
+      "tint": "12%",
+      "displacement": 12,
+      "box": {
+        "blur": 14,
+        "tint": "84%",
+        "saturate": 0.7,
+        "edge": "20%",
+        "displacement": 40
+      }
+    }
+  },
+  "border": {
+    "seeds": {
+      "seam": "primary",
+      "flank": "hue-b",
+      "calm": "hue-b"
+    },
+    "flankPos": "20%",
+    "calm": "35%",
+    "seamAngle": "135deg",
+    "intensity": {
+      "dark": "32%",
+      "light": "45%"
+    }
+  }
+}
