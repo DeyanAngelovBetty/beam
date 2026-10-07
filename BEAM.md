@@ -102,6 +102,15 @@ pain each one prevents:
    decision of its own background — never to a neighboring color's (an Alberta error button
    must not inherit brand-primary ink). This rule exists because we shipped and reverted
    exactly that mistake.
+   - **Colour decision — alex-sunlight (tuned with Alex, 2026-10-07).** Sunlight×Ontario primary +
+     Sunlight surface anchors warmed (`design/combos/alex-sunlight.json`). The one a11y move: light
+     `primary.main` **#B33F00 → #A33800**, a **hue-held L-step down** — #B33F00 is 4.01:1 on the light
+     anchor (below 4.5 for text), #A33800 reads **4.52–4.80:1** across the light surface ramp (audited,
+     WCAG + APCA, both modes). `primary.light`/`primary.dark` stay **decorative-only** (never text — usage
+     audited). Caveat, recorded: on the warm light canvas the **warning/info status fills** read ≥3:1 only
+     as label+icon+border, not fill-alone, and **warning/error hues sit near the warm primary** (ΔHue 8–14°)
+     — fine because status is never colour-alone (icon/shape channel). Full provenance + the audit table:
+     `derived-color-tokens.md` §8.
 5. **Typeface is a PRODUCT-axis seed — a title/body pair.** *(2026-08-05.)* `product/font/{title,
    body}` (tokens.ts `productFonts`): the **body** face is the base `typography.fontFamily` — the
    workhorse for data and for the `meta` key voice, which omits `fontFamily` *on purpose*

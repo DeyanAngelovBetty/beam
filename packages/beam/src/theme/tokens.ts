@@ -281,10 +281,14 @@ export const editabilityBorderSx = {
 export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
   sunlight: {
     ontario: {
-      // Modern Wisdom combo (§6 run): Sunlight/primary @ Ontario → tangerine family. contrastText
-      // UNTOUCHED (white on light, near-black on dark) — reported at officiation, not retuned.
-      light: { primaryDown1: '#8D1100', primary0: '#B33F00', primaryUp1: '#EB7500', contrastText: '#FFFFFF' },
-      dark: { primaryDown1: '#C47000', primary0: '#F59E1E', primaryUp1: '#FFB33F', contrastText: '#111827' },
+      // alex-sunlight (tuned with Alex in the Lab, 2026-10-07; design/combos/alex-sunlight.json). Warmer
+      // tangerine family. Light primary0 is the a11y tuning: #B33F00 → #A33800 — a HUE-HELD L-step down,
+      // because #B33F00 is only 4.01:1 on the light anchor (below 4.5 for text); #A33800 reads 4.52–4.80:1
+      // on the light surface ramp (audited). contrastText UNTOUCHED (white on light, near-black on dark).
+      // primaryUp1 (light #EB7500 → #DA6B40) is DECORATIVE-ONLY — never text, never a sole state signal
+      // (usage-audited: 0 component references; MUI uses it for tints/hover washes).
+      light: { primaryDown1: '#7D0E00', primary0: '#A33800', primaryUp1: '#DA6B40', contrastText: '#FFFFFF' },
+      dark: { primaryDown1: '#CF6137', primary0: '#FF8E64', primaryUp1: '#FF9F74', contrastText: '#111827' },
       states: STATES,
     },
     alberta: {
@@ -457,8 +461,10 @@ type NavSchemeSeed = {
 };
 export const surfaceSeeds: Record<ProductName, { dark: NavSchemeSeed; light: NavSchemeSeed }> = {
   sunlight: {
-    dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
-    light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 4, navGlassSaturate: 1.4 },
+    // alex-sunlight (2026-10-07): warm anchors. Dark #0E121B → #16110B, light #F0F0F0 → #E1D5C8. Product-
+    // scoped (Sunlight), so it warms BOTH Ontario AND Alberta's canvas; does NOT touch Gaspar/midnight.
+    dark: { anchor: '#16110B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
+    light: { anchor: '#E1D5C8', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 4, navGlassSaturate: 1.4 },
   },
   gaspar: {
     // TEAL adopted 2026-09-03 (derived-color-tokens §8): teal-tinted anchors from the recovered

@@ -456,6 +456,27 @@ there, so a decision that only lands in `tokens.ts` will be overwritten on the n
 **Manual sync for now; flag when a decision lands** (and scope it — e.g. the teal decision
 is the Ontario `product/gaspar` primary + surface anchor + mesh, not Alberta).
 
+**Second instance — Sunlight "alex-sunlight" (graduated 2026-10-07; tuned with Alex in the Lab).**
+Export `design/combos/alex-sunlight.json`. **Scope:** Sunlight×Ontario **primary** (jurisdiction) +
+Sunlight **surface anchors** (product → warms Ontario *and* Alberta; does not touch Gaspar/midnight).
+Gradient / star / chrome / border in the export equalled the current defaults — **no estate-wide change**.
+
+- **The a11y L-step (the reason this is a decision, not a plain swap):** light `primary.main`
+  **#B33F00 → #A33800** — a **hue-held L-step down** (same hue/chroma, lower L). #B33F00 is **4.01:1** on
+  the light anchor — below 4.5 for text; #A33800 reads **4.52 (page) / 4.66 (paper0) / 4.80 (paper)** —
+  clears AA for text on the whole light ramp. Dark `primary.main` #FF8E64 clears comfortably (8–9:1).
+- **Surface anchors:** dark `#0E121B → #16110B`, light `#F0F0F0 → #E1D5C8` (a warm cream). Text/secondary
+  stay ≥5:1 (light) / ≥9:1 (dark); the warm light ramp resolves `#DED2C5 → #EBDFD2`.
+- **Audit (WCAG 2 + APCA Lc, both modes, rendered derived tokens):** text.primary/secondary, contrastText
+  on contained primary (6.7 light / 7.9 dark), focus ring (primary.main, ≥4.5:1 → clears the 3:1 non-text
+  bar), text over the gradient mesh worst-case (≥10:1) — all pass. `primary.light`/`primary.dark` are
+  **decorative-only** (usage-audited: no component renders text in them). **Recorded caveats:** status
+  **fills** on the warm *light* canvas — warning 2.22:1, info 2.75:1 vs paper (< 3:1 as fill-alone) — and
+  **warning/error hues sit near the warm primary** (ΔHue 8–14° light; error 12° dark). Both are mitigated
+  by the never-colour-alone rule (status always carries an icon/shape), so they are accepted, not blockers.
+- **Figma propagation (OPEN):** push the Sunlight×Ontario `product` primary + the Sunlight surface anchors
+  to the Figma `product` collection, or the next sync overwrites them (Deyan updates Figma after the push).
+
 ### 8.1 Variants integrate into the lab as loadable PRESETS *(2026-09-03)*
 
 The candidate registry is now wired into the **Theme Lab drawer** as presets (the Storybook

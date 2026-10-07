@@ -63,6 +63,24 @@ const lavenderOverrides = (brand: BrandName): ThemeSeedOverrides => ({
 // The Gaspar "Official (Vasco/Figma)" override lives in @betty/beam (theme/gasparOfficial.ts) — shared by
 // the app's DEFAULT theme (the temporary default-swap seam) and the "Current (shipped)" candidate below.
 
+// ── Sunlight "Modern Wisdom (previous)" — the OUTGOING Sunlight seed before alex-sunlight graduated to
+// tokens.ts (2026-10-07). Kept as a selectable preset for side-by-side + rollback. Ontario-only primary
+// (Alberta was untouched by alex-sunlight); the surface (anchors) is product-scoped, so it restores both
+// jurisdictions' warmer-reverted canvas.
+const SUNLIGHT_PREV_PRIMARY_ONTARIO: NonNullable<ThemeSeedOverrides['primary']> = {
+  light: { primaryDown1: '#8D1100', primary0: '#B33F00', primaryUp1: '#EB7500', contrastText: '#FFFFFF' },
+  dark: { primaryDown1: '#C47000', primary0: '#F59E1E', primaryUp1: '#FFB33F', contrastText: '#111827' },
+  states: products.sunlight.ontario.states, // non-colour, shared
+};
+const SUNLIGHT_PREV_SURFACE: NonNullable<ThemeSeedOverrides['surface']> = {
+  dark: { anchor: '#0E121B', step: 0.07, navOffset: -0.15, navChroma: 2.2, navSpread: 0.7, navGlassAlpha: 0.52, navGlassBlur: 18, navGlassSaturate: 1.6 },
+  light: { anchor: '#F0F0F0', step: 0.01, navOffset: -3, navChroma: 3.0, navSpread: 0.7, navGlassAlpha: 0.66, navGlassBlur: 4, navGlassSaturate: 1.4 },
+};
+const sunlightPreviousOverrides = (brand: BrandName): ThemeSeedOverrides => ({
+  surface: SUNLIGHT_PREV_SURFACE,
+  ...(brand === 'ontario' ? { primary: SUNLIGHT_PREV_PRIMARY_ONTARIO } : {}),
+});
+
 export const THEME_VARIANTS: Record<LabProduct, ThemeVariant[]> = {
   gaspar: [
     // #1 = current shipped = the Vasco/Figma official palette (the app default; see gasparOfficial.ts).
@@ -72,5 +90,10 @@ export const THEME_VARIANTS: Record<LabProduct, ThemeVariant[]> = {
     // #3 = the earlier lavender, kept as a candidate for reference / rollback.
     { id: 'lavender', label: 'Lavender (previous)', buildTheme: (b) => createBeamTheme(b, 'gaspar', lavenderOverrides(b)), overrides: lavenderOverrides },
   ],
-  sunlight: [{ id: 'current', label: 'Modern Wisdom (current)', buildTheme: (b) => createBeamTheme(b, 'sunlight') }],
+  sunlight: [
+    // #1 = current shipped = alex-sunlight (tuned with Alex; graduated to tokens.ts 2026-10-07; no overrides).
+    { id: 'current', label: 'Alex (Sunlight)', buildTheme: (b) => createBeamTheme(b, 'sunlight') },
+    // #2 = the OUTGOING Modern Wisdom seed, kept for the A/B side-by-side + rollback.
+    { id: 'previous', label: 'Sunlight (previous)', buildTheme: (b) => createBeamTheme(b, 'sunlight', sunlightPreviousOverrides(b)), overrides: sunlightPreviousOverrides },
+  ],
 };
