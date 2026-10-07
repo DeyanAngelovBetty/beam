@@ -177,6 +177,20 @@ and the Transactions page, so they cannot drift. **Flag D-4:** "approved transac
 the approval-rate numerator/denominator (§10) must be the exact same predicate the tiles/charts and the
 drill-through use — settle the definition once (§10), encode once.
 
+**Approval-rate denominator — the two candidates, computed (Report 5; BI to decide — §10.2).** The denominator
+choice swings the number hugely, so Boryana sees the difference over the fixture sample (deposits; weekly
+buckets; `2026-08-17 → 2026-11-02`; numerator = `Succeeded`):
+
+| Denominator | Overall deposit approval rate | Denominator count | Partial bucket (2026-11-02) |
+|---|---|---|---|
+| **broad** — all deposit rows (incl. pre-submission) | **28.4%** | 873 | 25.8% |
+| **submitted** — exclude `Initiated` (≈ pre-submission rejections) | **43.1%** | 576 | 36.4% |
+
+A **~15-point** swing. Report 5 ships the **broad** value as PROVISIONAL (labelled so in the info affordance +
+caption) until BI rules; the `Total` line is the AGGREGATE (Σapproved / Σdenominator), not the mean of the
+provider lines. (`Initiated` is used here as the stand-in for "pre-submission" in the current fixture status
+set — confirm the real pre-submission signal with Konstantin.)
+
 ---
 
 ## 6. Drill-through mapping (chart dimension → Transactions filter)

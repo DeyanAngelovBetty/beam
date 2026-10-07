@@ -2,8 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Box, Stack, Button, Typography, Tooltip, IconButton, Section } from '@betty/beam';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import type { WidgetSize } from './DashboardGrid';
-import { Report1Chart } from './Report1Chart';
-import { Report3Chart } from './Report3Chart';
+import { Report1Chart, Report2Chart, Report3Chart, Report4Chart, Report5Chart } from './reportImpls';
 
 /**
  * Boryana's v1.1 dashboard reports (spec: apps/gaspar/docs/specs/gaspar-dashboard-requirements.md; reconciled
@@ -24,14 +23,14 @@ export interface DashboardReport {
 export const REPORTS: readonly DashboardReport[] = [
   { id: 'report1', title: 'Deposits vs Withdrawals', size: 'wide', toggle: ['Value', 'Count'], live: true,
     info: 'Approved transactions only. Value and count are separate views. Timezone: pending (§10).' },
-  { id: 'report2', title: 'AVG Deposits & Withdrawals per Transaction', size: 'wide', toggle: null,
+  { id: 'report2', title: 'AVG Deposits & Withdrawals per Transaction', size: 'wide', toggle: null, live: true,
     info: 'Mean value per approved transaction (denominator = approved, not attempts). Timezone: pending (§10).' },
   { id: 'report3', title: 'Deposits by Payment Provider', size: 'wide', toggle: ['Share', 'Absolute'], live: true,
     info: 'Share of approved deposit volume per provider (100% stacked); absolute view available. Provider colours fixed per entity. Timezone: pending (§10).' },
-  { id: 'report4', title: 'Withdrawals by Payment Provider', size: 'wide', toggle: ['Share', 'Absolute'],
-    info: 'As Report 3, for approved withdrawals. Timezone: pending (§10).' },
-  { id: 'report5', title: 'Deposits Approval Rate vs Total Deposit Approval Rate by Payment Provider', size: 'full', toggle: null,
-    info: 'Total = aggregate across providers, NOT the mean of the provider lines (they differ when volumes are uneven). Approval-rate denominator: pending with BI (§10). Timezone: pending.' },
+  { id: 'report4', title: 'Withdrawals by Payment Provider', size: 'wide', toggle: ['Share', 'Absolute'], live: true,
+    info: 'Mirror of Report 3, for approved withdrawals. Same provider colours. Timezone: pending (§10).' },
+  { id: 'report5', title: 'Deposits Approval Rate vs Total Deposit Approval Rate by Payment Provider', size: 'full', toggle: null, live: true,
+    info: 'Total = aggregate across providers (Σapproved / Σdenominator), NOT the mean of the provider lines. Denominator is PROVISIONAL (broad) — pending BI (§10); notes §5 computes both candidates. Timezone: pending.' },
 ];
 
 export const reportById = new Map(REPORTS.map((r) => [r.id, r]));
@@ -75,9 +74,13 @@ function ReportDraftBody() {
  *  the header control and the chart body stay in sync. */
 export function ReportSection({ report }: { report: DashboardReport }) {
   const [active, setActive] = useState<0 | 1>(0);
+  const view = active === 0 ? 'share' : 'absolute';
   let body: ReactNode = <ReportDraftBody />;
   if (report.id === 'report1') body = <Report1Chart measure={active === 0 ? 'value' : 'count'} />;
-  else if (report.id === 'report3') body = <Report3Chart view={active === 0 ? 'share' : 'absolute'} />;
+  else if (report.id === 'report2') body = <Report2Chart />;
+  else if (report.id === 'report3') body = <Report3Chart view={view} />;
+  else if (report.id === 'report4') body = <Report4Chart view={view} />;
+  else if (report.id === 'report5') body = <Report5Chart />;
 
   const headerAction = report.toggle
     ? <Toggle options={report.toggle} active={active} disabled={!report.live} onChange={report.live ? setActive : undefined} />

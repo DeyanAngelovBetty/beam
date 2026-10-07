@@ -102,9 +102,9 @@ export function depositsVsWithdrawals(f: Pick<TxFilter, 'createdFrom' | 'created
   };
 }
 
-/** Report 3 — Deposits by Payment Provider (approved deposits); one series per provider (value + count). */
-export function depositsByProvider(f: Pick<TxFilter, 'createdFrom' | 'createdTo'> = {}): AggregationResponse {
-  const rows = approved({ ...f, direction: 'Deposit' });
+/** Reports 3 & 4 — {Deposits|Withdrawals} by Payment Provider (approved); one series per provider. */
+function byProvider(direction: 'Deposit' | 'Withdrawal', f: Pick<TxFilter, 'createdFrom' | 'createdTo'>): AggregationResponse {
+  const rows = approved({ ...f, direction });
   const { from, to, bucket, key, buckets } = frame(rows);
   const byProv: Record<string, Map<string, SeriesPoint>> = {};
   const totals: Record<string, { value: number; count: number }> = {};
@@ -119,10 +119,60 @@ export function depositsByProvider(f: Pick<TxFilter, 'createdFrom' | 'createdTo'
     totals[r.psp].value += r.amount; totals[r.psp].count += 1;
   }
   return {
-    metric: 'deposits_by_provider', currency: 'CAD', bucket, buckets,
+    metric: `${direction.toLowerCase()}s_by_provider`, currency: 'CAD', bucket, buckets,
     range: { from, to, tz: TZ_PLACEHOLDER }, partial: { bucketKey: buckets[buckets.length - 1] ?? null },
     computedAt: FIXTURE_NOW, stalenessBudgetMs: STALENESS_BUDGET_MS,
     series: PROVIDERS.map((prov) => ({ key: prov, label: prov, points: buckets.map((b) => byProv[prov].get(b)!) })),
     totals,
+  };
+}
+export const depositsByProvider = (f: Pick<TxFilter, 'createdFrom' | 'createdTo'> = {}) => byProvider('Deposit', f);
+export const withdrawalsByProvider = (f: Pick<TxFilter, 'createdFrom' | 'createdTo'> = {}) => byProvider('Withdrawal', f); // Report 4
+
+/** Report 2 — AVG Deposits & Withdrawals per Transaction (approved only): mean value = Σamount / count. */
+export function avgPerTransaction(f: Pick<TxFilter, 'createdFrom' | 'createdTo' | 'provider'> = {}): AggregationResponse {
+  const base = depositsVsWithdrawals(f); // reuse the sum+count buckets, then divide
+  const toAvg = (pts: SeriesPoint[]): SeriesPoint[] => pts.map((p) => ({ bucket: p.bucket, value: p.count ? p.value / p.count : 0, count: p.count }));
+  return {
+    ...base, metric: 'avg_per_transaction',
+    series: base.series.map((s) => ({ ...s, points: toAvg(s.points) })),
+    totals: Object.fromEntries(Object.entries(base.totals).map(([k, t]) => [k, { value: t.count ? t.value / t.count : 0, count: t.count }])),
+  };
+}
+
+/**
+ * Report 5 — Deposits Approval Rate vs Total, by Payment Provider. Rate = approved / denominator, per bucket,
+ * per provider, PLUS a `Total` series that is the AGGREGATE (Σapproved / Σdenominator across providers) — NOT
+ * the mean of the provider rates (they differ when volumes are uneven). Denominator is OPEN (§10): `denom`
+ * picks 'broad' (all deposit rows) or 'submitted' (excludes Initiated as pre-submission). PROVISIONAL default
+ * is 'broad', surfaced as provisional in the UI; the notes compute both for a sample period.
+ */
+export type ApprovalDenominator = 'broad' | 'submitted';
+export function depositApprovalRateByProvider(denom: ApprovalDenominator = 'broad', f: Pick<TxFilter, 'createdFrom' | 'createdTo'> = {}): AggregationResponse {
+  const all = ALL_ROWS.filter((r) => matchesTx(r, { ...f, direction: 'Deposit' }));
+  const inDenom = (r: TransactionRow) => (denom === 'broad' ? true : r.status !== 'Initiated');
+  const { from, to, bucket, key, buckets } = frame(all);
+  // accumulate approved + denominator per provider (and overall) per bucket
+  const acc: Record<string, Map<string, { ok: number; den: number }>> = {};
+  const seed = () => new Map(buckets.map((b) => [b, { ok: 0, den: 0 }]));
+  for (const prov of [...PROVIDERS, '__total__']) acc[prov] = seed();
+  for (const r of all) {
+    if (!inDenom(r)) continue;
+    const b = key(r.createdAt); const ok = r.status === APPROVED ? 1 : 0;
+    for (const p of [r.psp, '__total__']) { const c = acc[p].get(b); if (c) { c.ok += ok; c.den += 1; } }
+  }
+  const rate = (prov: string): SeriesPoint[] => buckets.map((b) => { const c = acc[prov].get(b)!; return { bucket: b, value: c.den ? (c.ok / c.den) * 100 : 0, count: c.den }; });
+  return {
+    metric: 'deposit_approval_rate_by_provider', currency: 'CAD', bucket, buckets,
+    range: { from, to, tz: TZ_PLACEHOLDER }, partial: { bucketKey: buckets[buckets.length - 1] ?? null },
+    computedAt: FIXTURE_NOW, stalenessBudgetMs: STALENESS_BUDGET_MS,
+    series: [
+      ...PROVIDERS.map((prov) => ({ key: prov, label: prov, points: rate(prov) })),
+      { key: 'Total', label: 'Total (aggregate)', points: rate('__total__') },
+    ],
+    totals: Object.fromEntries([...PROVIDERS, 'Total'].map((prov) => {
+      const c = [...acc[prov === 'Total' ? '__total__' : prov].values()].reduce((s, x) => ({ ok: s.ok + x.ok, den: s.den + x.den }), { ok: 0, den: 0 });
+      return [prov, { value: c.den ? (c.ok / c.den) * 100 : 0, count: c.den }];
+    })),
   };
 }
