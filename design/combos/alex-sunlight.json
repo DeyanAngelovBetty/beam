@@ -11,9 +11,9 @@
   "brand": {
     "primary": {
       "dark": {
-        "main": "#ff8e64",
-        "light": "#ff9f74",
-        "dark": "#cf6137"
+        "main": "#f59e1e",
+        "light": "#ffa82f",
+        "dark": "#c57200"
       },
       "light": {
         "main": "#a33800",

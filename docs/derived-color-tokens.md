@@ -474,6 +474,12 @@ Gradient / star / chrome / border in the export equalled the current defaults �
   **fills** on the warm *light* canvas — warning 2.22:1, info 2.75:1 vs paper (< 3:1 as fill-alone) — and
   **warning/error hues sit near the warm primary** (ΔHue 8–14° light; error 12° dark). Both are mitigated
   by the never-colour-alone rule (status always carries an icon/shape), so they are accepted, not blockers.
+- **Dark primary reverted 2026-10-07:** dark `primary.main` #FF8E64 → **#F59E1E** (+ up1 #FFA82F, down1 #C57200)
+  — a Lab cross-mode lock had carried the light-mode edit into dark; the salmon was never intended. Light is
+  unchanged. Dark re-audit: primary-as-text clears AA on every dark surface except the lightest (overlay/
+  ramp-3) at **4.48:1** (0.02 under 4.5, primary-coloured text on popovers only); contained-primary, focus
+  ring, text all pass. **Figma dark primary (the 3 `Sunlight/primary/dark/*` Ontario-mode vars below) is now
+  STALE at #FF8E64 — re-sync pending Deyan's "go".**
 - **Figma propagation (DONE 2026-10-07).** The 8 variables were written in Beam (MUI v9) `9yNbolohxGitkMJKDjoyKG`
   via MCP and **verified by read-back** (values + untouched sibling modes), then screenshotted on the Colors
   page's Sunlight section (both schemes). Values, not structure — all 8 held literals. **`jurisdiction`

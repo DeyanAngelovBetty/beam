@@ -287,8 +287,10 @@ export const products: Record<ProductName, Record<BrandName, BrandTokens>> = {
       // on the light surface ramp (audited). contrastText UNTOUCHED (white on light, near-black on dark).
       // primaryUp1 (light #EB7500 → #DA6B40) is DECORATIVE-ONLY — never text, never a sole state signal
       // (usage-audited: 0 component references; MUI uses it for tints/hover washes).
+      // DARK reverted to tangerine 2026-10-07 (was #FF8E64 salmon — a Lab cross-mode lock carried the
+      // light-mode edit into dark; never intended). Dark is the retuned tangerine, close to the pre-alex family.
       light: { primaryDown1: '#7D0E00', primary0: '#A33800', primaryUp1: '#DA6B40', contrastText: '#FFFFFF' },
-      dark: { primaryDown1: '#CF6137', primary0: '#FF8E64', primaryUp1: '#FF9F74', contrastText: '#111827' },
+      dark: { primaryDown1: '#C57200', primary0: '#F59E1E', primaryUp1: '#FFA82F', contrastText: '#111827' },
       states: STATES,
     },
     alberta: {
