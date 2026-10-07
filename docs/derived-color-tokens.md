@@ -474,8 +474,13 @@ Gradient / star / chrome / border in the export equalled the current defaults �
   **fills** on the warm *light* canvas — warning 2.22:1, info 2.75:1 vs paper (< 3:1 as fill-alone) — and
   **warning/error hues sit near the warm primary** (ΔHue 8–14° light; error 12° dark). Both are mitigated
   by the never-colour-alone rule (status always carries an icon/shape), so they are accepted, not blockers.
-- **Figma propagation (OPEN):** push the Sunlight×Ontario `product` primary + the Sunlight surface anchors
-  to the Figma `product` collection, or the next sync overwrites them (Deyan updates Figma after the push).
+- **Figma propagation (DONE 2026-10-07).** The 8 variables were written in Beam (MUI v9) `9yNbolohxGitkMJKDjoyKG`
+  via MCP and **verified by read-back** (values + untouched sibling modes), then screenshotted on the Colors
+  page's Sunlight section (both schemes). Values, not structure — all 8 held literals. **`jurisdiction`
+  collection, Ontario mode only:** `Sunlight/primary/light/primary (default|-1|1)` → #A33800 / #7D0E00 / #DA6B40;
+  `Sunlight/primary/dark/primary (default|-1|1)` → #FF8E64 / #CF6137 / #FF9F74. **`product` collection, Sunlight
+  mode only:** `surface/{dark,light}/anchor` → #16110B / #E1D5C8. **Untouched:** Alberta primary, Gaspar/VASI
+  surface, and every `palette`-collection alias (the two-hop structure is intact — only the literal sources moved).
 
 ### 8.1 Variants integrate into the lab as loadable PRESETS *(2026-09-03)*
 

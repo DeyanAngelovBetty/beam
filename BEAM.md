@@ -109,8 +109,9 @@ pain each one prevents:
      WCAG + APCA, both modes). `primary.light`/`primary.dark` stay **decorative-only** (never text — usage
      audited). Caveat, recorded: on the warm light canvas the **warning/info status fills** read ≥3:1 only
      as label+icon+border, not fill-alone, and **warning/error hues sit near the warm primary** (ΔHue 8–14°)
-     — fine because status is never colour-alone (icon/shape channel). Full provenance + the audit table:
-     `derived-color-tokens.md` §8.
+     — fine because status is never colour-alone (icon/shape channel). **Figma synced 2026-10-07** — the 8
+     Sunlight variables written in Beam (MUI v9) and read back (Alberta/Gaspar/VASI untouched). Full provenance
+     + the audit table + the exact variables: `derived-color-tokens.md` §8.
 5. **Typeface is a PRODUCT-axis seed — a title/body pair.** *(2026-08-05.)* `product/font/{title,
    body}` (tokens.ts `productFonts`): the **body** face is the base `typography.fontFamily` — the
    workhorse for data and for the `meta` key voice, which omits `fontFamily` *on purpose*
