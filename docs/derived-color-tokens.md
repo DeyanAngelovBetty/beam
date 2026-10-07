@@ -479,12 +479,14 @@ Gradient / star / chrome / border in the export equalled the current defaults �
   unchanged. Dark re-audit: primary-as-text clears AA on every dark surface except the lightest (overlay/
   ramp-3) at **4.48:1** (0.02 under 4.5, primary-coloured text on popovers only); contained-primary, focus
   ring, text all pass. **Figma dark primary (the 3 `Sunlight/primary/dark/*` Ontario-mode vars below) is now
-  STALE at #FF8E64 — re-sync pending Deyan's "go".**
+  re-synced 2026-10-07 to #F59E1E / #C57200 / #FFA82F (Ontario mode) and read-back-verified; Alberta, light
+  primary, Gaspar/VASI untouched.**
 - **Figma propagation (DONE 2026-10-07).** The 8 variables were written in Beam (MUI v9) `9yNbolohxGitkMJKDjoyKG`
   via MCP and **verified by read-back** (values + untouched sibling modes), then screenshotted on the Colors
   page's Sunlight section (both schemes). Values, not structure — all 8 held literals. **`jurisdiction`
   collection, Ontario mode only:** `Sunlight/primary/light/primary (default|-1|1)` → #A33800 / #7D0E00 / #DA6B40;
-  `Sunlight/primary/dark/primary (default|-1|1)` → #FF8E64 / #CF6137 / #FF9F74. **`product` collection, Sunlight
+  `Sunlight/primary/dark/primary (default|-1|1)` → #F59E1E / #C57200 / #FFA82F (reverted from the salmon
+  #FF8E64/#CF6137/#FF9F74 same day — see the revert note above). **`product` collection, Sunlight
   mode only:** `surface/{dark,light}/anchor` → #16110B / #E1D5C8. **Untouched:** Alberta primary, Gaspar/VASI
   surface, and every `palette`-collection alias (the two-hop structure is intact — only the literal sources moved).
 
