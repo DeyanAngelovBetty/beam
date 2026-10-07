@@ -16,6 +16,7 @@
     "@fontsource-variable/roboto-flex": "^5.3.0",
     "@fontsource-variable/roboto-mono": "^5.3.0",
     "@mui/icons-material": "^9.0.0",
+    "@mui/x-charts": "^9.15.0",
     "@xyflow/react": "^12.11.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

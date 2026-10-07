@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Section } from '@betty/beam';
 import { WIDGETS } from '../bench/widgets/registry';
-import { REPORTS, reportById, ReportControls, ReportDraftBody } from './reports';
+import { REPORTS, reportById, ReportControls, reportBody } from './reports';
 import type { WidgetSize } from './DashboardGrid';
 
 /** The operator dashboard's widget — id · label (manager) · named size (grid). */
@@ -36,7 +36,7 @@ export const dashboardWidgetNode = (w: DashboardWidget): ReactNode => {
   if (report) {
     return (
       <Section title={report.title} actions={<ReportControls report={report} />}>
-        <ReportDraftBody />
+        {reportBody(report)}
       </Section>
     );
   }
