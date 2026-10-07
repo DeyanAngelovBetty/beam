@@ -97,6 +97,20 @@ Either library gets its categorical palette from our tokens (§4), never a bundl
 follow the **dataviz** skill + `derived-color-tokens.md` at build time. **Flag D-2 (resolved to a spike):** the
 library is chosen by the spike's evidence, not up front.
 
+**DECISION (2026-10-07): `@mui/x-charts@9.15.0` — adopted.** The spike (Reports 1 & 3) cleared most of the bar
+cheaply and it is **theme-native** (reads `@mui/material@9`, peer `^7.3.0 || ^9.0.0`) + the easiest adoption for
+the product teams. **New dependency** on `apps/gaspar` (+ its d3 transitive tree; `npm audit` flags transitive
+vulns to triage). Met out of the box: line crosshair + multi-series axis tooltip, 100% stacked (computed share)
++ absolute toggle, legend, theme-token text, hit-target = axis band. **Gaps, filled by TARGETED additions (not
+a reason for visx):**
+- **Keyboard-reachable tooltips — NOT in x-charts** (grepped v9.15 `dist`: no keyboard/tabIndex/keydown/arrow/
+  activedescendant). So the **per-chart table view is the mandatory a11y path**, not optional — next step.
+- **Direct series labels** — no native support → a small custom end-label overlay when built.
+- **Per-segment / per-bar partial styling** — no native support → we split each series into a complete-buckets
+  series + a last-bucket "tail" series and style the tail (dashed+hollow line / faded bar) via the per-series
+  `.MuiLineElement/MarkElement/BarElement-series-<id>` classes.
+These are localized additions; wholesale visx is not warranted.
+
 ---
 
 ## 4. Categorical colour tokens (provider palette)
@@ -258,6 +272,10 @@ step is the first item of **Batch 3**, ahead of the tiles.
 7. **Distinct-player denominator** — how a player active in only part of the period counts (v1.2 per-Player AVG).
 8. **Base-currency / conversion policy** — stated wherever a converted total appears, once the currency filter
    goes live (v1.2 multi-currency).
+9. **Axis date-label format** — ISO (`2026-10-07`) vs short (`Oct 7` / `W41` / `Oct`)? (chart-spike surfaced it.)
+10. **Axis title wording** — e.g. `Bucket (week)` — keep the mechanism-name, or a friendlier label?
+11. **Y-axis currency display** — `CAD value` vs `$` prefix vs compact (`$1.2k`); and the % axis format for the
+    share view.
 
 ---
 

@@ -91,7 +91,7 @@ const embeddedTableContractSx = {
   },
 };
 
-export function Section({ title, actions, toolbar, isEdit, bleed = false, children, 'aria-label': ariaLabel }: SectionProps) {
+export function Section({ title, actions, toolbar, isEdit, bleed = false, children, titleAdornment, headerAction, 'aria-label': ariaLabel }: SectionProps) {
   // Border: official semantics for the boolean (divider when true, else transparent); the `:has(field)`
   // auto-derivation is the opt-in `isEdit="auto"` path. Constant 1px geometry either way — only colour moves.
   const borderSx =
@@ -108,10 +108,13 @@ export function Section({ title, actions, toolbar, isEdit, bleed = false, childr
         ...embeddedTableContractSx,
       }}
     >
-      <Box sx={{ px: 2, pt: 2, pb: toolbar ? 1 : bleed ? 1.5 : 1 }}>
+      <Box sx={{ px: 2, pt: 2, pb: toolbar ? 1 : bleed ? 1.5 : 1, display: 'flex', alignItems: 'center', gap: 1 }}>
         {/* Section title = `subtitle1` (16px/600 via the theme scale — a step above the 16/regular
-            BeamStat values; v2.2). A deliberate visual delta on a shared organism, flagged for upstream. */}
+            BeamStat values; v2.2). A deliberate visual delta on a shared organism, flagged for upstream.
+            titleAdornment sits inline after the title; headerAction is pushed to the right of the same band. */}
         <Typography variant="subtitle1">{title}</Typography>
+        {titleAdornment}
+        {headerAction && <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>{headerAction}</Box>}
       </Box>
       {actions && <Box sx={{ px: 2, pb: 1 }}>{actions}</Box>}
       {/* Toolbar band — between header and body, at the field-twin datum (title → toolbar → body). Hosts

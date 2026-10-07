@@ -13,6 +13,14 @@ import { matchesTx, APPROVED, type TxFilter } from './txPredicate';
 export const TZ_PLACEHOLDER = 'America/Toronto (pending — §10 open)';
 export const STALENESS_BUDGET_MS = 60_000; // placeholder: "live" ≤ 60s (pending BI)
 
+/**
+ * FIXTURE CLOCK (2026-10-07). The fixtures are synthetic and their latest row sits in the future relative to
+ * the wall clock, which made a FUTURE bucket read "in progress". So `computedAt` / "now" is PINNED to the
+ * fixture's latest timestamp (a stated clock) and surfaced as "data as of …" — rather than re-anchoring the
+ * shared fixture (which TransactionsPage also consumes). The partial bucket is the one containing this clock.
+ */
+export const FIXTURE_NOW: string = ALL_ROWS.reduce((m, r) => (r.createdAt > m ? r.createdAt : m), ALL_ROWS[0]?.createdAt ?? new Date().toISOString());
+
 export type Bucket = 'day' | 'week' | 'month';
 export interface SeriesPoint { bucket: string; value: number; count: number }
 export interface Series { key: string; label: string; points: SeriesPoint[] }
@@ -85,7 +93,7 @@ export function depositsVsWithdrawals(f: Pick<TxFilter, 'createdFrom' | 'created
   return {
     metric: 'deposits_vs_withdrawals', currency: 'CAD', bucket, buckets,
     range: { from, to, tz: TZ_PLACEHOLDER }, partial: { bucketKey: buckets[buckets.length - 1] ?? null },
-    computedAt: new Date().toISOString(), stalenessBudgetMs: STALENESS_BUDGET_MS,
+    computedAt: FIXTURE_NOW, stalenessBudgetMs: STALENESS_BUDGET_MS,
     series: [
       { key: 'Deposit', label: 'Deposits', points: buckets.map((b) => byDir.Deposit.get(b)!) },
       { key: 'Withdrawal', label: 'Withdrawals', points: buckets.map((b) => byDir.Withdrawal.get(b)!) },
@@ -113,7 +121,7 @@ export function depositsByProvider(f: Pick<TxFilter, 'createdFrom' | 'createdTo'
   return {
     metric: 'deposits_by_provider', currency: 'CAD', bucket, buckets,
     range: { from, to, tz: TZ_PLACEHOLDER }, partial: { bucketKey: buckets[buckets.length - 1] ?? null },
-    computedAt: new Date().toISOString(), stalenessBudgetMs: STALENESS_BUDGET_MS,
+    computedAt: FIXTURE_NOW, stalenessBudgetMs: STALENESS_BUDGET_MS,
     series: PROVIDERS.map((prov) => ({ key: prov, label: prov, points: buckets.map((b) => byProv[prov].get(b)!) })),
     totals,
   };

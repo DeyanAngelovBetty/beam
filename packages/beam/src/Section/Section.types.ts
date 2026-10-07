@@ -21,6 +21,15 @@ export interface SectionProps {
   /** Actions rendered under the title (official parity). */
   actions?: ReactNode;
   /**
+   * LANE EXTENSION (additive, 2026-10-07) — header-row slots so a Section's controls share the TITLE band
+   * instead of stacking on their own row. `titleAdornment` renders inline right after the title (e.g. an info
+   * affordance); `headerAction` renders right-aligned on the same row (e.g. a small view toggle, §6.9
+   * small/flat). Both OPTIONAL — absent, the title band is byte-identical to official's. Used by the Gaspar
+   * dashboard report cards; ledgered in beam-alignment §4 (upstream-pitch: a Section header-action slot).
+   */
+  titleAdornment?: ReactNode;
+  headerAction?: ReactNode;
+  /**
    * LANE EXTENSION (flagged) — a toolbar band rendered BETWEEN the header and the body, at the
    * field-twin datum (min-height `FIELD_TWIN_HEIGHT`, its own inset + gap). Hosts the section's
    * add / bulk affordances; the canonical control is the small `+`-prefixed text button from the
